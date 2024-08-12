@@ -7,7 +7,7 @@ internal class File : IFile
     readonly DataStream baseStream;
     readonly int streamOffset;
     readonly int streamLength;
-    IFileStream stream;
+    IFileStream? stream;
 
     public File(string name, DataStream baseStream, int streamOffset, int streamLength, IFolder parent)
     {
@@ -39,7 +39,7 @@ internal class File : IFile
 
     public IFolder Parent { get; }
 
-    public event Action<int> FileSizeChanged;
+    public event Action<int>? FileSizeChanged;
 
     public IReadOnlyFile AsReadOnly(IReadOnlyFolder parent)
     {

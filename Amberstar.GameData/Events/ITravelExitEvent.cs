@@ -17,10 +17,10 @@ public interface ITravelExitEvent : IEvent
     /// </summary>
     byte Y { get; }
 
-    /// <summary>
-    /// Byte 3
-    /// </summary>
-    byte Direction { get; }
+	/// <summary>
+	/// Byte 3
+	/// </summary>
+	Direction Direction { get; }
 
 	/// <summary>
 	/// Word 6

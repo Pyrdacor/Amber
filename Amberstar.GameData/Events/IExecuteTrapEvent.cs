@@ -36,4 +36,8 @@ public interface IExecuteTrapEvent : IEvent
     /// Index of map text (seems to be limit to the range 0..25).
     /// </summary>
     byte TextIndex { get; }
+
+    bool AffectAllPlayers { get; }
+
+	byte TrapEffectTextIndex { get; }
 }

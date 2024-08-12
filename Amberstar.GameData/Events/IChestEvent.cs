@@ -13,6 +13,11 @@ public interface IChestEvent : IEvent
     /// lockpicking skill value if lockpicking is
     /// performed. A value of 0 means "always open".
     /// 
+    /// It seems that chest in Amberstar can only be
+    /// opened by lockpicking or the lockpick item.
+    /// There is no possibility to use or specify
+    /// another item like a specific key.
+    /// 
     /// It seems that all chests are open if you
     /// possess the Amberstar (needs verification).
     /// </summary>
@@ -49,8 +54,6 @@ public interface IChestEvent : IEvent
 
 	/// <summary>
 	/// Word 6
-	/// 
-	/// Item to unlock the door (key, amberstar, etc).
 	/// </summary>
-	word ItemIndex { get; }
+	word ChestIndex { get; }
 }

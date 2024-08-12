@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-namespace Amberstar.GameData;
+﻿namespace Amberstar.GameData;
 
 public enum TravelType : byte
 {

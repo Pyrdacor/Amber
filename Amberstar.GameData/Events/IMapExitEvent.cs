@@ -18,7 +18,7 @@ public interface IMapExitEvent : IEvent
     /// <summary>
     /// Byte 3
     /// </summary>
-    byte Direction { get; }
+    Direction Direction { get; }
 
 	/// <summary>
 	/// Word 6
