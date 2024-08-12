@@ -31,7 +31,7 @@ internal abstract class PlaceData(PlaceType placeType, PlaceDataArray placeData)
 
 		return placeType switch
 		{
-			>= PlaceType.Guild1 and <= PlaceType.Guild8 => new GuildData((Class)((int)placeType - (int)PlaceType.Guild1), placeData),
+			>= PlaceType.FirstGuild and <= PlaceType.LastGuild => new GuildData((Class)((int)placeType - (int)PlaceType.FirstGuild), placeData),
 			PlaceType.Merchant => new MerchantData(placeData),
 			PlaceType.FoodDealer => new FoodDealerData(placeData),
 			PlaceType.HorseDealer or PlaceType.RaftDealer or PlaceType.ShipDealer => new TransportDealerData(placeType, placeData),
@@ -50,15 +50,10 @@ internal class FoodDealerData(PlaceDataArray placeData) : PlaceData(PlaceType.Fo
 
 }
 
-public enum Class
-{
-	// TODO ...
-}
-
-internal class GuildData : PlaceData
+internal class GuildData : PlaceData, IGuildData
 {
 	public GuildData(Class @class, PlaceDataArray placeData)
-		: base((PlaceType)((int)PlaceType.Guild1 + (int)@class), placeData)
+		: base((PlaceType)((int)PlaceType.FirstGuild + (int)@class), placeData)
 	{
 
 	}
@@ -68,14 +63,7 @@ internal class GuildData : PlaceData
 	public word LevelPrice => placeData[1];
 }
 
-public enum Transport
-{
-	Horse,
-	Raft,
-	Ship
-}
-
-internal class TransportDealerData : PlaceData
+internal class TransportDealerData : PlaceData, ITransportDealerData
 {
 	public TransportDealerData(PlaceType placeType, PlaceDataArray placeData)
 		: base(placeType, placeData)
@@ -101,10 +89,21 @@ internal class TransportDealerData : PlaceData
 	public word SpawnMapIndex => placeData[3];
 }
 
-internal class HealerData(PlaceDataArray placeData) : PlaceData(PlaceType.Healer, placeData)
+internal class HealerData(PlaceDataArray placeData) : PlaceData(PlaceType.Healer, placeData), IHealerData
 {
-	// TODO
+	public word HealStunned => placeData[0];
+	public word HealPoison => placeData[1];
+	public word HealPetrify => placeData[2];
+	public word HealDisease => placeData[3];
+	public word HealAging => placeData[4];
+	public word HealMadness => placeData[5];
+	public word HealBlindness => placeData[6];
+	public word HealDeath => placeData[7];
+	public word HealAshesCost => placeData[8];
+	public word HealDustCost => placeData[9];
+
 	// Price to heal condition:
+	// Condition Bit -> [wordIndex]
 	// 1 -> [5]
 	// 4 -> [6]
 	// 8 -> [0]
@@ -115,7 +114,6 @@ internal class HealerData(PlaceDataArray placeData) : PlaceData(PlaceType.Healer
 	// 13 -> [7]
 	// 14 -> [8]
 	// 15 -> [9]
-	// Others seem not to be healable (maybe battle-temp curses etc)
 
 	public word RemoveCursePrice => placeData[10];
 }

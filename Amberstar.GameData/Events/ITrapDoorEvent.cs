@@ -3,10 +3,9 @@
 /// <summary>
 /// Player falls down and optionally gets damaged.
 /// 
-/// This was intended to also be used to climb up
-/// through a trap door in the ceiling. But this
-/// case is not implemented. If the flag is set,
-/// nothing happens.
+/// Player can also climb up if <see cref="Floor"/> is not set.
+/// But this can only happen if you climb with the levitation spell etc.
+/// No damage is done in this case.
 /// 
 /// Note that the view direction is preserved.
 /// </summary>

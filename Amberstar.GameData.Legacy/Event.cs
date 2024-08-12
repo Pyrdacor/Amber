@@ -78,8 +78,7 @@ internal abstract class Event(EventData eventData) : IEvent
 			EventType.UseItem => new UseItemEvent(eventData),
 			EventType.DoorExit => new DoorExitEvent(eventData),
 			EventType.TravelExit => new TravelExitEvent(eventData),
-			EventType.None or >= EventType.Invalid => throw new AmberException(ExceptionScope.Data, $"Unsupported event type: {(int)eventData.Type}"),
-			_ => throw new NotImplementedException()
+			_ => throw new AmberException(ExceptionScope.Data, $"Unsupported event type: {(int)eventData.Type}")
 		};
 	}
 }
@@ -138,7 +137,9 @@ internal class ChestEvent(EventData eventData) : Event(eventData), IChestEvent
 
 	public bool Hidden => eventData.Byte4 != 0;
 
-	public word ChestIndex => eventData.Word6;	
+	public word ChestIndex => eventData.Word6;
+
+	public word TextIndex => eventData.Word6;
 }
 
 internal class TrapDoorEvent(EventData eventData) : Event(eventData), ITrapDoorEvent
@@ -275,6 +276,8 @@ internal class ChangeTileEvent(EventData eventData) : Event(eventData), IChangeT
 	public byte X => eventData.Byte1;
 
 	public byte Y => eventData.Byte2;
+
+	public byte TextIndex => eventData.Byte4;
 
 	public word IconIndex => eventData.Word6;
 }

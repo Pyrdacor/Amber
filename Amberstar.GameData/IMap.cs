@@ -1,6 +1,4 @@
-﻿using Amber.Common;
-
-namespace Amberstar.GameData;
+﻿namespace Amberstar.GameData;
 
 [Flags]
 public enum MapFlags : byte
@@ -58,12 +56,13 @@ public struct MapNPC
 	public byte Month; // 0xff = always there	
 }
 
-public interface IMap
+public interface IMap : IEventProvider
 {
 	public MapType Type { get; }
 	public MapFlags Flags { get; }
 	public MapNPC[] NPCs { get; }
 	public PositionList[] NPCPositions { get; }
 
+	public const int EventCount = 254;
 	public const int NPCCount = 24;
 }

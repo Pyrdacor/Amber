@@ -3,8 +3,14 @@
 public enum PlaceType : byte
 {
 	// TODO (guilds are based on classes)
-	Guild1, Guild2, Guild3, Guild4,
-	Guild5, Guild6, Guild7, Guild8,
+	WarriorGuild,
+	PaladinGuild,
+	RangerGuild,
+	ThiefGuild,
+	MonkGuild,
+	WhiteWizzardGuild,
+	GreyWizzardGuild,
+	BlackWizzardGuild,
 	Merchant,
 	FoodDealer,
 	Unused, // 0 pointer in orignal?
@@ -15,7 +21,9 @@ public enum PlaceType : byte
 	ShipDealer,
 	Inn,
 	Library,
-	Invalid // first invalid type
+	Invalid, // first invalid type
+	FirstGuild = WarriorGuild,
+	LastGuild = BlackWizzardGuild
 }
 
 public interface IPlaceData
@@ -23,9 +31,44 @@ public interface IPlaceData
 	word Price { get; }
 }
 
-public interface IFoodDealerData : IPlaceData
+public interface IGuildData : IPlaceData
 {
+	word JoinPrice { get; }
 
+	word LevelPrice { get; }
+}
+
+public enum Transport
+{
+	Horse,
+	Raft,
+	Ship
+}
+
+public interface ITransportDealerData : IPlaceData
+{
+	Transport Transport { get; }
+
+	word SpawnX { get; }
+
+	word SpawnY { get; }
+
+	word SpawnMapIndex { get; }
+}
+
+public interface IHealerData : IPlaceData
+{
+	word HealStunned { get; }
+	word HealPoison { get; }
+	word HealPetrify { get; }
+	word HealDisease { get; }
+	word HealAging { get; }
+	word HealMadness { get; }
+	word HealBlindness { get; }
+	word HealDeath { get; }
+	word HealAshesCost { get; }
+	word HealDustCost { get; }
+	word RemoveCursePrice { get; }
 }
 
 // Place pictures are based on the PlaceType. Use this table:

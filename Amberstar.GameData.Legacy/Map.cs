@@ -1,4 +1,4 @@
-﻿using Amber.Common;
+﻿using Amber.Serialization;
 using System.Runtime.InteropServices;
 
 namespace Amberstar.GameData.Legacy;
@@ -27,7 +27,7 @@ public unsafe struct MapHeader
 	public byte Width;
 	public byte Height;
 	public fixed byte Name[31]; // null-terminated (max 30 chars)
-	public fixed byte EventData[254 * GameData.Event.DataSize];
+	public fixed byte EventData[IMap.EventCount * IEvent.DataSize];
 	public fixed word NPCData[IMap.NPCCount]; // NPC index, monster group index, map text index
 	public fixed byte NPCIcon[IMap.NPCCount];
 	public fixed byte NPCMove[IMap.NPCCount];
@@ -45,15 +45,38 @@ public unsafe struct MapHeader
 	public readonly word LabdataIndex => Tileset;
 }
 
-public abstract class Map(MapHeader header, MapNPC[] npcs, PositionList[] npcPositions) : IMap
+public abstract class Map : IMap
 {
-	protected readonly MapHeader header = header;
+	protected readonly MapHeader header;
+
+	public unsafe Map(MapHeader header, MapNPC[] npcs, PositionList[] npcPositions)
+	{
+		this.header = header;
+		NPCs = npcs;
+		NPCPositions = npcPositions;
+
+		var eventReader = new FixedDataReader(header.EventData, IMap.EventCount * IEvent.DataSize);
+
+		for (int i = 0; i < IMap.EventCount; i++)
+		{
+			if (eventReader.PeekByte() == 0)
+			{
+				// No event here
+				eventReader.Position += IEvent.DataSize;
+				continue;
+			}
+
+			Events.Add(Event.ReadEvent(eventReader));
+		}
+	}
 
 	public MapType Type => header.MapType;
 
 	public MapFlags Flags => header.Flags;
 
-	public MapNPC[] NPCs { get; } = npcs;
+	public MapNPC[] NPCs { get; }
 
-	public PositionList[] NPCPositions { get; } = npcPositions;
+	public PositionList[] NPCPositions { get; }
+
+	public List<IEvent> Events { get; } = [];
 }

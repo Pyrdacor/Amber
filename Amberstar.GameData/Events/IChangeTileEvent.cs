@@ -16,6 +16,13 @@ public interface IChangeTileEvent : IEvent
     byte Y { get; }
 
 	/// <summary>
+	/// Byte 4
+	/// 
+	/// If non-zero, a text is shown before the change.
+	/// </summary>
+	byte TextIndex { get; }
+
+	/// <summary>
 	/// Word 6
 	/// </summary>
 	word IconIndex { get; }

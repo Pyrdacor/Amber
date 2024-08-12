@@ -56,4 +56,11 @@ public interface IChestEvent : IEvent
 	/// Word 6
 	/// </summary>
 	word ChestIndex { get; }
+
+    /// <summary>
+    /// Word 8
+    /// 
+    /// Displayed if the chest is open.
+    /// </summary>
+	word TextIndex { get; }
 }

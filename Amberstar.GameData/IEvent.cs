@@ -35,3 +35,8 @@ public interface IEvent
 
 	public const int DataSize = 10;
 }
+
+public interface IEventProvider
+{
+	List<IEvent> Events { get; }
+}
