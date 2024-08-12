@@ -21,7 +21,7 @@ public enum EventType : byte
 	ChangeTile,
 	Encounter,
 	Place,
-	EventItem,
+	UseItem,
 	DoorExit,
 	TravelExit,
 	Invalid

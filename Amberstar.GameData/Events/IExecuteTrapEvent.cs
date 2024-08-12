@@ -31,11 +31,13 @@ public interface IExecuteTrapEvent : IEvent
     /// </summary>
     byte Damage { get; }
 
-    /// <summary>
-    /// Byte 4
-    /// Index of map text (seems to be limit to the range 0..25).
-    /// </summary>
-    byte TextIndex { get; }
+	/// <summary>
+	/// Byte 4
+	/// 
+	/// If non-zero, a text is shown before the trap.
+	/// Index of map text (seems to be limit to the range 0..25).
+	/// </summary>
+	byte TextIndex { get; }
 
     bool AffectAllPlayers { get; }
 
