@@ -93,7 +93,7 @@ public unsafe sealed class FixedDataReader : IDataReader
             return string.Empty;
 
         CheckOutOfRange(length);
-        var str = encoding.GetString(data, Position, length);
+        var str = encoding.GetString(ptr + Position, length);
         str = str.Replace(encoding.GetString(new byte[] { 0xb4 }), "'");
         Position += length;
         return str;

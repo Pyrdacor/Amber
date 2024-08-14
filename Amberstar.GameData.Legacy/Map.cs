@@ -1,4 +1,5 @@
-﻿using Amber.Serialization;
+﻿using Amber.Assets.Common;
+using Amber.Serialization;
 using System.Runtime.InteropServices;
 
 namespace Amberstar.GameData.Legacy;
@@ -16,7 +17,7 @@ namespace Amberstar.GameData.Legacy;
 // Otherwise use a radius of 16 + (lsl by 3 the spell effect).
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public unsafe struct MapHeader
+internal unsafe struct MapHeader
 {
 	public byte Magic; // 0xff
 	public byte Fill; // 0x00
@@ -45,7 +46,7 @@ public unsafe struct MapHeader
 	public readonly word LabdataIndex => Tileset;
 }
 
-public abstract class Map : IMap
+internal abstract class Map : IMap
 {
 	protected readonly MapHeader header;
 
@@ -68,6 +69,23 @@ public abstract class Map : IMap
 
 			Events.Add(Event.ReadEvent(eventReader));
 		}
+	}
+
+	public static unsafe Map Load(IAsset asset)
+	{
+		var reader = asset.GetReader();
+		var headerData = reader.ReadBytes(sizeof(MapHeader));
+		MapHeader header;
+
+		fixed (byte* ptr = headerData)
+		{
+			header = *(MapHeader*)ptr;
+		}
+
+		if (header.MapType == MapType.Map2D)
+			return Map2D.Load(asset.Identifier.Index, header, reader);
+		else
+			return Map3D.Load(asset.Identifier.Index, header, reader);
 	}
 
 	public MapType Type => header.MapType;

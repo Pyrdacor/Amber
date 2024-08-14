@@ -1,8 +1,8 @@
-﻿using Amber.Assets.Common;
-using Amber.Common;
+﻿using Amber.Common;
+using Amber.Serialization;
 namespace Amberstar.GameData.Legacy;
 
-public class Map2D : Map, IMap2D
+internal class Map2D : Map, IMap2D
 {
 	private Map2D(MapHeader header, MapNPC[] npcs, PositionList[] npcPositions, Tile2D[] tiles)
 		: base(header, npcs, npcPositions)
@@ -12,19 +12,10 @@ public class Map2D : Map, IMap2D
 
 	public Tile2D[] Tiles { get; }
 
-	public static unsafe Map2D Load(IAsset asset)
+	public static unsafe Map2D Load(int id, MapHeader header, IDataReader reader)
 	{
-		var reader = asset.GetReader();
-		var headerData = reader.ReadBytes(sizeof(MapHeader));
-		MapHeader header;
-
-		fixed (byte* ptr = headerData)
-		{
-			header = *(MapHeader*)ptr;
-		}
-
-		if (header.MapType != 0)
-			throw new AmberException(ExceptionScope.Data, $"Map {asset.Identifier.Index} is not a 2D map.");
+		if (header.MapType != MapType.Map2D)
+			throw new AmberException(ExceptionScope.Data, $"Map {id} is not a 2D map.");
 
 		int mapSize = header.Width * header.Height;
 		var underlay = reader.ReadBytes(mapSize);

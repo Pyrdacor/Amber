@@ -15,6 +15,7 @@
 		Monster,
 		MonsterGroup,
 		Place,
+		PlaceName,
 		Merchant,
 		Item,
 		Palette,

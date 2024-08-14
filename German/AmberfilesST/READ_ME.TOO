@@ -1,0 +1,220 @@
+AMBERSTAR HANDBUCH UPDATES: 21.01.1992
+--------------------------------------
+
+
+Hier finden Sie noch einige énderungen, die aufgrund der Kurzfristigkeit
+leider keinen Eingang mehr ins Handbuch fanden:
+
+----------------------------------------------------------------------------
+
+1.      Seite(70)      KAMPF
+
+Im Steuermenu des Kampfbildschirms gibt es zwei neue Iconen.
+
+>       =       SLOW-MODUS
+>>      =       FAST-MODUS
+
+Wenn der SLOW-MODUS aktiviert ist, wird zwischen den KampfzÅgen ein Stop
+eingelegt. Dieser Stop wird mittels der Linken Maustaste gelîst und der
+nÑchste Kampfzug wird ausgefÅhrt.
+
+Wenn der FAST-MODUS aktiviert ist, lÑuft nach dem drÅcken des OK Icons die
+Kampfrunde ohne stops Automatisch durch.
+
+----------------------------------------------------------------------------
+
+2.      Seite(39)      ZAUBERSPRöCHE
+
+Die meiûten Werte der ZaubersprÅche haben sich geÑndert.
+
+Weiûe Magie:
+------------
+Name            SP      SL      Ort     Ziel    Wirkung 
+
+Heilung 1         2       1     WSHLK   C       plus  1 bis  5 LP
+Heilung 2         4       2     WSHLK   C       plus  2 bis 10 LP
+Heilung 3         6       3     WSHLK   C       plus  4 bis 20 LP
+Heilung 4         8       4     WSHLK   C       plus  8 bis 40 LP
+Heilung 5        10       5     WSHLK   C       plus 16 bis 80 LP
+Allheilung       20      15     WSHLK   P       plus  4 bis 20 LP 
+
+Wiederbelebung   30      20     L       C       Reinkarnation Leiche
+Asche wandeln    50      25     L       C         " Leiche verbrannt
+Staub wandeln    70      30     L       C         " Leiche zermalmt
+
+Gift neutralis.   5       2     WSHLK   C       entgiften eines Charakters
+LÑhmung heilen   10       4     WSHLK   C       LÑhmung beseitigen
+Krankheit heil.  15       6     WSHLK   C       Krankheit beseitigen
+Alterung heilen  20       8     WSHLK   C       Alterung beseitigen
+Entsteinern      30      10     WSHLK   C       Stein zu Fleisch
+
+Aufwecken         5       2     K       P       Party aus Schlaf wecken
+Panik beseiti.   10       4     K       C       Charakter beruhigen
+Irritation be.   15       6     K       C       Charakter anleiten
+Blindheit hei.   20       8     WSHLK   C       Blindheit heilen
+VerrÅcktheit h.  30      10     WSHLK   C       VerrÅcktheit heilen
+
+LÑhmen           15       3     K       M       Monster lÑhmen
+Schlaf           10       3     K       R       Monster-Rotte einschlÑfern
+Angst            15       6     K       M       Monster-Rotte Ñngstigen
+Irritieren       15       9     K       M       Monster verwirren
+Erblinden        20      12     K       M       Monster blind machen
+
+Untote vernic.   15      5      K       M       Untote beseitigen
+Heiliges Wort    30      10     K       R       Untoten-Rotte beseitigen
+Fluch aufheben   25      10     WSHL    G       Fluch von einem Gegenstand nehmen
+Essen erschaf.   20      15     WSHL    G       1 Ration je Party-Mitglied
+
+Graue Magie:
+------------
+Name            SP      SL      Ort     Ziel    Wirkung    
+
+Licht            5       1      WSHL    S        2 Stunden Licht
+Licht            8       3      WSHL    S        8 Stunden Licht
+Licht 3         12       5      WSHL    S       16 Stunden Licht
+
+RÅstung Sch. 1  10       2      WSHLK   S        2 Stunden + 5% Parade
+RÅstung Sch. 2  20       6      WSHLK   S        8 Stunden +10% Parade
+RÅstung Sch. 3  30      10      WSHLK   S       16 Stunden +15% Parade
+
+Waffen Macht 1  10       2      WSHLK   S        2 Stunden + 5% Attacke
+Waffen Macht 2  20       6      WSHLK   S        8 Stunden +10% Attacke
+Waffen Macht 3  30      10      WSHLK   S       16 Stunden +15% Attacke
+
+Anti-Magie 1    15       4      WSHLK   S        2 St. + 5% Schutz vor Magie
+Anti-Magie 2    30       8      WSHLK   S        8 St. +10% Schutz vor Magie
+Anti-Magie 3    45      12      WSHLK   S       16 St. +15% Schutz vor Magie
+
+Hellsicht 1     15       5      WSHL    S        2 Stunden Hellsichtigkeit
+Hellsicht 2     30      10      WSHL    S        8 Stunden Hellsichtigkeit
+Hellsicht 3     45      15      WSHL    S       16 Stunden Hellsichtigkeit
+
+Unsichtbar. 1   20       8      WSHL    S        2 Stunden Unsichtbarkeit
+Unsichtbar. 2   40      16      WSHL    S        8 Stunden Unsichtbarkeit
+Unsichtbar. 3   60      24      WSHL    S       16 Stunden Unsichtbarkeit
+
+Magische Sp.    80      95      WSHL    S       Umfaût die 6 vorhergehenden SprÅche, 
+                                                jeweils auf Stufe 3
+
+Magischer Ko.    5       1      WSH     S       Richtung in die Party blickt
+Identifikation  25      15      WSHL    G       alle Daten eines Gegenstandes
+Levitation      10       5      WSH     S       FalltÅr nach oben,unten benutzen
+Hast            15       8      K       C       verdoppelt Attacken, Alter+1
+Massen-Hast     30      14      K       P       verdoppelt Attacken, Alter+1
+Teleport        40      20      W       P       versetzt Party in Blickrichtung
+
+Durchblick      30      20      WSH     S       erlaubt durch WÑnde zu sehen
+
+Schwarze Magie:
+---------------
+Name            SP      SL      Ort     Ziel    Wirkung   
+
+Feuerstrahl      1       1      K       M       vermindert LP um 1 bis 2
+Feuerstoû        2       2      K       M       vermindert LP um 2 bis 4
+Feuerball        5       4      K       R       vermindert LP um 4 bis 8
+Feuersturm      15       8      K       R       vermindert LP um 8 bis 16
+Feuerwalze      25      16      K       A       vermindert LP um 16 bis 32
+
+Wasserloch       2       2      K       M       vermindert LP um 2 bis 4
+Wasserfall       4       4      K       M       vermindert LP um 4 bis 8
+Eisball         10       8      K       R       vermindert LP um 8 bis 16
+Eisschauer      30      16      K       R       vermindert LP um 16 bis 32
+Hagelschlag     50      30      K       A       vermindert LP um 32 bis 64
+
+Dreckschleuder   4       3      K       M       vermindert LP um 4 bis 8
+Steinschlag      8       6      K       M       vermindert LP um 8 bis 16
+Sumpffeld       15      12      K       R       vermindert LP um 16 bis 32
+Erdrutsch       45      15      K       R       vermindert LP um 32 bis 64
+Erdbeben        75      40      K       A       vermindert LP um 64 bis 128
+
+Windhauch        8       5      K       M       vermindert LP um 8 bis 16
+Windteufel      12      10      K       M       vermindert LP um 16 bis 32
+Windheuler      28      20      K       R       vermindert LP um 32 bis 64
+Donnerschlag    60      30      K       R       vermindert LP um 64 bis 128
+Wirbelsturm    100      50      K       A       vermindert LP um 128 bis 256
+
+Auflîsung      100      35      K       M       tîtet ein Monster
+Magische Pfeile  8      15      K       G       vermindert LP um 8
+
+----------------------------------------------------------------------------
+
+3.      Seite(58)      FéHIGKEITEN TRAINIEREN
+
+Die verschiedenen Klassen haben jetzt unterschiedliche Punkte beim 
+Trainieren der neuen Stufe.
+
+KLASSE:         PUNKTE:
+-----------------------
+Krieger          8
+Paladin         10
+Ranger          14
+Dieb            16      
+Mînch           10
+W-Magier        12
+G-Magier        12
+S-Magier        12
+
+----------------------------------------------------------------------------
+     
+4.      Seite(83)      ERFAHRUNGSPUNKTE & STUFEN
+
+Die verschiedenen Klassen haben jetzt andere EP/Stufen Tabellen
+
+
+ST      KRIEGER         PALADIN         RANGER          DIEB
+------------------------------------------------------------
+01           30              50             90            40   
+02           90             150            270           120
+03          180             300            540           240
+04          300             500            900           400
+05          450             750           1350           600
+06          630            1050           1890           840
+07          840            1400           2520          1120
+08         1080            1800           3240          1440
+09         1350            2250           4050          1800
+10         1650            2750           4950          2200
+11         1980            3300           5940          2640
+12         2340            3900           7020          3120
+13         2730            4550           8190          3640
+14         3150            5250           9450          4200
+15         3600            6000          10800          4800
+16         4080            6800          12240          5440
+17         4590            7650          13770          6120        
+18         5130            8550          15390          6840
+19         5700            9500          17100          7600
+20         6300           10500          18900          8400
+u.s.w.
+
+ST      MôNCH           W-MAGIER        G-MAGIER        S-MAGIER
+----------------------------------------------------------------
+01         80                 70              70              75
+02        240                210             210             225
+03        480                420             420             450
+04        800                700             700             750
+05       1200               1050            1050            1125
+06       1680               1470            1470            1575
+07       2240               1960            1960            2100
+08       2880               2520            2520            2700
+09       3600               3150            3150            3375
+10       4400               3850            3850            4125
+11       5280               4620            4620            4950
+12       6240               5460            5460            5850
+13       7280               6370            6370            6825
+14       8400               7350            7350            7875
+15       9600               8400            8400            9000
+16      10880               9520            9520           10200
+17      12240              10710           10710           11475
+18      13680              11970           11970           12825
+19      15200              13300           13300           14250
+20      16800              14700           14700           15750
+u.s.w.
+
+FÅr jede weitere Stufe braucht die jeweilige Klasse folgende EP:
+( NÑchste Stufe * EP 1.STUFE )    
+ZusÑtzlich zur letzten vorhandenen Stufe.
+
+Die Maximalstufe jeder Klasse betrÑgt 50. 
+
+----------------------------------------------------------------------------
+
+

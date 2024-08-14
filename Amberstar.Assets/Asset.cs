@@ -1,15 +1,17 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
 using Amber.Serialization;
+using System.Runtime.CompilerServices;
 
-namespace Amberstar.Assets
+[assembly: InternalsVisibleTo("Amberstar.GameData.Atari")]
+
+namespace Amberstar.Assets;
+
+internal class Asset(AssetIdentifier identifier, IDataReader reader) : IAsset
 {
-	internal class Asset(AssetIdentifier identifier, IDataReader reader) : IAsset
-	{
-		readonly IDataReader reader = reader;
+	readonly IDataReader reader = reader;
 
-		public AssetIdentifier Identifier { get; } = identifier;
+	public AssetIdentifier Identifier { get; } = identifier;
 
-		public IDataReader GetReader() => reader;
-	}
+	public IDataReader GetReader() => reader;
 }

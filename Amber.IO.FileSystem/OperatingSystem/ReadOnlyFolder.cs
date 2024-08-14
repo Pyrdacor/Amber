@@ -5,8 +5,8 @@ namespace Amber.IO.FileSystem.OperatingSystem;
 internal class ReadOnlyFolder : IReadOnlyFolder
 {
     readonly DirectoryInfo directory;
-    Dictionary<string, IReadOnlyFolder> folders = [];
-    Dictionary<string, IReadOnlyFile> files = [];
+    Dictionary<string, IReadOnlyFolder>? folders = null;
+    Dictionary<string, IReadOnlyFile>? files = null;
 
     public ReadOnlyFolder(DirectoryInfo directoryInfo, IReadOnlyFolder? parent)
     {

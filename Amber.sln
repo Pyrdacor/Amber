@@ -17,11 +17,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.Assets", "Amberst
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.IO.FileSystem", "Amber.IO.FileSystem\Amber.IO.FileSystem.csproj", "{03DD958E-026B-4C1D-97EB-B2E48B422A3D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amberstar", "Amberstar\Amberstar.csproj", "{7FC46D94-3EB1-4A19-91F5-EF7D69879B0D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar", "Amberstar\Amberstar.csproj", "{7FC46D94-3EB1-4A19-91F5-EF7D69879B0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amberstar.GameData", "Amberstar.GameData\Amberstar.GameData.csproj", "{E63B985B-1584-4A58-B91B-0B2940AB63E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.GameData", "Amberstar.GameData\Amberstar.GameData.csproj", "{E63B985B-1584-4A58-B91B-0B2940AB63E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amberstar.GameData.Legacy", "Amberstar.GameData.Legacy\Amberstar.GameData.Legacy.csproj", "{360BC71F-066C-427D-8327-6421EAD9F05A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.GameData.Legacy", "Amberstar.GameData.Legacy\Amberstar.GameData.Legacy.csproj", "{360BC71F-066C-427D-8327-6421EAD9F05A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.GameData.Atari", "Amberstar.GameData.Atari\Amberstar.GameData.Atari.csproj", "{AFCDA8CA-C2A7-4B7F-9D96-8A933B8D32E5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amiga.FileFormats.LHA", "..\Amiga\Amiga.FileFormats.LHA\Amiga.FileFormats.LHA.csproj", "{94D29F78-02BB-42B3-A9F8-460E3799A2B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +73,14 @@ Global
 		{360BC71F-066C-427D-8327-6421EAD9F05A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{360BC71F-066C-427D-8327-6421EAD9F05A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{360BC71F-066C-427D-8327-6421EAD9F05A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFCDA8CA-C2A7-4B7F-9D96-8A933B8D32E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFCDA8CA-C2A7-4B7F-9D96-8A933B8D32E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFCDA8CA-C2A7-4B7F-9D96-8A933B8D32E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFCDA8CA-C2A7-4B7F-9D96-8A933B8D32E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94D29F78-02BB-42B3-A9F8-460E3799A2B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94D29F78-02BB-42B3-A9F8-460E3799A2B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94D29F78-02BB-42B3-A9F8-460E3799A2B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94D29F78-02BB-42B3-A9F8-460E3799A2B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

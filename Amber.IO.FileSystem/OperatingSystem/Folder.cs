@@ -5,8 +5,8 @@ namespace Amber.IO.FileSystem.OperatingSystem;
 internal class Folder : IFolder
 {
     readonly DirectoryInfo directory;
-    Dictionary<string, IFolder> folders = [];
-	Dictionary<string, IFile> files = [];
+    Dictionary<string, IFolder>? folders = null;
+	Dictionary<string, IFile>? files = null;
 
     public Folder(DirectoryInfo directoryInfo, IFolder? parent)
     {

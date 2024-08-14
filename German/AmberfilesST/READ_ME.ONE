@@ -1,0 +1,59 @@
+Hier noch einige technische Hinweise zu Amberstar:
+
+* Um Amberstar spielen zu k”nnen, mssen Sie das Programm installieren; 
+entweder auf Festplatte, aber AUCH auf Diskette. Sie mssen dazu einfach das 
+Programm 'INSTALL.PRG' von Disk A starten. Um auf Diskette zu installieren,
+ben”tigen sie 3 Disks, diese werden vom Programm formatiert. Sie k”nnen NICHT
+direkt von den Originalen spielen! Nach dem Installieren starten Sie bitte 
+'AMBRSTAR.PRG' von der installierten Spieldisk A.
+
+* Falls Sie irgendwann Amberstar von vorne beginnen m”chten, sollten Sie es 
+neu installieren.
+
+* W„hrend des Spieles untersttzt Amberstar zwei Laufwerken.
+
+* Lassen Sie die Originaldisketten immer schreibgeschtzt, um eine 
+Virusinfekton zu vermeiden.
+
+* Um eine auf Diskette installierte Version zu beschleunigen, haben wir ein 
+spezielles Cache-Programm mitgeliefert, welches das interne Betriebsystem-
+Cache erweitert. Dies beschleunigt Diskoperationen erheblich. Die 
+Spieldisketten drfen hierzu nicht schreibgeschtzt sein. Wenn Sie den Einsatz 
+des Cache-Programmes wnschen, sollten Sie folgendes tun:
+
+        - Erzeugen Sie einen Ordner namens 'AUTO' auf Spieldisk A.
+        - Kopieren Sie das Programm 'CACHE.PRG' von der Original-Disk A
+          in diesen Ordner.
+
+Booten sie nun mit der Spieldisk A, wird das Cache installiert.
+
+* Sollten Sie ber 'nur' 1 MB Speicher verfgen, k”nnte beim Start des 
+Spieles die Meldung [ Out of memory ] erschienen. Deaktivieren sie dann 
+bitte Accessories und AUTO-Ordner Programme, um freien Speicher zu erhalten.
+
+* Amberstar untersttzt allen Speicher und jede Hardisk, die unter TOS 
+funktionieren. Sollten trotzdem Probleme auftauchen, schicken Sie uns neben 
+Ihren Originaldisketten bitte eine detaillierte Fehlerangabe und eine Liste
+der verwendeten Hardware.
+ 
+* Sollte ein interner Fehler auftreten, gibt das Programm eine Meldung
+aus. Schreiben Sie diese Meldung und Ihre letzten Schritte im Spiel auf,
+und schicken Sie uns diese Notizen zusammen mit Ihren Originaldisketten.
+
+* Wenn Sie keinen Standard-ST (z.B. 16 MHz Karte, Prozessor Cache, Mega STe) 
+oder einen TT haben, k”nnen wir die fehlerfreie Operation des Programmes 
+nicht garantieren. Das Programm wird dies jedoch bemerken, und die Intro-
+Sequenz berspringen, da dort einige zeitkritische Programmiertricks 
+verwendet werden. Wenn m”glich, schalten Sie bitte Prozessor-Caches oder 
+„hnliches aus.
+
+* Amberstar l„uft nicht auf Monochrom-Monitoren.
+
+* Durch das Drcken der F10-Taste k”nnen Sie sich die aktuelle Versionsnummer
+des Programms anschauen.
+
+Viel Spa,
+
+J.Horneman
+24-1-1992
+
