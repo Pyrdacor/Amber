@@ -130,6 +130,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 				// - First block line has 4 pixels offset (first 4 pixels are not used, so 16x12 pixel blocks)
 				// - Last block line has 9 pixels less height (last 9 pixels are not used, so 16x7 pixel blocks)
 				// - The 9 block lines in-between are rendered as full 16x16 blocks
+				// So a layout is 320x163 pixels in size and is displayed at y=37 (so it ends at y=200).
 				Layouts.Add(i, new DataReader(dataReader.ReadBytes(220)));
 
 			#endregion

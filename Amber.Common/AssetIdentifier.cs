@@ -26,6 +26,7 @@
 		Item,
 		Palette,
 		Music,
+		Layout,
 		// Images ...
 	}
 
