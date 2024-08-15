@@ -67,7 +67,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 
 			// TODO: hopefully we have something better later
 			if (!FindAndGotoByteSequence(dataReader, offset, 0x00, 0x13, 0x00, 0x14, 0x00, 0x15))
-				throw new AmberException(ExceptionScope.Application, "Could not find the version string in the program file.");
+				throw new AmberException(ExceptionScope.Application, "Could not find the class names in the program file.");
 
 			ClassNames = [];
 			SkillNames = [];
@@ -104,7 +104,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			// TODO: hopefully we have something better later
 			offset = dataReader.Position;
 			if (!FindAndGotoByteSequence(dataReader, offset, 0x00, 0x38, 0x00, 0x56, 0x00, 0x71))
-				throw new AmberException(ExceptionScope.Application, "Could not find the version string in the program file.");
+				throw new AmberException(ExceptionScope.Application, "Could not find the spell names in the program file.");
 
 			for (int i = 1; i <= 7; i++)
 				SpellSchoolNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per spell school name
@@ -114,6 +114,25 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 
 			#endregion
 
+			#region Read Layouts
+			offset = 0x18000;
+			if (!FindAndGotoByteSequence(dataReader, offset, 0x55, 0x55, 0x00, 0x00, 0xA6, 0x49, 0xBE, 0x79))
+				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
+
+			dataReader.Position -= 0x7c;
+
+			if (dataReader.PeekWord() != 0xaaaa)
+				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
+
+			// There are 11 layouts
+			for (int i = 1; i <= 11; i++)
+				// A layout definition consists of 220 bytes (20 blocks per row, 11 rows)
+				// - First block line has 4 pixels offset (first 4 pixels are not used, so 16x12 pixel blocks)
+				// - Last block line has 9 pixels less height (last 9 pixels are not used, so 16x7 pixel blocks)
+				// - The 9 block lines in-between are rendered as full 16x16 blocks
+				Layouts.Add(i, new DataReader(dataReader.ReadBytes(220)));
+
+			#endregion
 			// TODO: places
 		}
 
@@ -187,6 +206,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			return false;
 		}
 
+		public Dictionary<int, IDataReader> Layouts { get; } = [];
 		public Dictionary<int, IDataReader> PlacesData { get; } = [];
 		public Dictionary<int, IDataReader> PlaceNames { get; } = [];
 		public Dictionary<int, IDataReader> SpellSchoolNames { get; } = [];
