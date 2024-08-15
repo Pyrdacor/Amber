@@ -4,24 +4,29 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy
 {
-	public class MapLoader : IMapLoader
+	public class MapLoader(IAssetProvider assetProvider) : IMapLoader
 	{
-		readonly Dictionary<AssetIdentifier, IMap> maps = [];
+		readonly Dictionary<int, IMap> maps = [];
 
-		public IMap LoadMap(IAsset asset)
+		public IMap LoadMap(int index)
 		{
-			if (!maps.TryGetValue(asset.Identifier, out var map))
+			if (!maps.TryGetValue(index, out var map))
 			{
+				var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Map, index));
+
+				if (asset == null)
+					throw new AmberException(ExceptionScope.Data, $"Map {index} not found.");
+
 				map = Map.Load(asset);
-				maps.Add(asset.Identifier, map);
+				maps.Add(index, map);
 			}
 
 			return map;
 		}
 
-		public bool TryLoadMap2D(IAsset asset, out IMap2D? map2D)
+		public bool TryLoadMap2D(int index, out IMap2D? map2D)
 		{
-			var map = LoadMap(asset);
+			var map = LoadMap(index);
 
 			if (map is IMap2D m)
 			{
@@ -35,9 +40,9 @@ namespace Amberstar.GameData.Legacy
 			}
 		}
 
-		public bool TryLoadMap3D(IAsset asset, out IMap3D? map3D)
+		public bool TryLoadMap3D(int index, out IMap3D? map3D)
 		{
-			var map = LoadMap(asset);
+			var map = LoadMap(index);
 
 			if (map is IMap3D m)
 			{

@@ -22,6 +22,6 @@ internal class AssetContainerCache(AssetType assetType, Func<Dictionary<int, IAs
 			loaded = true;
 		}
 
-		return cache.TryGetValue(index, out var asset) ? asset : null;
+		return cache.GetValueOrDefault(index);
 	}
 }

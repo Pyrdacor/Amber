@@ -1,9 +1,9 @@
-﻿using Amber.Assets.Common;
+﻿using Amber.Common;
 
 namespace Amberstar.GameData.Serialization
 {
 	public interface ITextLoader
 	{
-		IText LoadText(IAsset asset);
+		IText LoadText(AssetIdentifier assetIdentifier);
 	}
 }

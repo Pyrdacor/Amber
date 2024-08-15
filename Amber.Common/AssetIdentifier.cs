@@ -3,10 +3,16 @@
 	public enum AssetType
 	{
 		Unknown,
-		Image,
-		Audio,
-		Text,
-		TextList,
+		// Names
+		SpellName,
+		SpellSchoolName,
+		ClassName,
+		SkillName,
+		CharInfoText, // labels like "APR", "LP", "SP" etc
+		RaceName,
+		ConditionName,
+		ItemTypeName,
+		// Other stuff
 		Font,
 		Map,
 		Lab,
@@ -19,6 +25,8 @@
 		Merchant,
 		Item,
 		Palette,
+		Music,
+		// Images ...
 	}
 
 	public struct AssetIdentifier
@@ -30,6 +38,11 @@
 		{
 			Type = type;
 			Index = index;
+		}
+
+		public override string ToString()
+		{
+			return $"[{Type}, {Index}]";
 		}
 	}
 }

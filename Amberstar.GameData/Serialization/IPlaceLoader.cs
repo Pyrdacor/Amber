@@ -1,7 +1,9 @@
-﻿namespace Amberstar.GameData.Serialization
+﻿using Amberstar.GameData.Events;
+
+namespace Amberstar.GameData.Serialization
 {
 	public interface IPlaceLoader
 	{
-		Dictionary<int, IPlace> LoadPlaces();
+		IPlace LoadPlace(PlaceType placeType, int index);
 	}
 }

@@ -32,6 +32,22 @@ internal class Text(List<string> textFragments) : IText
 		return text;
 	}
 
+	public static Text LoadSingleString(IAsset asset, List<string> textFragments)
+	{
+		var reader = asset.GetReader();
+
+		var text = new Text(textFragments);
+		text.TextIndices.Add(reader.ReadWord());
+		text.TextLengths.Add(int.MaxValue);
+
+		return text;
+	}
+
+	public string GetString()
+	{
+		return TextIndices[0] == 0 ? string.Empty : textFragments[TextIndices[0]];
+	}
+
 	public List<string[]> GetParagraphs(int maxWidthInCharacters)
 	{
 		GetLines(maxWidthInCharacters, out var paragraphs);
@@ -64,7 +80,7 @@ internal class Text(List<string> textFragments) : IText
 					currentLine += "(";
 					break;
 				case CarriageReturn:
-					lines.Add(currentLine);
+					lines.Add(currentLine.TrimEnd(' '));
 					currentLine = string.Empty;
 					break;
 				case ParagraphMarker:
@@ -111,6 +127,9 @@ internal class Text(List<string> textFragments) : IText
 				}
 			}
 		}
+
+		if (currentLine.Length != 0)
+			lines.Add(currentLine.TrimEnd(' '));
 
 		return lines.ToArray();
 	}

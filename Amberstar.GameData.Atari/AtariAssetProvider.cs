@@ -9,12 +9,18 @@ using Amiga.FileFormats.LHA;
 
 namespace Amberstar.GameData.Atari;
 
-public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextLoader
+public sealed class AtariAssetProvider : BaseAssetProvider
 {
+	const string ProgramFileName = "AMBRSTAR.68K";
+	readonly Lazy<ProgramData> programData;
 	readonly IReadOnlyFileSystem fileSystem;
 	readonly Dictionary<AssetType, Dictionary<int, Asset>> assets = [];
-	ProgramData? programData;
-	const string ProgramFileName = "AMBRSTAR.68K";
+	readonly Lazy<ITextLoader> textLoader;
+	readonly Lazy<IPlaceLoader> placeLoader;
+
+	private ProgramData Data => programData.Value;
+	public ITextLoader TextLoader => textLoader.Value;
+	public IPlaceLoader PlaceLoader => placeLoader.Value;
 
 	private class ProgramData
 	{
@@ -56,6 +62,59 @@ public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextL
 				throw new AmberException(ExceptionScope.Application, "Invalid text fragment terminator.");
 
 			#endregion
+			#region Read all kind of names
+			offset = 0x2D000;
+
+			// TODO: hopefully we have something better later
+			if (!FindAndGotoByteSequence(dataReader, offset, 0x00, 0x13, 0x00, 0x14, 0x00, 0x15))
+				throw new AmberException(ExceptionScope.Application, "Could not find the version string in the program file.");
+
+			ClassNames = [];
+			SkillNames = [];
+			CharInfoTexts = [];
+			SpellSchoolNames = [];
+			SpellNames = [];
+
+			for (int i = 0; i < 11; i++)
+				ClassNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per class name
+
+			for (int i = 0; i < 10; i++)
+				SkillNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per skill name
+
+			for (int i = 0; i < 5; i++)
+				CharInfoTexts.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per char info text
+
+			dataReader.Position += 12; // TODO: unknown data
+
+			for (int i = 0; i < 7; i++)
+				RaceNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per race name
+
+			dataReader.Position += 2; // either an additional empty race name or an empty string for condition "none"
+
+			// Note: First the physical conditions, then the mental conditions.
+			// Note: There are only 5 mental conditions and I guess overloaded is not shown in the UI as a text.
+			//       So the last 3 mental conditions are again "dead", "ashes" and "dust" (most likely copied over
+			//       from the physical conditions). And I guess they are not used/shown at all.
+			for (int i = 1; i <= 16; i++)
+				ConditionNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per condition name
+
+			for (int i = 0; i < 19; i++)
+				ItemTypeNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per item type name
+
+			// TODO: hopefully we have something better later
+			offset = dataReader.Position;
+			if (!FindAndGotoByteSequence(dataReader, offset, 0x00, 0x38, 0x00, 0x56, 0x00, 0x71))
+				throw new AmberException(ExceptionScope.Application, "Could not find the version string in the program file.");
+
+			for (int i = 1; i <= 7; i++)
+				SpellSchoolNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per spell school name
+
+			for (int i = 1; i <= 7 * 30; i++)
+				SpellNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per spell name
+
+			#endregion
+
+			// TODO: places
 		}
 
 		private static string ReadString(IDataReader dataReader, byte endByte = 0)
@@ -128,17 +187,28 @@ public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextL
 			return false;
 		}
 
-		public Dictionary<int, IDataReader> PlacesData { get; }
-		public Dictionary<int, string> PlaceNames { get; }
-		public List<string> TextFragments { get; }
-		public byte[] GlyphMappings { get; }
-		public string Version { get; }
+		public Dictionary<int, IDataReader> PlacesData { get; } = [];
+		public Dictionary<int, IDataReader> PlaceNames { get; } = [];
+		public Dictionary<int, IDataReader> SpellSchoolNames { get; } = [];
+		public Dictionary<int, IDataReader> SpellNames { get; } = [];
+		public Dictionary<int, IDataReader> ClassNames { get; } = [];
+		public Dictionary<int, IDataReader> SkillNames { get; } = [];
+		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
+		public Dictionary<int, IDataReader> RaceNames { get; } = [];
+		public Dictionary<int, IDataReader> ConditionNames { get; } = [];
+		public Dictionary<int, IDataReader> ItemTypeNames { get; } = [];		
+		public List<string> TextFragments { get; } = [];
+		public byte[] GlyphMappings { get; } = [];
+		public string Version { get; } = string.Empty;
 	}
 
 	public AtariAssetProvider(IReadOnlyFileSystem fileSystem)
 		: base(fileSystem)
 	{
 		this.fileSystem = fileSystem;
+		programData = new(() => LoadProgramData(ProgramFileName));
+		textLoader = new(() => new TextLoader(this, Data.TextFragments));
+		placeLoader = new(() => new PlaceLoader(this));
 	}
 
 	public override IAsset? GetAsset(AssetIdentifier identifier)
@@ -148,53 +218,6 @@ public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextL
 		if (fileName != ProgramFileName)
 			return base.GetAsset(identifier);
 
-		if (programData == null)
-		{
-			var file = fileSystem.GetFile(fileName);
-
-			if (file == null)
-				return null;
-
-			using var fileReader = file.Stream.GetReader();
-
-			var prgFile = PrgReader.Read(fileReader);
-			IDataReader programDataReader;
-
-			try
-			{
-				// Is it a LHA file?
-				var stream = new MemoryStream(prgFile.DataSegment);
-				var lha = LHAReader.LoadLHAFile(stream);
-				var dataFile = lha.RootDirectory.GetFiles().FirstOrDefault();
-
-				if (dataFile == null)
-					throw new Exception();
-
-				// Again a prg file?
-				try
-				{
-					prgFile = PrgReader.Read(new DataReader(dataFile.Data));
-
-					// TODO: REMOVE
-					File.WriteAllBytes(@"D:\Projects\Amber\German\AmberfilesST\ExtractedDataSegment.bin", prgFile.DataSegment);
-
-					programDataReader = new DataReader(prgFile.DataSegment);
-				}
-				catch
-				{
-					// No? Use raw data.
-					programDataReader = new DataReader(dataFile.Data);
-				}				
-			}
-			catch
-			{
-				// No? Use raw data.
-				programDataReader = new DataReader(prgFile.DataSegment);
-			}
-
-			programData = new ProgramData(programDataReader);
-		}
-
 		bool hasAssetList = assets.TryGetValue(identifier.Type, out var assetList);
 
 		if (hasAssetList && assetList!.TryGetValue(identifier.Index, out var asset))
@@ -202,37 +225,77 @@ public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextL
 
 		if (!hasAssetList)
 		{
-			Dictionary<int, Asset> CreateAssets<TSource>(Dictionary<int, TSource> source)
+			Dictionary<int, Asset> CreateAssets(Dictionary<int, IDataReader> source)
 			{
-				static IDataReader GetReader(TSource entry)
-				{
-					if (entry is string str)
-						return new DataReader(DataReader.Encoding.GetBytes(str));
-					else if (entry is IDataReader reader)
-						return reader;
-					else
-						throw new NotSupportedException("Unsupported source type.");
-				}
-
-				return source.ToDictionary(e => e.Key, e => new Asset(new AssetIdentifier(identifier.Type, e.Key), GetReader(e.Value)));
+				return source.ToDictionary(e => e.Key, e => new Asset(new AssetIdentifier(identifier.Type, e.Key), e.Value));
 			}
 
 			assetList = identifier.Type switch
 			{
-				AssetType.Place => CreateAssets(programData.PlacesData),
-				AssetType.PlaceName => CreateAssets(programData.PlaceNames),
+				AssetType.Place => CreateAssets(Data.PlacesData),
+				AssetType.PlaceName => CreateAssets(Data.PlaceNames),
+				AssetType.SpellName => CreateAssets(Data.SpellNames),
+				AssetType.SpellSchoolName => CreateAssets(Data.SpellSchoolNames),
+				AssetType.ClassName => CreateAssets(Data.ClassNames),
+				AssetType.SkillName => CreateAssets(Data.SkillNames),
+				AssetType.CharInfoText => CreateAssets(Data.CharInfoTexts),
+				AssetType.RaceName => CreateAssets(Data.RaceNames),
+				AssetType.ConditionName => CreateAssets(Data.ConditionNames),
+				AssetType.ItemTypeName => CreateAssets(Data.ItemTypeNames),
 				_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {identifier.Type} for Atari asset provider")
 			};
+
 			assets.Add(identifier.Type, assetList);
 		}
 
-		return assetList!.TryGetValue(identifier.Index, out asset) ? asset : null;
+		return assetList!.GetValueOrDefault(identifier.Index);
 	}
 
-	private Dictionary<int, Asset> LoadPlaceAssets()
+	private ProgramData LoadProgramData(string fileName)
 	{
-		// TODO
-		throw new NotImplementedException();
+		var file = fileSystem.GetFile(fileName);
+
+		if (file == null)
+			throw new AmberException(ExceptionScope.Data, $"File {fileName} not found.");
+
+		using var fileReader = file.Stream.GetReader();
+
+		var prgFile = PrgReader.Read(fileReader);
+		IDataReader programDataReader;
+
+		try
+		{
+			// Is it a LHA file?
+			var stream = new MemoryStream(prgFile.DataSegment);
+			var lha = LHAReader.LoadLHAFile(stream);
+			var dataFile = lha.RootDirectory.GetFiles().FirstOrDefault();
+
+			if (dataFile == null)
+				throw new Exception();
+
+			// Again a prg file?
+			try
+			{
+				prgFile = PrgReader.Read(new DataReader(dataFile.Data));
+
+				// TODO: REMOVE
+				File.WriteAllBytes(@"D:\Projects\Amber\German\AmberfilesST\ExtractedDataSegment.bin", prgFile.DataSegment);
+
+				programDataReader = new DataReader(prgFile.DataSegment);
+			}
+			catch
+			{
+				// No? Use raw data.
+				programDataReader = new DataReader(dataFile.Data);
+			}
+		}
+		catch
+		{
+			// No? Use raw data.
+			programDataReader = new DataReader(prgFile.DataSegment);
+		}
+
+		return new ProgramData(programDataReader);
 	}
 
 	protected override string FileNameByAssetType(AssetType assetType)
@@ -241,12 +304,15 @@ public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextL
 		{
 			AssetType.Place => ProgramFileName,
 			AssetType.PlaceName => ProgramFileName,
+			AssetType.SpellName => ProgramFileName,
+			AssetType.SpellSchoolName => ProgramFileName,
+			AssetType.ClassName => ProgramFileName,
+			AssetType.SkillName => ProgramFileName,
+			AssetType.CharInfoText => ProgramFileName,
+			AssetType.RaceName => ProgramFileName,
+			AssetType.ConditionName => ProgramFileName,
+			AssetType.ItemTypeName => ProgramFileName,
 			_ => base.FileNameByAssetType(assetType),
 		};
-	}
-
-	public Dictionary<int, IPlace> LoadPlaces()
-	{
-		throw new NotImplementedException();
 	}
 }

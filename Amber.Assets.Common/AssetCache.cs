@@ -18,11 +18,7 @@ namespace Amber.Assets.Common
 				return asset;
 			}
 
-			if (!assetList.TryGetValue(identifier.Index, out asset))
-			{
-				asset = assetProvider.GetAsset(identifier);
-				assetList.Add(identifier.Index, asset);
-			}
+			asset = assetList.GetOrAdd(identifier.Index, () => assetProvider.GetAsset(identifier));
 			
 			return asset;
 		}

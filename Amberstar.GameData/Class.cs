@@ -2,6 +2,7 @@
 
 public enum Class
 {
+	None,
 	Warrior,
 	Paladin,
 	Ranger,
@@ -9,5 +10,7 @@ public enum Class
 	Monk,
 	WhiteWizzard,
 	GreyWizzard,
-	BlackWizzard
+	BlackWizzard,
+	Animal,
+	Monster
 }
