@@ -4,6 +4,7 @@ using Amber.IO.Common.FileSystem;
 using Amber.IO.FileFormats.Serialization;
 using Amber.Serialization;
 using Amberstar.Assets;
+using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 using Amiga.FileFormats.LHA;
 
@@ -17,10 +18,12 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 	readonly Dictionary<AssetType, Dictionary<int, Asset>> assets = [];
 	readonly Lazy<ITextLoader> textLoader;
 	readonly Lazy<IPlaceLoader> placeLoader;
+	readonly Lazy<ILayoutLoader> layoutLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
 	public IPlaceLoader PlaceLoader => placeLoader.Value;
+	public ILayoutLoader LayoutLoader => layoutLoader.Value;
 
 	private class ProgramData
 	{
@@ -114,15 +117,13 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 
 			#endregion
 
+			// TODO: Look at https://github.com/Pyrdacor/AmberSources/blob/5a4e383506cef4e2517785cac03c53a07f965660/amberstar/src/LAYOUT/GRAPHICS.ASM
+			// to see what comes in which order regarding graphics. Then we can just seek to the first offset and then load everything in sequence.
+
 			#region Read Layouts
-			offset = 0x18000;
-			if (!FindAndGotoByteSequence(dataReader, offset, 0x55, 0x55, 0x00, 0x00, 0xA6, 0x49, 0xBE, 0x79))
-				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
-
-			dataReader.Position -= 0x7c;
-
-			if (dataReader.PeekWord() != 0xaaaa)
-				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
+			offset = 0x16000;
+			if (!FindAndGotoByteSequence(dataReader, offset, 0x08, 0x06, 0x06, 0x06))
+				throw new AmberException(ExceptionScope.Application, "Could not find the layout definitions in the program file.");
 
 			// There are 11 layouts
 			for (int i = 1; i <= 11; i++)
@@ -133,7 +134,24 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 				// So a layout is 320x163 pixels in size and is displayed at y=37 (so it ends at y=200).
 				Layouts.Add(i, new DataReader(dataReader.ReadBytes(220)));
 
+			offset = 0x18000;
+			if (!FindAndGotoByteSequence(dataReader, offset, 0x55, 0x55, 0x00, 0x00, 0xA6, 0x49, 0xBE, 0x79))
+				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
+
+			dataReader.Position -= 0x7c;
+
+			if (dataReader.PeekWord() != 0xaaaa)
+				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
+
+			// Add layout blocks
+			// 16.896 bytes (each should be a 4bit 16x16 image, so 128 bytes per block).
+			// This means there should be 132 blocks.
+			LayoutBlocks = new Dictionary<int, Graphic>(132);
+
+			for (int i = 0; i < 132; i++)
+				LayoutBlocks.Add(i, Graphic.From4BitPlanes(16, 16, dataReader.ReadBytes(128)));
 			#endregion
+
 			// TODO: places
 		}
 
@@ -217,9 +235,10 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];
 		public Dictionary<int, IDataReader> ConditionNames { get; } = [];
-		public Dictionary<int, IDataReader> ItemTypeNames { get; } = [];		
+		public Dictionary<int, IDataReader> ItemTypeNames { get; } = [];
+		public Dictionary<int, Graphic> LayoutBlocks { get; } = [];
 		public List<string> TextFragments { get; } = [];
-		public byte[] GlyphMappings { get; } = [];
+		public byte[] GlyphMappings { get; } = [];		
 		public string Version { get; } = string.Empty;
 	}
 
@@ -230,6 +249,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		programData = new(() => LoadProgramData(ProgramFileName));
 		textLoader = new(() => new TextLoader(this, Data.TextFragments));
 		placeLoader = new(() => new PlaceLoader(this));
+		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks));
 	}
 
 	public override IAsset? GetAsset(AssetIdentifier identifier)

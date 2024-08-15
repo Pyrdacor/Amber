@@ -1,10 +1,11 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
+using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Atari;
 
-internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, IGraphic> layoutBlocks) : ILayoutLoader
+internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, Graphic> layoutBlocks) : ILayoutLoader
 {
 	private readonly Dictionary<int, Layout> layouts = [];
 

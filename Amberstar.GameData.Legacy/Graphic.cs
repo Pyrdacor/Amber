@@ -28,6 +28,50 @@ public class Graphic : IGraphic
 		UsePalette = usePalette;
 	}
 
+	public static Graphic From4BitPlanes(int width, int height, byte[] data)
+	{
+		if (data.Length != width * height / 2)
+			throw new AmberException(ExceptionScope.Application, "Invalid data length for 4-bit graphic.");
+
+		byte[] pixelData = new byte[width * height];
+		int wordsPerLine = (width + 15) / 16;
+		int index = 0;
+		int targetIndex = 0;
+
+		for (int y = 0; y < height; y++)
+		{
+			for (int w = 0; w < wordsPerLine; w++)
+			{
+				int plane0 = (data[index++] << 8) | data[index++];
+				int plane1 = (data[index++] << 8) | data[index++];
+				int plane2 = (data[index++] << 8) | data[index++];
+				int plane3 = (data[index++] << 8) | data[index++];
+
+				for (int x = 0; x < 16; x++)
+				{
+					int pixel = 0;
+					int mask = 1 << (15 - x);
+
+					if ((plane0 & mask) != 0)
+						pixel |= 0x1;
+
+					if ((plane1 & mask) != 0)
+						pixel |= 0x2;
+
+					if ((plane2 & mask) != 0)
+						pixel |= 0x4;
+
+					if ((plane3 & mask) != 0)
+						pixel |= 0x8;
+
+					pixelData[targetIndex++] = (byte)pixel;
+				}
+			}
+		}
+
+		return new Graphic(width, height, pixelData, true);
+	}
+
 	public int Width { get; private init; } = 0;
 
 	public int Height { get; private init; } = 0;
