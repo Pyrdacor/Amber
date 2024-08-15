@@ -283,6 +283,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 				AssetType.RaceName => CreateAssets(Data.RaceNames),
 				AssetType.ConditionName => CreateAssets(Data.ConditionNames),
 				AssetType.ItemTypeName => CreateAssets(Data.ItemTypeNames),
+				AssetType.Layout => CreateAssets(Data.Layouts),
 				_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {identifier.Type} for Atari asset provider")
 			};
 
@@ -353,6 +354,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			AssetType.RaceName => ProgramFileName,
 			AssetType.ConditionName => ProgramFileName,
 			AssetType.ItemTypeName => ProgramFileName,
+			AssetType.Layout => ProgramFileName,
 			_ => base.FileNameByAssetType(assetType),
 		};
 	}

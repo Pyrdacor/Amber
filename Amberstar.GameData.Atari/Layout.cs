@@ -57,7 +57,8 @@ namespace Amberstar.GameData.Atari
                     x += 16;
                 }
 
-                y += height;
+				x = 0;
+				y += height;
             }
 
             for (int i = 0; i < 11; i++)
@@ -70,7 +71,7 @@ namespace Amberstar.GameData.Atari
             {
                 graphic.ApplyBitMaskedPlanarValues
                 (
-                    0, 184 + by, // x, y
+                    0, 184 + by - 37, // x, y
                     [BottomMasks[by], BottomMasks[by], BottomMasks[by], BottomMasks[by]], // same mask for all planes
                     [BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++]],
                     4 // planes
@@ -81,7 +82,7 @@ namespace Amberstar.GameData.Atari
 			{
 				graphic.ApplyBitMaskedPlanarValues
 				(
-					304, 184 + by, // x, y
+					304, 184 + by - 37, // x, y
 					[BottomMasks[by], BottomMasks[by], BottomMasks[by], BottomMasks[by]], // same mask for all planes
 					[BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++]],
 					4 // planes

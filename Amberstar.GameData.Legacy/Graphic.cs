@@ -16,16 +16,16 @@ public class Graphic : IGraphic
 	{
 		Width = width;
 		Height = height;
-		this.pixelData = new byte[width * height * BytesPerPixel];
 		UsePalette = usePalette;
+		this.pixelData = new byte[width * height * BytesPerPixel];		
 	}
 
 	public Graphic(int width, int height, byte[] pixelData, bool usePalette)
 	{
 		Width = width;
 		Height = height;
-		this.pixelData = pixelData;
 		UsePalette = usePalette;
+		this.pixelData = pixelData;
 	}
 
 	public static Graphic From4BitPlanes(int width, int height, byte[] data)
