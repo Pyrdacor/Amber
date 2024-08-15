@@ -4,17 +4,17 @@ using Amber.IO.Common.FileSystem;
 using Amber.IO.FileFormats.Serialization;
 using Amber.Serialization;
 using Amberstar.Assets;
+using Amberstar.GameData.Serialization;
 using Amiga.FileFormats.LHA;
 
 namespace Amberstar.GameData.Atari;
 
-public sealed class AtariAssetProvider : BaseAssetProvider
+public sealed class AtariAssetProvider : BaseAssetProvider, IPlaceLoader, ITextLoader
 {
 	readonly IReadOnlyFileSystem fileSystem;
 	readonly Dictionary<AssetType, Dictionary<int, Asset>> assets = [];
 	ProgramData? programData;
 	const string ProgramFileName = "AMBRSTAR.68K";
-
 
 	private class ProgramData
 	{
@@ -133,25 +133,6 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		public List<string> TextFragments { get; }
 		public byte[] GlyphMappings { get; }
 		public string Version { get; }
-		public const int OpenBracket = 1580;
-		public const int ClosingBracket = 1581;
-		public const int ExclamationMark = 631;
-		public const int CarriageReturn = 1576;
-		public const int ParagraphMarker = 1577;
-		public const int SingleQuote = 1300;
-		public const int Comma = 166;
-		public const int DoubleColon = 155;
-		public const int SemiColon = 1302;
-		public const int FullStop = 170;
-		public const int QuestionMark = 743;
-
-		public static bool IsEndPunctuation(int word)
-		{
-			return word == ExclamationMark || word == ClosingBracket ||
-				   word == SingleQuote || word == Comma ||
-				   word == DoubleColon || word == SemiColon ||
-				   word == FullStop || word == QuestionMark;
-		}
 	}
 
 	public AtariAssetProvider(IReadOnlyFileSystem fileSystem)
@@ -262,5 +243,10 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			AssetType.PlaceName => ProgramFileName,
 			_ => base.FileNameByAssetType(assetType),
 		};
+	}
+
+	public Dictionary<int, IPlace> LoadPlaces()
+	{
+		throw new NotImplementedException();
 	}
 }

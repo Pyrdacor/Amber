@@ -1,10 +1,7 @@
-﻿using Amber.Assets.Common;
-using Amberstar.GameData.Events;
-
-namespace Amberstar.GameData.Serialization
+﻿namespace Amberstar.GameData.Serialization
 {
 	public interface IPlaceLoader
 	{
-		IPlaceData LoadPlaceData(IAsset asset);
+		Dictionary<int, IPlace> LoadPlaces();
 	}
 }
