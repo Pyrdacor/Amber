@@ -29,6 +29,11 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 	{
 		public ProgramData(IDataReader dataReader)
 		{
+			Graphic ReadGraphic(int width, int height)
+			{
+				return Graphic.From4BitPlanes(width, height, dataReader.ReadBytes(width * height / 2));
+			}
+
 			#region Read Version
 			int offset = 0x250;
 
@@ -116,15 +121,61 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 				SpellNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per spell name
 
 			#endregion
-
-			// TODO: Look at https://github.com/Pyrdacor/AmberSources/blob/5a4e383506cef4e2517785cac03c53a07f965660/amberstar/src/LAYOUT/GRAPHICS.ASM
-			// to see what comes in which order regarding graphics. Then we can just seek to the first offset and then load everything in sequence.
-
-			#region Read Layouts
+			#region Read embedded graphics
 			offset = 0x16000;
-			if (!FindAndGotoByteSequence(dataReader, offset, 0x08, 0x06, 0x06, 0x06))
-				throw new AmberException(ExceptionScope.Application, "Could not find the layout definitions in the program file.");
+			if (!FindAndGotoText(dataReader, offset, "Illegal window handle"))
+				throw new AmberException(ExceptionScope.Application, "Could not find the graphics in the program file.");
 
+			dataReader.AlignToWord();
+
+			while (dataReader.PeekWord() != 0)
+				dataReader.Position += 2;
+
+			// Now we should be at the beginning of the embedded graphics, starting with the layout bottom corners.
+			if (dataReader.PeekDword() != 0x00008000)
+				throw new AmberException(ExceptionScope.Application, "Could not find the graphics in the program file.");
+
+			#region Load layout bottom corner info
+			int cornerCount = 8 * 16;
+			LayoutBottomCorners = new List<word>(cornerCount);
+			for (int i = 0; i < cornerCount; i++)
+				LayoutBottomCorners.Add(dataReader.ReadWord());
+			int maskCount = 8 * 4;
+			LayoutBottomCornerMasks = new List<word>(maskCount);
+			for (int i = 0; i < maskCount; i++)
+				LayoutBottomCornerMasks.Add(dataReader.ReadWord());
+			#endregion
+			#region Read portrait area
+			// The status block is the area right of the player portrait.
+			// It has a size of 16x36 pixels and starts at y=1 (so end at y=37 where the layout starts).
+			// The upper part is the status icon box and the lower part is the LP and SP bar area.
+			// The status icon is displayed at y=1 (on screen, so relative y=0) and has a height of 16 pixels.
+			// The bars are displayed at y=18 (on screen, so relative y=17).
+			// The portraits are displayed 32 pixels to the left of the status block and has a size of 32x34.
+			// The portraits also are located at y=1, so they end at y=35.
+			PortraitArea = new Graphic(320, 37, true);
+			var statusBlockMid = ReadGraphic(16, 36);
+			var statusBlockLeft = ReadGraphic(16, 36);
+			var statusBlockRight = ReadGraphic(16, 36);
+			var statusBlockTop = ReadGraphic(32, 1);
+			var statusBlockBottom = ReadGraphic(32, 1);
+
+			PortraitArea.AddOverlay(0, 0, statusBlockLeft);
+
+			for (int i = 1; i <= 6; i++)
+				PortraitArea.AddOverlay(i * 48, 0, statusBlockMid);
+
+			PortraitArea.AddOverlay(6 * 48 + 16, 0, statusBlockRight);
+
+			// Top and bottom edges
+			for (int i = 0; i < 6; i++)
+			{
+				PortraitArea.AddOverlay(16 + i * 48, 0, statusBlockTop);
+				PortraitArea.AddOverlay(16 + i * 48, 35, statusBlockBottom);
+			}
+
+			#endregion
+			#region Read Layouts
 			// There are 11 layouts
 			for (int i = 1; i <= 11; i++)
 				// A layout definition consists of 220 bytes (20 blocks per row, 11 rows)
@@ -149,8 +200,9 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			LayoutBlocks = new Dictionary<int, Graphic>(132);
 
 			for (int i = 0; i < 132; i++)
-				LayoutBlocks.Add(i, Graphic.From4BitPlanes(16, 16, dataReader.ReadBytes(128)));
+				LayoutBlocks.Add(i, ReadGraphic(16, 16));
 			#endregion
+#endregion
 
 			// TODO: places
 		}
@@ -237,6 +289,9 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		public Dictionary<int, IDataReader> ConditionNames { get; } = [];
 		public Dictionary<int, IDataReader> ItemTypeNames { get; } = [];
 		public Dictionary<int, Graphic> LayoutBlocks { get; } = [];
+		public List<word> LayoutBottomCorners { get; } = [];
+		public List<word> LayoutBottomCornerMasks { get; } = [];
+		public Graphic PortraitArea { get; }
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];		
 		public string Version { get; } = string.Empty;
@@ -249,7 +304,8 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		programData = new(() => LoadProgramData(ProgramFileName));
 		textLoader = new(() => new TextLoader(this, Data.TextFragments));
 		placeLoader = new(() => new PlaceLoader(this));
-		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks));
+		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks,
+			Data.LayoutBottomCorners, Data.LayoutBottomCornerMasks, Data.PortraitArea));
 	}
 
 	public override IAsset? GetAsset(AssetIdentifier identifier)

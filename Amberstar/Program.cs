@@ -43,8 +43,6 @@ namespace Amberstar
 			PrintTexts(AssetType.SpellSchoolName, 7, 1);
 			PrintTexts(AssetType.SpellName, 7*30, 1);
 
-			var layout = assetProvider.LayoutLoader.LoadLayout(1);
-
 			byte[] testPal =
 			[
 				0x00, 0x00,
@@ -64,7 +62,14 @@ namespace Amberstar
 				0x03, 0x10,
 				0x07, 0x65
 			];
-			WriteGraphic(@"D:\Projects\Amber\German\AmberfilesST\Layout1.png", layout, testPal, false);
+
+			for (int i = 1; i <= 11; i++)
+			{
+				var layout = assetProvider.LayoutLoader.LoadLayout(i);
+				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout{i}.png", layout, testPal, false);
+			}
+
+			WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\PortraitArea.png", assetProvider.LayoutLoader.LoadPortraitArea(), testPal, false);
 		}
 
 		static void WriteGraphic(string filename, IGraphic graphic, byte[] palette, bool transparency)

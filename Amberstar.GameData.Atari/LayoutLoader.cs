@@ -5,7 +5,8 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Atari;
 
-internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, Graphic> layoutBlocks) : ILayoutLoader
+internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, Graphic> layoutBlocks,
+	List<word> layoutBottomCorners, List<word> layoutBottomCornerMasks, IGraphic portraitArea) : ILayoutLoader
 {
 	private readonly Dictionary<int, Layout> layouts = [];
 
@@ -18,11 +19,13 @@ internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, Graphi
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Layout {index} not found.");
 
-			layout = new Layout(asset.GetReader().ReadBytes(220), layoutBlocks);
+			layout = new Layout(asset.GetReader().ReadBytes(220), layoutBlocks, layoutBottomCorners, layoutBottomCornerMasks);
 
 			layouts.Add(index, layout);
 		}
 
 		return layout.Graphic;
 	}
+
+	public IGraphic LoadPortraitArea() => portraitArea;
 }

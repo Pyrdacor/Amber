@@ -5,7 +5,7 @@ namespace Amberstar.GameData.Atari
 {
 	internal class Layout
 	{
-        private readonly word[] BottomCorners =
+        /*private readonly word[] BottomCorners =
         [
 			 0x0000, 0x8000, 0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x0000,
              0x8000, 0x8000, 0x0000, 0x0000, 0x8000, 0x8000, 0x0000, 0x0000,
@@ -31,9 +31,10 @@ namespace Amberstar.GameData.Atari
             0xc000,0xc000,0xe000,0xe000,0xf000,0xfc00,0xff00,0xfff7,
 			0x0001,0x0001,0x0001,0x0001,0x0001,0x0001,0x0001,0x0001,
             0x0003,0x0003,0x0007,0x0007,0x000f,0x003f,0x00ff,0xffff,
-        ];
+        ];*/
 
-        public Layout(byte[] definition, Dictionary<int, Graphic> layoutBlocks)
+        public Layout(byte[] definition, Dictionary<int, Graphic> layoutBlocks,
+			List<word> bottomCorners, List<word> bottomCornerMasks)
         {
             var graphic = new Graphic(320, 163, true);
 			int line = 0;
@@ -74,8 +75,8 @@ namespace Amberstar.GameData.Atari
                 graphic.ApplyBitMaskedPlanarValues
                 (
                     0, 184 + by - 37, // x, y
-                    [BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex++]], // same mask for all planes
-                    [BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++]],
+                    [bottomCornerMasks[maskIndex], bottomCornerMasks[maskIndex], bottomCornerMasks[maskIndex], bottomCornerMasks[maskIndex++]], // same mask for all planes
+                    [bottomCorners[cornerIndex++], bottomCorners[cornerIndex++], bottomCorners[cornerIndex++], bottomCorners[cornerIndex++]],
                     4 // planes
                 );
             }
@@ -85,8 +86,8 @@ namespace Amberstar.GameData.Atari
 				graphic.ApplyBitMaskedPlanarValues
 				(
 					304, 184 + by - 37, // x, y
-					[BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex++]], // same mask for all planes
-					[BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++]],
+					[bottomCornerMasks[maskIndex], bottomCornerMasks[maskIndex], bottomCornerMasks[maskIndex], bottomCornerMasks[maskIndex++]], // same mask for all planes
+					[bottomCorners[cornerIndex++], bottomCorners[cornerIndex++], bottomCorners[cornerIndex++], bottomCorners[cornerIndex++]],
 					4 // planes
 				);
 			}
