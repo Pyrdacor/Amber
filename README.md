@@ -9,7 +9,10 @@ Many parts are designed in a way that they can be used or extended for different
 
 ## Projects
 
-tbd
+### Amber.Common
+
+Provides basic utilities which all other projects might use.
+
 
 
 ## Amberstar
