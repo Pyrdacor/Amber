@@ -19,11 +19,13 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 	readonly Lazy<ITextLoader> textLoader;
 	readonly Lazy<IPlaceLoader> placeLoader;
 	readonly Lazy<ILayoutLoader> layoutLoader;
+	readonly Lazy<IUIGraphicLoader> uIGraphicLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
 	public IPlaceLoader PlaceLoader => placeLoader.Value;
 	public ILayoutLoader LayoutLoader => layoutLoader.Value;
+	public IUIGraphicLoader UIGraphicLoader => uIGraphicLoader.Value;
 
 	private class ProgramData
 	{
@@ -175,7 +177,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			}
 
 			#endregion
-			#region Read Layouts
+			#region Read layout definitions
 			// There are 11 layouts
 			for (int i = 1; i <= 11; i++)
 				// A layout definition consists of 220 bytes (20 blocks per row, 11 rows)
@@ -184,7 +186,17 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 				// - The 9 block lines in-between are rendered as full 16x16 blocks
 				// So a layout is 320x163 pixels in size and is displayed at y=37 (so it ends at y=200).
 				Layouts.Add(i, new DataReader(dataReader.ReadBytes(220)));
-
+			#endregion
+			#region Read UI graphics
+			void AddUIGraphic(UIGraphic graphic)
+			{
+				var size = graphic.GetSize();
+				UIGraphics.Add((int)graphic, new DataReader(dataReader.ReadBytes((int)size.Width * (int)size.Height / 2)));
+			}
+			for (int i = 0; i <= (int)UIGraphic.Invisibility; i++)
+				AddUIGraphic((UIGraphic)i);
+			#endregion
+			#region Read layout block graphics
 			offset = 0x18000;
 			if (!FindAndGotoByteSequence(dataReader, offset, 0x55, 0x55, 0x00, 0x00, 0xA6, 0x49, 0xBE, 0x79))
 				throw new AmberException(ExceptionScope.Application, "Could not find the layouts in the program file.");
@@ -202,7 +214,23 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			for (int i = 0; i < 132; i++)
 				LayoutBlocks.Add(i, ReadGraphic(16, 16));
 			#endregion
-#endregion
+			#endregion
+			#region Read buttons
+			void AddButton(int button)
+			{
+				Buttons.Add(button, new DataReader(dataReader.ReadBytes(32 * 16 / 2)));
+			}
+			for (int i = 0; i <= (int)Button.LastButton; i++)
+				AddButton(i);
+			#endregion
+			#region Read status icons
+			void AddStatusIcon(int statusIcon)
+			{
+				StatusIcons.Add(statusIcon, new DataReader(dataReader.ReadBytes(16 * 16 / 2)));
+			}
+			for (int i = 0; i <= (int)StatusIcon.LastStatusIcon; i++)
+				AddStatusIcon(i);
+			#endregion
 
 			// TODO: places
 		}
@@ -292,6 +320,9 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		public List<word> LayoutBottomCorners { get; } = [];
 		public List<word> LayoutBottomCornerMasks { get; } = [];
 		public Graphic PortraitArea { get; }
+		public Dictionary<int, IDataReader> UIGraphics { get; } = [];
+		public Dictionary<int, IDataReader> Buttons { get; } = [];
+		public Dictionary<int, IDataReader> StatusIcons { get; } = [];
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];		
 		public string Version { get; } = string.Empty;
@@ -306,6 +337,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		placeLoader = new(() => new PlaceLoader(this));
 		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks,
 			Data.LayoutBottomCorners, Data.LayoutBottomCornerMasks, Data.PortraitArea));
+		uIGraphicLoader = new(() => new UIGraphicLoader(this));
 	}
 
 	public override IAsset? GetAsset(AssetIdentifier identifier)
@@ -340,6 +372,9 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 				AssetType.ConditionName => CreateAssets(Data.ConditionNames),
 				AssetType.ItemTypeName => CreateAssets(Data.ItemTypeNames),
 				AssetType.Layout => CreateAssets(Data.Layouts),
+				AssetType.UIGraphic => CreateAssets(Data.UIGraphics),
+				AssetType.Button => CreateAssets(Data.Buttons),
+				AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
 				_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {identifier.Type} for Atari asset provider")
 			};
 
@@ -411,6 +446,9 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			AssetType.ConditionName => ProgramFileName,
 			AssetType.ItemTypeName => ProgramFileName,
 			AssetType.Layout => ProgramFileName,
+			AssetType.UIGraphic => ProgramFileName,
+			AssetType.Button => ProgramFileName,
+			AssetType.StatusIcon => ProgramFileName,
 			_ => base.FileNameByAssetType(assetType),
 		};
 	}

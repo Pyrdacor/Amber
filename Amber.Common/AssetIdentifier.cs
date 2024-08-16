@@ -12,6 +12,12 @@
 		RaceName,
 		ConditionName,
 		ItemTypeName,
+		// Graphics
+		Layout,
+		UIGraphic,
+		Button,
+		StatusIcon,
+		// ...
 		// Other stuff
 		Font,
 		Map,
@@ -26,8 +32,6 @@
 		Item,
 		Palette,
 		Music,
-		Layout,
-		// Images ...
 	}
 
 	public struct AssetIdentifier

@@ -2,6 +2,7 @@
 using Amber.Common;
 using Amber.IO.FileSystem;
 using Amberstar.GameData.Atari;
+using Amberstar.GameData.Serialization;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
@@ -66,14 +67,36 @@ namespace Amberstar
 			for (int i = 1; i <= 11; i++)
 			{
 				var layout = assetProvider.LayoutLoader.LoadLayout(i);
-				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout{i}.png", layout, testPal, false);
+				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout\{i:000}.png", layout, testPal, false);
 			}
 
-			WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\PortraitArea.png", assetProvider.LayoutLoader.LoadPortraitArea(), testPal, false);
+			WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout\PortraitArea.png", assetProvider.LayoutLoader.LoadPortraitArea(), testPal, false);
+
+			for (int i = 0; i < (int)UIGraphic.LastUIGraphic; i++)
+			{
+				var graphic = (UIGraphic)i;
+				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\UIGraphics\{graphic}.png", assetProvider.UIGraphicLoader.LoadGraphic(graphic), testPal, false);
+			}
+
+			for (int i = 0; i <= (int)Button.LastButton; i++)
+			{
+				var button = (Button)i;
+				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Buttons\{button}.png", assetProvider.UIGraphicLoader.LoadButtonGraphic(button), testPal, false);
+			}
+
+			for (int i = 0; i <= (int)StatusIcon.LastStatusIcon; i++)
+			{
+				var statusIcon = (StatusIcon)i;
+				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\StatusIcons\{statusIcon}.png", assetProvider.UIGraphicLoader.LoadStatusIcon(statusIcon), testPal, false);
+			}
 		}
 
 		static void WriteGraphic(string filename, IGraphic graphic, byte[] palette, bool transparency)
 		{
+			var dir = Path.GetDirectoryName(filename);
+
+			Directory.CreateDirectory(dir);
+
 			using var bitmap = new Bitmap(graphic.Width, graphic.Height);
 			var data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
 				System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
