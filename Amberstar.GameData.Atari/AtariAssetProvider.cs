@@ -191,7 +191,8 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			void AddUIGraphic(UIGraphic graphic)
 			{
 				var size = graphic.GetSize();
-				UIGraphics.Add((int)graphic, new DataReader(dataReader.ReadBytes((int)size.Width * (int)size.Height / 2)));
+				int frameCount = graphic.GetFrameCount();
+				UIGraphics.Add((int)graphic, new DataReader(dataReader.ReadBytes(frameCount * (int)size.Width * (int)size.Height / 2)));
 			}
 			for (int i = 0; i <= (int)UIGraphic.Invisibility; i++)
 				AddUIGraphic((UIGraphic)i);
@@ -230,6 +231,10 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 			}
 			for (int i = 0; i <= (int)StatusIcon.LastStatusIcon; i++)
 				AddStatusIcon(i);
+			#endregion
+			#region Read more UI gfx
+			for (int i = (int)UIGraphic.DamageSplash; i <= (int)UIGraphic.LastUIGraphic; i++)
+				AddUIGraphic((UIGraphic)i);
 			#endregion
 
 			// TODO: places
@@ -337,7 +342,7 @@ public sealed class AtariAssetProvider : BaseAssetProvider
 		placeLoader = new(() => new PlaceLoader(this));
 		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks,
 			Data.LayoutBottomCorners, Data.LayoutBottomCornerMasks, Data.PortraitArea));
-		uIGraphicLoader = new(() => new UIGraphicLoader(this));
+		uIGraphicLoader = new(() => new UIGraphicLoader(this, Data.LayoutBlocks[77])); // layout block 77 is the empty item slot
 	}
 
 	public override IAsset? GetAsset(AssetIdentifier identifier)

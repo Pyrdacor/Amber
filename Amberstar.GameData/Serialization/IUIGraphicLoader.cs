@@ -24,6 +24,12 @@ namespace Amberstar.GameData.Serialization
 		AntiMagic,
 		Clairvoyance,
 		Invisibility,
+		EmptyItemSlot,
+		DamageSplash,
+		HealingCross,
+		Ouch,
+		MagicAnimation, // 3 frames with 32x32 each (displayed over the portraits)
+		EmptyCharSlot,
 		//Sword,
 		//Shield,
 		LastUIGraphic // TODO: point to last
@@ -129,6 +135,13 @@ namespace Amberstar.GameData.Serialization
 		LastStatusIcon = Overloaded
 	}
 
+	public enum ItemGraphic
+	{
+		RedCross, // second hand slot
+		Chain,
+		PearlChain,
+	}
+
 	public interface IUIGraphicLoader
 	{
 		IGraphic LoadGraphic(UIGraphic graphic);
@@ -138,32 +151,42 @@ namespace Amberstar.GameData.Serialization
 
 	public static class UIGraphicExtensions
 	{
-		private static readonly Dictionary<UIGraphic, Size> uiGraphicDimensions = new()
+		// frame count and size
+		private static Tuple<int, Size> Info(uint width, uint height, int frameCount = 1) => Tuple.Create(frameCount, new Size(width, height));
+		private static readonly Dictionary<UIGraphic, Tuple<int, Size>> uiGraphicInfos = new()
 		{
-			{ UIGraphic.Skull, new Size(32, 34) },
-			{ UIGraphic.FeedbackIcon, new Size(32, 16) },
-			{ UIGraphic.ChequeredIcon, new Size(32, 16) },
-			{ UIGraphic.Night, new Size(32, 32) },
-			{ UIGraphic.Dawn, new Size(32, 32) },
-			{ UIGraphic.Day, new Size(32, 32) },
-			{ UIGraphic.Dusk, new Size(32, 32) },
-			{ UIGraphic.CompassNorth, new Size(32, 32) },
-			{ UIGraphic.CompassEast, new Size(32, 32) },
-			{ UIGraphic.CompassSouth, new Size(32, 32) },
-			{ UIGraphic.CompassWest, new Size(32, 32) },
-			{ UIGraphic.Amberstar, new Size(32, 32) },
-			{ UIGraphic.Windchain, new Size(32, 16) },
-			{ UIGraphic.Light, new Size(16, 16) },
-			{ UIGraphic.ArmorProtection, new Size(16, 16) },
-			{ UIGraphic.WeaponPower, new Size(16, 16) },
-			{ UIGraphic.AntiMagic, new Size(16, 16) },
-			{ UIGraphic.Clairvoyance, new Size(16, 16) },
-			{ UIGraphic.Invisibility, new Size(16, 16) },
+			{ UIGraphic.Skull, Info(32, 34) },
+			{ UIGraphic.FeedbackIcon, Info(32, 16) },
+			{ UIGraphic.ChequeredIcon, Info(32, 16) },
+			{ UIGraphic.Night, Info(32, 32) },
+			{ UIGraphic.Dawn, Info(32, 32) },
+			{ UIGraphic.Day, Info(32, 32) },
+			{ UIGraphic.Dusk, Info(32, 32) },
+			{ UIGraphic.CompassNorth, Info(32, 32) },
+			{ UIGraphic.CompassEast, Info(32, 32) },
+			{ UIGraphic.CompassSouth, Info(32, 32) },
+			{ UIGraphic.CompassWest, Info(32, 32) },
+			{ UIGraphic.Amberstar, Info(32, 32) },
+			{ UIGraphic.Windchain, Info(32, 16) },
+			{ UIGraphic.Light, Info(16, 16) },
+			{ UIGraphic.ArmorProtection, Info(16, 16) },
+			{ UIGraphic.WeaponPower, Info(16, 16) },
+			{ UIGraphic.AntiMagic, Info(16, 16) },
+			{ UIGraphic.Clairvoyance, Info(16, 16) },
+			{ UIGraphic.Invisibility, Info(16, 16) },
+			{ UIGraphic.EmptyItemSlot, Info(16, 16) },
+			{ UIGraphic.DamageSplash, Info(32, 32) },
+			{ UIGraphic.HealingCross, Info(32, 32) },
+			{ UIGraphic.Ouch, Info(32, 32) },
+			{ UIGraphic.MagicAnimation, Info(32, 32, 3) },
+			{ UIGraphic.EmptyCharSlot, Info(32, 34) },
 			/*{ UIGraphic.Sword, new Size(16, 16) },
 			{ UIGraphic.Shield, new Size(16, 16) },*/
-			{ UIGraphic.LastUIGraphic, new Size(32, 32 * 10 * 10) } // TODO
+			{ UIGraphic.LastUIGraphic, Info(16, 128) } // TODO
 		};
 
-		public static Size GetSize(this UIGraphic graphic) => uiGraphicDimensions[graphic];
+		public static Size GetSize(this UIGraphic graphic) => uiGraphicInfos[graphic].Item2;
+
+		public static int GetFrameCount(this UIGraphic graphic) => uiGraphicInfos[graphic].Item1;
 	}
 }

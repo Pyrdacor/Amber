@@ -5,7 +5,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Atari;
 
-internal class UIGraphicLoader(IAssetProvider assetProvider) : IUIGraphicLoader
+internal class UIGraphicLoader(IAssetProvider assetProvider, IGraphic emptyItemSlotGraphic) : IUIGraphicLoader
 {
 	private readonly Dictionary<StatusIcon, IGraphic> statusIcons = [];
 	private readonly Dictionary<Button, IGraphic> buttons = [];
@@ -47,6 +47,9 @@ internal class UIGraphicLoader(IAssetProvider assetProvider) : IUIGraphicLoader
 
 	public IGraphic LoadGraphic(UIGraphic graphic)
 	{
+		if (graphic == UIGraphic.EmptyItemSlot)
+			return emptyItemSlotGraphic;
+
 		if (!uiGraphics.TryGetValue(graphic, out var gfx))
 		{
 			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.UIGraphic, (int)graphic));
@@ -55,9 +58,10 @@ internal class UIGraphicLoader(IAssetProvider assetProvider) : IUIGraphicLoader
 				throw new AmberException(ExceptionScope.Data, $"UI graphic {graphic} not found.");
 
 			var size = graphic.GetSize();
+			int frameCount = graphic.GetFrameCount();
 			int width = (int)size.Width;
 			int height = (int)size.Height;
-			gfx = Graphic.From4BitPlanes(width, height, asset.GetReader().ReadBytes(width * height / 2));
+			gfx = Graphic.From4BitPlanes(width, height, asset.GetReader().ReadBytes(frameCount * width * height / 2), frameCount);
 
 			uiGraphics.Add(graphic, gfx);
 		}

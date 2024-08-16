@@ -72,7 +72,7 @@ namespace Amberstar
 
 			WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout\PortraitArea.png", assetProvider.LayoutLoader.LoadPortraitArea(), testPal, false);
 
-			for (int i = 0; i < (int)UIGraphic.LastUIGraphic; i++)
+			for (int i = 0; i <= (int)UIGraphic.LastUIGraphic; i++)
 			{
 				var graphic = (UIGraphic)i;
 				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\UIGraphics\{graphic}.png", assetProvider.UIGraphicLoader.LoadGraphic(graphic), testPal, false);

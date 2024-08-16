@@ -28,17 +28,17 @@ public class Graphic : IGraphic
 		this.pixelData = pixelData;
 	}
 
-	public static Graphic From4BitPlanes(int width, int height, byte[] data)
+	public static Graphic From4BitPlanes(int width, int height, byte[] data, int frameCount = 1)
 	{
-		if (data.Length != width * height / 2)
+		if (data.Length != frameCount * width * height / 2)
 			throw new AmberException(ExceptionScope.Application, "Invalid data length for 4-bit graphic.");
 
-		byte[] pixelData = new byte[width * height];
+		byte[] pixelData = new byte[frameCount * width * height];
 		int wordsPerLine = (width + 15) / 16;
 		int index = 0;
 		int targetIndex = 0;
 
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < frameCount * height; y++)
 		{
 			for (int w = 0; w < wordsPerLine; w++)
 			{
@@ -69,7 +69,7 @@ public class Graphic : IGraphic
 			}
 		}
 
-		return new Graphic(width, height, pixelData, true);
+		return new Graphic(frameCount * width, height, pixelData, true);
 	}
 
 	public int Width { get; private init; } = 0;
