@@ -148,6 +148,8 @@ public class Graphic : IGraphic
 			}
 			else
 			{
+				int nextTargetIndex = targetIndex + targetRowSize;
+
 				for (int j = 0; j < overlay.Width; j++)
 				{
 					int index = sourceIndex + j * BytesPerPixel;
@@ -157,6 +159,8 @@ public class Graphic : IGraphic
 					else
 						targetIndex += BytesPerPixel;
 				}
+
+				targetIndex = nextTargetIndex;
 			}
 
 			sourceIndex += sourceRowSize;
@@ -176,18 +180,18 @@ public class Graphic : IGraphic
 
 		for (int p = 0; p < planes; p++)
 		{
-			word pixelValue = 0;
+			word plane = 0;
 			int checkMask = 1 << p;
 
 			for (int i = 0; i < 16; i++)
 			{
 				if ((pixels[i] & checkMask) != 0)
-					pixelValue |= (word)(1 << (15 - i));
+					plane |= (word)(1 << (15 - i));
 			}
 
-			pixelValue &= masks[p];
-			pixelValue |= values[p];
-			results[p] = pixelValue;
+			plane &= (word)~masks[p];
+			plane |= values[p];
+			results[p] = plane;
 		}
 
 		for (int i = 0; i < 16; i++)

@@ -64,19 +64,20 @@ namespace Amberstar
 				0x03, 0x10,
 				0x07, 0x65
 			];
-			WriteGraphic(@"D:\Projects\Amber\German\AmberfilesST\Layout1.png", layout, testPal);
+			WriteGraphic(@"D:\Projects\Amber\German\AmberfilesST\Layout1.png", layout, testPal, false);
 		}
 
-		static void WriteGraphic(string filename, IGraphic graphic, byte[] palette)
+		static void WriteGraphic(string filename, IGraphic graphic, byte[] palette, bool transparency)
 		{
 			using var bitmap = new Bitmap(graphic.Width, graphic.Height);
 			var data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
 				System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+			byte[] index0Color = [0, 0, 0, (byte)(transparency ?  0 : 0xff)];
 
 			byte[] PalIndexToColor(int index)
 			{
 				if (index == 0)
-					return [0, 0, 0, 0];
+					return index0Color;
 
 				var r = palette[index * 2 + 0] & 0xf;
 				var gb = palette[index * 2 + 1];

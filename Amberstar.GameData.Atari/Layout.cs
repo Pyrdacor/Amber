@@ -48,7 +48,7 @@ namespace Amberstar.GameData.Atari
 
                 for (int i = 0; i < 20; i++)
                 {
-                    var block = layoutBlocks[definition[defIndex++]];
+                    var block = layoutBlocks[definition[defIndex++] - 1];
 
                     if (height != 16)
                         block = block.GetPart(0, offsetY, 16, height);
@@ -59,12 +59,14 @@ namespace Amberstar.GameData.Atari
 
 				x = 0;
 				y += height;
+                line++;
             }
 
             for (int i = 0; i < 11; i++)
                 ProcessLine();
 
-            // Add lower borders
+            // Add lower corners
+            int maskIndex = 0;
             int cornerIndex = 0;
             // Lower left corner
             for (int by = 0; by < 16; by++)
@@ -72,7 +74,7 @@ namespace Amberstar.GameData.Atari
                 graphic.ApplyBitMaskedPlanarValues
                 (
                     0, 184 + by - 37, // x, y
-                    [BottomMasks[by], BottomMasks[by], BottomMasks[by], BottomMasks[by]], // same mask for all planes
+                    [BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex++]], // same mask for all planes
                     [BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++]],
                     4 // planes
                 );
@@ -83,7 +85,7 @@ namespace Amberstar.GameData.Atari
 				graphic.ApplyBitMaskedPlanarValues
 				(
 					304, 184 + by - 37, // x, y
-					[BottomMasks[by], BottomMasks[by], BottomMasks[by], BottomMasks[by]], // same mask for all planes
+					[BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex], BottomMasks[maskIndex++]], // same mask for all planes
 					[BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++], BottomCorners[cornerIndex++]],
 					4 // planes
 				);
