@@ -13,6 +13,21 @@ Many parts are designed in a way that they can be used or extended for different
 
 Provides basic utilities which all other projects might use.
 
+### Amber.Assets.Common
+
+Interfaces and general classes for working with assets.
+
+### Amber.IO.Common
+
+Interfaces and general classes for serialization and file systems.
+
+### Amber.IO.FileFormats
+
+Common file formats used in Amberstar and Ambermoon like the container files. Also provides readers, writers as well as compression and encoding routines.
+
+### Amber.IO.FileSystem
+
+Implementation of different file systems (e.g. virtual and operating system).
 
 
 ## Amberstar
