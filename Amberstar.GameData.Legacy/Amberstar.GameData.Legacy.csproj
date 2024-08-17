@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Amiga.FileFormats.LHA" Version="0.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Amber.IO.FileFormats\Amber.IO.FileFormats.csproj" />
     <ProjectReference Include="..\Amberstar.GameData\Amberstar.GameData.csproj" />
   </ItemGroup>

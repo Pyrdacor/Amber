@@ -2,7 +2,7 @@
 using Amber.Common;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.GameData.Atari;
+namespace Amberstar.GameData.Legacy;
 
 internal class TextLoader(IAssetProvider assetProvider, List<string> textFragments) : ITextLoader
 {

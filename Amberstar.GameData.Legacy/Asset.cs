@@ -3,9 +3,7 @@ using Amber.Common;
 using Amber.Serialization;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Amberstar.GameData.Atari")]
-
-namespace Amberstar.Assets;
+namespace Amberstar.GameData.Legacy;
 
 internal class Asset(AssetIdentifier identifier, IDataReader reader) : IAsset
 {

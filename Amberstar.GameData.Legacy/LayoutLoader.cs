@@ -3,7 +3,7 @@ using Amber.Common;
 using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.GameData.Atari;
+namespace Amberstar.GameData.Legacy;
 
 internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, Graphic> layoutBlocks,
 	List<word> layoutBottomCorners, List<word> layoutBottomCornerMasks, IGraphic portraitArea) : ILayoutLoader

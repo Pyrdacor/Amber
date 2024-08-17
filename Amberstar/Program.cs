@@ -1,7 +1,7 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
 using Amber.IO.FileSystem;
-using Amberstar.GameData.Atari;
+using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -14,7 +14,7 @@ namespace Amberstar
 		{
 			var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
 
-			var assetProvider = new AtariAssetProvider(fileSystem.AsReadOnly());
+			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
 			void PrintTexts(AssetType assetType, int count, int start = 0)
 			{

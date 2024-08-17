@@ -1,7 +1,7 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
 
-namespace Amberstar.GameData.Atari;
+namespace Amberstar.GameData.Legacy;
 
 internal class Text(List<string> textFragments) : IText
 {

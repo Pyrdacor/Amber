@@ -1,9 +1,8 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
-using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.GameData.Atari;
+namespace Amberstar.GameData.Legacy;
 
 internal class UIGraphicLoader(IAssetProvider assetProvider, IGraphic emptyItemSlotGraphic) : IUIGraphicLoader
 {

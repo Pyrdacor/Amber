@@ -1,10 +1,9 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
 using Amberstar.GameData.Events;
-using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.GameData.Atari;
+namespace Amberstar.GameData.Legacy;
 
 internal class PlaceLoader(IAssetProvider assetProvider) : IPlaceLoader
 {

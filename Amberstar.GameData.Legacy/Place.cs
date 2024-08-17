@@ -4,6 +4,14 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.GameData.Legacy;
 
+internal class Place(IPlaceData data, string name) : IPlace
+{
+	public IPlaceData Data { get; } = data;
+
+	public string Name { get; } = name;
+}
+
+
 // 24 bytes (12 words)
 [System.Runtime.CompilerServices.InlineArray(12)]
 internal struct PlaceDataArray
