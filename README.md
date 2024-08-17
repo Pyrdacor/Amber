@@ -44,12 +44,12 @@ Definitions for Amberstar game data.
 
 ### Amberstar.GameData.Legacy
 
-Concrete loaders and implementations of Amberstar game data which are related to the original legacy games for Atari, Amiga or DOS.
+Concrete loaders and implementations for Amberstar game data which are related to the original legacy games for Atari ST, Amiga or DOS.
 
-Gane data which is loaded from the main executable or other executables is not provided here as those files differ even in the legacy platforms.
+Game data which is loaded from the main executable or other executables is not provided here as those files differ even on the legacy platforms.
 
 ### Amberstar.GameData.Atari
 
-Extends Amberstar.GameData.Legacy and provides loaders for the executables of the Atari.
+Extends `Amberstar.GameData.Legacy` and provides loaders for the executables of the Atari ST.
 
 Those contain things like UI graphics, item graphics, layout graphics or texts.
