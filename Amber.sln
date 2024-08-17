@@ -5,7 +5,7 @@ VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Common", "Amber.Common\Amber.Common.csproj", "{180DB63E-361F-4FD8-8855-7B13C4781A0C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Renderer", "Amber.Renderer\Amber.Renderer.csproj", "{46FD071F-01D7-4394-B980-4F0BA04553F5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Renderer.Common", "Amber.Renderer.Common\Amber.Renderer.Common.csproj", "{46FD071F-01D7-4394-B980-4F0BA04553F5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.IO.Common", "Amber.IO.Common\Amber.IO.Common.csproj", "{97DDF832-E1F7-4766-8EC5-79ADEDD15FE6}"
 EndProject
