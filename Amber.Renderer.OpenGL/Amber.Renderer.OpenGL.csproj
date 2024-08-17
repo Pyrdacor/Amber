@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+	<Configurations>Debug;Release;DebugAndroid;ReleaseAndroid</Configurations>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='DebugAndroid'">
+    <DefineConstants>$(DefineConstants);DEBUG;TRACE;GLES</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='ReleaseAndroid'">
+    <DefineConstants>$(DefineConstants);GLES</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)'=='DebugAndroid'">
+    <PackageReference Include="Silk.NET.OpenGLES" Version="2.16.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)'=='ReleaseAndroid'">
+    <PackageReference Include="Silk.NET.OpenGLES" Version="2.16.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)'=='Release'">
+    <PackageReference Include="Silk.NET.OpenGL" Version="2.16.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)'=='Debug'">
+    <PackageReference Include="Silk.NET.OpenGL" Version="2.20.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amber.Common\Amber.Common.csproj" />
+    <ProjectReference Include="..\Amber.Renderer.Common\Amber.Renderer.Common.csproj" />
+  </ItemGroup>
+
+</Project>

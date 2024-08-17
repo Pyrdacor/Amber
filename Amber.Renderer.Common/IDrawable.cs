@@ -6,5 +6,5 @@ public interface IDrawable
 {
 	Position Position { get; set; }
 	bool Visible { get; set; }
-	int Layer { get; set; }
+	ILayer Layer { get; }
 }

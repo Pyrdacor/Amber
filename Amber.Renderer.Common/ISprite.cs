@@ -8,3 +8,8 @@ public interface ISprite : IDrawable
 	Size Size { get; set; }
 	Size? TextureSize { get; set; }
 }
+
+public interface ISpriteFactory
+{
+	ISprite CreateSprite();
+}
