@@ -29,7 +29,27 @@ Common file formats used in Amberstar and Ambermoon like the container files. Al
 
 Implementation of different file systems (e.g. virtual and operating system).
 
+### Amber.Renderer.Common
+
+Interfaces and general classes for rendering.
+
 
 ## Amberstar
 
 Currently Amberstar is ported to modern platforms based on this new project so the Amberstar related parts are kept here as well for easier development. At some point they will move to their own repository though.
+
+### Amberstar.GameData
+
+Definitions for Amberstar game data.
+
+### Amberstar.GameData.Legacy
+
+Concrete loaders and implementations of Amberstar game data which are related to the original legacy games for Atari, Amiga or DOS.
+
+Gane data which is loaded from the main executable or other executables is not provided here as those files differ even in the legacy platforms.
+
+### Amberstar.GameData.Atari
+
+Extends Amberstar.GameData.Legacy and provides loaders for the executables of the Atari.
+
+Those contain things like UI graphics, item graphics, layout graphics or texts.
