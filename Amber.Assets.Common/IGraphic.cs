@@ -14,6 +14,7 @@ public static class GraphicFormatExtensions
 {
     public static int BitsPerPixel(this GraphicFormat format) => format switch
     {
+	GraphicFormat.Planar1Bit => 1,
 	GraphicFormat.Planar3Bit => 3,
 	GraphicFormat.Planar4Bit => 4,
 	GraphicFormat.Planar5Bit => 5,
