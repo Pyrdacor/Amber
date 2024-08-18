@@ -19,7 +19,7 @@ internal class UIGraphicLoader(IAssetProvider assetProvider, IGraphic emptyItemS
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Status icon {icon} not found.");
 
-			gfx = Graphic.From4BitPlanes(16, 16, asset.GetReader().ReadBytes(16 * 16 / 2));
+			gfx = Graphic.FromBitPlanes(16, 16, asset.GetReader().ReadBytes(16 * 16 / 2), 4);
 
 			statusIcons.Add(icon, gfx);
 		}
@@ -36,7 +36,7 @@ internal class UIGraphicLoader(IAssetProvider assetProvider, IGraphic emptyItemS
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Button {button} not found.");
 
-			gfx = Graphic.From4BitPlanes(32, 16, asset.GetReader().ReadBytes(32 * 16 / 2));
+			gfx = Graphic.FromBitPlanes(32, 16, asset.GetReader().ReadBytes(32 * 16 / 2), 4);
 
 			buttons.Add(button, gfx);
 		}
@@ -60,7 +60,7 @@ internal class UIGraphicLoader(IAssetProvider assetProvider, IGraphic emptyItemS
 			int frameCount = graphic.GetFrameCount();
 			int width = (int)size.Width;
 			int height = (int)size.Height;
-			gfx = Graphic.From4BitPlanes(width, height, asset.GetReader().ReadBytes(frameCount * width * height / 2), frameCount);
+			gfx = Graphic.FromBitPlanes(width, height, asset.GetReader().ReadBytes(frameCount * width * height / 2), 4, frameCount);
 
 			uiGraphics.Add(graphic, gfx);
 		}

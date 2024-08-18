@@ -20,7 +20,6 @@
  */
 
 using Amber.Common;
-using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL.Shaders;
 
 namespace Amber.Renderer.OpenGL;
@@ -28,8 +27,6 @@ namespace Amber.Renderer.OpenGL;
 internal class Layer : ILayer, IDisposable
 {
     static int NextIndex = 1;
-    readonly ITexture? texture;
-    readonly ITexture? palette;
     readonly List<BaseShader> shaders = [];
     readonly State state;
 	bool disposed = false;
@@ -46,7 +43,7 @@ internal class Layer : ILayer, IDisposable
 
 	public ISpriteFactory SpriteFactory => throw new NotImplementedException();
 
-	public Layer(State state, LayerConfig config, ITexture? texture, ITexture? palette)
+	public Layer(State state, LayerConfig config)
     {
         // TODO: create render buffer
         Index = NextIndex++;
@@ -54,31 +51,23 @@ internal class Layer : ILayer, IDisposable
         Visible = true;
         this.state = state;
 
-        if (config.LayerFeatures.HasFlag(LayerFeatures.Sprites) && texture == null)
+        if (config.LayerFeatures.HasFlag(LayerFeatures.Sprites) && Config.Texture == null)
             throw new AmberException(ExceptionScope.Application, "Layer supports sprites but has no texture.");
 
-		if (config.LayerFeatures.HasFlag(LayerFeatures.Palette) && palette == null)
+		if (config.LayerFeatures.HasFlag(LayerFeatures.Palette) && Config.Palette == null)
 			throw new AmberException(ExceptionScope.Application, "Layer supports palettes but has no palette.");
-
-		this.texture = texture;
-        this.palette = palette;
-
-        void AddShader<TShader>() where TShader : IShader
-        {
-			shaders.Add(TShader.Create(state));
-		}
 
         if (config.LayerFeatures.HasFlag(LayerFeatures.ColoredRects))
         {
-            AddShader<ColorShader>();
-        }
+            shaders.Add(ColorShader.Create(state));
+		}
 
         if (config.LayerFeatures.HasFlag(LayerFeatures.Sprites))
         {
             if (config.LayerFeatures.HasFlag(LayerFeatures.Palette))
-                AddShader<TextureShader>();
-            // else
-            //  AddShader<ImageShader>();
+                shaders.Add(TextureShader.Create(state));
+			// else
+			//  shaders.Add(ImageShader.Create(state));
 		}
 
 		// TODO ...
@@ -89,18 +78,18 @@ internal class Layer : ILayer, IDisposable
 			{
 				textureShader.SetTexture(0);
 				state.Gl.ActiveTexture(GLEnum.Texture0);
-				texture!.Use();
+				Config.Texture!.Use();
 
-				if (palette != null && shader is IPaletteShader paletteShader)
+				if (Config.Palette != null && shader is IPaletteShader paletteShader)
 				{
 					paletteShader.SetPalette(1);
 					state.Gl.ActiveTexture(GLEnum.Texture1);
-					palette.Use();
+					Config.Palette.Use();
 
-                    paletteShader.SetPaletteCount(palette.Size.Height);
+                    paletteShader.SetPaletteCount(Config.Palette.Size.Height);
 				}
 
-				textureShader.SetAtlasSize((uint)texture.Size.Width, (uint)texture.Size.Height);
+				textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
 			}
 		}
 	}
@@ -148,6 +137,6 @@ internal class LayerFactory : ILayerFactory
 
 	public ILayer Create(LayerConfig config)
 	{
-		return new Layer(state, config, null, null); // TODO: textures
+		return new Layer(state, config);
 	}
 }

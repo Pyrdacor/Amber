@@ -23,8 +23,6 @@ namespace Amber.Renderer.OpenGL.Shaders;
 
 internal interface IShader
 {
-	static abstract BaseShader Create(State state);
-
 	void Use();
 
 	void UpdateMatrices(State state);

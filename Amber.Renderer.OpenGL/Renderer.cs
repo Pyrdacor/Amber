@@ -33,7 +33,7 @@ namespace Ambermoon.Renderer.OpenGL
         readonly State state;
 		readonly LayerFactory layerFactory;
 		readonly TextureFactory textureFactory;
-		readonly List<Layer> layers = [];
+		readonly List<ILayer> layers = [];
 
         public Renderer(IContextProvider contextProvider, Size size, Size virtualSize)
         {
@@ -104,12 +104,13 @@ namespace Ambermoon.Renderer.OpenGL
 
 		public void AddLayer(ILayer layer)
 		{
-			throw new NotImplementedException();
+			layers.Remove(layer);
+			layers.Add(layer);
 		}
 
 		public void RemoveLayer(ILayer layer)
 		{
-			throw new NotImplementedException();
+			layers.Remove(layer);
 		}
 
 		public void Dispose()
@@ -117,7 +118,7 @@ namespace Ambermoon.Renderer.OpenGL
 			if (disposed)
 				return;
 
-			throw new NotImplementedException();
+			// TODO
 		}
 	}
 }

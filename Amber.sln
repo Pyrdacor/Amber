@@ -28,6 +28,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Renderer.OpenGL", "Amber.Renderer.OpenGL\Amber.Renderer.OpenGL.csproj", "{BFAA9D88-A9C6-4C0B-B715-B64E5B0E89C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amberstar.net", "Amberstar.net\Amberstar.net.csproj", "{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -116,6 +118,14 @@ Global
 		{BFAA9D88-A9C6-4C0B-B715-B64E5B0E89C1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BFAA9D88-A9C6-4C0B-B715-B64E5B0E89C1}.ReleaseAndroid|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
 		{BFAA9D88-A9C6-4C0B-B715-B64E5B0E89C1}.ReleaseAndroid|Any CPU.Build.0 = ReleaseAndroid|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.DebugAndroid|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.DebugAndroid|Any CPU.Build.0 = Debug|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.ReleaseAndroid|Any CPU.ActiveCfg = Release|Any CPU
+		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.ReleaseAndroid|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

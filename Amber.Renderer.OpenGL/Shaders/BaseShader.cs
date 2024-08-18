@@ -23,7 +23,7 @@ namespace Amber.Renderer.OpenGL.Shaders;
 
 using static Shader;
 
-internal class BaseShader : IShader
+internal abstract class BaseShader : IShader
 {
     internal ShaderProgram shaderProgram;
     private protected State State { get; }
@@ -57,5 +57,5 @@ internal class BaseShader : IShader
         shaderProgram.SetInput(ZName, z);
     }
 
-    public static BaseShader Create(State state) => throw new NotSupportedException("Base shaders can't be created directly.");
+    //public static BaseShader Create(State state) => throw new NotSupportedException("Base shaders can't be created directly.");
 }

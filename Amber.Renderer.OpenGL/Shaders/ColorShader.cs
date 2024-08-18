@@ -58,5 +58,5 @@ internal class ColorShader : BaseShader
 
     }
 
-    public new static BaseShader Create(State state) => new ColorShader(state);
+    public static new BaseShader Create(State state) => new ColorShader(state);
 }
