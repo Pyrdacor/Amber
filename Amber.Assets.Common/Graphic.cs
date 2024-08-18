@@ -1,11 +1,10 @@
-﻿using Amber.Assets.Common;
-using Amber.Common;
+﻿using Amber.Common;
 
-namespace Amberstar.GameData.Legacy;
+namespace Amber.Assets.Common;
 
 public class Graphic : IGraphic
 {
-	readonly byte[] pixelData = [];
+	readonly byte[] data = [];
 
 	public Graphic()
 	{
@@ -16,16 +15,24 @@ public class Graphic : IGraphic
 	{
 		Width = width;
 		Height = height;
+		Format = usePalette
+		    ? GraphicFormat.PaletteIndices
+			: GraphicFormat.RGBA;
 		UsePalette = usePalette;
+		BytesPerPixel = Format.BytesPerPixel();
 		this.pixelData = new byte[width * height * BytesPerPixel];		
 	}
 
-	public Graphic(int width, int height, byte[] pixelData, bool usePalette)
+	public Graphic(int width, int height, byte[] data, bool usePalette)
 	{
 		Width = width;
 		Height = height;
+		Format = usePalette
+		    ? GraphicFormat.PaletteIndices
+			: GraphicFormat.RGBA;
 		UsePalette = usePalette;
-		this.pixelData = pixelData;
+		BytesPerPixel = Format.BytesPerPixel();
+		this.data = data;
 	}
 
 	public static Graphic From4BitPlanes(int width, int height, byte[] data, int frameCount = 1)
@@ -72,18 +79,17 @@ public class Graphic : IGraphic
 		return new Graphic(frameCount * width, height, pixelData, true);
 	}
 
-	public int Width { get; private init; } = 0;
+	public int Width { get; } = 0;
 
-	public int Height { get; private init; } = 0;
+	public int Height { get; } = 0;
 
-	public bool UsePalette { get; private init; } = false;
+	public GraphicFormat Format { get; private init; }
 
-	public int BytesPerPixel => UsePalette ? 1 : 4;
+	public bool UsesPalette { get; }
 
-	public byte[] GetPixelData()
-	{
-		return pixelData;
-	}
+	public int BytesPerPixel { get; }
+
+	public byte[] GetData() => data;
 
 	public Graphic GetPart(int x, int y, int width, int height)
 	{
@@ -121,13 +127,13 @@ public class Graphic : IGraphic
 	/// <param name="blend">If true, the alpha of the overlay is respected (for palette images, index 0 is treated as fully transparent). If false, transparent pixels will be placed in the target graphic.</param>
 	public void AddOverlay(int x, int y, IGraphic overlay, bool blend = false)
 	{
-		if (UsePalette != overlay.UsePalette)
+		if (UsePalette != overlay.Format.UsePalette())
 			throw new AmberException(ExceptionScope.Application, "Cannot overlay graphics with different palette usage.");
 
 		if (x < 0 || x + overlay.Width > Width || y < 0 || y + overlay.Height > Height)
 			throw new AmberException(ExceptionScope.Application, "Overlay is out of bounds.");
 
-		var overlayPixelData = overlay.GetPixelData();
+		var overlayPixelData = overlay.GetData();
 		Func<int, bool> IsTransparent = UsePalette
 			? (int index) => overlayPixelData[index] == 0
 			: (int index) => overlayPixelData[index + 3] == 0;
@@ -136,14 +142,14 @@ public class Graphic : IGraphic
 		int sourceIndex = 0;
 		int targetIndex = y * targetRowSize + x * BytesPerPixel;
 		Action<int> CopyPixel = UsePalette
-			? (int sourceIndex) => pixelData[targetIndex++] = overlayPixelData[sourceIndex]
-			: (int sourceIndex) => { Buffer.BlockCopy(overlayPixelData, sourceIndex, pixelData, targetIndex, BytesPerPixel); targetIndex += BytesPerPixel; };
+			? (int sourceIndex) => data[targetIndex++] = overlayPixelData[sourceIndex]
+			: (int sourceIndex) => { Buffer.BlockCopy(overlayPixelData, sourceIndex, data, targetIndex, BytesPerPixel); targetIndex += BytesPerPixel; };
 
 		for (int i = 0; i < overlay.Height; i++)
 		{
 			if (!blend)
 			{
-				Buffer.BlockCopy(overlayPixelData, sourceIndex, pixelData, targetIndex, sourceRowSize);
+				Buffer.BlockCopy(overlayPixelData, sourceIndex, data, targetIndex, sourceRowSize);
 				targetIndex += targetRowSize;
 			}
 			else
@@ -175,7 +181,7 @@ public class Graphic : IGraphic
 		if (x < 0 || x + 16 > Width || y < 0 || y >= Height)
 			throw new AmberException(ExceptionScope.Application, "Mask position is out of bounds.");
 
-		var pixels = new ReadOnlySpan<byte>(pixelData, y * Width + x, 16);
+		var pixels = new ReadOnlySpan<byte>(data, y * Width + x, 16);
 		word[] results = new word[planes];
 
 		for (int p = 0; p < planes; p++)
@@ -204,7 +210,7 @@ public class Graphic : IGraphic
 					pixelValue |= (byte)(1 << p);
 			}
 
-			pixelData[y * Width + x + i] = pixelValue;
+			data[y * Width + x + i] = pixelValue;
 		}
 	}
 }
