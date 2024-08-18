@@ -1,4 +1,5 @@
 using Amber.Common;
+using Amber.Assets.Common;
 
 namespace Amber.Renderer.Common;
 
