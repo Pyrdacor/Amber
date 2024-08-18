@@ -21,6 +21,13 @@ public static class GraphicFormatExtensions
 	GraphicFormat.X4R4G4B4 => 16,
 	_ => 32
     };
+
+    public static bool UsesPalette(this GraphicFormat format) => format switch
+    {
+	GraphicFormat.X4R4G4B4 => false,
+	GraphicFormat.R8G8B8A8 => false,
+	_ => true
+    };
 }
 
 public interface IGraphic
@@ -28,6 +35,6 @@ public interface IGraphic
     int Width { get; }
     int Height { get; }
     GraphicFormat Format { get; }
-    bool UsePalette { get; }
+
     byte[] GetPixelData();
 }
