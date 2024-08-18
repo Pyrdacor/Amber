@@ -57,5 +57,5 @@ internal class BaseShader : IShader
         shaderProgram.SetInput(ZName, z);
     }
 
-    public static IShader Create(State state) => throw new NotSupportedException("Base shaders can't be created directly.");
+    public static BaseShader Create(State state) => throw new NotSupportedException("Base shaders can't be created directly.");
 }

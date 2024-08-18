@@ -3,6 +3,7 @@
 public enum GraphicFormat
 {
     PaletteIndices,
+    Alpha, // Fonts etc
     RGBA,
 }
 
@@ -10,14 +11,14 @@ public static class GraphicFormatExtensions
 {
     public static int BytesPerPixel(this GraphicFormat format) => format switch
     {
-	GraphicFormat.PaletteIndices => 1,
-	_ => 4
+        GraphicFormat.RGBA => 4,
+	    _ => 1
     };
 
     public static bool UsesPalette(this GraphicFormat format) => format switch
     {
-	GraphicFormat.PaletteIndices => true,
-	_ => false
+	    GraphicFormat.PaletteIndices => true,
+	    _ => false
     };
 }
 

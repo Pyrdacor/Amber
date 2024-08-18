@@ -21,24 +21,25 @@
 
 using Amber.Common;
 using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL;
 using System.Numerics;
 
 namespace Ambermoon.Renderer.OpenGL
 {
-    public delegate bool FullscreenRequestHandler(bool fullscreen);
-
     public class Renderer : IRenderer, IDisposable
     {
         bool disposed = false;
         readonly State state;
 		readonly LayerFactory layerFactory;
-        readonly List<Layer> layers = [];
+		readonly TextureFactory textureFactory;
+		readonly List<Layer> layers = [];
 
         public Renderer(IContextProvider contextProvider, Size size, Size virtualSize)
         {
             state = new(contextProvider);
 			layerFactory = new(state);
+			textureFactory = new(state);
 
 			state.Gl.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -62,6 +63,8 @@ namespace Ambermoon.Renderer.OpenGL
 
 		public ILayerFactory LayerFactory => layerFactory;
 
+		public ITextureFactory TextureFactory => textureFactory;
+
 		public void Render()
 		{
 			foreach (var layer in layers)
@@ -76,7 +79,7 @@ namespace Ambermoon.Renderer.OpenGL
 			state.PushModelViewMatrix(Matrix4x4.Identity);
 			state.PushProjectionMatrix(state.ProjectionMatrix2D);
 
-			state.Gl.Viewport(0, 0, size.Width, size.Height);
+			state.Gl.Viewport(0, 0, (uint)size.Width, (uint)size.Height);
 		}
 
 		public Position ToScreen(Position position)

@@ -24,7 +24,7 @@ namespace Amber.Renderer.OpenGL.Shaders;
 using Amber.Common;
 using static Shader;
 
-internal class TextureShader : BaseShader
+internal class TextureShader : BaseShader, IPaletteShader
 {
     // The palette has a size of 32xNumPalettes pixels.
     // Each row represents one palette of 32 colors.
@@ -33,7 +33,7 @@ internal class TextureShader : BaseShader
     protected static string TextureFragmentShader(State state) => GetFragmentShaderHeader(state) + $@"
         uniform float {UsePaletteName};
         uniform float {PaletteCountName};
-        uniform sampler2D {SamplerName};
+        uniform sampler2D {TextureName};
         uniform sampler2D {PaletteName};
         uniform float {ColorKeyName};
         in vec2 varTexCoord;
@@ -46,7 +46,7 @@ internal class TextureShader : BaseShader
             
             if ({UsePaletteName} > 0.5f)
             {{
-                float colorIndex = texture({SamplerName}, varTexCoord).r * 255.0f;
+                float colorIndex = texture({TextureName}, varTexCoord).r * 255.0f;
                 
                 if (colorIndex < 0.5f)
                     discard;
@@ -59,7 +59,7 @@ internal class TextureShader : BaseShader
             }}
             else
             {{
-                pixelColor = texture({SamplerName}, varTexCoord);
+                pixelColor = texture({TextureName}, varTexCoord);
                 if (pixelColor.a < 0.5f)
                     discard;
             }}
@@ -114,9 +114,9 @@ internal class TextureShader : BaseShader
         shaderProgram.SetInput(UsePaletteName, use ? 1.0f : 0.0f);
     }
 
-    public void SetSampler(int textureUnit = 0)
+    public void SetTexture(int textureUnit = 0)
     {
-        shaderProgram.SetInput(SamplerName, textureUnit);
+        shaderProgram.SetInput(TextureName, textureUnit);
     }
 
     public void SetPalette(int textureUnit = 1)
@@ -142,5 +142,5 @@ internal class TextureShader : BaseShader
         shaderProgram.SetInput(PaletteCountName, (float)count);
     }
 
-    public new static IShader Create(State state) => new TextureShader(state);
+    public new static BaseShader Create(State state) => new TextureShader(state);
 }

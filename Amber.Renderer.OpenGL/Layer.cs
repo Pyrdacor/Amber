@@ -20,6 +20,7 @@
  */
 
 using Amber.Common;
+using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL.Shaders;
 
 namespace Amber.Renderer.OpenGL;
@@ -27,8 +28,8 @@ namespace Amber.Renderer.OpenGL;
 internal class Layer : ILayer, IDisposable
 {
     static int NextIndex = 1;
-    readonly Texture? texture;
-    readonly Texture? palette;
+    readonly ITexture? texture;
+    readonly ITexture? palette;
     readonly List<BaseShader> shaders = [];
     readonly State state;
 	bool disposed = false;
@@ -45,7 +46,7 @@ internal class Layer : ILayer, IDisposable
 
 	public ISpriteFactory SpriteFactory => throw new NotImplementedException();
 
-	public Layer(State state, LayerConfig config, Texture? texture, Texture? palette)
+	public Layer(State state, LayerConfig config, ITexture? texture, ITexture? palette)
     {
         // TODO: create render buffer
         Index = NextIndex++;
@@ -64,33 +65,44 @@ internal class Layer : ILayer, IDisposable
 
         void AddShader<TShader>() where TShader : IShader
         {
-			shaders.Add((TShader.Create(state) as BaseShader)!);
+			shaders.Add(TShader.Create(state));
 		}
 
         if (config.LayerFeatures.HasFlag(LayerFeatures.ColoredRects))
-			AddShader<ColorShader>();
+        {
+            AddShader<ColorShader>();
+        }
+
         if (config.LayerFeatures.HasFlag(LayerFeatures.Sprites))
         {
             if (config.LayerFeatures.HasFlag(LayerFeatures.Palette))
                 AddShader<TextureShader>();
-			// else
-			//  AddShader<ImageShader>();
-
-			/*shader.SetSampler(0); // we use texture unit 0 -> see Gl.ActiveTexture below
-			state.Gl.ActiveTexture(GLEnum.Texture0);
-			texture.Bind();
-            
-			if (palette != null)
-            {
-                shader.SetPalette(1);
-                state.Gl.ActiveTexture(GLEnum.Texture1);
-                palette.Bind();
-            }
-
-            shader.SetAtlasSize((uint)Texture.Width, (uint)Texture.Height);*/
+            // else
+            //  AddShader<ImageShader>();
 		}
 
 		// TODO ...
+
+		foreach (var shader in shaders)
+        {
+			if (shader is ITextureShader textureShader)
+			{
+				textureShader.SetTexture(0);
+				state.Gl.ActiveTexture(GLEnum.Texture0);
+				texture!.Use();
+
+				if (palette != null && shader is IPaletteShader paletteShader)
+				{
+					paletteShader.SetPalette(1);
+					state.Gl.ActiveTexture(GLEnum.Texture1);
+					palette.Use();
+
+                    paletteShader.SetPaletteCount(palette.Size.Height);
+				}
+
+				textureShader.SetAtlasSize((uint)texture.Size.Width, (uint)texture.Size.Height);
+			}
+		}
 	}
 
     public void Render(IRenderer renderer)
@@ -102,6 +114,10 @@ internal class Layer : ILayer, IDisposable
 		{
 			shader.SetZ(Config.BaseZ);
             shader.UpdateMatrices(state);
+
+            if (shader is  IPaletteShader paletteShader)
+                paletteShader.SetColorKey(0); // TODO
+
 			// TODO ...
 		}
 
@@ -121,7 +137,7 @@ internal class Layer : ILayer, IDisposable
     }
 }
 
-public class LayerFactory : ILayerFactory
+internal class LayerFactory : ILayerFactory
 {
     readonly State state;
 

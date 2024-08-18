@@ -1,4 +1,5 @@
-﻿using Amber.Common;
+﻿using Amber.Assets.Common;
+using Amber.Common;
 using Amber.Serialization;
 using Amberstar.GameData.Serialization;
 
@@ -10,7 +11,7 @@ namespace Amberstar.GameData.Legacy
 		{
 			Graphic ReadGraphic(int width, int height)
 			{
-				return Graphic.From4BitPlanes(width, height, dataReader.ReadBytes(width * height / 2));
+				return Graphic.FromBitPlanes(width, height, dataReader.ReadBytes(width * height / 2), 4);
 			}
 
 			#region Read Version

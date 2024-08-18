@@ -115,7 +115,7 @@ namespace Amberstar
 				return [ (byte)(r | (r << 4)), (byte)(g | (g << 4)), (byte)(b | (b << 4)), 0xff ];
 			}
 
-			var pixels = graphic.GetPixelData().SelectMany(paletteIndex => PalIndexToColor(paletteIndex)).ToArray();
+			var pixels = graphic.GetData().SelectMany(paletteIndex => PalIndexToColor(paletteIndex)).ToArray();
 
 			Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
 

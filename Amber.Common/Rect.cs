@@ -7,13 +7,13 @@ public readonly struct Rect
 	public bool Empty => Size.Empty;
 	public int Left => Position.X;
 	public int Top => Position.Y;
-	public int Right => (int)Math.Min(int.MaxValue, Left + Size.Width);
-	public int Bottom => (int)Math.Min(int.MaxValue, Top + Size.Height);
+	public int Right => Math.Min(int.MaxValue, Left + Size.Width);
+	public int Bottom => Math.Min(int.MaxValue, Top + Size.Height);
 	public Position UpperLeft => new(Left, Top);
 	public Position UpperRight => new(Right, Top);
 	public Position LowerLeft => new(Left, Bottom);
 	public Position LowerRight => new(Right, Bottom);
-	public Position Center => new((int)Math.Min(int.MaxValue, Left + Size.Width / 2), (int)Math.Min(int.MaxValue, Top + Size.Height / 2));
+	public Position Center => new(Math.Min(int.MaxValue, Left + Size.Width / 2), Math.Min(int.MaxValue, Top + Size.Height / 2));
 
 	public Rect()
 	{
@@ -26,6 +26,12 @@ public readonly struct Rect
 		Size = size;
 	}
 
+	public Rect(int x, int y, int width, int height)
+	{
+		Position = new(x, y);
+		Size = new(width, height);
+	}
+
 	public Rect(int x, int y, uint width, uint height)
 	{
 		Position = new(x, y);
@@ -34,7 +40,7 @@ public readonly struct Rect
 
 	public static Rect FromBoundaries(int left, int top, int right, int bottom)
 	{
-		return new(left, top, (uint)Math.Max(0, right - left), (uint)Math.Max(0, bottom - top));
+		return new(left, top, Math.Max(0, right - left), Math.Max(0, bottom - top));
 	}
 
 	public bool Contains(Position position)

@@ -16,22 +16,24 @@ public class Graphic : IGraphic
 		Width = width;
 		Height = height;
 		Format = usePalette
-		    ? GraphicFormat.PaletteIndices
+			? GraphicFormat.PaletteIndices
 			: GraphicFormat.RGBA;
-		UsePalette = usePalette;
+		UsesPalette = usePalette;
 		BytesPerPixel = Format.BytesPerPixel();
-		this.pixelData = new byte[width * height * BytesPerPixel];		
+		this.data = new byte[width * height * BytesPerPixel];
 	}
 
-	public Graphic(int width, int height, byte[] data, bool usePalette)
+	public Graphic(int width, int height, byte[] data, GraphicFormat graphicFormat)
 	{
 		Width = width;
 		Height = height;
-		Format = usePalette
-		    ? GraphicFormat.PaletteIndices
-			: GraphicFormat.RGBA;
-		UsePalette = usePalette;
+		Format = graphicFormat;
+		UsesPalette = graphicFormat.UsesPalette();
 		BytesPerPixel = Format.BytesPerPixel();
+
+		if (data.Length != width * height * BytesPerPixel)
+			throw new AmberException(ExceptionScope.Data, "Unexpected graphic data size.");
+
 		this.data = data;
 	}
 
@@ -71,7 +73,39 @@ public class Graphic : IGraphic
 			}
 		}
 
-		return new Graphic(frameCount * width, height, pixelData, true);
+		return new Graphic(frameCount * width, height, pixelData, GraphicFormat.PaletteIndices);
+	}
+
+	public static Graphic FromAlpha(int width, int height, byte[] data)
+	{
+		return new Graphic(width, height, data, GraphicFormat.Alpha);
+	}
+
+	public static Graphic FromRGBA(int width, int height, byte[] data)
+	{
+		return new Graphic(width, height, data, GraphicFormat.RGBA);
+	}
+
+	public static Graphic FromPalette(int width, int height, byte[] data)
+	{
+		var pixelData = new byte[width * height * 4];
+		int sourceIndex = 0;
+		int targetIndex = 0;
+
+		for (int i = 0; i < width * height; i++)
+		{
+			int r = data[sourceIndex++] & 0x0f;
+			int gb = data[sourceIndex++];
+			int g = gb >> 4;
+			int b = gb & 0xf;
+
+			pixelData[targetIndex++] = (byte)(r | (r << 4));
+			pixelData[targetIndex++] = (byte)(g | (g << 4));
+			pixelData[targetIndex++] = (byte)(b | (b << 4));
+			pixelData[targetIndex++] = 0xff; // a
+		}
+
+		return new Graphic(width, height, pixelData, GraphicFormat.RGBA);
 	}
 
 	public int Width { get; }
@@ -92,7 +126,7 @@ public class Graphic : IGraphic
 			throw new AmberException(ExceptionScope.Application, "Part is out of bounds.");
 
 		if (x == 0 && y == 0 && width == Width && height == Height)
-			return new Graphic(Width, Height, (byte[])pixelData.Clone(), UsePalette);
+			return new Graphic(Width, Height, (byte[])data.Clone(), Format);
 
 		byte[] partPixelData = new byte[width * height * BytesPerPixel];
 		int sourceRowSize = Width * BytesPerPixel;
@@ -102,12 +136,12 @@ public class Graphic : IGraphic
 
 		for (int i = 0; i < height; i++)
 		{
-			Buffer.BlockCopy(pixelData, sourceIndex, partPixelData, targetIndex, targetRowSize);
+			Buffer.BlockCopy(data, sourceIndex, partPixelData, targetIndex, targetRowSize);
 			sourceIndex += sourceRowSize;
 			targetIndex += targetRowSize;
 		}
 
-		return new Graphic(width, height, partPixelData, UsePalette);
+		return new Graphic(width, height, partPixelData, Format);
 	}	
 
 	/// <summary>
@@ -122,21 +156,21 @@ public class Graphic : IGraphic
 	/// <param name="blend">If true, the alpha of the overlay is respected (for palette images, index 0 is treated as fully transparent). If false, transparent pixels will be placed in the target graphic.</param>
 	public void AddOverlay(int x, int y, IGraphic overlay, bool blend = false)
 	{
-		if (UsePalette != overlay.Format.UsePalette())
+		if (UsesPalette != overlay.Format.UsesPalette())
 			throw new AmberException(ExceptionScope.Application, "Cannot overlay graphics with different palette usage.");
 
 		if (x < 0 || x + overlay.Width > Width || y < 0 || y + overlay.Height > Height)
 			throw new AmberException(ExceptionScope.Application, "Overlay is out of bounds.");
 
 		var overlayPixelData = overlay.GetData();
-		Func<int, bool> IsTransparent = UsePalette
+		Func<int, bool> IsTransparent = UsesPalette
 			? (int index) => overlayPixelData[index] == 0
 			: (int index) => overlayPixelData[index + 3] == 0;
 		int sourceRowSize = overlay.Width * BytesPerPixel;
 		int targetRowSize = Width * BytesPerPixel;
 		int sourceIndex = 0;
 		int targetIndex = y * targetRowSize + x * BytesPerPixel;
-		Action<int> CopyPixel = UsePalette
+		Action<int> CopyPixel = UsesPalette
 			? (int sourceIndex) => data[targetIndex++] = overlayPixelData[sourceIndex]
 			: (int sourceIndex) => { Buffer.BlockCopy(overlayPixelData, sourceIndex, data, targetIndex, BytesPerPixel); targetIndex += BytesPerPixel; };
 
@@ -170,7 +204,7 @@ public class Graphic : IGraphic
 
 	public void ApplyBitMaskedPlanarValues(int x, int y, word[] masks, word[] values, int planes)
 	{
-		if (!UsePalette)
+		if (!UsesPalette)
 			throw new AmberException(ExceptionScope.Application, "Bit masks can only be applied to palette graphics.");
 
 		if (x < 0 || x + 16 > Width || y < 0 || y >= Height)

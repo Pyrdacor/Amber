@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Amber.Assets.Common\Amber.Assets.Common.csproj" />
     <ProjectReference Include="..\Amber.IO.FileFormats\Amber.IO.FileFormats.csproj" />
     <ProjectReference Include="..\Amberstar.GameData\Amberstar.GameData.csproj" />
   </ItemGroup>

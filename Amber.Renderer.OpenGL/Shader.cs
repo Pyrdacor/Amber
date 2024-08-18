@@ -40,7 +40,7 @@ internal class Shader : IDisposable
 	internal static readonly string LayerName = "layer";
 	internal static readonly string UsePaletteName = "usePalette";
 	internal static readonly string TexCoordName = "texCoord";
-	internal static readonly string SamplerName = "sampler";
+	internal static readonly string TextureName = "sampler";
 	internal static readonly string AtlasSizeName = "atlasSize";
 	internal static readonly string PaletteName = "palette";
 	internal static readonly string PaletteIndexName = "paletteIndex";

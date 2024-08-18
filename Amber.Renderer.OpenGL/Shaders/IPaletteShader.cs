@@ -1,9 +1,9 @@
 ﻿/*
- * IShader.cs - Shader interface
+ * IPaletteShader.cs - Interface for all textured shaders which use palettes
  *
  * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
- * This file is part of the Amber project.
+ * This file is part of Amber.
  *
  * Amber is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +21,11 @@
 
 namespace Amber.Renderer.OpenGL.Shaders;
 
-internal interface IShader
+internal interface IPaletteShader : ITextureShader
 {
-	static abstract BaseShader Create(State state);
+	void SetPalette(int textureUnit = 1);
 
-	void Use();
+	void SetColorKey(byte colorIndex);
 
-	void UpdateMatrices(State state);
-
-	ShaderProgram ShaderProgram { get; }
+	void SetPaletteCount(int count);
 }
