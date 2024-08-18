@@ -16,4 +16,5 @@ public interface IRenderer
 	Size Size { get; }
 	IReadOnlyList<ILayer> Layers { get; }
 	ILayerFactory LayerFactory { get; }
+	ITextureFactory TextureFactory { get; }
 }
