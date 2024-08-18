@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Amber.Common\Amber.Common.csproj" />
+    <ProjectReference Include="..\Amber.Assets.Common\Amber.Assets.Common.csproj" />
   </ItemGroup>
 
 </Project>
