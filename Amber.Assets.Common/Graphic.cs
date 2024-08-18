@@ -79,11 +79,11 @@ public class Graphic : IGraphic
 		return new Graphic(frameCount * width, height, pixelData, true);
 	}
 
-	public int Width { get; } = 0;
+	public int Width { get; }
 
-	public int Height { get; } = 0;
+	public int Height { get; }
 
-	public GraphicFormat Format { get; private init; }
+	public GraphicFormat Format { get; }
 
 	public bool UsesPalette { get; }
 
