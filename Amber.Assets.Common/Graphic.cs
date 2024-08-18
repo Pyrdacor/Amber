@@ -1,4 +1,4 @@
-﻿using Amber.Common;
+using Amber.Common;
 
 namespace Amber.Assets.Common;
 
@@ -35,41 +35,34 @@ public class Graphic : IGraphic
 		this.data = data;
 	}
 
-	public static Graphic From4BitPlanes(int width, int height, byte[] data, int frameCount = 1)
+	public static Graphic FromBitPlanes(int width, int height, byte[] data, int planes, int frameCount = 1)
 	{
-		if (data.Length != frameCount * width * height / 2)
-			throw new AmberException(ExceptionScope.Application, "Invalid data length for 4-bit graphic.");
+		if (data.Length != frameCount * width * height * planes / 8)
+			throw new AmberException(ExceptionScope.Application, $"Invalid data length for {planes}-bit graphic.");
 
 		byte[] pixelData = new byte[frameCount * width * height];
 		int wordsPerLine = (width + 15) / 16;
 		int index = 0;
 		int targetIndex = 0;
+	    int[] plane = new int[planes];
 
 		for (int y = 0; y < frameCount * height; y++)
 		{
 			for (int w = 0; w < wordsPerLine; w++)
 			{
-				int plane0 = (data[index++] << 8) | data[index++];
-				int plane1 = (data[index++] << 8) | data[index++];
-				int plane2 = (data[index++] << 8) | data[index++];
-				int plane3 = (data[index++] << 8) | data[index++];
+				for (int p = 0; p < planes; p++)
+				    plane[p] = (data[index++] << 8) | data[index++];
 
 				for (int x = 0; x < 16; x++)
 				{
 					int pixel = 0;
 					int mask = 1 << (15 - x);
 
-					if ((plane0 & mask) != 0)
-						pixel |= 0x1;
-
-					if ((plane1 & mask) != 0)
-						pixel |= 0x2;
-
-					if ((plane2 & mask) != 0)
-						pixel |= 0x4;
-
-					if ((plane3 & mask) != 0)
-						pixel |= 0x8;
+					for (int p = 0; p < planes; p++)
+					{
+						if ((plane[p] & mask) != 0)
+						    pixel |= 1 << p;
+					}
 
 					pixelData[targetIndex++] = (byte)pixel;
 				}
