@@ -8,3 +8,8 @@ public interface ITexture
 
     void Use();
 }
+
+public interface ITextureFactory
+{
+	ITexture Create(IGraphic graphic);
+}
