@@ -36,5 +36,5 @@ public interface IGraphic
     int Height { get; }
     GraphicFormat Format { get; }
 
-    byte[] GetPixelData();
+    byte[] GetData();
 }
