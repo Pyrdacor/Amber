@@ -25,9 +25,9 @@ public static class GraphicFormatExtensions
 
 public interface IGraphic
 {
-	int Width { get; }
-	int Height { get; }
-	GraphicFormat Format { get; }
-	bool UsePalette { get; }
-	byte[] GetPixelData();
+    int Width { get; }
+    int Height { get; }
+    GraphicFormat Format { get; }
+    bool UsePalette { get; }
+    byte[] GetPixelData();
 }
