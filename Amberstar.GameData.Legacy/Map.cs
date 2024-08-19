@@ -75,6 +75,16 @@ internal abstract class Map : IMap
 	{
 		var reader = asset.GetReader();
 		var headerData = reader.ReadBytes(sizeof(MapHeader));
+
+        if (BitConverter.IsLittleEndian)
+		{
+            headerData = StructEndianessFixer.FixData(headerData,
+		        new WordFixer(2),
+			    new WordArrayFixer(39+2540, IMap.NPCCount),
+			    new WordFixer(39+2540+7*IMap.NPCCount)
+	        );
+		}
+
 		MapHeader header;
 
 		fixed (byte* ptr = headerData)
