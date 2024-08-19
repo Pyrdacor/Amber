@@ -26,4 +26,6 @@ internal interface ITextureShader : IShader
 	void SetTexture(int textureUnit = 0);
 
 	void SetAtlasSize(uint width, uint height);
+
+	void UsePalette(bool use);
 }

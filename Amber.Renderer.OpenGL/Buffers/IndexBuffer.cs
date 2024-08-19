@@ -21,9 +21,9 @@
 
 using Amber.Common;
 
-namespace Amber.Renderer.OpenGL;
+namespace Amber.Renderer.OpenGL.Buffers;
 
-internal class IndexBuffer : BufferObject<uint>
+internal class IndexBuffer : Buffer<uint>
 {
     public override int Dimension => 6;
 

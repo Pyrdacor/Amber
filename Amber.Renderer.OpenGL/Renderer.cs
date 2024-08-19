@@ -47,12 +47,13 @@ namespace Ambermoon.Renderer.OpenGL
 			state.Gl.DepthRange(0.0f, 1.0f);
 			state.Gl.DepthFunc(DepthFunction.Lequal);
 			state.Gl.Disable(EnableCap.CullFace);
+			state.Gl.Enable(EnableCap.Texture2D);
 
 			state.Gl.Disable(EnableCap.Blend);
 			state.Gl.BlendEquationSeparate(BlendEquationModeEXT.FuncAdd, BlendEquationModeEXT.FuncAdd);
 			state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.Zero);
 
-			state.ProjectionMatrix2D = Matrix4x4.CreateOrthographic(virtualSize.Width, virtualSize.Height, 0, 1);
+			state.ProjectionMatrix2D = Matrix4x4.CreateOrthographicOffCenter(0, virtualSize.Width, virtualSize.Height, 0, 0, 1);
 
 			Resize(size);
         }

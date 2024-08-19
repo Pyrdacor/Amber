@@ -25,7 +25,7 @@ using Amber.Renderer.Common;
 
 namespace Amber.Renderer.OpenGL;
 
-public class Texture : ITexture, IDisposable
+internal class Texture : ITexture, IDisposable
 {
     public static Texture? ActiveTexture { get; private set; } = null;
 
@@ -51,16 +51,21 @@ public class Texture : ITexture, IDisposable
         Create(graphic.Format, graphic.GetData(), numMipMapLevels);
     }
 
-    static InternalFormat ToOpenGLInternalFormat(GraphicFormat format) =>
-        format == GraphicFormat.Alpha ? InternalFormat.R8 : InternalFormat.Rgba8;
+    static InternalFormat ToOpenGLInternalFormat(GraphicFormat format)
+    {
+        return format switch
+        {
+            GraphicFormat.RGBA => InternalFormat.Rgba8,
+            _ => InternalFormat.R8
+        };
+    }
 
     static GLEnum ToOpenGLPixelFormat(GraphicFormat graphicFormat)
     {
 		return graphicFormat switch
 		{
 			GraphicFormat.RGBA => GLEnum.Rgba,
-            GraphicFormat.Alpha => GLEnum.Red, // Red is right here (single component)
-			_ => throw new Exception("Invalid texture graphic format."),
+            _ => GLEnum.Red, // single component
 		};
 	}
 
@@ -130,15 +135,8 @@ public class Texture : ITexture, IDisposable
     public void Use() => Bind();
 }
 
-internal class TextureFactory : ITextureFactory
+internal class TextureFactory(State state) : ITextureFactory
 {
-	readonly State state;
-
-	public TextureFactory(State state)
-	{
-		this.state = state;
-	}
-
 	public ITexture Create(IGraphic graphic)
 	{
         return new Texture(state, graphic);

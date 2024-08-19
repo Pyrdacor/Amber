@@ -1,5 +1,5 @@
 ﻿/*
- * BufferObject.cs - Base class for number based data buffers
+ * Buffer.cs - Base class for render data buffers
  *
  * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
@@ -22,45 +22,46 @@
 using Amber.Common;
 using System.Runtime.InteropServices;
 
-namespace Amber.Renderer.OpenGL;
+namespace Amber.Renderer.OpenGL.Buffers;
 
-internal abstract class BufferObject<T> : IDisposable
+internal abstract class Buffer<T> : IBuffer, IDisposable
     where T : unmanaged, IEquatable<T>
 {
-	public static VertexAttribPointerType Type => typeof(T).Name.ToLower() switch
-	{
-		"byte" => VertexAttribPointerType.UnsignedByte,
-		"int16" => VertexAttribPointerType.Short,
-		"uint16" => VertexAttribPointerType.UnsignedShort,
-		"uint32" => VertexAttribPointerType.UnsignedInt,
-		"single" => VertexAttribPointerType.Float,
-		_ => throw new Exception("Invalid buffer data type")
-	};
+    private static VertexAttribPointerType type => typeof(T).Name.ToLower() switch
+    {
+        "byte" => VertexAttribPointerType.UnsignedByte,
+        "int16" => VertexAttribPointerType.Short,
+        "uint16" => VertexAttribPointerType.UnsignedShort,
+        "uint32" => VertexAttribPointerType.UnsignedInt,
+        "single" => VertexAttribPointerType.Float,
+        _ => throw new Exception("Invalid buffer data type")
+    };
 
-	protected delegate bool DataUpdater<U>(T[] buffer, int index, U value);
+    protected delegate bool DataUpdater<U>(T[] buffer, int index, U value);
 
-	readonly object bufferLock = new();
-	readonly IndexPool indices = new();
-	readonly GLEnum usageHint = GLEnum.DynamicDraw;
-	readonly State state;
-	uint index = 0;
+    readonly object bufferLock = new();
+    readonly IndexPool indices = new();
+    readonly GLEnum usageHint = GLEnum.DynamicDraw;
+    readonly State state;
+    uint index = 0;
     bool disposed = false;
     T[]? buffer = null;
     bool changedSinceLastCreation = true;
 
-	public abstract int Dimension { get; }
-	public bool Normalized { get; protected set; } = false;
-	public int Size { get; protected set; }
-	protected GLEnum BufferTarget { get; set; } = GLEnum.ArrayBuffer;
+    public abstract int Dimension { get; }
+    public bool Normalized { get; protected set; } = false;
+    public int Size { get; protected set; }
+    protected GLEnum BufferTarget { get; set; } = GLEnum.ArrayBuffer;
+    public VertexAttribPointerType Type => type;
 
-    protected BufferObject(State state, bool staticData)
+	protected Buffer(State state, bool staticData)
     {
         this.state = state;
         index = state.Gl.GenBuffer();
 
         if (staticData)
             usageHint = GLEnum.StaticDraw;
-    }
+	}
 
     bool DefaultUpdater(T[] buffer, int index, T value)
     {
@@ -99,13 +100,13 @@ internal abstract class BufferObject<T> : IDisposable
             buffer = EnsureBufferSize(buffer, (index + 1) * Dimension, out bool changed);
 
             if (!reused)
-            { 
+            {
                 Size += Dimension;
                 changed = true;
             }
 
             int bufferIndex = index * Dimension;
-            
+
             if (inserter(buffer, bufferIndex, value) || changed)
             {
                 changedSinceLastCreation = true;
@@ -192,7 +193,7 @@ internal abstract class BufferObject<T> : IDisposable
         changedSinceLastCreation = false;
     }
 
-    internal bool RecreateUnbound()
+    public bool RecreateUnbound()
     {
         if (!changedSinceLastCreation || buffer == null)
             return false;

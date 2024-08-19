@@ -20,6 +20,7 @@
  */
 
 using Amber.Common;
+using Amber.Renderer.OpenGL.Buffers;
 
 namespace Amber.Renderer.OpenGL;
 
@@ -138,7 +139,7 @@ internal class ShaderProgram : IDisposable
         ActiveProgram = this;
     }
 
-    public uint BindInputBuffer<T>(string name, BufferObject<T> buffer) where T : unmanaged, IEquatable<T>
+    public uint BindInputBuffer(string name, IBuffer buffer)
     {
         if (ActiveProgram != this)
             throw new AmberException(ExceptionScope.Render, "Shader program is not active.");
@@ -151,10 +152,10 @@ internal class ShaderProgram : IDisposable
 
         unsafe
         {
-            if (BufferObject<T>.Type == VertexAttribPointerType.Float)
-                state.Gl.VertexAttribPointer(location, buffer.Dimension, BufferObject<T>.Type, buffer.Normalized, 0, (void*)0);
+            if (buffer.Type == VertexAttribPointerType.Float)
+                state.Gl.VertexAttribPointer(location, buffer.Dimension, buffer.Type, buffer.Normalized, 0, (void*)0);
             else
-                state.Gl.VertexAttribIPointer(location, buffer.Dimension, (VertexAttribIType)BufferObject<T>.Type, 0, (void*)0);
+                state.Gl.VertexAttribIPointer(location, buffer.Dimension, (VertexAttribIType)buffer.Type, 0, (void*)0);
         }
 
         return location;

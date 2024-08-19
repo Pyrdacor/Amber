@@ -1,6 +1,6 @@
 ﻿namespace Amber.Common;
 
-public readonly struct Rect
+public readonly struct Rect : IEquatable<Rect>
 {
 	public readonly Position Position;
 	public readonly Size Size;
@@ -58,6 +58,31 @@ public readonly struct Rect
 			Math.Min(Right, rect.Right),
 			Math.Min(Bottom, rect.Bottom)
 		);
+	}
+
+	public bool Equals(Rect other)
+	{
+		return Position == other.Position && Size == other.Size;
+	}
+
+	public override bool Equals(object? obj)
+	{
+		return obj is Rect rect && Equals(rect);
+	}
+
+	public override int GetHashCode()
+	{
+		return HashCode.Combine(Position, Size);
+	}
+
+	public static bool operator ==(Rect left, Rect right)
+	{
+		return left.Equals(right);
+	}
+
+	public static bool operator !=(Rect left, Rect right)
+	{
+		return !(left == right);
 	}
 
 	public override readonly string ToString() => $"{Position} {Size}";

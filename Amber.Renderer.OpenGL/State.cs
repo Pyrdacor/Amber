@@ -19,17 +19,12 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if GLES
-using Silk.NET.OpenGLES;
-#else
-using Silk.NET.OpenGL;
 using System.Numerics;
 using System.Text.RegularExpressions;
-#endif
 
 namespace Amber.Renderer.OpenGL;
 
-public partial class State : IEquatable<State>
+internal partial class State : IEquatable<State>
 {
     public readonly int OpenGLVersionMajor = 0;
     public readonly int OpenGLVersionMinor = 0;

@@ -21,41 +21,43 @@
 
 namespace Amber.Renderer.OpenGL.Shaders;
 
+using Amber.Renderer.OpenGL.Buffers;
 using static Shader;
 
 internal abstract class BaseShader : IShader
 {
     internal ShaderProgram shaderProgram;
-    private protected State State { get; }
 
-    public void UpdateMatrices(State state)
-    {
-        shaderProgram.SetInputMatrix(ModelViewMatrixName, state.CurrentModelViewMatrix.ToArray(), true);
-        shaderProgram.SetInputMatrix(ProjectionMatrixName, state.CurrentProjectionMatrix.ToArray(), true);
-    }
+	protected BaseShader(State state, string fragmentShaderCode, string vertexShaderCode)
+	{
+		var fragmentShader = new Shader(state, Shader.Type.Fragment, fragmentShaderCode);
+		var vertexShader = new Shader(state, Shader.Type.Vertex, vertexShaderCode);
 
-    public void Use()
-    {
-        if (shaderProgram != ShaderProgram.ActiveProgram)
-            shaderProgram.Use();
-    }
+		shaderProgram = new ShaderProgram(state, fragmentShader, vertexShader);
 
-    protected BaseShader(State state, string fragmentShaderCode, string vertexShaderCode)
-    {
-        var fragmentShader = new Shader(state, Shader.Type.Fragment, fragmentShaderCode);
-        var vertexShader = new Shader(state, Shader.Type.Vertex, vertexShaderCode);
+		State = state;
+	}
 
-        shaderProgram = new ShaderProgram(state, fragmentShader, vertexShader);
+	private protected State State { get; }
 
-        State = state;
-    }
+	public ShaderProgram ShaderProgram => shaderProgram;
 
-    public ShaderProgram ShaderProgram => shaderProgram;
+	public abstract Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject);
 
-    public void SetZ(float z)
+	public void UpdateMatrices(State state)
+	{
+		shaderProgram.SetInputMatrix(ModelViewMatrixName, state.CurrentModelViewMatrix.ToArray(), true);
+		shaderProgram.SetInputMatrix(ProjectionMatrixName, state.CurrentProjectionMatrix.ToArray(), true);
+	}
+
+	public void Use()
+	{
+		if (shaderProgram != ShaderProgram.ActiveProgram)
+			shaderProgram.Use();
+	}
+
+	public void SetZ(float z)
     {
         shaderProgram.SetInput(ZName, z);
     }
-
-    //public static BaseShader Create(State state) => throw new NotSupportedException("Base shaders can't be created directly.");
 }

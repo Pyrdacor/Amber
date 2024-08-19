@@ -86,13 +86,13 @@ public class Graphic : IGraphic
 		return new Graphic(width, height, data, GraphicFormat.RGBA);
 	}
 
-	public static Graphic FromPalette(int width, int height, byte[] data)
+	public static Graphic FromPalette(byte[] data)
 	{
-		var pixelData = new byte[width * height * 4];
+		var pixelData = new byte[data.Length * 2];
 		int sourceIndex = 0;
 		int targetIndex = 0;
 
-		for (int i = 0; i < width * height; i++)
+		for (int i = 0; i < data.Length / 2; i++)
 		{
 			int r = data[sourceIndex++] & 0x0f;
 			int gb = data[sourceIndex++];
@@ -105,7 +105,7 @@ public class Graphic : IGraphic
 			pixelData[targetIndex++] = 0xff; // a
 		}
 
-		return new Graphic(width, height, pixelData, GraphicFormat.RGBA);
+		return new Graphic(data.Length / 2, 1, pixelData, GraphicFormat.RGBA);
 	}
 
 	public int Width { get; }

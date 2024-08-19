@@ -1,5 +1,5 @@
 ﻿/*
- * IPaletteShader.cs - Interface for all textured shaders which use palettes
+ * WordBuffer.cs - Buffer for shader word data
  *
  * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
@@ -19,15 +19,9 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace Amber.Renderer.OpenGL.Shaders;
+namespace Amber.Renderer.OpenGL.Buffers;
 
-internal interface IPaletteShader : ITextureShader
+internal class WordBuffer(State state, bool staticData) : Buffer<word>(state, staticData)
 {
-	void SetPalette(int textureUnit = 1);
-
-	void SetColorKey(byte colorIndex);
-
-	void SetPaletteSize(int size);
-
-	void SetPaletteCount(int count);
+    public override int Dimension => 1;
 }

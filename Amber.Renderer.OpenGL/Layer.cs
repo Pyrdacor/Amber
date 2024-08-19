@@ -20,15 +20,21 @@
  */
 
 using Amber.Common;
+using Amber.Renderer.OpenGL.Drawables;
 using Amber.Renderer.OpenGL.Shaders;
+using Silk.NET.OpenGL;
 
 namespace Amber.Renderer.OpenGL;
 
 internal class Layer : ILayer, IDisposable
 {
     static int NextIndex = 1;
-    readonly List<BaseShader> shaders = [];
-    readonly State state;
+	static readonly Dictionary<string, BaseShader> cachedShaders = [];
+	readonly SpriteFactory? spriteFactory;
+	readonly ColoredRectFactory? coloredRectFactory;
+	readonly List<BaseShader> shaders = [];
+	readonly Dictionary<string, RenderBuffer> renderBuffers = [];
+	readonly State state;
 	bool disposed = false;
 
 	public bool Visible
@@ -37,40 +43,77 @@ internal class Layer : ILayer, IDisposable
         set;
     }
 
+    public LayerType Type {  get; }
+
     public LayerConfig Config { get; }
 
 	public int Index { get; }
 
-	public ISpriteFactory SpriteFactory => throw new NotImplementedException();
+	public ISpriteFactory? SpriteFactory => spriteFactory;
 
-	public Layer(State state, LayerConfig config)
+	public IColoredRectFactory? ColoredRectFactory => coloredRectFactory;
+
+	// TODO
+	public PositionTransformation? PositionTransformation { get; }
+
+	// TODO
+	public SizeTransformation? SizeTransformation { get; }
+
+	public Layer(State state, LayerType type, LayerConfig config)
     {
         // TODO: create render buffer
         Index = NextIndex++;
+        Type = type;
 		Config = config;
         Visible = true;
         this.state = state;
 
-        if (config.LayerFeatures.HasFlag(LayerFeatures.Sprites) && Config.Texture == null)
-            throw new AmberException(ExceptionScope.Application, "Layer supports sprites but has no texture.");
+        if (type.UsesTextures() && Config.Texture == null)
+            throw new AmberException(ExceptionScope.Application, "Layer supports textures but has no texture.");
 
-		if (config.LayerFeatures.HasFlag(LayerFeatures.Palette) && Config.Palette == null)
+		if (type.UsesPalette() && Config.Palette == null)
 			throw new AmberException(ExceptionScope.Application, "Layer supports palettes but has no palette.");
 
-        if (config.LayerFeatures.HasFlag(LayerFeatures.ColoredRects))
-        {
-            shaders.Add(ColorShader.Create(state));
+		void AddColor2DBuffer()
+		{
+			var colorShader = EnsureShader(() => new ColorShader(state));
+			shaders.Add(colorShader);
+			renderBuffers.Add(typeof(ColoredRect).Name, new RenderBuffer(state, colorShader));
 		}
 
-        if (config.LayerFeatures.HasFlag(LayerFeatures.Sprites))
-        {
-            if (config.LayerFeatures.HasFlag(LayerFeatures.Palette))
-                shaders.Add(TextureShader.Create(state));
-			// else
-			//  shaders.Add(ImageShader.Create(state));
+		void AddTexture2DBuffer()
+		{
+			var textureShader = EnsureShader(() => new Texture2DShader(state));
+			shaders.Add(textureShader);
+			renderBuffers.Add(typeof(Sprite).Name, new RenderBuffer(state, textureShader));
 		}
 
-		// TODO ...
+        switch (type)
+        {
+			case LayerType.Color2D:
+				AddColor2DBuffer();
+				coloredRectFactory = new(this);
+				break;
+			case LayerType.ColorAndTexture2D:
+            {
+				AddColor2DBuffer();
+				AddTexture2DBuffer();
+				coloredRectFactory = new(this);
+				spriteFactory = new(this);
+				break;
+			}			
+			case LayerType.Texture2D:
+			{
+				AddTexture2DBuffer();
+				spriteFactory = new(this);
+				break;
+			}
+			default:
+			{
+				// TODO
+				throw new NotImplementedException();
+			}
+		}
 
 		foreach (var shader in shaders)
         {
@@ -86,13 +129,27 @@ internal class Layer : ILayer, IDisposable
 					state.Gl.ActiveTexture(GLEnum.Texture1);
 					Config.Palette.Use();
 
-                    paletteShader.SetPaletteCount(Config.Palette.Size.Height);
+					paletteShader.SetPaletteSize(Config.Palette.Size.Width);
+					paletteShader.SetPaletteCount(Config.Palette.Size.Height);
 				}
 
 				textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
 			}
 		}
 	}
+
+	public RenderBuffer? GetBufferForDrawable<TDrawable>()
+		where TDrawable : Drawable
+	{
+		return renderBuffers.GetValueOrDefault(typeof(TDrawable).Name);
+	}
+
+    private static TShader EnsureShader<TShader>(Func<TShader> factory)
+        where TShader : BaseShader
+    {
+        var typeName = typeof(TShader).Name;
+        return (TShader)cachedShaders.GetOrAdd(typeName, factory);
+    }
 
     public void Render(IRenderer renderer)
     {
@@ -104,21 +161,45 @@ internal class Layer : ILayer, IDisposable
 			shader.SetZ(Config.BaseZ);
             shader.UpdateMatrices(state);
 
-            if (shader is  IPaletteShader paletteShader)
-                paletteShader.SetColorKey(0); // TODO
+			if (shader is IPaletteShader paletteShader)
+			{
+				if (shader is ITextureShader textureShader)
+					textureShader.UsePalette(true);
+
+				paletteShader.SetColorKey(0); // TODO
+			}
+			else if (shader is ITextureShader textureShader)
+			{
+				textureShader.UsePalette(false);
+			}
 
 			// TODO ...
 		}
 
-        // RenderBuffer?.Render();
-    }
+		if (Config.Texture != null)
+		{
+			state.Gl.ActiveTexture(GLEnum.Texture0);
+			Config.Texture.Use();
+		}
+
+		if (Config.Palette != null)
+		{
+			state.Gl.ActiveTexture(GLEnum.Texture1);
+			Config.Palette.Use();
+		}
+
+		foreach (var buffer in renderBuffers)
+			buffer.Value.Render();
+	}
 
     public void Dispose()
     {
         if (!disposed)
         {
-            //RenderBuffer?.Dispose();
-            //texture?.Dispose();
+			foreach (var buffer in renderBuffers)
+				buffer.Value.Dispose();
+			renderBuffers.Clear();
+
             Visible = false;
 
             disposed = true;
@@ -126,17 +207,10 @@ internal class Layer : ILayer, IDisposable
     }
 }
 
-internal class LayerFactory : ILayerFactory
+internal class LayerFactory(State state) : ILayerFactory
 {
-    readonly State state;
-
-    public LayerFactory(State state)
-    {
-        this.state = state;
-    }
-
-	public ILayer Create(LayerConfig config)
+	public ILayer Create(LayerType type, LayerConfig config)
 	{
-		return new Layer(state, config);
+		return new Layer(state, type, config);
 	}
 }

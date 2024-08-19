@@ -1,5 +1,5 @@
 ﻿/*
- * TextureShader.cs - Shader for textured 2D sprites
+ * Texture2DShader.cs - Shader for textured 2D sprites
  *
  * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
@@ -22,16 +22,18 @@
 namespace Amber.Renderer.OpenGL.Shaders;
 
 using Amber.Common;
+using Amber.Renderer.OpenGL.Buffers;
 using static Shader;
 
-internal class TextureShader : BaseShader, IPaletteShader
+internal class Texture2DShader : BaseShader, IPaletteShader
 {
-    // The palette has a size of 32xNumPalettes pixels.
-    // Each row represents one palette of 32 colors.
-    // So the palette index determines the pixel row.
-    // The column is the palette color index from 0 to 31.
-    protected static string TextureFragmentShader(State state) => GetFragmentShaderHeader(state) + $@"
+	// The palette has a size of {PaletteSizeName}x{PaletteCountName} pixels.
+	// Each row represents one palette of {PaletteSizeName} colors.
+	// So the palette index determines the pixel row.
+	// The column is the palette color index from 0 to {PaletteSizeName}-1.
+	protected static string TextureFragmentShader(State state) => GetFragmentShaderHeader(state) + $@"
         uniform float {UsePaletteName};
+        uniform float {PaletteSizeName};
         uniform float {PaletteCountName};
         uniform sampler2D {TextureName};
         uniform sampler2D {PaletteName};
@@ -54,7 +56,7 @@ internal class TextureShader : BaseShader, IPaletteShader
                 {{
                     if (colorIndex >= 31.5f)
                         colorIndex = 0.0f;
-                    pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / 32.0f, (palIndex + 0.5f) / {PaletteCountName}));
+                    pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
                 }}
             }}
             else
@@ -97,19 +99,38 @@ internal class TextureShader : BaseShader, IPaletteShader
         }}
     ";
 
-    TextureShader(State state)
+    public Texture2DShader(State state)
         : this(state, TextureFragmentShader(state), TextureVertexShader(state))
     {
 
     }
 
-    protected TextureShader(State state, string fragmentShaderCode, string vertexShaderCode)
+    protected Texture2DShader(State state, string fragmentShaderCode, string vertexShaderCode)
         : base(state, fragmentShaderCode, vertexShaderCode)
     {
 
     }
 
-    public void UsePalette(bool use)
+	public override Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject)
+	{
+		var buffers = new Dictionary<BufferPurpose, IBuffer>();
+
+		void Add(BufferPurpose purpose, string name, IBuffer buffer)
+		{
+			vertexArrayObject.AddBuffer(name, buffer);
+			buffers.Add(purpose, buffer);
+		}
+
+		Add(BufferPurpose.Position2D, PositionName, new FloatPositionBuffer(State, false));
+		Add(BufferPurpose.TextureCoordinates, TexCoordName, new PositionBuffer(State, false));
+		Add(BufferPurpose.DisplayLayer, LayerName, new ByteBuffer(State, true));
+		Add(BufferPurpose.PaletteIndex, PaletteIndexName, new ByteBuffer(State, true));
+		Add(BufferPurpose.MaskColorIndex, MaskColorIndexName, new ByteBuffer(State, true));
+
+		return buffers;
+	}
+
+	public void UsePalette(bool use)
     {
         shaderProgram.SetInput(UsePaletteName, use ? 1.0f : 0.0f);
     }
@@ -137,10 +158,13 @@ internal class TextureShader : BaseShader, IPaletteShader
         shaderProgram.SetInput(ColorKeyName, (float)colorIndex);
     }
 
-    public void SetPaletteCount(int count)
+	public void SetPaletteSize(int size)
+	{
+		shaderProgram.SetInput(PaletteSizeName, (float)size);
+	}
+
+	public void SetPaletteCount(int count)
     {
         shaderProgram.SetInput(PaletteCountName, (float)count);
     }
-
-    public new static BaseShader Create(State state) => new TextureShader(state);
 }

@@ -8,3 +8,13 @@ public interface IDrawable
 	bool Visible { get; set; }
 	ILayer Layer { get; }
 }
+
+public interface ISizedDrawable : IDrawable
+{
+	Size Size { get; set; }
+}
+
+public interface ILayeredDrawable : IDrawable
+{
+	byte DisplayLayer { get; set; }
+}

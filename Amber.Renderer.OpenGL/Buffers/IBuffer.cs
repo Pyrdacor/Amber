@@ -1,5 +1,5 @@
 ﻿/*
- * IPaletteShader.cs - Interface for all textured shaders which use palettes
+ * IBuffer.cs - Interface for render data buffers
  *
  * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
@@ -19,15 +19,30 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace Amber.Renderer.OpenGL.Shaders;
+namespace Amber.Renderer.OpenGL.Buffers;
 
-internal interface IPaletteShader : ITextureShader
+public enum BufferPurpose
 {
-	void SetPalette(int textureUnit = 1);
+    Position2D,
+    Position3D,
+    Color,
+    Alpha,
+    TextureCoordinates,
+    TextureSize,
+    DisplayLayer,
+    PaletteIndex,
+    MaskColorIndex,
+}
 
-	void SetColorKey(byte colorIndex);
+internal interface IBuffer : IDisposable
+{
+    int Dimension { get; }
+    bool Normalized { get; }
+    int Size { get; }
+	VertexAttribPointerType Type { get; }
 
-	void SetPaletteSize(int size);
-
-	void SetPaletteCount(int count);
+	void Bind();
+    void Unbind();
+    bool RecreateUnbound();
+    void Remove(int index);
 }

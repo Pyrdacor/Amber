@@ -21,6 +21,8 @@
 
 namespace Amber.Renderer.OpenGL.Shaders;
 
+using Amber.Renderer.OpenGL.Buffers;
+using System.Collections.Generic;
 using static Shader;
 
 internal class ColorShader : BaseShader
@@ -52,11 +54,26 @@ internal class ColorShader : BaseShader
             }}
         ";
 
-    ColorShader(State state)
+	public ColorShader(State state)
         : base(state, ColorFragmentShader(state), ColorVertexShader(state))
     {
 
     }
 
-    public static new BaseShader Create(State state) => new ColorShader(state);
+	public override Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject)
+	{
+        var buffers = new Dictionary<BufferPurpose, IBuffer>();
+
+        void Add(BufferPurpose purpose, string name, IBuffer buffer)
+        {
+            vertexArrayObject.AddBuffer(name, buffer);
+		    buffers.Add(purpose, buffer);
+		}
+
+		Add(BufferPurpose.Position2D, PositionName, new FloatPositionBuffer(State, false));
+		Add(BufferPurpose.DisplayLayer, LayerName, new ByteBuffer(State, true));
+		Add(BufferPurpose.Color, ColorName, new ColorBuffer(State, false));
+
+		return buffers;
+	}
 }
