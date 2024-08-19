@@ -10,7 +10,13 @@ public interface ITexture
     void Use();
 }
 
+public interface ITextureAtlas : ITexture
+{
+	Position GetOffset(int index);
+}
+
 public interface ITextureFactory
 {
-	ITexture Create(IGraphic graphic);
+	ITexture Create(IGraphic graphic, int numMipMapLevels = 0);
+	ITextureAtlas CreateAtlas(Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0);
 }

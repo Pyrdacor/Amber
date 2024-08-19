@@ -11,14 +11,12 @@ public class Graphic : IGraphic
 
 	}
 
-	public Graphic(int width, int height, bool usePalette)
+	public Graphic(int width, int height, GraphicFormat graphicFormat)
 	{
 		Width = width;
 		Height = height;
-		Format = usePalette
-			? GraphicFormat.PaletteIndices
-			: GraphicFormat.RGBA;
-		UsesPalette = usePalette;
+		Format = graphicFormat;
+		UsesPalette = graphicFormat.UsesPalette();
 		BytesPerPixel = Format.BytesPerPixel();
 		this.data = new byte[width * height * BytesPerPixel];
 	}

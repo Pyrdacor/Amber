@@ -7,7 +7,7 @@ internal class Layout
     public Layout(byte[] definition, Dictionary<int, Graphic> layoutBlocks,
 			List<word> bottomCorners, List<word> bottomCornerMasks)
     {
-        var graphic = new Graphic(320, 163, true);
+        var graphic = new Graphic(320, 163, GraphicFormat.PaletteIndices);
 			int line = 0;
         int x = 0;
         int y = 0;

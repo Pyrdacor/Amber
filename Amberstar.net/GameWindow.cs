@@ -354,9 +354,14 @@ namespace Amberstar
 
 			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
-            var atlas = new Graphic(640, 163, true);
-			atlas.AddOverlay(0, 0, assetProvider.LayoutLoader.LoadLayout(2));
-            atlas.AddOverlay(320, 0, assetProvider.LayoutLoader.LoadPortraitArea());
+            var graphics = new Dictionary<int, IGraphic>()
+            {
+                { 1, assetProvider.LayoutLoader.LoadLayout(2) },
+                { 2, assetProvider.LayoutLoader.LoadPortraitArea() },
+                { 3, assetProvider.UIGraphicLoader.LoadGraphic(GameData.Serialization.UIGraphic.EmptyCharSlot) }
+            };
+
+            var textureAtlas = renderer.TextureFactory.CreateAtlas(graphics);
 
 			var layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
             {
@@ -365,8 +370,8 @@ namespace Amberstar
                 RenderTarget = LayerRenderTarget.VirtualScreen2D,
                 UseVirtualScreen = true,
                 Palette = renderer.TextureFactory.Create(palette),
-                Texture = renderer.TextureFactory.Create(atlas)
-            });
+                Texture = textureAtlas
+			});
 
             var coloredRect = layer.ColoredRectFactory?.Create();
 
@@ -392,7 +397,7 @@ namespace Amberstar
 
 			if (sprite != null)
 			{
-				sprite.TextureOffset = new();
+				sprite.TextureOffset = textureAtlas.GetOffset(1);
 				sprite.Position = new Position(0, 37);
 				sprite.Size = new Size(320, 163);
 				sprite.Visible = true;
@@ -402,11 +407,24 @@ namespace Amberstar
 
 			if (sprite != null)
 			{
-				sprite.TextureOffset = new(320, 0);
+				sprite.TextureOffset = textureAtlas.GetOffset(2);
 				sprite.Position = new Position(0, 0);
 				sprite.Size = new Size(320, 36);
 				sprite.Visible = true;
 			}
+
+            for (int i = 0; i < 6; i++)
+            {
+                sprite = layer.SpriteFactory?.Create();
+
+                if (sprite != null)
+                {
+                    sprite.TextureOffset = textureAtlas.GetOffset(3);
+                    sprite.Position = new Position(16 + i * 48, 1);
+                    sprite.Size = new Size(32, 36);
+                    sprite.Visible = true;
+                }
+            }
 
 			layer.Visible = true;
 

@@ -32,14 +32,13 @@ internal class Texture : ITexture, IDisposable
     readonly State state;
     bool disposed = false;
 
-	public virtual uint Index { get; private set; } = 0u;
-	public Size Size { get; }
+	public uint Index { get; private set; }
+	public Size Size { get; private protected init; }
 
-	protected Texture(State state, Size size)
+	protected Texture(State state)
     {
         this.state = state;
         Index = state.Gl.GenTexture();
-        Size = size;
     }
 
     public Texture(State state, IGraphic graphic, int numMipMapLevels = 0)
@@ -135,10 +134,160 @@ internal class Texture : ITexture, IDisposable
     public void Use() => Bind();
 }
 
+internal class TextureAtlas : Texture, ITextureAtlas
+{
+	// key = max height of category
+	class TextureCategorySorter : IComparer<KeyValuePair<uint, List<int>>>
+	{
+		public int Compare(KeyValuePair<uint, List<int>> x, KeyValuePair<uint, List<int>> y)
+		{
+			return x.Key.CompareTo(y.Key);
+		}
+	}
+
+	readonly Dictionary<int, Position> textureOffsets = [];
+
+	public TextureAtlas(State state, Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0)
+		: base(state)
+	{
+		if (graphics.Count == 0)
+			return;
+
+		var formats = graphics.Select(g => g.Value.Format);
+		var graphicFormat = formats.First();
+
+		if (formats.Skip(1).Any(f => f != graphicFormat))
+			throw new AmberException(ExceptionScope.Application, "All graphics for a texture atlas must use the same format.");		
+
+		// sort textures by similar heights (16-pixel bands)
+		// heights of items are < key * 16
+		// value = list of texture indices
+		Dictionary<uint, List<int>> textureCategories = [];
+		Dictionary<uint, uint> textureCategoryMinValues = [];
+		Dictionary<uint, uint> textureCategoryMaxValues = [];
+		Dictionary<uint, uint> textureCategoryTotalWidth = [];
+
+		foreach (var texture in graphics)
+		{
+			uint category = (uint)texture.Value.Height / 16u;
+
+			if (!textureCategories.ContainsKey(category))
+			{
+				textureCategories.Add(category, []);
+				textureCategoryMinValues.Add(category, (uint)texture.Value.Height);
+				textureCategoryMaxValues.Add(category, (uint)texture.Value.Height);
+				textureCategoryTotalWidth.Add(category, (uint)texture.Value.Width);
+			}
+			else
+			{
+				if (texture.Value.Height < textureCategoryMinValues[category])
+					textureCategoryMinValues[category] = (uint)texture.Value.Height;
+				if (texture.Value.Height > textureCategoryMaxValues[category])
+					textureCategoryMaxValues[category] = (uint)texture.Value.Height;
+				textureCategoryTotalWidth[category] += (uint)texture.Value.Width;
+			}
+
+			textureCategories[category].Add(texture.Key);
+		}
+
+		var filteredTextureCategories = new List<KeyValuePair<uint, List<int>>>();
+
+		foreach (var category in textureCategories)
+		{
+			if (textureCategories[category.Key].Count == 0)
+				continue; // was merged with lower category
+
+			// merge categories with minimal differences
+			if (textureCategoryMinValues[category.Key] >= category.Key * 16 + 8 &&
+				textureCategories.ContainsKey(category.Key + 1) &&
+				textureCategoryMaxValues[category.Key + 1] <= (category.Key + 1) * 16 + 8)
+			{
+				textureCategories[category.Key].AddRange(textureCategories[category.Key + 1]);
+				textureCategoryMaxValues[category.Key] = Math.Max(textureCategoryMaxValues[category.Key], textureCategoryMaxValues[category.Key + 1]);
+				textureCategories[category.Key + 1].Clear();
+			}
+
+			filteredTextureCategories.Add(new KeyValuePair<uint, List<int>>(textureCategoryMaxValues[category.Key], textureCategories[category.Key]));
+		}
+
+		filteredTextureCategories.Sort(new TextureCategorySorter());
+
+		// now we have a sorted category list with all texture indices
+
+		uint maxWidth = Math.Max(512u, textureCategoryMaxValues.Max(m => m.Value));
+		uint width = 0u;
+		uint height = 0u;
+		uint xOffset = 0u;
+		uint yOffset = 0u;
+
+		// create texture offsets
+		foreach (var category in filteredTextureCategories)
+		{
+			foreach (var textureIndex in category.Value)
+			{
+				var texture = graphics[textureIndex];
+
+				if (xOffset + texture.Width <= maxWidth)
+				{
+					if (yOffset + texture.Height > height)
+						height = yOffset + (uint)texture.Height;
+
+					textureOffsets.Add(textureIndex, new Position((int)xOffset, (int)yOffset));
+
+					xOffset += (uint)texture.Width;
+
+					if (xOffset > width)
+						width = xOffset;
+				}
+				else
+				{
+					xOffset = 0;
+					yOffset = height;
+
+					height = yOffset + (uint)texture.Height;
+
+					textureOffsets.Add(textureIndex, new Position((int)xOffset, (int)yOffset));
+
+					xOffset += (uint)texture.Width;
+
+					if (xOffset > width)
+						width = xOffset;
+				}
+			}
+
+			if (xOffset > maxWidth - 320) // we do not expect textures with a width greater than 320
+			{
+				xOffset = 0;
+				yOffset = height;
+			}
+		}
+
+		// create texture
+		Size = new((int)width, (int)height);
+		var atlasGraphic = new Graphic(Size.Width, Size.Height, graphicFormat);
+
+		foreach (var offset in textureOffsets)
+		{
+			var subGraphic = graphics[offset.Key];
+
+			atlasGraphic.AddOverlay(offset.Value.X, offset.Value.Y, subGraphic);
+		}
+
+		Create(graphicFormat, atlasGraphic.GetData(), numMipMapLevels);
+	}
+
+	public Position GetOffset(int index) => textureOffsets[index];
+}
+
 internal class TextureFactory(State state) : ITextureFactory
 {
-	public ITexture Create(IGraphic graphic)
+	public ITexture Create(IGraphic graphic, int numMipMapLevels = 0)
 	{
-        return new Texture(state, graphic);
+        return new Texture(state, graphic, numMipMapLevels);
 	}
+
+	public ITextureAtlas CreateAtlas(Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0)
+    {
+        return new TextureAtlas(state, graphics, numMipMapLevels);
+    }
 }

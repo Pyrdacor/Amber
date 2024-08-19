@@ -113,7 +113,7 @@ namespace Amberstar.GameData.Legacy
 			// The bars are displayed at y=18 (on screen, so relative y=17).
 			// The portraits are displayed 32 pixels to the left of the status block and has a size of 32x34.
 			// The portraits also are located at y=1, so they end at y=35.
-			PortraitArea = new Graphic(320, 37, true);
+			PortraitArea = new Graphic(320, 37, GraphicFormat.PaletteIndices);
 			var statusBlockMid = ReadGraphic(16, 36);
 			var statusBlockLeft = ReadGraphic(16, 36);
 			var statusBlockRight = ReadGraphic(16, 36);
