@@ -30,6 +30,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Renderer.OpenGL", "Am
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amberstar.net", "Amberstar.net\Amberstar.net.csproj", "{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amberstar.Game", "Amberstar.Game\Amberstar.Game.csproj", "{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -126,6 +128,14 @@ Global
 		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.ReleaseAndroid|Any CPU.ActiveCfg = Release|Any CPU
 		{0CC0B182-F6F2-4CD7-BE21-4A474EFD2E63}.ReleaseAndroid|Any CPU.Build.0 = Release|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.DebugAndroid|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.DebugAndroid|Any CPU.Build.0 = Debug|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.ReleaseAndroid|Any CPU.ActiveCfg = Release|Any CPU
+		{A4EBABAA-E51F-455D-B8B5-DB54A4A06A4F}.ReleaseAndroid|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

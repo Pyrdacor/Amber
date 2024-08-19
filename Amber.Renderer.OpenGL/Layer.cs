@@ -114,28 +114,6 @@ internal class Layer : ILayer, IDisposable
 				throw new NotImplementedException();
 			}
 		}
-
-		foreach (var shader in shaders)
-        {
-			if (shader is ITextureShader textureShader)
-			{
-				textureShader.SetTexture(0);
-				state.Gl.ActiveTexture(GLEnum.Texture0);
-				Config.Texture!.Use();
-
-				if (Config.Palette != null && shader is IPaletteShader paletteShader)
-				{
-					paletteShader.SetPalette(1);
-					state.Gl.ActiveTexture(GLEnum.Texture1);
-					Config.Palette.Use();
-
-					paletteShader.SetPaletteSize(Config.Palette.Size.Width);
-					paletteShader.SetPaletteCount(Config.Palette.Size.Height);
-				}
-
-				textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
-			}
-		}
 	}
 
 	public RenderBuffer? GetBufferForDrawable<TDrawable>()
@@ -156,6 +134,15 @@ internal class Layer : ILayer, IDisposable
         if (!Visible)
             return;
 
+		void SetupTextureShader(ITextureShader textureShader, bool usePalette)
+		{
+			textureShader.SetTexture(0);
+			state.Gl.ActiveTexture(GLEnum.Texture0);
+			Config.Texture!.Use();
+			textureShader.UsePalette(usePalette);
+			textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
+		}
+
 		foreach (var shader in shaders)
 		{
 			shader.SetZ(Config.BaseZ);
@@ -164,13 +151,18 @@ internal class Layer : ILayer, IDisposable
 			if (shader is IPaletteShader paletteShader)
 			{
 				if (shader is ITextureShader textureShader)
-					textureShader.UsePalette(true);
+					SetupTextureShader(textureShader, true);
 
+				paletteShader.SetPalette(1);
+				state.Gl.ActiveTexture(GLEnum.Texture1);
+				Config.Palette!.Use();
+				paletteShader.SetPaletteSize(Config.Palette.Size.Width);
+				paletteShader.SetPaletteCount(Config.Palette.Size.Height);
 				paletteShader.SetColorKey(0); // TODO
 			}
 			else if (shader is ITextureShader textureShader)
 			{
-				textureShader.UsePalette(false);
+				SetupTextureShader(textureShader, false);
 			}
 
 			// TODO ...

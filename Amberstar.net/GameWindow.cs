@@ -16,10 +16,11 @@ using Color = Amber.Common.Color;
 using Amber.Assets.Common;
 using Amberstar.GameData.Legacy;
 using Amber.IO.FileSystem;
+using Amberstar.net;
 
 namespace Amberstar
 {
-    class GameWindow : IContextProvider
+	class GameWindow : IContextProvider
     {
         string gameVersion = "Amberstar.net";
         Renderer? renderer;
@@ -27,6 +28,7 @@ namespace Amberstar
         IKeyboard? keyboard = null;
         IMouse? mouse = null;
         ICursor? cursor = null;
+        Game.Game? game = null;
         bool initialized = false;
 
         public string Identifier { get; }
@@ -144,12 +146,12 @@ namespace Amberstar
 
         }
 
-        void Keyboard_KeyDown(IKeyboard keyboard, Silk.NET.Input.Key key, int value)
+        void Keyboard_KeyDown(IKeyboard keyboard, Key key, int value)
         {
+			//game?.KeyDown()
+		}
 
-        }
-
-        void Keyboard_KeyUp(IKeyboard keyboard, Silk.NET.Input.Key key, int value)
+        void Keyboard_KeyUp(IKeyboard keyboard, Key key, int value)
         {
 
         }
@@ -328,109 +330,16 @@ namespace Amberstar
 
             renderer = new(this, new Size(Width, Height), new Size(320, 200));
 
-			byte[] testPal =
-			[
-				0x00, 0x00,
-				0x07, 0x50,
-				0x03, 0x33,
-				0x02, 0x22,
-				0x01, 0x11,
-				0x07, 0x42,
-				0x06, 0x31,
-				0x02, 0x00,
-				0x05, 0x66,
-				0x03, 0x45,
-				0x07, 0x54,
-				0x06, 0x43,
-				0x05, 0x32,
-				0x04, 0x21,
-				0x03, 0x10,
-				0x07, 0x65
-			];
-
-            var palette = Graphic.FromPalette(testPal);
-
 			var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
 
 			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
-            var graphics = new Dictionary<int, IGraphic>()
-            {
-                { 1, assetProvider.LayoutLoader.LoadLayout(2) },
-                { 2, assetProvider.LayoutLoader.LoadPortraitArea() },
-                { 3, assetProvider.UIGraphicLoader.LoadGraphic(GameData.Serialization.UIGraphic.EmptyCharSlot) }
-            };
+            // setup the layers
+            LayerSetup.Run(assetProvider, renderer);
 
-            var textureAtlas = renderer.TextureFactory.CreateAtlas(graphics);
+			game = new Game.Game(renderer, assetProvider);
 
-			var layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
-            {
-                BaseZ = 0,
-                LayerFeatures = LayerFeatures.Transparency,
-                RenderTarget = LayerRenderTarget.VirtualScreen2D,
-                UseVirtualScreen = true,
-                Palette = renderer.TextureFactory.Create(palette),
-                Texture = textureAtlas
-			});
-
-            var coloredRect = layer.ColoredRectFactory?.Create();
-
-            if (coloredRect != null)
-            {
-                coloredRect.Color = Color.Red;
-                coloredRect.Position = new Position(0, 0);
-                coloredRect.Size = new Size(160, 100);
-                coloredRect.Visible = true;
-            }
-
-			coloredRect = layer.ColoredRectFactory?.Create();
-
-			if (coloredRect != null)
-			{
-				coloredRect.Color = Color.Green;
-				coloredRect.Position = new Position(160, 0);
-				coloredRect.Size = new Size(80, 200);
-				coloredRect.Visible = true;
-			}
-
-			var sprite = layer.SpriteFactory?.Create();
-
-			if (sprite != null)
-			{
-				sprite.TextureOffset = textureAtlas.GetOffset(1);
-				sprite.Position = new Position(0, 37);
-				sprite.Size = new Size(320, 163);
-				sprite.Visible = true;
-			}
-
-			sprite = layer.SpriteFactory?.Create();
-
-			if (sprite != null)
-			{
-				sprite.TextureOffset = textureAtlas.GetOffset(2);
-				sprite.Position = new Position(0, 0);
-				sprite.Size = new Size(320, 36);
-				sprite.Visible = true;
-			}
-
-            for (int i = 0; i < 6; i++)
-            {
-                sprite = layer.SpriteFactory?.Create();
-
-                if (sprite != null)
-                {
-                    sprite.TextureOffset = textureAtlas.GetOffset(3);
-                    sprite.Position = new Position(16 + i * 48, 1);
-                    sprite.Size = new Size(32, 36);
-                    sprite.Visible = true;
-                }
-            }
-
-			layer.Visible = true;
-
-			renderer.AddLayer(layer);
-
-            initialized = true;
+			initialized = true;
         }
 
         void Window_Render(double delta)

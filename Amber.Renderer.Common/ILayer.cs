@@ -2,11 +2,13 @@
 
 namespace Amber.Renderer;
 
+// TODO: use them
 [Flags]
 public enum LayerFeatures
 {
-	Transparency,
-	DisplayLayers
+	None = 0,
+	Transparency = 0x1,
+	DisplayLayers = 0x2
 }
 
 public enum LayerType
@@ -53,10 +55,9 @@ public static class LayerTypeExtensions
 public readonly struct LayerConfig
 {
 	public float BaseZ { get; init; }
-	public bool UseVirtualScreen { get; init; }
 	public LayerRenderTarget RenderTarget { get; init; }
 	public LayerFeatures LayerFeatures { get; init; }
-	public ITexture? Texture { get; init; }
+	public ITextureAtlas? Texture { get; init; }
 	public ITexture? Palette { get; init; }
 }
 
