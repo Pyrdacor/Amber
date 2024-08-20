@@ -44,25 +44,7 @@ namespace Amberstar
 			PrintTexts(AssetType.SpellSchoolName, 7, 1);
 			PrintTexts(AssetType.SpellName, 7*30, 1);
 
-			byte[] testPal =
-			[
-				0x00, 0x00,
-				0x07, 0x50,
-				0x03, 0x33,
-				0x02, 0x22,
-				0x01, 0x11,
-				0x07, 0x42,
-				0x06, 0x31,
-				0x02, 0x00,
-				0x05, 0x66,
-				0x03, 0x45,
-				0x07, 0x54,
-				0x06, 0x43,
-				0x05, 0x32,
-				0x04, 0x21,
-				0x03, 0x10,
-				0x07, 0x65
-			];
+			byte[] testPal = assetProvider.PaletteLoader.LoadUIPalette().GetData();
 
 			for (int i = 1; i <= 11; i++)
 			{
@@ -89,6 +71,13 @@ namespace Amberstar
 				var statusIcon = (StatusIcon)i;
 				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\StatusIcons\{statusIcon}.png", assetProvider.UIGraphicLoader.LoadStatusIcon(statusIcon), testPal, false);
 			}
+
+			for (int i = 1; i <= (int)Image80x80.LastImage; i++)
+			{
+				var image = (Image80x80)i;
+				var graphic = assetProvider.GraphicLoader.Load80x80Graphic(image);
+				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\80x80Images\{i:000}.png", graphic, graphic.Palette.GetData(), false);
+			}
 		}
 
 		static void WriteGraphic(string filename, IGraphic graphic, byte[] palette, bool transparency)
@@ -102,17 +91,14 @@ namespace Amberstar
 				System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 			byte[] index0Color = [0, 0, 0, (byte)(transparency ?  0 : 0xff)];
 
+			// Out: B G R A
+			//  In: R G B A
 			byte[] PalIndexToColor(int index)
 			{
 				if (index == 0)
 					return index0Color;
 
-				var r = palette[index * 2 + 0] & 0xf;
-				var gb = palette[index * 2 + 1];
-				var g = gb >> 4;
-				var b = gb & 0xf;
-
-				return [ (byte)(r | (r << 4)), (byte)(g | (g << 4)), (byte)(b | (b << 4)), 0xff ];
+				return [ palette[index * 4 + 2], palette[index * 4 + 1], palette[index * 4 + 0], 0xff];
 			}
 
 			var pixels = graphic.GetData().SelectMany(paletteIndex => PalIndexToColor(paletteIndex)).ToArray();

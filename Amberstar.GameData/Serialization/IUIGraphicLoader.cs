@@ -30,8 +30,10 @@ namespace Amberstar.GameData.Serialization
 		Ouch,
 		MagicAnimation, // 3 frames with 32x32 each (displayed over the portraits)
 		EmptyCharSlot,
-		//Sword,
-		//Shield,
+		HPBar,
+		SPBar,
+		Sword,
+		Shield,
 		LastUIGraphic // TODO: point to last
 	}
 
@@ -171,8 +173,132 @@ namespace Amberstar.GameData.Serialization
 		RedCross, // second hand slot
 		Chain,
 		PearlChain,
-		// TODO ...
-		LastItemGraphic = PearlChain
+		Brooch,
+		Gem,
+		LeatherArmor,
+		Robe,
+		Shoes,
+		Boots,
+		Belt,
+		HornHelm,
+		SunHelm,
+		IronHelm,
+		Rope,
+		Unknown, // TODO
+		RatHead,
+		CrystalOrb,
+		Arrow,
+		Bolt,
+		ShortBow,
+		LongBow,
+		CrossBow,
+		Axe,
+		BattleAxe,
+		Knife,
+		Flail,
+		Mace,
+		Hammer,
+		Stick,
+		Sabre,
+		Sling,
+		Trident,
+		Dagger,
+		ShortSword,
+		LongSword,
+		BroadSword,
+		ChainMail,
+		PlateMail,
+		BandedArmor,
+		KnightArmor,
+		Buckler,
+		RoundShield,
+		SmallShield,
+		LargeShield,
+		Key,
+		Lockpick,
+		Cat,
+		MorningStar,
+		ThrowingAxe,
+		Whip,
+		ThrowingSickle,
+		Unknown2, // TODO
+		Wand,
+		Club,
+		Unknown3, // TODO
+		Bone,
+		Broom,
+		PieceOfAmberstar,
+		Unknown4, // TODO: palette?
+		Harp,
+		HolyHorn,
+		Clover,
+		YellowGem,
+		Cloth,
+		BlueMushroom,
+		Egg,
+		Amberstar,
+		MagicWand,
+		MagicDisc,
+		Crowbar,
+		EmptyPotion,
+		UnknownPotion1, // TODO...
+		UnknownPotion2,
+		UnknownPotion3,
+		UnknownPotion4,
+		UnknownPotion5,
+		UnknownPotion6,
+		UnknownPotion7,
+		UnknownPotion8,
+		UnknownPotion9,
+		UnknownPotion10,
+		UnknownPotion11,
+		IronRing1,
+		GoldenRing,
+		Unknown5, // TODO
+		SaphireRing,
+		Collar,
+		Flower,
+		SmallRing,
+		IronRing2,
+		Trophy,
+		Unknown6, // TODO
+		UnknownGem1, // TODO
+		RainbowGem,
+		UnknownGem2, // TODO
+		UnknownGem3, // TODO
+		WishingCoins,
+		Unknown7, // TODO
+		Flute, // ?
+		NoteWithPen,
+		Hat,
+		Crystal,
+		Unknown8, // TODO
+		Unknown9, // TODO
+		Book,
+		Unknown10, // TODO
+		Letter,
+		SilverCutlery,
+		RuneAlphabet,
+		Ration,
+		TextScroll,
+		Map,
+		Unknown11, // TODO
+		Unknown12, // TODO
+		Clock,
+		MapLocator,
+		Mushroom2,
+		GoldenLetter,
+		Letter2,
+		Letter3,
+		Bottle,
+		MagicPicture,
+		WoodenStaff,
+		AnotherPotion, // TODO
+		Pickaxe,
+		Shovel,
+		Unknown13, // TODO
+		Unknown14, // TODO
+		LastItemGraphic = Unknown14
 	}
 
 	public interface IUIGraphicLoader
@@ -213,9 +339,11 @@ namespace Amberstar.GameData.Serialization
 			{ UIGraphic.Ouch, Info(32, 32) },
 			{ UIGraphic.MagicAnimation, Info(32, 32, 3) },
 			{ UIGraphic.EmptyCharSlot, Info(32, 34) },
-			/*{ UIGraphic.Sword, new Size(16, 16) },
-			{ UIGraphic.Shield, new Size(16, 16) },*/
-			{ UIGraphic.LastUIGraphic, Info(16, 128) } // TODO
+			{ UIGraphic.HPBar, Info(16, 17) },
+			{ UIGraphic.SPBar, Info(16, 17) },
+			{ UIGraphic.Sword, Info(16, 10) },
+			{ UIGraphic.Shield, Info(16, 10) },
+			{ UIGraphic.LastUIGraphic, Info(16, 2048) } // TODO
 		};
 
 		public static Size GetSize(this UIGraphic graphic) => uiGraphicInfos[graphic].Item2;

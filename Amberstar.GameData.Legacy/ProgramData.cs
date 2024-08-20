@@ -185,7 +185,7 @@ namespace Amberstar.GameData.Legacy
 				AddStatusIcon(i);
 			#endregion
 			#region Read more UI gfx
-			for (int i = (int)UIGraphic.DamageSplash; i <= (int)UIGraphic.LastUIGraphic; i++)
+			for (int i = (int)UIGraphic.DamageSplash; i <= (int)UIGraphic.EmptyCharSlot; i++)
 				AddUIGraphic((UIGraphic)i);
 			#endregion
 			#region Read item graphics
@@ -195,6 +195,10 @@ namespace Amberstar.GameData.Legacy
 			}
 			for (int i = 0; i <= (int)ItemGraphic.LastItemGraphic; i++)
 				AddItemGraphic(i);
+			#endregion
+			#region Read even more UI gfx
+			for (int i = (int)UIGraphic.HPBar; i <= (int)UIGraphic.LastUIGraphic; i++)
+				AddUIGraphic((UIGraphic)i);
 			#endregion
 
 			// TODO: places
