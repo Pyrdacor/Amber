@@ -11,7 +11,7 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
 
 	public IText LoadText(AssetIdentifier assetIdentifier)
 	{
-		bool singleString = false;
+		bool singleString;
 
 		switch (assetIdentifier.Type)
 		{
@@ -25,6 +25,11 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
 			case AssetType.ItemTypeName:
 				singleString = true;
 				// TODO: add more text asset types
+				break;
+			case AssetType.MapText:
+			case AssetType.ItemText:
+			case AssetType.PuzzleText:
+				singleString = false;
 				break;
 			default:
 				throw new AmberException(ExceptionScope.Application, $"Invalid text asset type {assetIdentifier.Type}.");

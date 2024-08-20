@@ -15,18 +15,24 @@ internal class Text(List<string> textFragments) : IText
 		reader.Position++; // skip fill byte
 
 		var text = new Text(textFragments);
+
+		if (textCount == 0)
+			return text;
+
+		var lengths = new int[textCount];
 		int offset = reader.ReadWord();
 
 		for (int i = 0; i < textCount; i++)
 		{
 			int nextOffset = reader.ReadWord();
-			text.TextLengths.Add(nextOffset - offset);
+			lengths[i] = nextOffset - offset;
 			offset = nextOffset;
 		}
 
 		for (int i = 0; i < textCount; i++)
 		{
-			text.TextIndices.Add(reader.ReadWord());
+			for (int n = 0; n < lengths[i]; n++)
+				text.TextIndices.Add(reader.ReadWord());
 		}
 
 		return text;
@@ -38,14 +44,13 @@ internal class Text(List<string> textFragments) : IText
 
 		var text = new Text(textFragments);
 		text.TextIndices.Add(reader.ReadWord());
-		text.TextLengths.Add(int.MaxValue);
 
 		return text;
 	}
 
 	public string GetString()
 	{
-		return TextIndices[0] == 0 ? string.Empty : textFragments[TextIndices[0]];
+		return TextIndices.Count == 0 || TextIndices[0] == 0 ? string.Empty : textFragments[TextIndices[0]];
 	}
 
 	public List<string[]> GetParagraphs(int maxWidthInCharacters)
@@ -62,6 +67,10 @@ internal class Text(List<string> textFragments) : IText
 	private string[] GetLines(int maxWidthInCharacters, out List<string[]> paragraphs)
 	{
 		paragraphs = [];
+
+		if (TextIndices.Count == 0)
+			return [];
+
 		int paragraphOffset = 0;
 		List<string> lines = [];
 		string currentLine = string.Empty;
@@ -69,10 +78,6 @@ internal class Text(List<string> textFragments) : IText
 		for (int i = 0; i < TextIndices.Count; i++)
 		{
 			word textIndex = TextIndices[i];
-			int length = TextLengths[i];
-
-			if (length <= 0)
-				continue;
 
 			switch (textIndex)
 			{
@@ -95,8 +100,7 @@ internal class Text(List<string> textFragments) : IText
 				default:
 					if (IsEndPunctuation(textIndex) && currentLine.Length > 0 && currentLine[^1] == ' ')
 						currentLine = currentLine[..^1];
-					length = Math.Min(length, textFragments[textIndex].Length);
-					AddText(textFragments[textIndex][..length]);
+					AddText(textFragments[textIndex] + " ");
 					break;
 			}
 
@@ -134,7 +138,6 @@ internal class Text(List<string> textFragments) : IText
 		return lines.ToArray();
 	}
 
-	public List<int> TextLengths { get; private init; } = [];
 	public List<word> TextIndices { get; private init; } = [];
 
 	public const int OpenBracket = 1580;

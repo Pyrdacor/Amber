@@ -12,6 +12,10 @@
 		RaceName,
 		ConditionName,
 		ItemTypeName,
+		// Texts
+		MapText,
+		ItemText,
+		PuzzleText, // Amberstar assembling texts
 		// Graphics
 		Layout,
 		UIGraphic,

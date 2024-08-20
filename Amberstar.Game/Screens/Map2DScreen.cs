@@ -13,7 +13,7 @@
 
 		public override void Open(Game game)
 		{
-			var map = game.AssetProvider.MapLoader.LoadMap(1);
+			var map = game.AssetProvider.MapLoader.LoadMap(65);
 
 			// 
 			Console.WriteLine(map.Type.ToString());

@@ -223,14 +223,11 @@ public class AssetProvider : IAssetProvider
 		return assetType switch
 		{
 			AssetType.Map => "MAP_DATA.AMB",
+			AssetType.MapText => "MAPTEXT.AMB",
+			AssetType.ItemText => "CODETXT.AMB",
+			AssetType.PuzzleText => "PUZZLE.TXT",
 			_ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
-	}
-
-	private static string ReadString(IDataReader dataReader, byte endByte = 0)
-	{
-		var bytes = ReadUntilByte(dataReader, endByte);
-		return DataReader.Encoding.GetString(bytes);
 	}
 
 	private static byte[] ReadUntilByte(IDataReader dataReader, byte endByte)
