@@ -163,6 +163,18 @@ internal class RenderBuffer : IDisposable
             paletteIndexBuffer.Add(sprite.PaletteIndex, paletteIndexBufferIndex + 3);
         }
 
+		var opaqueBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.Opaque);
+
+		if (opaqueBuffer != null)
+		{
+            byte opaque = (byte)(sprite.Opaque ? 1 : 0);
+
+			int opaqueBufferIndex = opaqueBuffer.Add(opaque, index);
+			opaqueBuffer.Add(opaque, opaqueBufferIndex + 1);
+			opaqueBuffer.Add(opaque, opaqueBufferIndex + 2);
+			opaqueBuffer.Add(opaque, opaqueBufferIndex + 3);
+		}
+
 		var textureOffsetBuffer = GetBuffer<PositionBuffer, short>(BufferPurpose.TextureCoordinates);
 
 		if (textureOffsetBuffer != null)
@@ -297,7 +309,20 @@ internal class RenderBuffer : IDisposable
         }
     }
 
-    public void UpdateTextureOffset(int index, ISprite sprite)
+	public void UpdateOpaque(int index, byte opaque)
+	{
+		var opaqueBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.Opaque);
+
+		if (opaqueBuffer != null)
+		{
+			opaqueBuffer.Update(index, opaque);
+			opaqueBuffer.Update(index + 1, opaque);
+			opaqueBuffer.Update(index + 2, opaque);
+			opaqueBuffer.Update(index + 3, opaque);
+		}
+	}
+
+	public void UpdateTextureOffset(int index, ISprite sprite)
     {
 		var textureOffsetBuffer = GetBuffer<PositionBuffer, short>(BufferPurpose.TextureCoordinates);
 

@@ -72,6 +72,7 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<IMapLoader> mapLoader;
 	readonly Lazy<IPaletteLoader> paletteLoader;
 	readonly Lazy<IGraphicLoader> graphicLoader;
+	readonly Lazy<ITilesetLoader> tilesetLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -81,6 +82,7 @@ public class AssetProvider : IAssetProvider
 	public IMapLoader MapLoader => mapLoader.Value;
 	public IPaletteLoader PaletteLoader => paletteLoader.Value;
 	public IGraphicLoader GraphicLoader => graphicLoader.Value;
+	public ITilesetLoader TilesetLoader => tilesetLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -111,6 +113,7 @@ public class AssetProvider : IAssetProvider
 		mapLoader = new(() => new MapLoader(this));		
 		paletteLoader = new(() => new PaletteLoader(this, UIPalette));
 		graphicLoader = new(() => new GraphicLoader(this));
+		tilesetLoader = new(() => new TilesetLoader(this));
 	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
@@ -257,6 +260,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.PuzzleText => "PUZZLE.TXT",
 			AssetType.Palette => "COL_PALL.AMB",
 			AssetType.Graphics80x80 => "PICS80.AMB",
+			AssetType.Tileset => "ICON_DAT.AMB",
 			_ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
 	}

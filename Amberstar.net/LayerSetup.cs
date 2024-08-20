@@ -8,7 +8,9 @@ namespace Amberstar.net
 {
 	internal static class LayerSetup
 	{
-		public static UIGraphicIndexProvider Run(AssetProvider assetProvider, Renderer renderer)
+		public static void Run(AssetProvider assetProvider, Renderer renderer,
+			out UIGraphicIndexProvider uiGraphicIndexProvider,
+			out PaletteIndexProvider paletteIndexProvider)
 		{
 			/*
 			Layout, // opaque, drawn in the back
@@ -21,7 +23,40 @@ namespace Amberstar.net
 			Text
 			*/
 
+			// Create the palette
 			var uiPalette = assetProvider.PaletteLoader.LoadUIPalette();
+			var generalPalettes = Enumerable.Range(1, 10).Select(assetProvider.PaletteLoader.LoadPalette).ToArray();
+			var tilesetPalettes = Enumerable.Range(1, 2).Select(index => assetProvider.TilesetLoader.LoadTileset(index).Palette).ToArray();
+			var image80x80Palettes = Enumerable.Range(1, 26).Select(index => assetProvider.GraphicLoader.Load80x80Graphic((Image80x80)index).Palette).ToArray();
+			var palette = new Graphic(16, 1 + 10 + 2 + 26, GraphicFormat.RGBA);
+
+			palette.AddOverlay(0, 0, uiPalette);
+			int y = 1;
+			var generalPaletteIndices = new Dictionary<int, int>();
+
+			for (int i = 0; i < generalPalettes.Length; i++)
+			{
+				generalPaletteIndices.Add(i, y);
+				palette.AddOverlay(0, y++, generalPalettes[i]);				
+			}
+
+			var tilesetPaletteIndices = new Dictionary<int, int>();
+
+			for (int i = 0; i < tilesetPalettes.Length; i++)
+			{
+				tilesetPaletteIndices.Add(i, y);
+				palette.AddOverlay(0, y++, tilesetPalettes[i]);
+			}
+
+			var image80x80PaletteIndices = new Dictionary<Image80x80, int>();
+
+			for (int i = 0; i < image80x80Palettes.Length; i++)
+			{
+				image80x80PaletteIndices.Add((Image80x80)(i + 1), y);
+				palette.AddOverlay(0, y++, image80x80Palettes[i]);
+			}
+
+			var paletteTexture = renderer.TextureFactory.Create(palette);
 
 			// Layouts
 			var graphics = new Dictionary<int, IGraphic>();
@@ -32,7 +67,7 @@ namespace Amberstar.net
 			{
 				//BaseZ = 0.70f, // TODO
 				LayerFeatures = LayerFeatures.None,
-				Palette = renderer.TextureFactory.Create(uiPalette),
+				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
 			});
@@ -60,7 +95,7 @@ namespace Amberstar.net
 			{
 				//BaseZ = 0.70f, // TODO
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
-				Palette = renderer.TextureFactory.Create(uiPalette),
+				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
 			});
@@ -69,7 +104,8 @@ namespace Amberstar.net
 
 			// TODO ...
 
-			return new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset);
+			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset);
+			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
 		}
 	}
 }

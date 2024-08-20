@@ -9,6 +9,7 @@ public interface ISprite : ILayeredDrawable, ISizedDrawable
 	byte PaletteIndex { get; set; }
 	byte? MaskColorIndex { get; set; }
 	bool MirrorX { get; set; }
+	bool Opaque { get; set; }
 }
 
 public interface ISpriteFactory

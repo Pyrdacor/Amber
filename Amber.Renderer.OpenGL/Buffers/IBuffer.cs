@@ -32,6 +32,7 @@ public enum BufferPurpose
     DisplayLayer,
     PaletteIndex,
     MaskColorIndex,
+    Opaque
 }
 
 internal interface IBuffer : IDisposable

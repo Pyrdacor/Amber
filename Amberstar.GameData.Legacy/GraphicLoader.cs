@@ -1,5 +1,6 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
+using Amber.Serialization;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
@@ -8,6 +9,32 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 {
 	private readonly Dictionary<Image80x80, IPaletteGraphic> graphics80x80 = [];
 	private readonly Dictionary<ItemGraphic, IGraphic> itemGraphics = [];
+
+	public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
+	{
+		width = dataReader.ReadWord() + 1;
+		height = dataReader.ReadWord() + 1;
+		planes = dataReader.ReadWord();
+
+		if (planes != 4)
+			throw new AmberException(ExceptionScope.Data, "Unexpected plane count for legacy graphic data.");
+
+		return dataReader.ReadBytes(width * height * planes / 8);
+	}
+
+	public static Graphic LoadGraphicWithHeader(IDataReader dataReader)
+	{
+		var data = LoadGraphicDataWithHeader(dataReader, out int width, out int height, out int planes);
+
+		return Graphic.FromBitPlanes(width, height, data, planes);
+	}
+
+	public static PaletteGraphic LoadGraphicWithHeader(IDataReader dataReader, IGraphic palette)
+	{
+		var data = LoadGraphicDataWithHeader(dataReader, out int width, out int height, out int planes);
+
+		return PaletteGraphic.FromBitPlanes(width, height, data, planes, palette);
+	}
 
 	public IPaletteGraphic Load80x80Graphic(Image80x80 index)
 	{

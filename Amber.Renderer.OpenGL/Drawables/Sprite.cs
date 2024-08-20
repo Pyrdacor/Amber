@@ -28,6 +28,7 @@ namespace Amber.Renderer.OpenGL.Drawables
 		public byte PaletteIndex { get; set; }
 		public byte? MaskColorIndex { get; set; }
 		public bool MirrorX { get; set; }
+		public bool Opaque { get; set; }
 
 		private protected override void UpdateVisibility()
 		{

@@ -8,17 +8,21 @@ namespace Amberstar.Game
 {
 	public class Game : IDisposable
 	{
-		public Game(IRenderer renderer, IAssetProvider assetProvider, IUIGraphicIndexProvider uiGraphicIndexProvider)
+		public Game(IRenderer renderer, IAssetProvider assetProvider,
+			IUIGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider)
 		{
 			Renderer = renderer;
 			AssetProvider = assetProvider;
 			UIGraphicIndexProvider = uiGraphicIndexProvider;
+			PaletteIndexProvider = paletteIndexProvider;
 			ScreenHandler = new(this);
 
+			int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;
+
 			// Show portrait area
-			AddSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0);
+			AddSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0, uiPaletteIndex);
 			// Show layout
-			AddSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 2);
+			AddSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 2, uiPaletteIndex);
 
 			// Show empty char slots
 			for (int i = 0; i < 6; i++)
@@ -27,10 +31,12 @@ namespace Amberstar.Game
 				var size = new Size(32, 34);
 				// if (notEmpty) // TODO
 					AddColoredRect(Layer.UI, position, size, Color.Black);
-				AddSprite(Layer.UI, position, size, i == 0 ? (int)UIGraphic.Skull : (int)UIGraphic.EmptyCharSlot);
+				AddSprite(Layer.UI, position, size, i == 0 ? (int)UIGraphic.Skull : (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
 			}
 
-			//AddSprite(Layer.UI, new Position(100, 100), new Size(80, 80), UIGraphicIndexProvider.Get80x80ImageIndex(Image80x80.Unknown10));
+			AddSprite(Layer.UI, new Position(100, 100), new Size(80, 80),
+				UIGraphicIndexProvider.Get80x80ImageIndex(Image80x80.Castle),
+				PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.Castle), true);
 
 			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
 		}
@@ -38,6 +44,7 @@ namespace Amberstar.Game
 		internal IRenderer Renderer { get; }
 		internal IAssetProvider AssetProvider { get; }
 		internal IUIGraphicIndexProvider UIGraphicIndexProvider { get; }
+		internal IPaletteIndexProvider PaletteIndexProvider { get; }
 		internal ScreenHandler ScreenHandler { get; }
 
 		public void Update(double delta)
@@ -53,7 +60,7 @@ namespace Amberstar.Game
 		// TODO: Move somewhere else
 		ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];
 
-		internal ISprite? AddSprite(Layer layer, Position position, Size size, int textureIndex)
+		internal ISprite? AddSprite(Layer layer, Position position, Size size, int textureIndex, int paletteIndex, bool opaque = false)
 		{
 			var renderLayer = GetRenderLayer(layer);
 			var textureAtlas = renderLayer.Config.Texture!;
@@ -64,7 +71,9 @@ namespace Amberstar.Game
 				sprite.TextureOffset = textureAtlas.GetOffset(textureIndex);
 				sprite.Position = position;
 				sprite.Size = size;
-				sprite.Visible = true;
+				sprite.PaletteIndex = (byte)paletteIndex;
+				sprite.Opaque = opaque;
+				sprite.Visible = true;				
 			}
 
 			return sprite;

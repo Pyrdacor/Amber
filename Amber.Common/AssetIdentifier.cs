@@ -25,6 +25,7 @@
 		ItemGraphic,
 		// ...
 		// Other stuff
+		Tileset,
 		Font,
 		Map,
 		Lab,
