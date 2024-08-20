@@ -135,11 +135,44 @@ namespace Amberstar.GameData.Serialization
 		LastStatusIcon = Overloaded
 	}
 
+	public enum Image80x80
+	{
+		Unknown1 = 1,
+		Unknown2,
+		Unknown3,
+		Unknown4,
+		Unknown5,
+		Unknown6,
+		Unknown7,
+		Unknown8,
+		Unknown9,
+		Unknown10,
+		Unknown11,
+		Unknown12,
+		Unknown13,
+		Unknown14,
+		Unknown15,
+		Unknown16,
+		Unknown17,
+		Unknown18,
+		Unknown19,
+		Unknown20,
+		Unknown21,
+		Unknown22,
+		Unknown23,
+		Unknown24,
+		Unknown25,
+		Unknown26,
+		LastImage = Unknown25
+	}
+
 	public enum ItemGraphic
 	{
 		RedCross, // second hand slot
 		Chain,
 		PearlChain,
+		// TODO ...
+		LastItemGraphic = PearlChain
 	}
 
 	public interface IUIGraphicLoader

@@ -8,10 +8,11 @@ namespace Amberstar.Game
 {
 	public class Game : IDisposable
 	{
-		public Game(IRenderer renderer, IAssetProvider assetProvider)
+		public Game(IRenderer renderer, IAssetProvider assetProvider, IUIGraphicIndexProvider uiGraphicIndexProvider)
 		{
 			Renderer = renderer;
 			AssetProvider = assetProvider;
+			UIGraphicIndexProvider = uiGraphicIndexProvider;
 			ScreenHandler = new(this);
 
 			// Show portrait area
@@ -23,17 +24,20 @@ namespace Amberstar.Game
 			for (int i = 0; i < 6; i++)
 			{
 				var position = new Position(16 + i * 48, 1);
-				var size = new Size(32, 36);
+				var size = new Size(32, 34);
 				// if (notEmpty) // TODO
 					AddColoredRect(Layer.UI, position, size, Color.Black);
 				AddSprite(Layer.UI, position, size, i == 0 ? (int)UIGraphic.Skull : (int)UIGraphic.EmptyCharSlot);
 			}
+
+			//AddSprite(Layer.UI, new Position(100, 100), new Size(80, 80), UIGraphicIndexProvider.Get80x80ImageIndex(Image80x80.Unknown10));
 
 			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
 		}
 
 		internal IRenderer Renderer { get; }
 		internal IAssetProvider AssetProvider { get; }
+		internal IUIGraphicIndexProvider UIGraphicIndexProvider { get; }
 		internal ScreenHandler ScreenHandler { get; }
 
 		public void Update(double delta)

@@ -35,10 +35,10 @@ public class Graphic : IGraphic
 		this.data = data;
 	}
 
-	public static Graphic FromBitPlanes(int width, int height, byte[] data, int planes, int frameCount = 1)
+	private protected static byte[] ReadBitPlanes(int width, int height, byte[] data, int planes, int frameCount = 1)
 	{
 		if (planes < 1 || planes > 8)
-		    throw new AmberException(ExceptionScope.Application, "Bit planes must be between 1 and 8.");
+			throw new AmberException(ExceptionScope.Application, "Bit planes must be between 1 and 8.");
 		if (data.Length != frameCount * width * height * planes / 8)
 			throw new AmberException(ExceptionScope.Application, $"Invalid data length for {planes}-bit graphic.");
 
@@ -46,14 +46,14 @@ public class Graphic : IGraphic
 		int wordsPerLine = (width + 15) / 16;
 		int index = 0;
 		int targetIndex = 0;
-	    int[] plane = new int[planes];
+		int[] plane = new int[planes];
 
 		for (int y = 0; y < frameCount * height; y++)
 		{
 			for (int w = 0; w < wordsPerLine; w++)
 			{
 				for (int p = 0; p < planes; p++)
-				    plane[p] = (data[index++] << 8) | data[index++];
+					plane[p] = (data[index++] << 8) | data[index++];
 
 				for (int x = 0; x < 16; x++)
 				{
@@ -63,13 +63,20 @@ public class Graphic : IGraphic
 					for (int p = 0; p < planes; p++)
 					{
 						if ((plane[p] & mask) != 0)
-						    pixel |= 1 << p;
+							pixel |= 1 << p;
 					}
 
 					pixelData[targetIndex++] = (byte)pixel;
 				}
 			}
 		}
+
+		return pixelData;
+	}
+
+	public static Graphic FromBitPlanes(int width, int height, byte[] data, int planes, int frameCount = 1)
+	{
+		var pixelData = ReadBitPlanes(width, height, data, planes, frameCount);
 
 		return new Graphic(frameCount * width, height, pixelData, GraphicFormat.PaletteIndices);
 	}
@@ -84,6 +91,11 @@ public class Graphic : IGraphic
 		return new Graphic(width, height, data, GraphicFormat.RGBA);
 	}
 
+	/// <summary>
+	/// Note: This expects 16 bit colors in XR GB format where each
+	/// color component uses the full 4-bit nibble. X is ignored and
+	/// all colors will be treated as fully opaque (alpha = 100%).
+	/// </summary>
 	public static Graphic FromPalette(byte[] data)
 	{
 		var pixelData = new byte[data.Length * 2];
@@ -240,4 +252,29 @@ public class Graphic : IGraphic
 			data[y * Width + x + i] = pixelValue;
 		}
 	}
+}
+
+public class PaletteGraphic : Graphic, IPaletteGraphic
+{
+	public PaletteGraphic(int width, int height, IGraphic palette)
+		: base(width, height, GraphicFormat.PaletteIndices)
+	{
+		Palette = palette;
+	}
+
+	public PaletteGraphic(int width, int height, byte[] data, IGraphic palette)
+		: base(width, height, data, GraphicFormat.PaletteIndices)
+	{
+		Palette = palette;
+	}
+
+	public static PaletteGraphic FromBitPlanes(int width, int height, byte[] data, int planes, IGraphic palette, int frameCount = 1)
+	{
+		var pixelData = ReadBitPlanes(width, height, data, planes, frameCount);
+
+		return new PaletteGraphic(frameCount * width, height, pixelData, palette);
+	}
+
+
+	public IGraphic Palette { get; }
 }

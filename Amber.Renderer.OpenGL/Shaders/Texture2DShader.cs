@@ -54,7 +54,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
                     discard;
                 else
                 {{
-                    if (colorIndex >= 31.5f)
+                    if (colorIndex > {PaletteSizeName} - 0.5f)
                         colorIndex = 0.0f;
                     pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
                 }}
@@ -69,7 +69,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             if (maskColIndex < 0.5f)
                 {FragmentOutColorName} = pixelColor;
             else
-                {FragmentOutColorName} = texture({PaletteName}, vec2((maskColIndex + 0.5f) / 32.0f, (palIndex + 0.5f) / {PaletteCountName}));
+                {FragmentOutColorName} = texture({PaletteName}, vec2((maskColIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
         }}
     ";
 

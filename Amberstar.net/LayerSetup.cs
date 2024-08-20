@@ -8,7 +8,7 @@ namespace Amberstar.net
 {
 	internal static class LayerSetup
 	{
-		public static void Run(AssetProvider assetProvider, Renderer renderer)
+		public static UIGraphicIndexProvider Run(AssetProvider assetProvider, Renderer renderer)
 		{
 			/*
 			Layout, // opaque, drawn in the back
@@ -21,28 +21,7 @@ namespace Amberstar.net
 			Text
 			*/
 
-			// TODO: palettes (should be one palette texture for all layers which need them)
-			byte[] testPal =
-			[
-				0x00, 0x00,
-				0x07, 0x50,
-				0x03, 0x33,
-				0x02, 0x22,
-				0x01, 0x11,
-				0x07, 0x42,
-				0x06, 0x31,
-				0x02, 0x00,
-				0x05, 0x66,
-				0x03, 0x45,
-				0x07, 0x54,
-				0x06, 0x43,
-				0x05, 0x32,
-				0x04, 0x21,
-				0x03, 0x10,
-				0x07, 0x65
-			];
-
-			var palette = Graphic.FromPalette(testPal);
+			var uiPalette = assetProvider.PaletteLoader.LoadUIPalette();
 
 			// Layouts
 			var graphics = new Dictionary<int, IGraphic>();
@@ -53,7 +32,7 @@ namespace Amberstar.net
 			{
 				//BaseZ = 0.70f, // TODO
 				LayerFeatures = LayerFeatures.None,
-				Palette = renderer.TextureFactory.Create(palette),
+				Palette = renderer.TextureFactory.Create(uiPalette),
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
 			});
@@ -62,19 +41,26 @@ namespace Amberstar.net
 
 			// UI
 			graphics = new();
+			int uiGraphicOffset = graphics.Count;
 			foreach (var g in Enum.GetValues<UIGraphic>().Distinct())
-				graphics.Add((int)g, assetProvider.UIGraphicLoader.LoadGraphic(g));
-			int offset = graphics.Count;
+				graphics.Add(uiGraphicOffset + (int)g, assetProvider.UIGraphicLoader.LoadGraphic(g));
+			int buttonOffset = graphics.Count;
 			foreach (var b in Enum.GetValues<Button>().Distinct())
-				graphics.Add(offset + (int)b, assetProvider.UIGraphicLoader.LoadButtonGraphic(b));
-			offset = graphics.Count;
+				graphics.Add(buttonOffset + (int)b, assetProvider.UIGraphicLoader.LoadButtonGraphic(b));
+			int statusIconOffset = graphics.Count;
 			foreach (var i in Enum.GetValues<StatusIcon>().Distinct())
-				graphics.Add(offset + (int)i, assetProvider.UIGraphicLoader.LoadStatusIcon(i));
+				graphics.Add(statusIconOffset + (int)i, assetProvider.UIGraphicLoader.LoadStatusIcon(i));
+			int image80x80Offset = graphics.Count - 1; // the enum is 1-based
+			foreach (var i in Enum.GetValues<Image80x80>().Distinct())
+				graphics.Add(image80x80Offset + (int)i, assetProvider.GraphicLoader.Load80x80Graphic(i));
+			int itemGraphicOffset = graphics.Count;
+			foreach (var i in Enum.GetValues<ItemGraphic>().Distinct())
+				graphics.Add(itemGraphicOffset + (int)i, assetProvider.GraphicLoader.LoadItemGraphic(i));
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				//BaseZ = 0.70f, // TODO
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
-				Palette = renderer.TextureFactory.Create(palette),
+				Palette = renderer.TextureFactory.Create(uiPalette),
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
 			});
@@ -82,6 +68,8 @@ namespace Amberstar.net
 			renderer.AddLayer(layer);
 
 			// TODO ...
+
+			return new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset);
 		}
 	}
 }

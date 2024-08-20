@@ -21,6 +21,8 @@
 		UIGraphic,
 		Button,
 		StatusIcon,
+		Graphics80x80,
+		ItemGraphic,
 		// ...
 		// Other stuff
 		Font,

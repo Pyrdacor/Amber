@@ -30,3 +30,9 @@ public interface IGraphic
 
     byte[] GetData();
 }
+
+// Those directly contain and provide a palette
+public interface IPaletteGraphic : IGraphic
+{
+    IGraphic Palette { get; }
+}

@@ -188,6 +188,14 @@ namespace Amberstar.GameData.Legacy
 			for (int i = (int)UIGraphic.DamageSplash; i <= (int)UIGraphic.LastUIGraphic; i++)
 				AddUIGraphic((UIGraphic)i);
 			#endregion
+			#region Read item graphics
+			void AddItemGraphic(int index)
+			{
+				ItemGraphics.Add(index, new DataReader(dataReader.ReadBytes(16 * 16 / 2)));
+			}
+			for (int i = 0; i <= (int)ItemGraphic.LastItemGraphic; i++)
+				AddItemGraphic(i);
+			#endregion
 
 			// TODO: places
 		}
@@ -280,6 +288,7 @@ namespace Amberstar.GameData.Legacy
 		public Dictionary<int, IDataReader> UIGraphics { get; } = [];
 		public Dictionary<int, IDataReader> Buttons { get; } = [];
 		public Dictionary<int, IDataReader> StatusIcons { get; } = [];
+		public Dictionary<int, IDataReader> ItemGraphics { get; } = [];
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;

@@ -27,6 +27,28 @@ public enum EmbeddedDataOffset
 
 public class AssetProvider : IAssetProvider
 {
+	// The UI palette seems to be existent in multiple places inside the program data.
+	// But we keep things simple.
+	private static readonly IGraphic UIPalette = Legacy.PaletteLoader.LoadPalette(new DataReader(
+	[
+		0x00, 0x00,
+		0x07, 0x50,
+		0x03, 0x33,
+		0x02, 0x22,
+		0x01, 0x11,
+		0x07, 0x42,
+		0x06, 0x31,
+		0x02, 0x00,
+		0x05, 0x66,
+		0x03, 0x45,
+		0x07, 0x54,
+		0x06, 0x43,
+		0x05, 0x32,
+		0x04, 0x21,
+		0x03, 0x10,
+		0x07, 0x65
+	]));
+
 	static readonly Dictionary<LegacyPlatform, string> programFileNames = new()
 	{
 		{ LegacyPlatform.Atari, "AMBRSTAR.68K" },
@@ -48,6 +70,8 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<ILayoutLoader> layoutLoader;
 	readonly Lazy<IUIGraphicLoader> uIGraphicLoader;
 	readonly Lazy<IMapLoader> mapLoader;
+	readonly Lazy<IPaletteLoader> paletteLoader;
+	readonly Lazy<IGraphicLoader> graphicLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -55,6 +79,8 @@ public class AssetProvider : IAssetProvider
 	public ILayoutLoader LayoutLoader => layoutLoader.Value;
 	public IUIGraphicLoader UIGraphicLoader => uIGraphicLoader.Value;
 	public IMapLoader MapLoader => mapLoader.Value;
+	public IPaletteLoader PaletteLoader => paletteLoader.Value;
+	public IGraphicLoader GraphicLoader => graphicLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -83,6 +109,9 @@ public class AssetProvider : IAssetProvider
 			Data.LayoutBottomCorners, Data.LayoutBottomCornerMasks, Data.PortraitArea));
 		uIGraphicLoader = new(() => new UIGraphicLoader(this, Data.LayoutBlocks[77])); // layout block 77 is the empty item slot
 		mapLoader = new(() => new MapLoader(this));
+		
+		paletteLoader = new(() => new PaletteLoader(this, UIPalette));
+		graphicLoader = new(() => new GraphicLoader(this));
 	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
@@ -168,6 +197,7 @@ public class AssetProvider : IAssetProvider
 				AssetType.UIGraphic => CreateAssets(Data.UIGraphics),
 				AssetType.Button => CreateAssets(Data.Buttons),
 				AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
+				AssetType.ItemGraphic => CreateAssets(Data.ItemGraphics),
 				_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {identifier.Type} for Atari asset provider")
 			};
 
@@ -226,25 +256,10 @@ public class AssetProvider : IAssetProvider
 			AssetType.MapText => "MAPTEXT.AMB",
 			AssetType.ItemText => "CODETXT.AMB",
 			AssetType.PuzzleText => "PUZZLE.TXT",
+			AssetType.Palette => "COL_PALL.AMB",
+			AssetType.Graphics80x80 => "PICS80.AMB",
 			_ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
-	}
-
-	private static byte[] ReadUntilByte(IDataReader dataReader, byte endByte)
-	{
-		var buffer = new List<byte>();
-
-		while (dataReader.Position < dataReader.Size)
-		{
-			var b = dataReader.ReadByte();
-
-			if (b == endByte)
-				break;
-
-			buffer.Add(b);
-		}
-
-		return buffer.ToArray();
 	}
 
 	private static bool FindAndGotoText(IDataReader dataReader, int offset, string text)
