@@ -1,6 +1,7 @@
 ﻿using Amber.Assets.Common;
 using Amber.Serialization;
 using System.Runtime.InteropServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Amberstar.GameData.Legacy;
 
@@ -78,11 +79,14 @@ internal abstract class Map : IMap
 
         if (BitConverter.IsLittleEndian)
 		{
-            headerData = StructEndianessFixer.FixData(headerData,
-		        new WordFixer(2),
-			    new WordArrayFixer(39+2540, IMap.NPCCount),
-			    new WordFixer(39+2540+7*IMap.NPCCount)
-	        );
+			var builder = new StructEndianessFixer.Builder();
+			var fixer = builder
+				.Word(2)
+				.WordGap(40 + 6, 2, IMap.EventCount, 6)
+				.WordArray(40 + 2540, IMap.NPCCount)
+				.Word(40 + 2540 + 7 * IMap.NPCCount)
+				.Build();
+			fixer.FixData(headerData);
 		}
 
 		MapHeader header;

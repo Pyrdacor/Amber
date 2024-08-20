@@ -5,7 +5,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class PlaceLoader(IAssetProvider assetProvider) : IPlaceLoader
+internal class PlaceLoader(Amber.Assets.Common.IAssetProvider assetProvider) : IPlaceLoader
 {
 	private readonly Dictionary<int, Place> places = [];
 

@@ -1,30 +1,83 @@
-internal static class StructEndianessFixer
+using Amber.Assets.Common;
+
+internal class StructEndianessFixer
 {
-    public abstract class Fixer
+    public class Builder
+    {
+        readonly StructEndianessFixer fixer = new();
+
+        public Builder Word(int offset)
+        {
+			fixer.fixers.Add(new WordFixer(offset));
+            return this;
+        }
+
+		public Builder WordArray(int offset, int length)
+		{
+			fixer.fixers.Add(new WordArrayFixer(offset, length));
+			return this;
+		}
+
+        public Builder WordGap(int startIndex, int groupLength, int groupCount, int gap)
+        {
+            fixer.fixers.Add(new WordGapFixer(startIndex, groupLength, groupCount, gap));
+            return this;
+        }
+
+		public StructEndianessFixer Build() => fixer;
+    }
+
+	readonly List<Fixer> fixers = [];
+
+	private StructEndianessFixer()
+    {
+
+    }
+
+	private abstract class Fixer
     {
         public abstract void Fix(byte[] dsta);
     }
 
-    public class WordFixer(int index) : Fixer
+    static void FixWord(byte[] data, int index)
     {
-        public override void Fix(byte[] data)
-        {
-            (data[0], data[1]) = (data[1], data[0]);
-        }
+		(data[index], data[index + 1]) = (data[index + 1], data[index]);
+	}
+
+	private class WordFixer(int index) : Fixer
+    {
+        public override void Fix(byte[] data) => FixWord(data, index);
     }
 
-    public class WordArrayFixer(int index, int length) : Fixer
+	private class WordArrayFixer(int index, int length) : Fixer
     {
         public override void Fix(byte[] data)
         {
-            int offset = index;
-
             for (int i = 0; i < length; i++)
-                (data[offset], data[offset + 1]) = (data[++offset], data[offset++ - 1]);
+                FixWord(data, index + i * 2);
         }
     }
 
-    public byte[] FixData(byte[] data, params Fixer[] fixers)
+	private class WordGapFixer(int startIndex, int groupLength, int groupCount, int gap) : Fixer
+	{
+		public override void Fix(byte[] data)
+		{
+			int offset = startIndex;
+
+			for (int g = 0; g < groupCount; g++)
+			{
+                for (int i = 0; i < groupLength; i++)
+                {
+                    FixWord(data, offset);
+                    offset += 2;
+                }
+
+                offset += gap;
+            }
+		}
+	}
+
+	public void FixData(byte[] data)
     {
         foreach (var fixer in fixers)
         {

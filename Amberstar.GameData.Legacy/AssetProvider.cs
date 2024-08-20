@@ -5,7 +5,6 @@ using Amber.IO.FileFormats.Serialization;
 using Amber.Serialization;
 using Amberstar.GameData.Serialization;
 using Amiga.FileFormats.LHA;
-using System.IO;
 
 namespace Amberstar.GameData.Legacy;
 
@@ -48,12 +47,14 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<IPlaceLoader> placeLoader;
 	readonly Lazy<ILayoutLoader> layoutLoader;
 	readonly Lazy<IUIGraphicLoader> uIGraphicLoader;
+	readonly Lazy<IMapLoader> mapLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
 	public IPlaceLoader PlaceLoader => placeLoader.Value;
 	public ILayoutLoader LayoutLoader => layoutLoader.Value;
 	public IUIGraphicLoader UIGraphicLoader => uIGraphicLoader.Value;
+	public IMapLoader MapLoader => mapLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -81,6 +82,7 @@ public class AssetProvider : IAssetProvider
 		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks,
 			Data.LayoutBottomCorners, Data.LayoutBottomCornerMasks, Data.PortraitArea));
 		uIGraphicLoader = new(() => new UIGraphicLoader(this, Data.LayoutBlocks[77])); // layout block 77 is the empty item slot
+		mapLoader = new(() => new MapLoader(this));
 	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;

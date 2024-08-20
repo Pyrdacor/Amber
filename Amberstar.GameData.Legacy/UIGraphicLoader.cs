@@ -4,7 +4,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class UIGraphicLoader(IAssetProvider assetProvider, IGraphic emptyItemSlotGraphic) : IUIGraphicLoader
+internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider, IGraphic emptyItemSlotGraphic) : IUIGraphicLoader
 {
 	private readonly Dictionary<StatusIcon, IGraphic> statusIcons = [];
 	private readonly Dictionary<Button, IGraphic> buttons = [];

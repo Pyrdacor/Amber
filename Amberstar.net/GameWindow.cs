@@ -346,7 +346,8 @@ namespace Amberstar
         {
             if (window != null && window.WindowState != WindowState.Minimized)
             {
-                renderer?.Render();
+				game?.Render(delta);
+				renderer?.Render();
 
                 window.SwapBuffers();
             }
@@ -354,7 +355,7 @@ namespace Amberstar
 
         void Window_Update(double delta)
         {
-
+            game?.Update(delta);
         }
 
         void Window_Resize(WindowDimension size)

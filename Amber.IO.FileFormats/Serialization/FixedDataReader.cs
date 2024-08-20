@@ -166,7 +166,7 @@ public unsafe sealed class FixedDataReader : IDataReader
     public byte[] ReadBytes(int amount)
     {
         var data = new byte[amount];
-        Marshal.Copy(new IntPtr(ptr), data, Position, data.Length);
+        Marshal.Copy(new IntPtr(ptr + Position), data, 0, data.Length);
         Position += amount;
         return data;
     }

@@ -4,7 +4,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class LayoutLoader(IAssetProvider assetProvider, Dictionary<int, Graphic> layoutBlocks,
+internal class LayoutLoader(Amber.Assets.Common.IAssetProvider assetProvider, Dictionary<int, Graphic> layoutBlocks,
 	List<word> layoutBottomCorners, List<word> layoutBottomCornerMasks, IGraphic portraitArea) : ILayoutLoader
 {
 	private readonly Dictionary<int, Layout> layouts = [];

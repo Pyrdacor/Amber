@@ -30,6 +30,16 @@ internal abstract class PlaceData(PlaceType placeType, PlaceDataArray placeData)
 	public static unsafe PlaceData ReadPlaceData(PlaceType placeType, IDataReader reader)
 	{
 		var data = reader.ReadBytes(sizeof(PlaceDataArray));
+
+		if (BitConverter.IsLittleEndian)
+		{
+			var builder = new StructEndianessFixer.Builder();
+			var fixer = builder
+				.WordArray(0, 12)
+				.Build();
+			fixer.FixData(data);
+		}
+
 		PlaceDataArray placeData;
 
 		fixed (byte* ptr = data)

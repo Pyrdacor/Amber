@@ -4,7 +4,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy
 {
-	public class MapLoader(IAssetProvider assetProvider) : IMapLoader
+	public class MapLoader(Amber.Assets.Common.IAssetProvider assetProvider) : IMapLoader
 	{
 		readonly Dictionary<int, IMap> maps = [];
 

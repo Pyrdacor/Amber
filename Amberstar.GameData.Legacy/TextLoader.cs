@@ -4,7 +4,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class TextLoader(IAssetProvider assetProvider, List<string> textFragments) : ITextLoader
+internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List<string> textFragments) : ITextLoader
 {
 	readonly List<string> textFragments = textFragments;
 	readonly Dictionary<AssetIdentifier, IText> texts = [];
