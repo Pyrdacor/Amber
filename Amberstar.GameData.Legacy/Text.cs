@@ -6,6 +6,10 @@ namespace Amberstar.GameData.Legacy;
 internal class Text(List<string> textFragments) : IText
 {
 	readonly List<string> textFragments = textFragments;
+	readonly List<word> textIndices = [];
+	readonly List<int> textBlockOffsets = [];
+
+	public int TextBlockCount => textBlockOffsets.Count;
 
 	public static Text Load(IAsset asset, List<string> textFragments)
 	{
@@ -31,8 +35,10 @@ internal class Text(List<string> textFragments) : IText
 
 		for (int i = 0; i < textCount; i++)
 		{
+			text.textBlockOffsets.Add(text.textIndices.Count);
+
 			for (int n = 0; n < lengths[i]; n++)
-				text.TextIndices.Add(reader.ReadWord());
+				text.textIndices.Add(reader.ReadWord());
 		}
 
 		return text;
@@ -43,14 +49,30 @@ internal class Text(List<string> textFragments) : IText
 		var reader = asset.GetReader();
 
 		var text = new Text(textFragments);
-		text.TextIndices.Add(reader.ReadWord());
+		text.textIndices.Add(reader.ReadWord());
+		text.textBlockOffsets.Add(0);
 
 		return text;
 	}
 
+	public IText GetTextBlock(int index)
+	{
+		if (index < 0 || index >= textBlockOffsets.Count)
+			throw new AmberException(ExceptionScope.Application, "Text block index out of range");
+
+		var textBlock = new Text(textFragments);
+		int offset = textBlockOffsets[index];
+		int nextOffset = index == textBlockOffsets.Count - 1 ? textIndices.Count : textBlockOffsets[index + 1];
+
+		textBlock.textBlockOffsets.Add(0);
+		textBlock.textIndices.AddRange(textIndices.Skip(offset).Take(nextOffset - offset));
+
+		return textBlock;
+	}
+
 	public string GetString()
 	{
-		return TextIndices.Count == 0 || TextIndices[0] == 0 ? string.Empty : textFragments[TextIndices[0]];
+		return textIndices.Count == 0 || textIndices[0] == 0 ? string.Empty : textFragments[textIndices[0]];
 	}
 
 	public List<string[]> GetParagraphs(int maxWidthInCharacters)
@@ -68,16 +90,16 @@ internal class Text(List<string> textFragments) : IText
 	{
 		paragraphs = [];
 
-		if (TextIndices.Count == 0)
+		if (textIndices.Count == 0)
 			return [];
 
 		int paragraphOffset = 0;
 		List<string> lines = [];
 		string currentLine = string.Empty;
 
-		for (int i = 0; i < TextIndices.Count; i++)
+		for (int i = 0; i < textIndices.Count; i++)
 		{
-			word textIndex = TextIndices[i];
+			word textIndex = textIndices[i];
 
 			switch (textIndex)
 			{
@@ -135,10 +157,10 @@ internal class Text(List<string> textFragments) : IText
 		if (currentLine.Length != 0)
 			lines.Add(currentLine.TrimEnd(' '));
 
+		paragraphs.Add(lines.Skip(paragraphOffset).ToArray());
+
 		return lines.ToArray();
 	}
-
-	public List<word> TextIndices { get; private init; } = [];
 
 	public const int OpenBracket = 1580;
 	public const int ClosingBracket = 1581;

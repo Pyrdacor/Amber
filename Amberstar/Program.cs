@@ -16,33 +16,54 @@ namespace Amberstar
 
 			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
-			void PrintTexts(AssetType assetType, int count, int start = 0)
+			void WriteTexts(AssetType assetType, int count, int start = 0, bool skipEmpty = false, bool textBlocks = false)
 			{
-				Console.WriteLine();
-				Console.WriteLine("-------------------------------------");
-				Console.WriteLine($"{assetType}");
-				Console.WriteLine("-------------------------------------");
-				Console.WriteLine();
+				string folder = $@"D:\Projects\Amber\German\AmberfilesST\{assetType}s";
+				Directory.CreateDirectory(folder);
 
 				for (int i = 0; i < count; i++)
 				{
 					var assetId = new AssetIdentifier(assetType, start + i);
-
 					var text = assetProvider.TextLoader.LoadText(assetId);
-					var name = text.GetString();
 
-					Console.WriteLine(name.Length != 0 ? name : $"{assetType} {start + i}");
+					if (textBlocks)
+					{
+						if (skipEmpty && (text.TextBlockCount == 0 || string.IsNullOrWhiteSpace(text.GetString())))
+							continue;
+
+						var subFolder = count == 1 ? folder : Path.Combine(folder, $"{start + i:000}");
+
+						Directory.CreateDirectory(subFolder);
+
+						for (int b = 0; b < text.TextBlockCount; b++)
+						{
+							var content = string.Join('\n', text.GetTextBlock(b).GetLines(int.MaxValue));
+							File.WriteAllText(Path.Combine(subFolder, $"{b:000}.txt"), content, System.Text.Encoding.UTF8);
+						}
+					}
+					else
+					{
+						var content = string.Join('\n', text.GetLines(int.MaxValue));
+
+						if (skipEmpty && string.IsNullOrWhiteSpace(content))
+							continue;
+
+						File.WriteAllText(Path.Combine(folder, $"{start + i:000}.txt"), content, System.Text.Encoding.UTF8);
+					}
 				}
 			}
 
-			PrintTexts(AssetType.ClassName, 11);
-			PrintTexts(AssetType.SkillName, 10);
-			PrintTexts(AssetType.CharInfoText, 5);
-			PrintTexts(AssetType.RaceName, 7);
-			PrintTexts(AssetType.ConditionName, 16, 1);
-			PrintTexts(AssetType.ItemTypeName, 19);
-			PrintTexts(AssetType.SpellSchoolName, 7, 1);
-			PrintTexts(AssetType.SpellName, 7*30, 1);
+			WriteTexts(AssetType.ClassName, 11);
+			WriteTexts(AssetType.SkillName, 10);
+			WriteTexts(AssetType.CharInfoText, 5);
+			WriteTexts(AssetType.RaceName, 7);
+			WriteTexts(AssetType.ConditionName, 16, 1);
+			WriteTexts(AssetType.ItemTypeName, 19);
+			WriteTexts(AssetType.SpellSchoolName, 7, 1);
+			WriteTexts(AssetType.SpellName, 7*30, 1);
+			WriteTexts(AssetType.MapText, 152, 1, true, true);
+			WriteTexts(AssetType.PuzzleText, 1, 1, false, true);
+			WriteTexts(AssetType.ItemText, 2, 1, false, true);
 
 			byte[] testPal = assetProvider.PaletteLoader.LoadUIPalette().GetData();
 

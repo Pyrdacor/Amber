@@ -10,4 +10,7 @@ public interface IText
 	string GetString();
 	string[] GetLines(int maxWidthInCharacters);
 	List<string[]> GetParagraphs(int maxWidthInCharacters);
+	IText GetTextBlock(int index);
+
+	int TextBlockCount { get; }
 }

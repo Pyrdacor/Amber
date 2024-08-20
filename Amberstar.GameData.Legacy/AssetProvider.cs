@@ -108,8 +108,7 @@ public class AssetProvider : IAssetProvider
 		layoutLoader = new(() => new LayoutLoader(this, Data.LayoutBlocks,
 			Data.LayoutBottomCorners, Data.LayoutBottomCornerMasks, Data.PortraitArea));
 		uIGraphicLoader = new(() => new UIGraphicLoader(this, Data.LayoutBlocks[77])); // layout block 77 is the empty item slot
-		mapLoader = new(() => new MapLoader(this));
-		
+		mapLoader = new(() => new MapLoader(this));		
 		paletteLoader = new(() => new PaletteLoader(this, UIPalette));
 		graphicLoader = new(() => new GraphicLoader(this));
 	}
