@@ -53,7 +53,7 @@ namespace Ambermoon.Renderer.OpenGL
 			state.Gl.BlendEquationSeparate(BlendEquationModeEXT.FuncAdd, BlendEquationModeEXT.FuncAdd);
 			state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.Zero);
 
-			state.ProjectionMatrix2D = Matrix4x4.CreateOrthographicOffCenter(0, virtualSize.Width, virtualSize.Height, 0, 0, 1);
+			state.ProjectionMatrix2D = Matrix4.CreateOrtho2D(0, virtualSize.Width, 0, virtualSize.Height, 0, 1);
 
 			Resize(size);
         }
@@ -74,10 +74,10 @@ namespace Ambermoon.Renderer.OpenGL
 
 		public void Resize(Size size)
 		{
-			//state.ProjectionMatrix3D = Matrix4x4.CreatePerspectiveFieldOfView(FovY3D, aspect, 0.1f, 40.0f * Global.DistancePerBlock); // Max 3D map dimension is 41
+			//state.ProjectionMatrix3D = Matrix4.CreatePerspectiveFieldOfView(FovY3D, aspect, 0.1f, 40.0f * Global.DistancePerBlock); // Max 3D map dimension is 41
 
 			state.ClearMatrices();
-			state.PushModelViewMatrix(Matrix4x4.Identity);
+			state.PushModelViewMatrix(Matrix4.Identity);
 			state.PushProjectionMatrix(state.ProjectionMatrix2D);
 
 			state.Gl.Viewport(0, 0, (uint)size.Width, (uint)size.Height);

@@ -32,8 +32,8 @@ internal partial class State : IEquatable<State>
     public readonly int GLSLVersionMajor = 0;
     public readonly int GLSLVersionMinor = 0;
     readonly string contextIdentifier;
-	readonly Stack<Matrix4x4> projectionMatrixStack = new();
-	readonly Stack<Matrix4x4> modelViewMatrixStack = new();
+	readonly Stack<Matrix4> projectionMatrixStack = new();
+	readonly Stack<Matrix4> modelViewMatrixStack = new();
 
 	public State(IContextProvider contextProvider)
     {
@@ -90,33 +90,33 @@ internal partial class State : IEquatable<State>
     }
 
 	public GL Gl { get; }
-	public Matrix4x4 ProjectionMatrix2D { get; set; } = Matrix4x4.Identity;
-    public Matrix4x4 ProjectionMatrix3D { get; set; } = Matrix4x4.Identity;
-    public Matrix4x4 FullScreenProjectionMatrix2D { get; set; } = Matrix4x4.Identity;
-	public Matrix4x4 CurrentProjectionMatrix => (projectionMatrixStack.Count == 0) ? Matrix4x4.Identity : projectionMatrixStack.Peek();
-	public Matrix4x4 CurrentModelViewMatrix => (modelViewMatrixStack.Count == 0) ? Matrix4x4.Identity : modelViewMatrixStack.Peek();
+	public Matrix4 ProjectionMatrix2D { get; set; } = Matrix4.Identity;
+    public Matrix4 ProjectionMatrix3D { get; set; } = Matrix4.Identity;
+    public Matrix4 FullScreenProjectionMatrix2D { get; set; } = Matrix4.Identity;
+	public Matrix4 CurrentProjectionMatrix => (projectionMatrixStack.Count == 0) ? Matrix4.Identity : projectionMatrixStack.Peek();
+	public Matrix4 CurrentModelViewMatrix => (modelViewMatrixStack.Count == 0) ? Matrix4.Identity : modelViewMatrixStack.Peek();
 
-	public void PushProjectionMatrix(Matrix4x4 matrix)
+	public void PushProjectionMatrix(Matrix4 matrix)
     {
         projectionMatrixStack.Push(matrix);
     }
 
-    public void PushModelViewMatrix(Matrix4x4 matrix)
+    public void PushModelViewMatrix(Matrix4 matrix)
     {
         modelViewMatrixStack.Push(matrix);
     }
 
-    public Matrix4x4 PopProjectionMatrix()
+    public Matrix4 PopProjectionMatrix()
     {
         return projectionMatrixStack.Pop();
     }
 
-    public Matrix4x4 PopModelViewMatrix()
+    public Matrix4 PopModelViewMatrix()
     {
         return modelViewMatrixStack.Pop();
     }
 
-    public void RestoreProjectionMatrix(Matrix4x4 matrix)
+    public void RestoreProjectionMatrix(Matrix4 matrix)
     {
         if (projectionMatrixStack.Contains(matrix))
         {
@@ -127,7 +127,7 @@ internal partial class State : IEquatable<State>
             PushProjectionMatrix(matrix);
     }
 
-    public void RestoreModelViewMatrix(Matrix4x4 matrix)
+    public void RestoreModelViewMatrix(Matrix4 matrix)
     {
         if (modelViewMatrixStack.Contains(matrix))
         {

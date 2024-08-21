@@ -77,7 +77,7 @@ namespace Amberstar.Game.Screens
 			{
 				for (int x = 0; x < TilesPerRow; x++)
 				{
-					int index = x + y * map!.Width;
+					int index = (x + scrollOffsetX) + (y + scrollOffsetY) * map!.Width;
 					var tile = map.Tiles[index];
 
 					if (tile.Underlay != 0)

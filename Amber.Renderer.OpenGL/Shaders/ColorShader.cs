@@ -50,7 +50,8 @@ internal class ColorShader : BaseShader
                 vec2 pos = vec2({PositionName}.x + 0.49f, {PositionName}.y + 0.49f);
                 pixelColor = vec4(float({ColorName}.r) / 255.0f, float({ColorName}.g) / 255.0f, float({ColorName}.b) / 255.0f, float({ColorName}.a) / 255.0f);
                 
-                gl_Position = {ProjectionMatrixName} * {ModelViewMatrixName} * vec4(pos, 1.0f - {ZName} - float({LayerName}) * 0.00001f, 1.0f);
+                float z = clamp(1.0f - {ZName} - float({LayerName}) * 0.00001f, 0.0f, 1.0f);
+                gl_Position = {ProjectionMatrixName} * {ModelViewMatrixName} * vec4(pos, z, 1.0f);
             }}
         ";
 

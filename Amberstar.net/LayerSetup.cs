@@ -58,14 +58,18 @@ namespace Amberstar.net
 
 			var paletteTexture = renderer.TextureFactory.Create(palette);
 
-			// Layouts
-			var graphics = new Dictionary<int, IGraphic>();
-			graphics.Add(0, assetProvider.LayoutLoader.LoadPortraitArea());
+
+			#region Layouts
+
+			var graphics = new Dictionary<int, IGraphic>
+			{
+				{ 0, assetProvider.LayoutLoader.LoadPortraitArea() }
+			};
 			for (int i = 1; i <= 11; i++)
 				graphics.Add(i, assetProvider.LayoutLoader.LoadLayout(i));
 			var layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
-				//BaseZ = 0.70f, // TODO
+				BaseZ = 0.0f, // display in the back
 				LayerFeatures = LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
@@ -74,7 +78,10 @@ namespace Amberstar.net
 			layer.Visible = true;
 			renderer.AddLayer(layer);
 
-			// UI
+			#endregion
+
+			#region UI
+
 			graphics = [];
 			int uiGraphicOffset = graphics.Count;
 			foreach (var g in Enum.GetValues<UIGraphic>().Distinct())
@@ -93,7 +100,7 @@ namespace Amberstar.net
 				graphics.Add(itemGraphicOffset + (int)i, assetProvider.GraphicLoader.LoadItemGraphic(i));
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
-				//BaseZ = 0.70f, // TODO
+				BaseZ = 0.7f,
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
@@ -102,7 +109,11 @@ namespace Amberstar.net
 			layer.Visible = true;
 			renderer.AddLayer(layer);
 
-			// Map underlay
+			#endregion
+
+
+			#region Map underlay
+
 			graphics = [];
 			var tileset1Graphics = assetProvider.TilesetLoader.LoadTileset(1).Graphics;
 			var tileset2Graphics = assetProvider.TilesetLoader.LoadTileset(2).Graphics;
@@ -114,7 +125,7 @@ namespace Amberstar.net
 				graphics.Add(index++, graphic);
 			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
-				//BaseZ = 0.01f, // TODO
+				BaseZ = 0.1f,
 				LayerFeatures = LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
@@ -123,10 +134,14 @@ namespace Amberstar.net
 			layer.Visible = true;
 			renderer.AddLayer(layer);
 
-			// Map overlay
+			#endregion
+
+
+			#region Map overlay
+
 			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
-				//BaseZ = 0.02f, // TODO
+				BaseZ = 0.2f,
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
@@ -134,6 +149,8 @@ namespace Amberstar.net
 			});
 			layer.Visible = true;
 			renderer.AddLayer(layer);
+
+			#endregion
 
 			// TODO ...
 

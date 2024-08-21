@@ -17,6 +17,7 @@ using Amber.Assets.Common;
 using Amberstar.GameData.Legacy;
 using Amber.IO.FileSystem;
 using Amberstar.net;
+using Silk.NET.OpenGL;
 
 namespace Amberstar
 {
@@ -258,7 +259,7 @@ namespace Amberstar
                 for (int y = 0; y < imageSize.Height; ++y)
                 {
                     int i = upsideDown ? imageSize.Height - y - 1 : y;
-                    Buffer.BlockCopy(rgbData, y * imageSize.Width * bpp, dataWithFilterBytes, 1 + i + i * imageSize.Width * bpp, imageSize.Width * bpp);
+                    System.Buffer.BlockCopy(rgbData, y * imageSize.Width * bpp, dataWithFilterBytes, 1 + i + i * imageSize.Width * bpp, imageSize.Width * bpp);
                 }
                 // Note: Data is initialized with 0 bytes so the filter bytes are already 0.
                 using var uncompressedStream = new MemoryStream(dataWithFilterBytes);
@@ -320,10 +321,10 @@ namespace Amberstar
             window.Monitor = platform!.GetMainMonitor();
             window.Size = new WindowDimension(320 * 3, 200 * 3);
 
-            var gl = Silk.NET.OpenGL.GL.GetApi(GLContext);
+            var gl = GL.GetApi(GLContext);
             gl.Viewport(new System.Drawing.Size(window.FramebufferSize.X, window.FramebufferSize.Y));
             gl.ClearColor(System.Drawing.Color.Black);
-            gl.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit);
+            gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GLContext!.SwapBuffers();
 
             window.Center();
@@ -346,6 +347,9 @@ namespace Amberstar
         {
             if (window != null && window.WindowState != WindowState.Minimized)
             {
+				var gl = GL.GetApi(GLContext);
+				gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
 				game?.Render(delta);
 				renderer?.Render();
 

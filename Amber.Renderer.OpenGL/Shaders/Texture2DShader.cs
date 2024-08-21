@@ -102,7 +102,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             palIndex = float({PaletteIndexName});
             maskColIndex = float({MaskColorIndexName});
             noTransparency = float({OpaqueName});
-            float z = 1.0f - {ZName} - float({LayerName}) * 0.00001f;
+            float z = clamp(1.0f - {ZName} - float({LayerName}) * 0.00001f, 0.0f, 1.0f);
             gl_Position = {ProjectionMatrixName} * {ModelViewMatrixName} * vec4(pos, z, 1.0f);
         }}
     ";
