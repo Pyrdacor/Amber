@@ -7,5 +7,9 @@ public enum Direction : byte
 	Down,
 	Left,
 	Keep,
-	Random = Keep
+	Random = Keep,
+	North = Up,
+	East = Right,
+	South = Down,
+	West = Left
 }

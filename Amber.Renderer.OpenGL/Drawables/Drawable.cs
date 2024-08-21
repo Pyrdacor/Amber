@@ -75,6 +75,7 @@ namespace Amber.Renderer.OpenGL.Drawables
 	internal abstract class SizedDrawable : Drawable, ISizedDrawable
 	{
 		Size size = new(0, 0);
+		int baseLineOffset;
 
 		private protected SizedDrawable(Layer layer, RenderBuffer renderBuffer)
 			: base(layer, renderBuffer)
@@ -95,6 +96,21 @@ namespace Amber.Renderer.OpenGL.Drawables
 						Visible = false;
 					else if (VisibilityRequested)
 						Visible = true;
+				}
+			}
+		}
+
+		public int BaseLineOffset
+		{
+			get => baseLineOffset;
+			set
+			{
+				if (baseLineOffset != value)
+				{
+					baseLineOffset = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateDisplayLayer(DrawIndex, (byte)MathUtil.Limit(0, Position.Y + Size.Height + baseLineOffset, 255));
 				}
 			}
 		}

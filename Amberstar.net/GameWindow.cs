@@ -18,6 +18,8 @@ using Amberstar.GameData.Legacy;
 using Amber.IO.FileSystem;
 using Amberstar.net;
 using Silk.NET.OpenGL;
+using Amberstar.Game;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar
 {
@@ -66,146 +68,64 @@ namespace Amberstar
             }
         }
 
-        /*static KeyModifiers GetModifiers(IKeyboard keyboard)
+        List<Game.Key> QueryPressedKeys()
         {
-            var modifiers = KeyModifiers.None;
-
-            if (keyboard.IsKeyPressed(Silk.NET.Input.Key.ShiftLeft) || keyboard.IsKeyPressed(Silk.NET.Input.Key.ShiftRight))
-                modifiers |= KeyModifiers.Shift;
-            if (keyboard.IsKeyPressed(Silk.NET.Input.Key.ControlLeft) || keyboard.IsKeyPressed(Silk.NET.Input.Key.ControlRight))
-                modifiers |= KeyModifiers.Control;
-            if (keyboard.IsKeyPressed(Silk.NET.Input.Key.AltLeft) || keyboard.IsKeyPressed(Silk.NET.Input.Key.AltRight))
-                modifiers |= KeyModifiers.Alt;
-
-            return modifiers;
-        }*/
-
-        /*List<Key> QueryPressedKeys()
-            => keyboard?.SupportedKeys.Where(key => keyboard.IsKeyPressed(key)).Select(ConvertKey).ToList();
-
-        static Key ConvertKey(Silk.NET.Input.Key key) => key switch
-        {
-            Silk.NET.Input.Key.Left => Key.Left,
-            Silk.NET.Input.Key.Right => Key.Right,
-            Silk.NET.Input.Key.Up => Key.Up,
-            Silk.NET.Input.Key.Down => Key.Down,
-            Silk.NET.Input.Key.Escape => Key.Escape,
-            Silk.NET.Input.Key.F1 => Key.F1,
-            Silk.NET.Input.Key.F2 => Key.F2,
-            Silk.NET.Input.Key.F3 => Key.F3,
-            Silk.NET.Input.Key.F4 => Key.F4,
-            Silk.NET.Input.Key.F5 => Key.F5,
-            Silk.NET.Input.Key.F6 => Key.F6,
-            Silk.NET.Input.Key.F7 => Key.F7,
-            Silk.NET.Input.Key.F8 => Key.F8,
-            Silk.NET.Input.Key.F9 => Key.F9,
-            Silk.NET.Input.Key.F10 => Key.F10,
-            Silk.NET.Input.Key.F11 => Key.F11,
-            Silk.NET.Input.Key.F12 => Key.F12,
-            Silk.NET.Input.Key.Enter => Key.Return,
-            Silk.NET.Input.Key.KeypadEnter => Key.Return,
-            Silk.NET.Input.Key.Delete => Key.Delete,
-            Silk.NET.Input.Key.Backspace => Key.Backspace,
-            Silk.NET.Input.Key.Tab => Key.Tab,
-            Silk.NET.Input.Key.Keypad0 => Key.Num0,
-            Silk.NET.Input.Key.Keypad1 => Key.Num1,
-            Silk.NET.Input.Key.Keypad2 => Key.Num2,
-            Silk.NET.Input.Key.Keypad3 => Key.Num3,
-            Silk.NET.Input.Key.Keypad4 => Key.Num4,
-            Silk.NET.Input.Key.Keypad5 => Key.Num5,
-            Silk.NET.Input.Key.Keypad6 => Key.Num6,
-            Silk.NET.Input.Key.Keypad7 => Key.Num7,
-            Silk.NET.Input.Key.Keypad8 => Key.Num8,
-            Silk.NET.Input.Key.Keypad9 => Key.Num9,
-            Silk.NET.Input.Key.PageUp => Key.PageUp,
-            Silk.NET.Input.Key.PageDown => Key.PageDown,
-            Silk.NET.Input.Key.Home => Key.Home,
-            Silk.NET.Input.Key.End => Key.End,
-            Silk.NET.Input.Key.Space => Key.Space,
-            Silk.NET.Input.Key.W => Key.W,
-            Silk.NET.Input.Key.A => Key.A,
-            Silk.NET.Input.Key.S => Key.S,
-            Silk.NET.Input.Key.D => Key.D,
-            Silk.NET.Input.Key.Q => Key.Q,
-            Silk.NET.Input.Key.E => Key.E,
-            Silk.NET.Input.Key.M => Key.M,
-            Silk.NET.Input.Key.Number0 => Key.Number0,
-            Silk.NET.Input.Key.Number1 => Key.Number1,
-            Silk.NET.Input.Key.Number2 => Key.Number2,
-            Silk.NET.Input.Key.Number3 => Key.Number3,
-            Silk.NET.Input.Key.Number4 => Key.Number4,
-            Silk.NET.Input.Key.Number5 => Key.Number5,
-            Silk.NET.Input.Key.Number6 => Key.Number6,
-            Silk.NET.Input.Key.Number7 => Key.Number7,
-            Silk.NET.Input.Key.Number8 => Key.Number8,
-            Silk.NET.Input.Key.Number9 => Key.Number9,
-            _ => Key.Invalid,
-        };*/
+            return keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToList() ?? [];
+        }
 
         void Keyboard_KeyChar(IKeyboard keyboard, char keyChar)
         {
-
-        }
-
-        void Keyboard_KeyDown(IKeyboard keyboard, Key key, int value)
-        {
-			//game?.KeyDown()
+			game?.KeyChar(keyChar, InputConverter.GetModifiers(keyboard));
 		}
 
-        void Keyboard_KeyUp(IKeyboard keyboard, Key key, int value)
+        void Keyboard_KeyDown(IKeyboard keyboard, Silk.NET.Input.Key key, int value)
         {
+            game?.KeyDown(InputConverter.Convert(key), InputConverter.GetModifiers(keyboard));
+		}
 
-        }
-
-        /*static MouseButtons GetMouseButtons(IMouse mouse)
+        void Keyboard_KeyUp(IKeyboard keyboard, Silk.NET.Input.Key key, int value)
         {
-            var buttons = MouseButtons.None;
-
-            if (mouse.IsButtonPressed(MouseButton.Left))
-                buttons |= MouseButtons.Left;
-            if (mouse.IsButtonPressed(MouseButton.Right))
-                buttons |= MouseButtons.Right;
-            if (mouse.IsButtonPressed(MouseButton.Middle))
-                buttons |= MouseButtons.Middle;
-
-            return buttons;
-        }
-
-        static MouseButtons ConvertMouseButtons(MouseButton mouseButton)
-        {
-            return mouseButton switch
-            {
-                MouseButton.Left => MouseButtons.Left,
-                MouseButton.Right => MouseButtons.Right,
-                MouseButton.Middle => MouseButtons.Middle,
-                _ => MouseButtons.None
-            };
-        }
-
-        static Position ConvertMousePosition(MousePosition position)
-        {
-            return new Position(Util.Round(position.X), Util.Round(position.Y));
-        }*/
+			game?.KeyUp(InputConverter.Convert(key), InputConverter.GetModifiers(keyboard));
+		}
 
         void Mouse_MouseDown(IMouse mouse, MouseButton button)
         {
-
+            game?.MouseDown
+            (
+                InputConverter.ConvertMousePosition(mouse.Position),
+                InputConverter.ConvertMouseButtons(button),
+                InputConverter.GetModifiers(keyboard!)
+            );
         }
 
         void Mouse_MouseUp(IMouse mouse, MouseButton button)
         {
-
-        }
+			game?.MouseUp
+			(
+				InputConverter.ConvertMousePosition(mouse.Position),
+				InputConverter.ConvertMouseButtons(button),
+				InputConverter.GetModifiers(keyboard!)
+			);
+		}
 
         void Mouse_MouseMove(IMouse mouse, MousePosition position)
         {
-
-        }
+			game?.MouseMove
+			(
+				InputConverter.ConvertMousePosition(mouse.Position),
+				InputConverter.GetMouseButtons(mouse)
+			);
+		}
 
         void Mouse_Scroll(IMouse mouse, ScrollWheel wheelDelta)
         {
-
-        }
+			game?.MouseWheel
+			(
+				InputConverter.ConvertMousePosition(mouse.Position),
+                wheelDelta.X, wheelDelta.Y,
+				InputConverter.GetMouseButtons(mouse)
+			);
+		}
 
         static void WritePNG(string filename, byte[] rgbData, Size imageSize, bool alpha, bool upsideDown)
         {
@@ -338,7 +258,7 @@ namespace Amberstar
             // setup the layers
             LayerSetup.Run(assetProvider, renderer, out var uiGraphicIndexProvider, out var paletteIndexProvider);
 
-			game = new Game.Game(renderer, assetProvider, uiGraphicIndexProvider, paletteIndexProvider);
+			game = new Game.Game(renderer, assetProvider, uiGraphicIndexProvider, paletteIndexProvider, QueryPressedKeys);
 
 			initialized = true;
         }

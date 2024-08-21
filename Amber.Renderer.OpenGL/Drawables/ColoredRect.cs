@@ -42,6 +42,11 @@ namespace Amber.Renderer.OpenGL.Drawables
 		{
 			if (Visible && DrawIndex == -1)
 				DrawIndex = renderBuffer.GetDrawIndex(this, layer.PositionTransformation, layer.SizeTransformation);
+			else if (!Visible && DrawIndex != -1)
+			{
+				renderBuffer.FreeDrawIndex(DrawIndex);
+				DrawIndex = -1;
+			}
 		}
 	}
 

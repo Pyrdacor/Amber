@@ -12,6 +12,12 @@ public interface IDrawable
 public interface ISizedDrawable : IDrawable
 {
 	Size Size { get; set; }
+	/// <summary>
+	/// Normally the baseline is Y + Height. For render layers which do not
+	/// support display layers, this is used to determine the rendering order.
+	/// This offset is added to Y + Height to determine the actual baseline.
+	/// </summary>
+	int BaseLineOffset { get; set; }
 }
 
 public interface ILayeredDrawable : IDrawable

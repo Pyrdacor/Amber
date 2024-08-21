@@ -21,7 +21,6 @@
 
 using Amber.Common;
 using Amber.Renderer.OpenGL.Buffers;
-using Amber.Renderer.OpenGL.Drawables;
 using Amber.Renderer.OpenGL.Shaders;
 using ColorBuffer = Amber.Renderer.OpenGL.Buffers.ColorBuffer;
 
@@ -65,7 +64,7 @@ internal class RenderBuffer : IDisposable
 		{
             byte layer = features.HasFlag(LayerFeatures.DisplayLayers) && drawable is ILayeredDrawable layered
                 ? layered.DisplayLayer
-                : (byte)MathUtil.Limit(0, drawable.Position.Y + drawable.Size.Height, 255);
+                : (byte)MathUtil.Limit(0, drawable.Position.Y + drawable.Size.Height + drawable.BaseLineOffset, 255);
 
 			int layerBufferIndex = layerBuffer.Add(layer, index);
 			layerBuffer.Add(layer, layerBufferIndex + 1);
@@ -429,27 +428,28 @@ internal class RenderBuffer : IDisposable
 
         foreach (var buffer in buffers)
         {
+            // Note: The inverse index freeing is crucial as the next free index is taken from the end of the list.
             if (buffer.Value is FloatPositionBuffer positionBuffer)
             {
 				// ensure it is not visible
-				positionBuffer.Update(index + 0, float.MaxValue, float.MaxValue);
-				positionBuffer.Update(index + 1, float.MaxValue, float.MaxValue);
-				positionBuffer.Update(index + 2, float.MaxValue, float.MaxValue);
 				positionBuffer.Update(index + 3, float.MaxValue, float.MaxValue);
+				positionBuffer.Update(index + 2, float.MaxValue, float.MaxValue);
+				positionBuffer.Update(index + 1, float.MaxValue, float.MaxValue);
+				positionBuffer.Update(index + 0, float.MaxValue, float.MaxValue);
 			}
             else if (buffer.Value is VectorBuffer vectorBuffer)
 			{
 				// ensure it is not visible
-				vectorBuffer.Update(index + 0, float.MaxValue, float.MaxValue, float.MaxValue);
-				vectorBuffer.Update(index + 1, float.MaxValue, float.MaxValue, float.MaxValue);
-				vectorBuffer.Update(index + 2, float.MaxValue, float.MaxValue, float.MaxValue);
 				vectorBuffer.Update(index + 3, float.MaxValue, float.MaxValue, float.MaxValue);
+				vectorBuffer.Update(index + 2, float.MaxValue, float.MaxValue, float.MaxValue);
+				vectorBuffer.Update(index + 1, float.MaxValue, float.MaxValue, float.MaxValue);
+				vectorBuffer.Update(index + 0, float.MaxValue, float.MaxValue, float.MaxValue);
 			}
 
-			buffer.Value.Remove(index + 0);
-            buffer.Value.Remove(index + 1);
+			buffer.Value.Remove(index + 3);
             buffer.Value.Remove(index + 2);
-            buffer.Value.Remove(index + 3);
+            buffer.Value.Remove(index + 1);
+            buffer.Value.Remove(index + 0);
         }
     }
 

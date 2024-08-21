@@ -1,4 +1,6 @@
-﻿namespace Amberstar.Game.Screens
+﻿using Amber.Common;
+
+namespace Amberstar.Game.Screens
 {
 	public enum ScreenType
 	{
@@ -48,12 +50,47 @@
 			// default: empty
 		}
 
-		public virtual void Update(Game game, double delta)
+		public virtual void Update(Game game, long elapsedTicks)
 		{
 			// default: empty
 		}
 
-		public virtual void Render(Game game, double delta)
+		public virtual void Render(Game game)
+		{
+			// default: empty
+		}
+
+		public virtual void KeyDown(Key key, KeyModifiers keyModifiers)
+		{
+			// default: empty
+		}
+
+		public virtual void KeyUp(Key key, KeyModifiers keyModifiers)
+		{
+			// default: empty
+		}
+
+		public virtual void KeyChar(char ch, KeyModifiers keyModifiers)
+		{
+			// default: empty
+		}
+
+		public virtual void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+		{
+			// default: empty
+		}
+
+		public virtual void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+		{
+			// default: empty
+		}
+
+		public virtual void MouseMove(Position position, MouseButtons buttons)
+		{
+			// default: empty
+		}
+
+		public virtual void MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
 		{
 			// default: empty
 		}

@@ -112,7 +112,7 @@ namespace Amberstar.net
 			#endregion
 
 
-			#region Map underlay
+			#region Map2D
 
 			graphics = [];
 			var tileset1Graphics = assetProvider.TilesetLoader.LoadTileset(1).Graphics;
@@ -126,23 +126,7 @@ namespace Amberstar.net
 			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
 				BaseZ = 0.1f,
-				LayerFeatures = LayerFeatures.DisplayLayers,
-				Palette = paletteTexture,
-				RenderTarget = LayerRenderTarget.VirtualScreen2D,
-				Texture = renderer.TextureFactory.CreateAtlas(graphics),
-			});
-			layer.Visible = true;
-			renderer.AddLayer(layer);
-
-			#endregion
-
-
-			#region Map overlay
-
-			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
-			{
-				BaseZ = 0.2f,
-				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				LayerFeatures = LayerFeatures.Transparency,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
