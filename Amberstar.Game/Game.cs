@@ -1,13 +1,19 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amberstar.Game.Screens;
+using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
+using System.Reflection.Emit;
 using IAssetProvider = Amberstar.GameData.IAssetProvider;
 
 namespace Amberstar.Game
 {
 	public class Game : IDisposable
 	{
+		ISprite portraitBackgroundSprite;
+		ISprite layoutSprite;
+
 		public Game(IRenderer renderer, IAssetProvider assetProvider,
 			IUIGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider)
 		{
@@ -20,9 +26,9 @@ namespace Amberstar.Game
 			int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;
 
 			// Show portrait area
-			AddSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0, uiPaletteIndex);
+			portraitBackgroundSprite = AddSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0, uiPaletteIndex)!;
 			// Show layout
-			AddSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 2, uiPaletteIndex);
+			layoutSprite = AddSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 0, uiPaletteIndex)!;
 
 			// Show empty char slots
 			for (int i = 0; i < 6; i++)
@@ -93,6 +99,13 @@ namespace Amberstar.Game
 			}
 
 			return coloredRect;
+		}
+
+		internal void SetLayout(Layout layout)
+		{
+			var renderLayer = GetRenderLayer(Layer.Layout);
+			var textureAtlas = renderLayer.Config.Texture!;
+			layoutSprite.TextureOffset = textureAtlas.GetOffset((int)layout);
 		}
 
 		public void Dispose()

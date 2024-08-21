@@ -21,6 +21,7 @@
 
 using Amber.Common;
 using Amber.Renderer.OpenGL.Buffers;
+using Amber.Renderer.OpenGL.Drawables;
 using Amber.Renderer.OpenGL.Shaders;
 using ColorBuffer = Amber.Renderer.OpenGL.Buffers.ColorBuffer;
 
@@ -34,10 +35,12 @@ internal class RenderBuffer : IDisposable
 	readonly VertexArrayObject vertexArrayObject;
     readonly Dictionary<BufferPurpose, IBuffer> buffers;
     readonly IndexBuffer indexBuffer;
+    readonly LayerFeatures features;
 
-	public RenderBuffer(State state, BaseShader shader, int textureFactor = 1)
+	public RenderBuffer(State state, BaseShader shader, LayerFeatures features, int textureFactor = 1)
     {
         this.state = state;
+        this.features = features;
         this.textureFactor = textureFactor;
 		vertexArrayObject = new VertexArrayObject(state, shader.ShaderProgram);
 
@@ -53,6 +56,23 @@ internal class RenderBuffer : IDisposable
 	{
         return buffers.GetValueOrDefault(purpose) as TBuffer;
     }
+
+    private void SetupDisplayLayer(int index, ISizedDrawable drawable)
+    {
+        var layerBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.DisplayLayer);
+
+		if (layerBuffer != null)
+		{
+            byte layer = features.HasFlag(LayerFeatures.DisplayLayers) && drawable is ILayeredDrawable layered
+                ? layered.DisplayLayer
+                : (byte)MathUtil.Limit(0, drawable.Position.Y + drawable.Size.Height, 255);
+
+			int layerBufferIndex = layerBuffer.Add(layer, index);
+			layerBuffer.Add(layer, layerBufferIndex + 1);
+			layerBuffer.Add(layer, layerBufferIndex + 2);
+			layerBuffer.Add(layer, layerBufferIndex + 3);
+		}
+	}
 
     public int GetDrawIndex(IColoredRect coloredRect,
         PositionTransformation? positionTransformation,
@@ -76,17 +96,7 @@ internal class RenderBuffer : IDisposable
 
         indexBuffer.InsertQuad(index / 4);
 
-        var layerBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.DisplayLayer);
-
-        if (layerBuffer != null)
-        {
-			byte layer = coloredRect.DisplayLayer;
-
-			int layerBufferIndex = layerBuffer.Add(layer, index);
-            layerBuffer.Add(layer, layerBufferIndex + 1);
-            layerBuffer.Add(layer, layerBufferIndex + 2);
-            layerBuffer.Add(layer, layerBufferIndex + 3);
-        }
+        SetupDisplayLayer(index, coloredRect);
 
         var colorBuffer = GetBuffer<ColorBuffer, byte>(BufferPurpose.Color);
 
@@ -197,31 +207,7 @@ internal class RenderBuffer : IDisposable
             }
         }
 
-		/*if (baseLineBuffer != null)
-        {
-            var baseLineOffsetSize = new FloatSize(0, sprite.BaseLineOffset);
-
-            if (sizeTransformation != null)
-                baseLineOffsetSize = sizeTransformation(baseLineOffsetSize);
-
-            ushort baseLine = (ushort)Math.Min(ushort.MaxValue, position.Y + size.Height + Util.Round(baseLineOffsetSize.Height));
-            int baseLineBufferIndex = baseLineBuffer.Add(baseLine, index);
-            baseLineBuffer.Add(baseLine, baseLineBufferIndex + 1);
-            baseLineBuffer.Add(baseLine, baseLineBufferIndex + 2);
-            baseLineBuffer.Add(baseLine, baseLineBufferIndex + 3);
-        }*/
-
-		var layerBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.DisplayLayer);
-
-		if (layerBuffer != null)
-        {
-            byte layer = sprite.DisplayLayer;
-
-            int layerBufferIndex = layerBuffer.Add(layer, index);
-            layerBuffer.Add(layer, layerBufferIndex + 1);
-            layerBuffer.Add(layer, layerBufferIndex + 2);
-            layerBuffer.Add(layer, layerBufferIndex + 3);
-        }
+		SetupDisplayLayer(index, sprite);
 
 		var maskColorBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.MaskColorIndex);
 
@@ -279,20 +265,11 @@ internal class RenderBuffer : IDisposable
         positionBuffer.Update(index + 2, position.X + size.Width, position.Y + size.Height);
         positionBuffer.Update(index + 3, position.X, position.Y + size.Height);
 
-        /*if (baseLineBuffer != null)
+        if (!features.HasFlag(LayerFeatures.DisplayLayers))
         {
-            var baseLineOffsetSize = new Size(0, baseLineOffset);
-
-            if (sizeTransformation != null)
-                baseLineOffsetSize = sizeTransformation(new FloatSize(baseLineOffsetSize)).ToSize();
-
-            ushort baseLine = (ushort)Math.Min(ushort.MaxValue, position.Y + size.Height + baseLineOffsetSize.Height);
-
-            baseLineBuffer.Update(index, baseLine);
-            baseLineBuffer.Update(index + 1, baseLine);
-            baseLineBuffer.Update(index + 2, baseLine);
-            baseLineBuffer.Update(index + 3, baseLine);
-        }*/
+            // Based on lower Y (baseline)
+			SetupDisplayLayer(index, drawable);
+		}
     }
 
     public void UpdateMaskColor(int index, byte? maskColor)
@@ -333,6 +310,11 @@ internal class RenderBuffer : IDisposable
         var spriteSize = new Size(sprite.Size);
         var textureOffset = new Position(sprite.TextureOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
+
+        if (sprite is IAnimatedSprite animatedSprite && animatedSprite.CurrentFrameIndex > 0)
+        {
+            textureOffset = new(textureOffset.X + animatedSprite.CurrentFrameIndex * textureSize.Width, textureOffset.Y);
+        }
 
         /*if (sprite.ClipArea != null)
         {

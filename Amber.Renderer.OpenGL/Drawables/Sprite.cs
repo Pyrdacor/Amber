@@ -6,6 +6,12 @@ namespace Amber.Renderer.OpenGL.Drawables
 		?? throw new AmberException(ExceptionScope.Application, $"No render buffer found for drawable {nameof(Sprite)}")), ISprite
 	{
 		byte displayLayer;
+		Position textureOffset;
+		Size? textureSize;
+		byte paletteIndex;
+		byte? maskColorIndex;
+		bool mirrorX;
+		bool opaque;
 
 		public byte DisplayLayer
 		{
@@ -22,13 +28,95 @@ namespace Amber.Renderer.OpenGL.Drawables
 			}
 		}
 
-		// TODO
-		public Position TextureOffset { get; set; }
-		public Size? TextureSize { get; set; }
-		public byte PaletteIndex { get; set; }
-		public byte? MaskColorIndex { get; set; }
-		public bool MirrorX { get; set; }
-		public bool Opaque { get; set; }
+		public Position TextureOffset
+		{
+			get => textureOffset;
+			set
+			{
+				if (textureOffset != value)
+				{
+					textureOffset = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateTextureOffset(DrawIndex, this);
+				}
+			}
+		}
+
+		public Size? TextureSize
+		{
+			get => textureSize;
+			set
+			{
+				if (textureSize != value)
+				{
+					textureSize = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateTextureOffset(DrawIndex, this);
+				}
+			}
+		}
+
+		public byte PaletteIndex
+		{
+			get => paletteIndex;
+			set
+			{
+				if (paletteIndex != value)
+				{
+					paletteIndex = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdatePaletteIndex(DrawIndex, paletteIndex);
+				}
+			}
+		}
+
+		public byte? MaskColorIndex
+		{
+			get => maskColorIndex;
+			set
+			{
+				if (maskColorIndex != value)
+				{
+					maskColorIndex = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateMaskColor(DrawIndex, maskColorIndex);
+				}
+			}
+		}
+
+		public bool MirrorX
+		{
+			get => mirrorX;
+			set
+			{
+				if (mirrorX != value)
+				{
+					mirrorX = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateTextureOffset(DrawIndex, this);
+				}
+			}
+		}
+
+		public bool Opaque
+		{
+			get => opaque;
+			set
+			{
+				if (opaque != value)
+				{
+					opaque = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateOpaque(DrawIndex, (byte)(opaque ? 1 : 0));
+				}
+			}
+		}
 
 		private protected override void UpdateVisibility()
 		{
@@ -37,8 +125,57 @@ namespace Amber.Renderer.OpenGL.Drawables
 		}
 	}
 
+	internal class AnimatedSprite(Layer layer) : Sprite(layer), IAnimatedSprite
+	{
+		int currentFrameIndex;
+		int frameCount = 1;
+
+		public int CurrentFrameIndex
+		{
+			get => currentFrameIndex;
+			set
+			{
+				value %= frameCount;
+
+				if (value < 0)
+					value += frameCount;
+
+				if (currentFrameIndex != value)
+				{
+					currentFrameIndex = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateTextureOffset(DrawIndex, this);
+				}
+			}
+		}
+
+		public int FrameCount
+		{
+			get => frameCount;
+			set
+			{
+				if (frameCount != value)
+				{
+					if (value < 1)
+						value = 1;
+
+					frameCount = value;
+
+					if (currentFrameIndex >= frameCount)
+						currentFrameIndex = frameCount - 1;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateTextureOffset(DrawIndex, this);
+				}
+			}
+		}
+	}
+
 	internal class SpriteFactory(Layer layer) : ISpriteFactory
 	{
 		public ISprite Create() => new Sprite(layer);
+
+		public IAnimatedSprite CreateAnimated() => new AnimatedSprite(layer);
 	}
 }

@@ -49,6 +49,7 @@ internal class Shader : IDisposable
 	internal static readonly string PaletteCountName = "palCount";
     internal static readonly string PaletteSizeName = "palSize";
 	internal static readonly string OpaqueName = "opaque";
+    internal static readonly string AllowTransparencyName = "allowTransparency";
 
 	readonly State state;
 	readonly string code = "";

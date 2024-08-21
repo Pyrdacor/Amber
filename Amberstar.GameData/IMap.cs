@@ -58,6 +58,8 @@ public struct MapNPC
 
 public interface IMap : IEventProvider
 {
+	public int Width { get; }
+	public int Height { get; }
 	public MapType Type { get; }
 	public MapFlags Flags { get; }
 	public MapNPC[] NPCs { get; }

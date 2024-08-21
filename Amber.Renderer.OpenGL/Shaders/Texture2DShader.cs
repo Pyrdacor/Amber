@@ -38,6 +38,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         uniform sampler2D {TextureName};
         uniform sampler2D {PaletteName};
         uniform float {ColorKeyName};
+        uniform float {AllowTransparencyName};
         in vec2 varTexCoord;
         flat in float palIndex;
         flat in float maskColIndex;
@@ -51,7 +52,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             {{
                 float colorIndex = texture({TextureName}, varTexCoord).r * 255.0f;
                 
-                if (colorIndex < 0.5f && noTransparency < 0.5f)
+                if (colorIndex < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                     discard;
                 else
                 {{
@@ -63,14 +64,14 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             else
             {{
                 pixelColor = texture({TextureName}, varTexCoord);
-                if (pixelColor.a < 0.5f && noTransparency < 0.5f)
+                if (pixelColor.a < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                     discard;
             }}
            
             if (maskColIndex >= 0.5f)
                 pixelColor = texture({PaletteName}, vec2((maskColIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
 
-            if (noTransparency >= 0.5f)
+            if (noTransparency >= 0.5f || {AllowTransparencyName} < 0.5f)
                 pixelColor.a = 1.0f;
                 
             {FragmentOutColorName} = pixelColor;
@@ -175,4 +176,9 @@ internal class Texture2DShader : BaseShader, IPaletteShader
     {
         shaderProgram.SetInput(PaletteCountName, (float)count);
     }
+
+	public void AllowTransparency(bool allow)
+	{
+		shaderProgram.SetInput(AllowTransparencyName, allow ? 1.0f : 0.0f);
+	}
 }

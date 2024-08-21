@@ -12,7 +12,14 @@ public interface ISprite : ILayeredDrawable, ISizedDrawable
 	bool Opaque { get; set; }
 }
 
+public interface IAnimatedSprite : ISprite
+{
+	int CurrentFrameIndex { get; set; }
+	int FrameCount { get; set; }
+}
+
 public interface ISpriteFactory
 {
 	ISprite Create();
+	IAnimatedSprite CreateAnimated();
 }

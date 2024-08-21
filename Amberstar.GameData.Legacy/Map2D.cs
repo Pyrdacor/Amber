@@ -10,6 +10,8 @@ internal class Map2D : Map, IMap2D
 		Tiles = tiles;
 	}
 
+	public int TilesetIndex => header.Tileset;
+
 	public Tile2D[] Tiles { get; }
 
 	public static unsafe Map2D Load(int id, MapHeader header, IDataReader reader)

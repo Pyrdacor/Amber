@@ -31,8 +31,8 @@ namespace Amberstar.net
 			var palette = new Graphic(16, 1 + 10 + 2 + 26, GraphicFormat.RGBA);
 
 			palette.AddOverlay(0, 0, uiPalette);
-			int y = 1;
-			var generalPaletteIndices = new Dictionary<int, int>();
+			byte y = 1;
+			var generalPaletteIndices = new Dictionary<int, byte>();
 
 			for (int i = 0; i < generalPalettes.Length; i++)
 			{
@@ -40,15 +40,15 @@ namespace Amberstar.net
 				palette.AddOverlay(0, y++, generalPalettes[i]);				
 			}
 
-			var tilesetPaletteIndices = new Dictionary<int, int>();
+			var tilesetPaletteIndices = new Dictionary<int, byte>();
 
 			for (int i = 0; i < tilesetPalettes.Length; i++)
 			{
-				tilesetPaletteIndices.Add(i, y);
+				tilesetPaletteIndices.Add(i + 1, y);
 				palette.AddOverlay(0, y++, tilesetPalettes[i]);
 			}
 
-			var image80x80PaletteIndices = new Dictionary<Image80x80, int>();
+			var image80x80PaletteIndices = new Dictionary<Image80x80, byte>();
 
 			for (int i = 0; i < image80x80Palettes.Length; i++)
 			{
@@ -66,7 +66,7 @@ namespace Amberstar.net
 			var layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
 				//BaseZ = 0.70f, // TODO
-				LayerFeatures = LayerFeatures.None,
+				LayerFeatures = LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
@@ -75,7 +75,7 @@ namespace Amberstar.net
 			renderer.AddLayer(layer);
 
 			// UI
-			graphics = new();
+			graphics = [];
 			int uiGraphicOffset = graphics.Count;
 			foreach (var g in Enum.GetValues<UIGraphic>().Distinct())
 				graphics.Add(uiGraphicOffset + (int)g, assetProvider.UIGraphicLoader.LoadGraphic(g));
@@ -94,6 +94,39 @@ namespace Amberstar.net
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				//BaseZ = 0.70f, // TODO
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				Palette = paletteTexture,
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+				Texture = renderer.TextureFactory.CreateAtlas(graphics),
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			// Map underlay
+			graphics = [];
+			var tileset1Graphics = assetProvider.TilesetLoader.LoadTileset(1).Graphics;
+			var tileset2Graphics = assetProvider.TilesetLoader.LoadTileset(2).Graphics;
+			int index = 1;
+			foreach (var graphic in tileset1Graphics)
+				graphics.Add(index++, graphic);
+			index++;
+			foreach (var graphic in tileset2Graphics)
+				graphics.Add(index++, graphic);
+			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
+			{
+				//BaseZ = 0.01f, // TODO
+				LayerFeatures = LayerFeatures.DisplayLayers,
+				Palette = paletteTexture,
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+				Texture = renderer.TextureFactory.CreateAtlas(graphics),
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			// Map overlay
+			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
+			{
+				//BaseZ = 0.02f, // TODO
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,

@@ -78,14 +78,14 @@ internal class Layer : ILayer, IDisposable
 		{
 			var colorShader = EnsureShader(() => new ColorShader(state));
 			shaders.Add(colorShader);
-			renderBuffers.Add(typeof(ColoredRect).Name, new RenderBuffer(state, colorShader));
+			renderBuffers.Add(typeof(ColoredRect).Name, new RenderBuffer(state, colorShader, config.LayerFeatures));
 		}
 
 		void AddTexture2DBuffer()
 		{
 			var textureShader = EnsureShader(() => new Texture2DShader(state));
 			shaders.Add(textureShader);
-			renderBuffers.Add(typeof(Sprite).Name, new RenderBuffer(state, textureShader));
+			renderBuffers.Add(typeof(Sprite).Name, new RenderBuffer(state, textureShader, config.LayerFeatures));
 		}
 
         switch (type)
@@ -141,6 +141,7 @@ internal class Layer : ILayer, IDisposable
 			Config.Texture!.Use();
 			textureShader.UsePalette(usePalette);
 			textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
+			textureShader.AllowTransparency(Config.LayerFeatures.HasFlag(LayerFeatures.Transparency));					
 		}
 
 		foreach (var shader in shaders)

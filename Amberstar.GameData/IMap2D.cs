@@ -9,6 +9,7 @@
 
 	public interface IMap2D : IMap
 	{
+		int TilesetIndex { get; }
 		Tile2D[] Tiles { get; }
 	}
 }

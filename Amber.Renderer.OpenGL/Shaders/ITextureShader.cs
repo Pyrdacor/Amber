@@ -28,4 +28,6 @@ internal interface ITextureShader : IShader
 	void SetAtlasSize(uint width, uint height);
 
 	void UsePalette(bool use);
+
+	void AllowTransparency(bool allow);
 }
