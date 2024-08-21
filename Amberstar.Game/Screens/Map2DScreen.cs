@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
+using Amberstar.Game.Events;
 using Amberstar.GameData;
 
 namespace Amberstar.Game.Screens
@@ -48,6 +49,12 @@ namespace Amberstar.Game.Screens
 		long moveTickCounter = 0;
 
 		public override ScreenType Type { get; } = ScreenType.Map2D;
+
+		internal void MapChanged()
+		{
+			LoadMap(game!.State.MapIndex);
+			AfterMove();
+		}
 
 		public override void Init(Game game)
 		{
@@ -124,6 +131,22 @@ namespace Amberstar.Game.Screens
 
 			bool TileBlocksMovement(int x, int y)
 			{
+				// Some events like teleports seem to allow movement. (TODO: any other events?)
+				var eventIndex = map!.Tiles[x + y * map.Width].Event;
+
+				if (eventIndex != 0)
+				{
+					var @event = map.Events[eventIndex - 1];
+
+					// TODO: we should check if the event is still active
+					if (@event.Type == EventType.MapExit ||
+						@event.Type == EventType.Teleporter ||
+						@event.Type == EventType.TrapDoor ||
+						@event.Type == EventType.TravelExit ||
+						(@event.Type == EventType.WindGate && game.State.HasWindChain))
+						return false;
+				}
+
 				var targetTile = map!.Tiles[x + y * map.Width];
 				return BlocksMovement(targetTile.Underlay) || BlocksMovement(targetTile.Overlay);
 			}
@@ -168,7 +191,14 @@ namespace Amberstar.Game.Screens
 
 		private void AfterMove()
 		{
-			FillMap(game!.State.PartyPosition.X - TilesPerRow / 2, game.State.PartyPosition.Y - TileRows / 2, true);
+			var playerPosition = game!.State.PartyPosition;
+			FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
+
+			// Check for events
+			var eventIndex = map!.Tiles[playerPosition.X + playerPosition.Y * map.Width].Event;
+
+			if (eventIndex != 0)
+				game.EventHandler.HandleEvent(EventTrigger.Move, Event.CreateEvent(map.Events[eventIndex - 1]), map);
 		}
 
 		private void UpdateMovement()

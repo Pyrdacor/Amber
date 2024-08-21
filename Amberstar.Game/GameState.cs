@@ -10,5 +10,7 @@ namespace Amberstar.Game
 		public Position PartyPosition { get; set; } = new(7, 10);
 		public Direction PartyDirection { get; set; } = Direction.Right;
 		public TravelType TravelType { get; set; }
+		// TODO: Use special item bit mask later
+		public bool HasWindChain{ get; set; }
 	}
 }

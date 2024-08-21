@@ -3,6 +3,7 @@ using Amber.Renderer;
 using Amberstar.Game.Screens;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
+using EventHandler = Amberstar.Game.Events.EventHandler;
 using IAssetProvider = Amberstar.GameData.IAssetProvider;
 
 namespace Amberstar.Game
@@ -28,6 +29,7 @@ namespace Amberstar.Game
 			PaletteIndexProvider = paletteIndexProvider;
 			ScreenHandler = new(this);
 			State = new();
+			EventHandler = new(this);
 			this.pressedKeyProvider = pressedKeyProvider;
 
 			int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;
@@ -59,6 +61,7 @@ namespace Amberstar.Game
 		internal IPaletteIndexProvider PaletteIndexProvider { get; }
 		internal ScreenHandler ScreenHandler { get; }
 		internal GameState State { get; }
+		internal EventHandler EventHandler { get; }
 
 		public void Update(double delta)
 		{
@@ -113,6 +116,41 @@ namespace Amberstar.Game
 		public void MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
 		{
 			ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons);
+		}
+
+		internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
+		{
+			// TODO: fade
+			var map = AssetProvider.MapLoader.LoadMap(mapIndex);
+
+			State.PartyPosition = new(x - 1, y - 1);
+			State.PartyDirection = direction;
+			State.MapIndex = mapIndex;
+
+			if (map.Type == MapType.Map2D)
+			{
+				if (ScreenHandler.ActiveScreen?.Type == ScreenType.Map2D)
+					(ScreenHandler.ActiveScreen as Map2DScreen)!.MapChanged();
+				else
+				{
+					ScreenHandler.ClearAllScreens();
+					ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
+				}
+			}
+			else // 3D
+			{
+				throw new NotImplementedException("3D maps are not implemented");
+			}
+		}
+
+		internal void ShowText(int textIndex, Action followAction)
+		{
+			// TODO
+		}
+
+		internal void ShowPictureWithText(int pictureIndex, int textIndex, Action followAction)
+		{
+			// TODO
 		}
 
 		// TODO: Move somewhere else
