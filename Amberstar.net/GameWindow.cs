@@ -256,9 +256,9 @@ namespace Amberstar
 			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
             // setup the layers
-            LayerSetup.Run(assetProvider, renderer, out var uiGraphicIndexProvider, out var paletteIndexProvider);
+            LayerSetup.Run(assetProvider, renderer, out var uiGraphicIndexProvider, out var paletteIndexProvider, out var fontInfoProvider);
 
-			game = new Game.Game(renderer, assetProvider, uiGraphicIndexProvider, paletteIndexProvider, QueryPressedKeys);
+			game = new Game.Game(renderer, assetProvider, uiGraphicIndexProvider, paletteIndexProvider, fontInfoProvider, QueryPressedKeys);
 
 			initialized = true;
         }

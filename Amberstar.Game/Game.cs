@@ -21,7 +21,7 @@ namespace Amberstar.Game
 
 		public Game(IRenderer renderer, IAssetProvider assetProvider,
 			IUIGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
-			Func<List<Key>> pressedKeyProvider)
+			IFontInfoProvider fontInfoProvider, Func<List<Key>> pressedKeyProvider)
 		{
 			Renderer = renderer;
 			AssetProvider = assetProvider;
@@ -30,6 +30,7 @@ namespace Amberstar.Game
 			ScreenHandler = new(this);
 			State = new();
 			EventHandler = new(this);
+			TextManager = new(this, AssetProvider.FontLoader.LoadFont(), fontInfoProvider);
 			this.pressedKeyProvider = pressedKeyProvider;
 
 			int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;
@@ -53,6 +54,9 @@ namespace Amberstar.Game
 				PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.Castle), true);*/
 
 			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
+
+			var foo = TextManager.Create("Hello World!");
+			foo.Draw(220, 70, 100);
 		}
 
 		internal IRenderer Renderer { get; }
@@ -62,6 +66,7 @@ namespace Amberstar.Game
 		internal ScreenHandler ScreenHandler { get; }
 		internal GameState State { get; }
 		internal EventHandler EventHandler { get; }
+		internal TextManager TextManager { get; }
 
 		public void Update(double delta)
 		{
@@ -120,7 +125,11 @@ namespace Amberstar.Game
 
 		internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
 		{
+			if (State.MapIndex != mapIndex)
+				fade = true; // always fade when switching maps
+
 			// TODO: fade
+
 			var map = AssetProvider.MapLoader.LoadMap(mapIndex);
 
 			State.PartyPosition = new(x - 1, y - 1);

@@ -1,6 +1,7 @@
 ﻿using Amber.Assets.Common;
 using Amber.Renderer;
 using Ambermoon.Renderer.OpenGL;
+using Amberstar.Game;
 using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
@@ -10,7 +11,8 @@ namespace Amberstar.net
 	{
 		public static void Run(AssetProvider assetProvider, Renderer renderer,
 			out UIGraphicIndexProvider uiGraphicIndexProvider,
-			out PaletteIndexProvider paletteIndexProvider)
+			out PaletteIndexProvider paletteIndexProvider,
+			out FontInfoProvider fontInfoProvider)
 		{
 			/*
 			Layout, // opaque, drawn in the back
@@ -136,10 +138,52 @@ namespace Amberstar.net
 
 			#endregion
 
+
+			#region Text
+
+			graphics = [];
+			var font = assetProvider.FontLoader.LoadFont();
+			var textGlyphTextureIndices = new Dictionary<char, int>();
+			var runeGlyphTextureIndices = new Dictionary<char, int>();
+			int glyphTextureIndex = 0;
+			for (int i = 33; i < 256; i++)
+			{
+				var glyph = font.GetGlyph((char)i, false);
+
+				if (glyph != null)
+				{
+					textGlyphTextureIndices.Add((char)i, glyphTextureIndex);
+					graphics.Add(glyphTextureIndex++, glyph);
+				}					
+			}
+			for (int i = 33; i < 256; i++)
+			{
+				var glyph = font.GetGlyph((char)i, true);
+
+				if (glyph != null)
+				{
+					runeGlyphTextureIndices.Add((char)i, glyphTextureIndex++);
+					graphics.Add(glyphTextureIndex++, glyph);
+				}
+			}
+			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
+			{
+				BaseZ = 0.7f,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				Palette = paletteTexture,
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+				Texture = renderer.TextureFactory.CreateAtlas(graphics),
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			#endregion
+
 			// TODO ...
 
 			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset);
 			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
+			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}
 	}
 }

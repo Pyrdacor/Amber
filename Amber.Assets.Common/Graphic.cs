@@ -37,6 +37,24 @@ public class Graphic : IGraphic
 
 	private protected static byte[] ReadBitPlanes(int width, int height, byte[] data, int planes, int frameCount = 1)
 	{
+		if (width <= 8 && planes == 1 && frameCount == 1) // font
+		{
+			byte[] glyphlData = new byte[width * height];
+
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int mask = 1 << (7 - x);
+
+					if ((data[y] & mask) != 0)
+						glyphlData[y * width + x] = 1;
+				}
+			}
+
+			return glyphlData;
+		}
+
 		if (planes < 1 || planes > 8)
 			throw new AmberException(ExceptionScope.Application, "Bit planes must be between 1 and 8.");
 		if (data.Length != frameCount * width * height * planes / 8)

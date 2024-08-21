@@ -17,6 +17,10 @@ namespace Amberstar.net
 
 		public byte GetLabyrinthPaletteIndex(int paletteIndex) => generalPalettes[paletteIndex];
 
+		public byte GetTextPaletteIndex() => uiPaletteIndex; // TODO?
+
 		public byte GetTilesetPaletteIndex(int tileset) => palettesTileset[tileset];
+
+
 	}
 }

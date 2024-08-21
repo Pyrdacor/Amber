@@ -23,6 +23,7 @@ public enum EmbeddedDataOffset
 	Names,
 	SpellSchoolNames,
 	Graphics,
+	TextConversionTab
 }
 
 public class AssetProvider : IAssetProvider
@@ -73,6 +74,7 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<IPaletteLoader> paletteLoader;
 	readonly Lazy<IGraphicLoader> graphicLoader;
 	readonly Lazy<ITilesetLoader> tilesetLoader;
+	readonly Lazy<IFontLoader> fontLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -83,6 +85,7 @@ public class AssetProvider : IAssetProvider
 	public IPaletteLoader PaletteLoader => paletteLoader.Value;
 	public IGraphicLoader GraphicLoader => graphicLoader.Value;
 	public ITilesetLoader TilesetLoader => tilesetLoader.Value;
+	public IFontLoader FontLoader => fontLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -114,6 +117,7 @@ public class AssetProvider : IAssetProvider
 		paletteLoader = new(() => new PaletteLoader(this, UIPalette));
 		graphicLoader = new(() => new GraphicLoader(this));
 		tilesetLoader = new(() => new TilesetLoader(this));
+		fontLoader = new(() => new FontLoader(this));
 	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
@@ -200,6 +204,7 @@ public class AssetProvider : IAssetProvider
 				AssetType.Button => CreateAssets(Data.Buttons),
 				AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
 				AssetType.ItemGraphic => CreateAssets(Data.ItemGraphics),
+				AssetType.Font => CreateAssets(Data.Fonts),
 				_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {identifier.Type} for Atari asset provider")
 			};
 
@@ -331,6 +336,11 @@ public class AssetProvider : IAssetProvider
 				while (dataReader.PeekWord() != 0)
 					dataReader.Position += 2;
 				return dataReader.PeekDword() == 0x00008000;
+			case EmbeddedDataOffset.TextConversionTab:
+				if (!FindAndGotoByteSequence(dataReader, 0x37800, 0x01, 0x3B, 0x00, 0x00, 0x00, 0xC2))
+					return false;
+				dataReader.Position += 6;
+				return true;
 			default:
 				return false;
 		}

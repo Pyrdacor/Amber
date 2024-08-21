@@ -200,6 +200,11 @@ namespace Amberstar.GameData.Legacy
 			for (int i = (int)UIGraphic.HPBar; i <= (int)UIGraphic.LastUIGraphic; i++)
 				AddUIGraphic((UIGraphic)i);
 			#endregion
+			#region Read Version
+			if (!dataSeeker(EmbeddedDataOffset.TextConversionTab, dataReader))
+				throw new AmberException(ExceptionScope.Application, "Could not find the font information in the program file.");
+			Fonts.Add(0, new DataReader(dataReader.ReadBytes(0x3fe)));
+			#endregion
 
 			// TODO: places
 		}
@@ -293,6 +298,7 @@ namespace Amberstar.GameData.Legacy
 		public Dictionary<int, IDataReader> Buttons { get; } = [];
 		public Dictionary<int, IDataReader> StatusIcons { get; } = [];
 		public Dictionary<int, IDataReader> ItemGraphics { get; } = [];
+		public Dictionary<int, IDataReader> Fonts { get; } = [];
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;
