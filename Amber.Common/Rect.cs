@@ -60,6 +60,30 @@ public readonly struct Rect : IEquatable<Rect>
 		);
 	}
 
+	public void Clip(ref Position position, ref Size size)
+	{
+		int right = position.X + size.Width;
+		int bottom = position.Y + size.Height;
+		position = new(Math.Max(Left, position.X), Math.Max(Top, position.Y));
+		size = new(MathUtil.Limit(0, right - position.X, size.Width), MathUtil.Limit(0, bottom - position.Y, size.Height));
+	}
+
+	public void Clip(ref FloatPosition position, ref FloatSize size)
+	{
+		float right = position.X + size.Width;
+		float bottom = position.Y + size.Height;
+		position = new(Math.Max(Left, position.X), Math.Max(Top, position.Y));
+		size = new(MathUtil.Limit(0, right - position.X, size.Width), MathUtil.Limit(0, bottom - position.Y, size.Height));
+	}
+
+	public void Clip(ref FloatPosition position, ref Size size)
+	{
+		float right = position.X + size.Width;
+		float bottom = position.Y + size.Height;
+		position = new(Math.Max(Left, position.X), Math.Max(Top, position.Y));
+		size = new(MathUtil.Limit(0, MathUtil.Round(right - position.X), size.Width), MathUtil.Limit(0, MathUtil.Round(bottom - position.Y), size.Height));
+	}
+
 	public bool Equals(Rect other)
 	{
 		return Position == other.Position && Size == other.Size;

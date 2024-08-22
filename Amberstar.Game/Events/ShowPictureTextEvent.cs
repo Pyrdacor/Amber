@@ -21,18 +21,10 @@ namespace Amberstar.Game.Events
 			if ((triggerMask & expectedTriggerMask) == 0)
 				return false;
 
-			void SetWord()
-			{
-				if (SetWordBit != 0)
-				{
-					// TODO ...
-				}
-			}
-
 			if (Picture == 0)
-				game.ShowText(TextIndex, SetWord);
+				game.ShowText();
 			else
-				game.ShowPictureWithText(Picture, TextIndex, SetWord);
+				game.ShowPictureWithText();
 
 			return true;
 		}

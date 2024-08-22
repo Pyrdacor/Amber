@@ -6,5 +6,6 @@ public enum Layout
 	CharacterCreator = 1,
 	Inventory = 2,
 	Map3D = 5,
+	PictureText = 7,
 	// TODO ...
 }

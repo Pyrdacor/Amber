@@ -76,6 +76,7 @@ namespace Amber.Renderer.OpenGL.Drawables
 	{
 		Size size = new(0, 0);
 		int baseLineOffset;
+		Rect? clipRect;
 
 		private protected SizedDrawable(Layer layer, RenderBuffer renderBuffer)
 			: base(layer, renderBuffer)
@@ -115,16 +116,31 @@ namespace Amber.Renderer.OpenGL.Drawables
 			}
 		}
 
+		public Rect? ClipRect
+		{
+			get => clipRect;
+			set
+			{
+				if (clipRect != value)
+				{
+					clipRect = value;
+
+					if (Visible && DrawIndex != -1)
+						UpdatePosition();
+				}
+			}
+		}
+
 		private protected override void UpdatePosition()
 		{
 			if (DrawIndex != -1)
-				renderBuffer.UpdatePosition(DrawIndex, this, 0, layer.PositionTransformation, layer.SizeTransformation);
+				renderBuffer.UpdatePosition(DrawIndex, this, layer.PositionTransformation, layer.SizeTransformation);
 		}
 
 		private protected virtual void UpdateSize()
 		{
 			if (DrawIndex != -1)
-				renderBuffer.UpdatePosition(DrawIndex, this, 0, layer.PositionTransformation, layer.SizeTransformation);
+				renderBuffer.UpdatePosition(DrawIndex, this, layer.PositionTransformation, layer.SizeTransformation);
 		}
 
 		private protected override bool CanBeVisible() => base.CanBeVisible() && !size.Empty;

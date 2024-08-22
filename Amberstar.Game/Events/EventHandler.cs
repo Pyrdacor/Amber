@@ -4,9 +4,17 @@ namespace Amberstar.Game.Events
 {
     internal class EventHandler(Game game)
     {
-        public bool HandleEvent(EventTrigger trigger, Event @event, IEventProvider eventProvider)
+		internal IEvent? CurrentEvent { get; private set; }
+
+		public bool HandleEvent(EventTrigger trigger, Event @event, IEventProvider eventProvider)
         {
-            return @event.Handle(trigger, game, eventProvider);
+			CurrentEvent = @event;
+
+			bool result = @event.Handle(trigger, game, eventProvider);
+
+			CurrentEvent = null;
+
+			return result;
 		}
     }
 }

@@ -13,11 +13,14 @@ namespace Amberstar.Game.Screens
 		BattlePositions,
 		Door,
 		Chest,
+		PictureText,
 		// TODO ...
 	}
 
 	internal abstract class Screen
 	{
+		Action? closeAction;
+
 		public abstract ScreenType Type { get; }
 
 		public virtual void Init(Game game)
@@ -30,14 +33,14 @@ namespace Amberstar.Game.Screens
 			// default: empty
 		}
 
-		public virtual void Open(Game game)
+		public virtual void Open(Game game, Action? closeAction)
 		{
-			// default: empty
+			this.closeAction = closeAction;
 		}
 
 		public virtual void Close(Game game)
 		{
-			// default: empty
+			closeAction?.Invoke();
 		}
 
 		public virtual void ScreenPushed(Game game, Screen screen)
@@ -51,11 +54,6 @@ namespace Amberstar.Game.Screens
 		}
 
 		public virtual void Update(Game game, long elapsedTicks)
-		{
-			// default: empty
-		}
-
-		public virtual void Render(Game game)
 		{
 			// default: empty
 		}
@@ -105,9 +103,10 @@ namespace Amberstar.Game.Screens
 
 		public Screen Create(ScreenType screenType)
 		{
-			var screen = screenType switch
+			Screen screen = screenType switch
 			{
 				ScreenType.Map2D => new Map2DScreen(),
+				ScreenType.PictureText => new PictureTextScreen(),
 				_ => throw new NotImplementedException()
 			};
 
@@ -117,17 +116,20 @@ namespace Amberstar.Game.Screens
 			return screen;
 		}
 
-		public bool PushScreen(Screen screen)
+		public bool PushScreen(Screen screen, Action? followAction = null)
 		{
 			var currentScreen = ActiveScreen;
 
 			if (currentScreen?.Type == screen.Type)
+			{
+				followAction?.Invoke();
 				return false;
+			}
 
 			screens.Push(screen);
 
 			currentScreen?.ScreenPushed(game, screen);
-			screen.Open(game);
+			screen.Open(game, followAction);
 
 			return true;
 		}
@@ -153,10 +155,10 @@ namespace Amberstar.Game.Screens
 			}
 		}
 
-		public void ReplaceScreen(Screen screen)
+		public void ReplaceScreen(Screen screen, Action? followAction = null)
 		{
 			PopScreen();
-			PushScreen(screen);
+			PushScreen(screen, followAction);
 		}
 
 		public void Dispose()

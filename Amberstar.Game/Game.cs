@@ -11,6 +11,8 @@ namespace Amberstar.Game
 {
 	public class Game : IDisposable
 	{
+		record TimedAction(long Key, Action Action);
+
 		const long TicksPerSecond = 60;
 		double totalTime = 0.0;
 		long lastGameTicks = 0;
@@ -19,7 +21,8 @@ namespace Amberstar.Game
 		readonly ISprite layoutSprite;
 		readonly Func<List<Key>> pressedKeyProvider;
 		List<Key>? pressedKeys = null;
-		readonly SortedStack<long, Action> timedActions = new();
+		readonly SortedStack<long, TimedAction> timedActions = new();
+		long lastTimedActionKey = -1;
 		IRenderText timeText; // for debugging
 
 		public Game(IRenderer renderer, IAssetProvider assetProvider,
@@ -67,13 +70,13 @@ namespace Amberstar.Game
 			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
 
 			timeText = TextManager.Create($"{State.Hour:00}:{State.Minute:00}");
-			timeText.Draw(220, 70, 100);
+			timeText.Show(220, 70, 100);
 
 			Time.MinuteChanged += () =>
 			{
 				timeText.Delete();
 				timeText = TextManager.Create($"{State.Hour:00}:{State.Minute:00}");
-				timeText.Draw(220, 70, 100);
+				timeText.Show(220, 70, 100);
 			};
 		}
 
@@ -97,7 +100,7 @@ namespace Amberstar.Game
 
 			if (readyTimedAction != null)
 			{
-				readyTimedAction();
+				readyTimedAction.Action();
 				return;
 			}
 
@@ -114,7 +117,7 @@ namespace Amberstar.Game
 
 		public void Render(double delta)
 		{
-			ScreenHandler.ActiveScreen?.Render(this);
+			// TODO: needed?
 		}
 
 		public void KeyDown(Key key, KeyModifiers keyModifiers)
@@ -181,14 +184,14 @@ namespace Amberstar.Game
 			}
 		}
 
-		internal void ShowText(int textIndex, Action followAction)
+		internal void ShowText(Action? nextAction = null)
 		{
 			// TODO
 		}
 
-		internal void ShowPictureWithText(int pictureIndex, int textIndex, Action followAction)
+		internal void ShowPictureWithText()
 		{
-			// TODO
+			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.PictureText));
 		}
 
 		// TODO: Move somewhere else
@@ -236,9 +239,16 @@ namespace Amberstar.Game
 			layoutSprite.TextureOffset = textureAtlas.GetOffset((int)layout);
 		}
 
-		internal void AddDelayedAction(long delay, Action action)
+		internal long AddDelayedAction(long delay, Action action)
 		{
-			timedActions.Push(gameTicks + delay, action);
+			timedActions.Push(gameTicks + delay, new(++lastTimedActionKey, action));
+			return lastTimedActionKey;
+		}
+
+		internal void DeleteDelayedActions(params long[] keys)
+		{
+			var lookup = new HashSet<long>(keys);
+			timedActions.Remove(timedAction => lookup.Contains(timedAction.Key));
 		}
 
 		internal bool IsKeyDown(Key key) => (pressedKeys ?? pressedKeyProvider()).Contains(key);

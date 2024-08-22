@@ -56,6 +56,7 @@ namespace Amberstar.Game.Screens
 		long lastMoveStartTicks = 0;
 		long currentTicks = 0;
 		bool additionalMoveRequested = false;
+		bool screenPushPlayerWasVisible = false;
 
 		public override ScreenType Type { get; } = ScreenType.Map2D;
 
@@ -71,8 +72,31 @@ namespace Amberstar.Game.Screens
 			tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
 		}
 
-		public override void Open(Game game)
+		public override void ScreenPushed(Game game, Screen screen)
 		{
+			base.ScreenPushed(game, screen);
+
+			// TODO: check for transparent screens?
+			underlay.Values.ToList().ForEach(tile => tile.Visible = false);
+			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
+			screenPushPlayerWasVisible = player!.Visible;
+			player!.Visible = false;
+		}
+
+		public override void ScreenPopped(Game game, Screen screen)
+		{
+			game.SetLayout(Layout.Map2D);
+			underlay.Values.ToList().ForEach(tile => tile.Visible = true);
+			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
+			player!.Visible = screenPushPlayerWasVisible;
+
+			base.ScreenPopped(game, screen);
+		}
+
+		public override void Open(Game game, Action? closeAction)
+		{
+			base.Open(game, closeAction);
+
 			moveTickCounter = 0;
 			lastMoveStartTicks = 0;
 			currentTicks = 0;
@@ -90,11 +114,8 @@ namespace Amberstar.Game.Screens
 			ClearMap();
 			player!.Visible = false;
 			player = null;
-		}
 
-		public override void Render(Game game)
-		{
-			// TODO
+			base.Close(game);
 		}
 
 		public override void Update(Game game, long elapsedTicks)

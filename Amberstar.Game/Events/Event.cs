@@ -5,8 +5,9 @@ namespace Amberstar.Game.Events
 {
 	internal enum EventTrigger
 	{
-		Move,
+		// Note: Keep Eye as 0 and Move as 1 as it must match the event data!
 		Eye,
+		Move,
 		Ear,
 		Mouth,
 		UseItem

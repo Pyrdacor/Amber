@@ -117,10 +117,10 @@ internal class RenderBuffer : IDisposable
     {
         var position = new FloatPosition(sprite.Position);
         var spriteSize = new Size(sprite.Size);
-        var textureAtlasOffset = new Position(sprite.TextureOffset);
+        var textureOffset = new Position(sprite.TextureOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
 
-        /*if (sprite.ClipArea != null)
+        if (sprite.ClipRect != null)
         {
             float textureWidthFactor = (float)spriteSize.Width / textureSize.Width;
             float textureHeightFactor = (float)spriteSize.Height / textureSize.Height;
@@ -128,22 +128,25 @@ internal class RenderBuffer : IDisposable
             float oldY = position.Y;
             int oldWidth = spriteSize.Width;
             int oldHeight = spriteSize.Height;
-            sprite.ClipArea.ClipRect(position, spriteSize);
-            textureAtlasOffset.Y += Util.Round((position.Y - oldY) / textureHeightFactor);
-            textureSize.Width -= Util.Round((oldWidth - spriteSize.Width) / textureWidthFactor);
-            textureSize.Height -= Util.Round((oldHeight - spriteSize.Height) / textureHeightFactor);
+            sprite.ClipRect.Value.Clip(ref position, ref spriteSize);
+            int textureX = textureOffset.X;
+            int textureY = textureOffset.Y + MathUtil.Round((position.Y - oldY) / textureHeightFactor);
+			textureSize = new(textureSize.Width - MathUtil.Round((oldWidth - spriteSize.Width) / textureWidthFactor),
+                textureSize.Height - MathUtil.Round((oldHeight - spriteSize.Height) / textureHeightFactor));
 
             if (sprite.MirrorX)
             {
                 float oldRight = oldX + oldWidth;
                 float newRight = position.X + spriteSize.Width;
-                textureAtlasOffset.X += Util.Round((oldRight - newRight) / textureWidthFactor);
+				textureX += MathUtil.Round((oldRight - newRight) / textureWidthFactor);
             }
             else
             {
-                textureAtlasOffset.X += Util.Round((position.X - oldX) / textureWidthFactor);
+				textureX += MathUtil.Round((position.X - oldX) / textureWidthFactor);
             }
-        }*/
+
+            textureOffset = new(textureX, textureY);
+        }
 
         var size = new FloatSize(spriteSize);
 
@@ -192,17 +195,17 @@ internal class RenderBuffer : IDisposable
 
             if (sprite.MirrorX)
             {
-                int textureOffsetBufferIndex = textureOffsetBuffer.Add((short)(textureAtlasOffset.X + textureSize.Width), (short)textureAtlasOffset.Y, index);
-				textureOffsetBuffer.Add((short)textureAtlasOffset.X, (short)textureAtlasOffset.Y, textureOffsetBufferIndex + 1);
-				textureOffsetBuffer.Add((short)textureAtlasOffset.X, (short)(textureAtlasOffset.Y + textureSize.Height), textureOffsetBufferIndex + 2);
-				textureOffsetBuffer.Add((short)(textureAtlasOffset.X + textureSize.Width), (short)(textureAtlasOffset.Y + textureSize.Height), textureOffsetBufferIndex + 3);
+                int textureOffsetBufferIndex = textureOffsetBuffer.Add((short)(textureOffset.X + textureSize.Width), (short)textureOffset.Y, index);
+				textureOffsetBuffer.Add((short)textureOffset.X, (short)textureOffset.Y, textureOffsetBufferIndex + 1);
+				textureOffsetBuffer.Add((short)textureOffset.X, (short)(textureOffset.Y + textureSize.Height), textureOffsetBufferIndex + 2);
+				textureOffsetBuffer.Add((short)(textureOffset.X + textureSize.Width), (short)(textureOffset.Y + textureSize.Height), textureOffsetBufferIndex + 3);
             }
             else
             {
-                int textureOffsetBufferIndex = textureOffsetBuffer.Add((short)textureAtlasOffset.X, (short)textureAtlasOffset.Y, index);
-                textureOffsetBuffer.Add((short)(textureAtlasOffset.X + textureSize.Width), (short)textureAtlasOffset.Y, textureOffsetBufferIndex + 1);
-                textureOffsetBuffer.Add((short)(textureAtlasOffset.X + textureSize.Width), (short)(textureAtlasOffset.Y + textureSize.Height), textureOffsetBufferIndex + 2);
-                textureOffsetBuffer.Add((short)textureAtlasOffset.X, (short)(textureAtlasOffset.Y + textureSize.Height), textureOffsetBufferIndex + 3);
+                int textureOffsetBufferIndex = textureOffsetBuffer.Add((short)textureOffset.X, (short)textureOffset.Y, index);
+                textureOffsetBuffer.Add((short)(textureOffset.X + textureSize.Width), (short)textureOffset.Y, textureOffsetBufferIndex + 1);
+                textureOffsetBuffer.Add((short)(textureOffset.X + textureSize.Width), (short)(textureOffset.Y + textureSize.Height), textureOffsetBufferIndex + 2);
+                textureOffsetBuffer.Add((short)textureOffset.X, (short)(textureOffset.Y + textureSize.Height), textureOffsetBufferIndex + 3);
             }
         }
 
@@ -243,15 +246,15 @@ internal class RenderBuffer : IDisposable
         return index;
     }
 
-    public void UpdatePosition(int index, ISizedDrawable drawable, int baseLineOffset,
+    public void UpdatePosition(int index, ISizedDrawable drawable,
         PositionTransformation? positionTransformation, SizeTransformation? sizeTransformation)
     {
-        var position = new FloatPosition(drawable.Position);
+		var position = new FloatPosition(drawable.Position);
         var size = new FloatSize(drawable.Size);
 
-        //drawable.ClipArea?.ClipRect(position, size);
+		drawable.ClipRect?.Clip(ref position, ref size);
 
-        if (positionTransformation != null)
+		if (positionTransformation != null)
             position = positionTransformation(position);
 
         if (sizeTransformation != null)
@@ -315,7 +318,7 @@ internal class RenderBuffer : IDisposable
             textureOffset = new(textureOffset.X + animatedSprite.CurrentFrameIndex * textureSize.Width, textureOffset.Y);
         }
 
-        /*if (sprite.ClipArea != null)
+        if (sprite.ClipRect != null)
         {
             float textureWidthFactor = (float)spriteSize.Width / textureSize.Width;
             float textureHeightFactor = (float)spriteSize.Height / textureSize.Height;
@@ -323,22 +326,26 @@ internal class RenderBuffer : IDisposable
             float oldY = position.Y;
             int oldWidth = spriteSize.Width;
             int oldHeight = spriteSize.Height;
-            sprite.ClipArea.ClipRect(position, spriteSize);
-            textureOffset.Y += Util.Round((position.Y - oldY) / textureHeightFactor);
-            textureSize.Width -= Util.Round((oldWidth - spriteSize.Width) / textureWidthFactor);
-            textureSize.Height -= Util.Round((oldHeight - spriteSize.Height) / textureHeightFactor);
+
+            sprite.ClipRect.Value.Clip(ref position, ref spriteSize);
+            int textureX = textureOffset.X;
+            int textureY = textureOffset.Y + MathUtil.Round((position.Y - oldY) / textureHeightFactor);
+            textureSize = new(textureSize.Width - MathUtil.Round((oldWidth - spriteSize.Width) / textureWidthFactor),
+                textureSize.Height - MathUtil.Round((oldHeight - spriteSize.Height) / textureHeightFactor));
 
             if (sprite.MirrorX)
             {
                 float oldRight = oldX + oldWidth;
                 float newRight = position.X + spriteSize.Width;
-                textureOffset.X += Util.Round((oldRight - newRight) / textureWidthFactor);
+                textureX += MathUtil.Round((oldRight - newRight) / textureWidthFactor);
             }
             else
             {
-                textureOffset.X += Util.Round((position.X - oldX) / textureWidthFactor);
+                textureX += MathUtil.Round((position.X - oldX) / textureWidthFactor);
             }
-        }*/
+
+            textureOffset = new(textureX, textureY);
+        }
 
         textureSize = new Size(textureSize.Width * textureFactor, textureSize.Height * textureFactor);
 

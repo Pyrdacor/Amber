@@ -18,6 +18,7 @@ public interface ISizedDrawable : IDrawable
 	/// This offset is added to Y + Height to determine the actual baseline.
 	/// </summary>
 	int BaseLineOffset { get; set; }
+	Rect? ClipRect { get; set; }
 }
 
 public interface ILayeredDrawable : IDrawable
