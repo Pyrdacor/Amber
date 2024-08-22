@@ -20,6 +20,7 @@ namespace Amberstar.Game
 		readonly Func<List<Key>> pressedKeyProvider;
 		List<Key>? pressedKeys = null;
 		readonly SortedStack<long, Action> timedActions = new();
+		IRenderText timeText; // for debugging
 
 		public Game(IRenderer renderer, IAssetProvider assetProvider,
 			IUIGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
@@ -30,9 +31,17 @@ namespace Amberstar.Game
 			UIGraphicIndexProvider = uiGraphicIndexProvider;
 			PaletteIndexProvider = paletteIndexProvider;
 			ScreenHandler = new(this);
-			State = new();
+			try
+			{
+				State = new(assetProvider.SavegameLoader.LoadSavegame());
+			}
+			catch
+			{
+				State = new();
+			}
 			EventHandler = new(this);
 			TextManager = new(this, AssetProvider.FontLoader.LoadFont(), fontInfoProvider);
+			Time = new(this);
 			this.pressedKeyProvider = pressedKeyProvider;
 
 			int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;
@@ -57,8 +66,15 @@ namespace Amberstar.Game
 
 			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
 
-			var foo = TextManager.Create("Hello World!");
-			foo.Draw(220, 70, 100);
+			timeText = TextManager.Create($"{State.Hour:00}:{State.Minute:00}");
+			timeText.Draw(220, 70, 100);
+
+			Time.MinuteChanged += () =>
+			{
+				timeText.Delete();
+				timeText = TextManager.Create($"{State.Hour:00}:{State.Minute:00}");
+				timeText.Draw(220, 70, 100);
+			};
 		}
 
 		internal IRenderer Renderer { get; }
@@ -69,24 +85,29 @@ namespace Amberstar.Game
 		internal GameState State { get; }
 		internal EventHandler EventHandler { get; }
 		internal TextManager TextManager { get; }
+		internal Time Time { get; }
 
 		public void Update(double delta)
 		{
 			totalTime += delta;
 			gameTicks = (long)Math.Round(totalTime * TicksPerSecond);
 
+			// Execute timed actions which are ready.
+			var readyTimedAction = timedActions.Pop(gameTicks);
+
+			if (readyTimedAction != null)
+			{
+				readyTimedAction();
+				return;
+			}
+
 			if (gameTicks == lastGameTicks)
 				return;
-
-			// Execute time actions which are ready.
-			foreach (var readyTimedAction in timedActions.Pop(gameTicks))
-			{
-				readyTimedAction?.Invoke();
-			}
 
 			long elapsed = gameTicks - lastGameTicks;
 			lastGameTicks = gameTicks;
 
+			Time.Update(elapsed);
 			ScreenHandler.ActiveScreen?.Update(this, elapsed);
 			pressedKeys = null; // reset
 		}
@@ -140,7 +161,7 @@ namespace Amberstar.Game
 
 			var map = AssetProvider.MapLoader.LoadMap(mapIndex);
 
-			State.PartyPosition = new(x - 1, y - 1);
+			State.SetPartyPosition(x - 1, y - 1);
 			State.PartyDirection = direction;
 			State.MapIndex = mapIndex;
 

@@ -58,12 +58,12 @@ public struct MapNPC
 
 public interface IMap : IEventProvider
 {
-	public int Width { get; }
-	public int Height { get; }
-	public MapType Type { get; }
-	public MapFlags Flags { get; }
-	public MapNPC[] NPCs { get; }
-	public PositionList[] NPCPositions { get; }
+	int Width { get; }
+	int Height { get; }
+	MapType Type { get; }
+	MapFlags Flags { get; }
+	MapNPC[] NPCs { get; }
+	PositionList[] NPCPositions { get; }
 
 	public const int EventCount = 254;
 	public const int NPCCount = 24;

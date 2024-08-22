@@ -25,6 +25,7 @@
 		ItemGraphic,
 		// ...
 		// Other stuff
+		Savegame,
 		Tileset,
 		Font,
 		Map,

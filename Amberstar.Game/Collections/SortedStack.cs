@@ -1,6 +1,7 @@
 ﻿namespace Amberstar.Game.Collections
 {
 	public class SortedStack<TKey, TValue> where TKey : IComparable<TKey>
+		where TValue : notnull
 	{
 		private readonly SortedList<TKey, Queue<TValue>> _sortedList = [];
 
@@ -15,30 +16,26 @@
 			queue.Enqueue(value);
 		}
 
-		public List<TValue> Pop(TKey maxKey)
+		public TValue? Pop(TKey maxKey)
 		{
-			List<TValue> itemsToPop = [];
-			List<TKey> keysToRemove = [];
-
 			foreach (var kvp in _sortedList)
 			{
 				if (kvp.Key.CompareTo(maxKey) <= 0)
 				{
-					while (kvp.Value.Count > 0)
-					{
-						itemsToPop.Add(kvp.Value.Dequeue());
-					}
+					var item = kvp.Value.Dequeue();
 
-					keysToRemove.Add(kvp.Key);
+					if (kvp.Value.Count == 0)
+						_sortedList.Remove(kvp.Key);
+
+					return item;
+				}
+				else
+				{
+					break;
 				}
 			}
 
-			foreach (var key in keysToRemove)
-			{
-				_sortedList.Remove(key);
-			}
-
-			return itemsToPop;
+			return default;
 		}
 	}
 }

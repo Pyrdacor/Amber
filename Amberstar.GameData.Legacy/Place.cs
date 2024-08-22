@@ -88,9 +88,9 @@ internal class TransportDealerData : PlaceData, ITransportDealerData
 	{
 		Transport = placeType switch
 		{
-			PlaceType.HorseDealer => Transport.Horse,
-			PlaceType.RaftDealer => Transport.Raft,
-			PlaceType.ShipDealer => Transport.Ship,
+			PlaceType.HorseDealer => TransportType.Horse,
+			PlaceType.RaftDealer => TransportType.Raft,
+			PlaceType.ShipDealer => TransportType.Ship,
 			_ => throw new AmberException(ExceptionScope.Application, "Invalid transport place type")
 		};
 
@@ -98,7 +98,7 @@ internal class TransportDealerData : PlaceData, ITransportDealerData
 			throw new AmberException(ExceptionScope.Data, "Mismatching transport type in place data");
 	}
 
-	public Transport Transport { get; }
+	public TransportType Transport { get; }
 
 	public word SpawnX => placeData[1];
 

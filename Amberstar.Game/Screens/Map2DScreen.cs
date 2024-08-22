@@ -2,7 +2,6 @@
 using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.GameData;
-using System.Linq;
 
 namespace Amberstar.Game.Screens
 {
@@ -183,13 +182,13 @@ namespace Amberstar.Game.Screens
 				if (newY != oldPosition.Y && !TileBlocksMovement(oldPosition.X, newY))
 				{
 					// only move in y direction
-					game.State.PartyPosition = new(oldPosition.X, newY);
+					game.State.SetPartyPosition(oldPosition.X, newY);
 					return true;
 				}
 				else if (newX != oldPosition.X && !TileBlocksMovement(newX, oldPosition.Y))
 				{
 					// only move in x direction
-					game.State.PartyPosition = new(newX, oldPosition.Y);
+					game.State.SetPartyPosition(newX, oldPosition.Y);
 					return true;
 				}
 				else
@@ -202,7 +201,7 @@ namespace Amberstar.Game.Screens
 			}
 
 			// Can move
-			game.State.PartyPosition = new(newX, newY);
+			game.State.SetPartyPosition(newX, newY);
 			return true;
 		}
 
@@ -210,6 +209,8 @@ namespace Amberstar.Game.Screens
 		{
 			var playerPosition = game!.State.PartyPosition;
 			FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
+
+			game.Time.Moved2D();
 
 			// Check for events
 			var eventIndex = map!.Tiles[playerPosition.X + playerPosition.Y * map.Width].Event;

@@ -38,16 +38,9 @@ public interface IGuildData : IPlaceData
 	word LevelPrice { get; }
 }
 
-public enum Transport
-{
-	Horse,
-	Raft,
-	Ship
-}
-
 public interface ITransportDealerData : IPlaceData
 {
-	Transport Transport { get; }
+	TransportType Transport { get; }
 
 	word SpawnX { get; }
 
