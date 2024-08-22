@@ -57,6 +57,8 @@ namespace Amberstar.Game.Screens
 		long currentTicks = 0;
 		bool additionalMoveRequested = false;
 		bool screenPushPlayerWasVisible = false;
+		IRenderText? timeText; // for debugging, TODO: REMOVE
+		byte palette = 0;
 
 		public override ScreenType Type { get; } = ScreenType.Map2D;
 
@@ -70,6 +72,20 @@ namespace Amberstar.Game.Screens
 		{
 			this.game = game;
 			tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
+
+			timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+			timeText.Show(220, 70, 100);
+
+			game.Time.MinuteChanged += () =>
+			{
+				timeText?.Delete();
+
+				if (game.ScreenHandler.ActiveScreen?.Type != ScreenType.Map2D)
+					return;
+
+				timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+				timeText.Show(220, 70, 100);
+			};
 		}
 
 		public override void ScreenPushed(Game game, Screen screen)
@@ -81,6 +97,8 @@ namespace Amberstar.Game.Screens
 			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			screenPushPlayerWasVisible = player!.Visible;
 			player!.Visible = false;
+
+			timeText?.Delete();
 		}
 
 		public override void ScreenPopped(Game game, Screen screen)
@@ -89,6 +107,10 @@ namespace Amberstar.Game.Screens
 			underlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			player!.Visible = screenPushPlayerWasVisible;
+
+			timeText?.Delete();
+			timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+			timeText.Show(220, 70, 100);
 
 			base.ScreenPopped(game, screen);
 		}
@@ -114,6 +136,8 @@ namespace Amberstar.Game.Screens
 			ClearMap();
 			player!.Visible = false;
 			player = null;
+
+			timeText?.Delete();
 
 			base.Close(game);
 		}
@@ -504,6 +528,7 @@ namespace Amberstar.Game.Screens
 			lastScrollY = -1;
 			map = game!.AssetProvider.MapLoader.LoadMap(index) as IMap2D; // TODO: catch exceptions
 			tileGraphicOffset = map!.TilesetIndex == 1 ? 0 : tilesets![0].Graphics.Count + 1;
+			palette = game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 
 			game.State.MapIndex = index;
 			game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)

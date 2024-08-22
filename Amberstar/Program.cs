@@ -12,13 +12,16 @@ namespace Amberstar
 	{
 		static void Main(string[] args)
 		{
-			var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
+			string basePath = @"D:\Projects\Amber\English\AmberfilesST";
+			//string basePath = @"D:\Projects\Amber\German\AmberfilesST";
+
+			var fileSystem = FileSystem.FromOperatingSystemPath(basePath);
 
 			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
 			void WriteTexts(AssetType assetType, int count, int start = 0, bool skipEmpty = false, bool textBlocks = false)
 			{
-				string folder = $@"D:\Projects\Amber\German\AmberfilesST\{assetType}s";
+				string folder = $@"{basePath}\{assetType}s";
 				Directory.CreateDirectory(folder);
 
 				for (int i = 0; i < count; i++)
@@ -70,34 +73,34 @@ namespace Amberstar
 			for (int i = 1; i <= 11; i++)
 			{
 				var layout = assetProvider.LayoutLoader.LoadLayout(i);
-				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout\{i:000}.png", layout, testPal, false);
+				WriteGraphic($@"{basePath}\Layout\{i:000}.png", layout, testPal, false);
 			}
 
-			WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Layout\PortraitArea.png", assetProvider.LayoutLoader.LoadPortraitArea(), testPal, false);
+			WriteGraphic($@"{basePath}\Layout\PortraitArea.png", assetProvider.LayoutLoader.LoadPortraitArea(), testPal, false);
 
 			for (int i = 0; i <= (int)UIGraphic.LastUIGraphic; i++)
 			{
 				var graphic = (UIGraphic)i;
-				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\UIGraphics\{graphic}.png", assetProvider.UIGraphicLoader.LoadGraphic(graphic), testPal, false);
+				WriteGraphic($@"{basePath}\UIGraphics\{graphic}.png", assetProvider.UIGraphicLoader.LoadGraphic(graphic), testPal, false);
 			}
 
 			for (int i = 0; i <= (int)Button.LastButton; i++)
 			{
 				var button = (Button)i;
-				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\Buttons\{button}.png", assetProvider.UIGraphicLoader.LoadButtonGraphic(button), testPal, false);
+				WriteGraphic($@"{basePath}\Buttons\{button}.png", assetProvider.UIGraphicLoader.LoadButtonGraphic(button), testPal, false);
 			}
 
 			for (int i = 0; i <= (int)StatusIcon.LastStatusIcon; i++)
 			{
 				var statusIcon = (StatusIcon)i;
-				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\StatusIcons\{statusIcon}.png", assetProvider.UIGraphicLoader.LoadStatusIcon(statusIcon), testPal, false);
+				WriteGraphic($@"{basePath}\StatusIcons\{statusIcon}.png", assetProvider.UIGraphicLoader.LoadStatusIcon(statusIcon), testPal, false);
 			}
 
 			for (int i = 1; i <= (int)Image80x80.LastImage; i++)
 			{
 				var image = (Image80x80)i;
 				var graphic = assetProvider.GraphicLoader.Load80x80Graphic(image);
-				WriteGraphic($@"D:\Projects\Amber\German\AmberfilesST\80x80Images\{i:000}.png", graphic, graphic.Palette.GetData(), false);
+				WriteGraphic($@"{basePath}\80x80Images\{i:000}.png", graphic, graphic.Palette.GetData(), false);
 			}
 		}
 

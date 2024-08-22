@@ -1,0 +1,65 @@
+Here is some technical information concerning Amberstar :
+
+* To play Amberstar, you must install it. This goes for harddisks as well
+as for floppy disks. To install Amberstar, run the program INSTALL.PRG from
+disk A. Installing on floppy disk requires three disks, which will be
+formatted by the program. You can NOT play from the original disks! After
+installing you may start playing by running AMBRSTAR.PRG from game-disk A. 
+
+* If you have problems with Amberstar, remove all resident programs and/or
+accessories.
+
+* Do NOT use a write cache when playing Amberstar, unless you know how to use
+it! Files may be destroyed when you leave the program by resetting. This also
+counts for other resident programs which influence disk access.
+Technical note : Timer C is periodically deactivated when playing.
+
+* If you would at some time like to restart from the beginning, you will have
+to install again.
+
+* Amberstar supports two drives while you are playing. If you are asked to
+insert a disk, it doesn't matter in which drive you insert it.
+In the installation program, only drive A is supported.
+HINT : once the game has started, only disks B and C are used.
+
+* Leave the original disks write-protected to avoid infections by viruses.
+
+* To increase the speed of the floppy disk version, we have included a special
+cache-program which extends the operating system's internal cache, thereby
+accelerating all disk accesses. To effectively use this cache, you should
+remove the write-protection on the game-disks. If you wish to employ this
+cache-program, follow these instructions :
+
+          - Create a folder called 'AUTO' on game disk A.
+          - Copy the program 'CACHE.PRG' from the original disk A into this
+            folder.
+
+The cache will be installed as soon as you boot from game-disk A.
+
+* If you have 'only' 1 megabyte of memory, the message [ Out of memory ] may
+appear at the start of the game. Please remove any accessories or AUTO-folder
+programs to get more free memory.
+
+* Amberstar supports all memory or harddisks recognized by TOS. However, should
+you have problems, please send us the original disks and a detailed description
+of the errors which occurred, plus a list of the hardware you use.
+
+* The program will print a message if an internal error occurs. Please write
+down the message and your last couple of moves, and send it to us together with
+your original disks.
+ 
+* We sadly cannot guarantee error-free operation if you do not have a standard
+ST (e.g. 16 MHz 68000, processor cache, Mega STe) or if you have a TT. The
+program will notice this and will skip the intro-sequence, because some
+critical programming methods are being used. If possible, disable any processor
+caches or speed-ups.
+
+* Amberstar does NOT support monochrome monitors.
+
+* By pressing F10 in the game you may view the version number of your copy.
+
+Have fun,
+
+J.Horneman
+9-6-1992
+

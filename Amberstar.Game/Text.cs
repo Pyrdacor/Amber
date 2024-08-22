@@ -1,8 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
-using Amber.Renderer.Common;
 using Amberstar.GameData;
-using System.Linq;
 
 namespace Amberstar.Game
 {
@@ -21,10 +19,11 @@ namespace Amberstar.Game
 	internal class TextManager(Game game, IFont font,
 		IFontInfoProvider fontInfoProvider)
 	{
-		const int DefaultInkColorIndex = 8;
-		const int DefaultPaperColorIndex = 0;
-		const int TransparentPaper = -1;
+		public const int DefaultInkColorIndex = 8;
+		public const int DefaultPaperColorIndex = 0;
+		public const int TransparentPaper = -1;
 		const int TicksPerScroll = 4; // TODO
+		const byte DefaultPaletteIndex = 0; // UI
 
 		struct TextBlock(int textColorIndex, int paperColorIndex, string text, bool runes)
 		{
@@ -42,7 +41,7 @@ namespace Amberstar.Game
 		class Text
 		(
 			Game game, List<TextLine> textLines, IFont font,
-			IFontInfoProvider fontInfoProvider
+			IFontInfoProvider fontInfoProvider, byte paletteIndex
 		) : IRenderText
 		{
 			readonly ILayer layer = game.Renderer.Layers[(int)Layer.Text];
@@ -142,6 +141,8 @@ namespace Amberstar.Game
 				glyph.TextureOffset = textureAtlas.GetOffset(glyphIndex);
 				int clipHeight = areaHeight == 0 ? int.MaxValue : areaHeight;
 				glyph.ClipRect = new(areaX, areaY, int.MaxValue, clipHeight);
+				glyph.MaskColorIndex = (byte)colorIndex;
+				glyph.PaletteIndex = paletteIndex;
 				glyph.Visible = true;
 
 				return glyph;
@@ -331,15 +332,18 @@ namespace Amberstar.Game
 			}
 		}
 
-		public IRenderText Create(IText text, int maxWidth)
+		public IRenderText Create(IText text, int maxWidth,
+			int defaultTextColorIndex = DefaultInkColorIndex,
+			int defaultPaperColorIndex = DefaultPaperColorIndex,
+			byte paletteIndex = DefaultPaletteIndex)
 		{
 			int maxWidthInCharacters = maxWidth / font.Advance;
 			var lines = text.GetLines(maxWidthInCharacters);
 			var textLines = new List<TextLine>();
 			var coloredTextBlocks = new List<TextBlock>();
 			string currentTextBlock = string.Empty;
-			int currentInk = DefaultInkColorIndex;
-			int currentPaper = DefaultPaperColorIndex;
+			int currentInk = defaultTextColorIndex;
+			int currentPaper = defaultPaperColorIndex;
 			bool runes = false;
 
 			foreach (var line in lines)
@@ -412,16 +416,19 @@ namespace Amberstar.Game
 			EndBlock();
 			EndLine();
 
-			return new Text(game, textLines, font, fontInfoProvider);
+			return new Text(game, textLines, font, fontInfoProvider, paletteIndex);
 		}
 
-		public IRenderText Create(string text)
+		public IRenderText Create(string text,
+			int defaultTextColorIndex = DefaultInkColorIndex,
+			int defaultPaperColorIndex = DefaultPaperColorIndex,
+			byte paletteIndex = DefaultPaletteIndex)
 		{
 			var textLines = new List<TextLine>();
 			var coloredTextBlocks = new List<TextBlock>();
 			string currentTextBlock = string.Empty;
-			int currentInk = DefaultInkColorIndex;
-			int currentPaper = DefaultPaperColorIndex;
+			int currentInk = defaultTextColorIndex;
+			int currentPaper = defaultPaperColorIndex;
 			bool runes = false;
 
 			for (int i = 0; i < text.Length; i++)
@@ -488,7 +495,7 @@ namespace Amberstar.Game
 			EndBlock();
 			EndLine();
 
-			return new Text(game, textLines, font, fontInfoProvider);
+			return new Text(game, textLines, font, fontInfoProvider, paletteIndex);
 		}
 	}
 }

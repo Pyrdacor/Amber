@@ -330,18 +330,18 @@ public class AssetProvider : IAssetProvider
 			case EmbeddedDataOffset.GlyphMappings:
 				return FindAndGotoByteSequence(dataReader, 0x700, 0x20, 0xff, 0xff, 0xff);
 			case EmbeddedDataOffset.Names:
-				return FindAndGotoByteSequence(dataReader, 0x2D000, 0x00, 0x13, 0x00, 0x14, 0x00, 0x15);
+				return FindAndGotoByteSequence(dataReader, 0x2A000, 0x00, 0x13, 0x00, 0x14, 0x00, 0x15);
 			case EmbeddedDataOffset.SpellSchoolNames:
-				return FindAndGotoByteSequence(dataReader, 0x2D000, 0x00, 0x38, 0x00, 0x56, 0x00, 0x71);
+				return FindAndGotoByteSequence(dataReader, 0x2A000, 0x00, 0x38, 0x00, 0x56, 0x00, 0x71);
 			case EmbeddedDataOffset.Graphics:
-				if (!FindAndGotoText(dataReader, 0x16000, "Illegal window handle"))
+				if (!FindAndGotoText(dataReader, 0x12000, "Illegal window handle"))
 					return false;
 				dataReader.AlignToWord();
 				while (dataReader.PeekWord() != 0)
 					dataReader.Position += 2;
 				return dataReader.PeekDword() == 0x00008000;
 			case EmbeddedDataOffset.TextConversionTab:
-				if (!FindAndGotoByteSequence(dataReader, 0x37800, 0x01, 0x3B, 0x00, 0x00, 0x00, 0xC2))
+				if (!FindAndGotoByteSequence(dataReader, dataReader.Size - 2000, 0x01, 0x3B, 0x00, 0x00, 0x00, 0xC2))
 					return false;
 				dataReader.Position += 6;
 				return true;

@@ -23,7 +23,6 @@ namespace Amberstar.Game
 		List<Key>? pressedKeys = null;
 		readonly SortedStack<long, TimedAction> timedActions = new();
 		long lastTimedActionKey = -1;
-		IRenderText timeText; // for debugging
 
 		public Game(IRenderer renderer, IAssetProvider assetProvider,
 			IUIGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
@@ -50,9 +49,9 @@ namespace Amberstar.Game
 			int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;
 
 			// Show portrait area
-			portraitBackgroundSprite = AddSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0, uiPaletteIndex)!;
+			portraitBackgroundSprite = AddSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0, 14)!;
 			// Show layout
-			layoutSprite = AddSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 0, uiPaletteIndex)!;
+			layoutSprite = AddSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 0, 14)!;
 
 			// Show empty char slots
 			for (int i = 0; i < 6; i++)
@@ -68,16 +67,6 @@ namespace Amberstar.Game
 				PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.Castle), true);*/
 
 			ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
-
-			timeText = TextManager.Create($"{State.Hour:00}:{State.Minute:00}");
-			timeText.Show(220, 70, 100);
-
-			Time.MinuteChanged += () =>
-			{
-				timeText.Delete();
-				timeText = TextManager.Create($"{State.Hour:00}:{State.Minute:00}");
-				timeText.Show(220, 70, 100);
-			};
 		}
 
 		internal IRenderer Renderer { get; }
@@ -232,11 +221,14 @@ namespace Amberstar.Game
 			return coloredRect;
 		}
 
-		internal void SetLayout(Layout layout)
+		internal void SetLayout(Layout layout, byte? paletteIndex = null)
 		{
 			var renderLayer = GetRenderLayer(Layer.Layout);
 			var textureAtlas = renderLayer.Config.Texture!;
 			layoutSprite.TextureOffset = textureAtlas.GetOffset((int)layout);
+
+			if (paletteIndex != null)
+				layoutSprite.PaletteIndex = paletteIndex.Value;
 		}
 
 		internal long AddDelayedAction(long delay, Action action)
