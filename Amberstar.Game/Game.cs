@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
+using Amberstar.Game.Collections;
 using Amberstar.Game.Screens;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
@@ -11,13 +12,14 @@ namespace Amberstar.Game
 	public class Game : IDisposable
 	{
 		const long TicksPerSecond = 60;
-		double totalTicks = 0.0;
+		double totalTime = 0.0;
 		long lastGameTicks = 0;
 		long gameTicks = 0;
-		ISprite portraitBackgroundSprite;
-		ISprite layoutSprite;
+		readonly ISprite portraitBackgroundSprite;
+		readonly ISprite layoutSprite;
 		readonly Func<List<Key>> pressedKeyProvider;
 		List<Key>? pressedKeys = null;
+		readonly SortedStack<long, Action> timedActions = new();
 
 		public Game(IRenderer renderer, IAssetProvider assetProvider,
 			IUIGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
@@ -70,11 +72,17 @@ namespace Amberstar.Game
 
 		public void Update(double delta)
 		{
-			totalTicks += delta;
-			gameTicks = (long)Math.Round(totalTicks * TicksPerSecond);
+			totalTime += delta;
+			gameTicks = (long)Math.Round(totalTime * TicksPerSecond);
 
 			if (gameTicks == lastGameTicks)
 				return;
+
+			// Execute time actions which are ready.
+			foreach (var readyTimedAction in timedActions.Pop(gameTicks))
+			{
+				readyTimedAction?.Invoke();
+			}
 
 			long elapsed = gameTicks - lastGameTicks;
 			lastGameTicks = gameTicks;
@@ -205,6 +213,11 @@ namespace Amberstar.Game
 			var renderLayer = GetRenderLayer(Layer.Layout);
 			var textureAtlas = renderLayer.Config.Texture!;
 			layoutSprite.TextureOffset = textureAtlas.GetOffset((int)layout);
+		}
+
+		internal void AddDelayedAction(long delay, Action action)
+		{
+			timedActions.Push(gameTicks + delay, action);
 		}
 
 		internal bool IsKeyDown(Key key) => (pressedKeys ?? pressedKeyProvider()).Contains(key);
