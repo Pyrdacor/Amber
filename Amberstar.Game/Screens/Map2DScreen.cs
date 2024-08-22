@@ -2,6 +2,7 @@
 using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.GameData;
+using System.Linq;
 
 namespace Amberstar.Game.Screens
 {
@@ -13,16 +14,22 @@ namespace Amberstar.Game.Screens
 			Actions
 		}
 
+		// Note: In original you could only use by mouse or buttons on 2D.
+		// In general travel types had a delay which was given in number
+		// of vertical blanks. The delays were 5, 2, 3, 2, 4, 0, 0.
+		// For movement in cities it was even 0 for waling.
+		// However this is way too fast when using automatic movement
+		// (e.g. holding the key down).
+		const int CityTicksPerStep = 20;
 		static readonly Dictionary<TravelType, int> TicksPerStep = new()
 		{
-			// TODO
-			{ TravelType.Walk, 20 },
-			{ TravelType.Horse, 10 },
-			{ TravelType.Raft, 10 },
-			{ TravelType.Ship, 8 },
-			{ TravelType.MagicDisc, 10 },
-			{ TravelType.Eagle, 5 },
-			{ TravelType.SuperChicken, 2 },
+			{ TravelType.Walk, 6 * CityTicksPerStep },
+			{ TravelType.Horse, 3 * CityTicksPerStep },
+			{ TravelType.Raft, 4 * CityTicksPerStep },
+			{ TravelType.Ship, 3 * CityTicksPerStep },
+			{ TravelType.MagicDisc, 5 * CityTicksPerStep },
+			{ TravelType.Eagle, 1 * CityTicksPerStep },
+			{ TravelType.SuperChicken, 1 * CityTicksPerStep },
 		};
 
 		const int TilesPerRow = 11;
@@ -47,6 +54,9 @@ namespace Amberstar.Game.Screens
 		int moveX = 0;
 		int moveY = 0;
 		long moveTickCounter = 0;
+		long lastMoveStartTicks = 0;
+		long currentTicks = 0;
+		bool additionalMoveRequested = false;
 
 		public override ScreenType Type { get; } = ScreenType.Map2D;
 
@@ -64,6 +74,11 @@ namespace Amberstar.Game.Screens
 
 		public override void Open(Game game)
 		{
+			moveTickCounter = 0;
+			lastMoveStartTicks = 0;
+			currentTicks = 0;
+			additionalMoveRequested = false;
+
 			game.SetLayout(Layout.Map2D);
 			buttonLayout = ButtonLayout.Movement;
 			LoadMap(game.State.MapIndex);
@@ -88,11 +103,13 @@ namespace Amberstar.Game.Screens
 			if (elapsedTicks == 0)
 				return;
 
+			currentTicks += elapsedTicks;
+
 			if (moveX != 0 || moveY != 0)
 			{
 				moveTickCounter += elapsedTicks;
 
-				var ticksPerStep = TicksPerStep[game.State.TravelType];
+				var ticksPerStep = GetTicksPerStep();
 
 				if (ticksPerStep > 0 && moveTickCounter >= ticksPerStep)
 				{
@@ -100,7 +117,7 @@ namespace Amberstar.Game.Screens
 
 					while (moveTickCounter >= ticksPerStep)
 					{
-						if (MovePlayer(ref moveX, ref moveY))
+						if (MovePlayer(moveX, moveY))
 						{
 							moved = true;
 							moveTickCounter -= ticksPerStep;
@@ -122,9 +139,9 @@ namespace Amberstar.Game.Screens
 			}
 		}
 
-		private bool MovePlayer(ref int x, ref int y)
+		private bool MovePlayer(int x, int y)
 		{
-			// TODO: collision detection
+			additionalMoveRequested = false;
 			var oldPosition = game!.State.PartyPosition;
 			int newX = MathUtil.Limit(0, oldPosition.X + x, map!.Width - 1);
 			int newY = MathUtil.Limit(0, oldPosition.Y + y, map.Height - 1);
@@ -241,7 +258,26 @@ namespace Amberstar.Game.Screens
 			if (downLeft || downRight)
 				down = true;
 
-			bool wasMovingBefore = moveX != 0 || moveY != 0;
+			if (additionalMoveRequested && !left && !right && !up && !down)
+			{
+				long timeTillNextMove = Math.Max(0, GetTicksPerStep() - (currentTicks - lastMoveStartTicks));
+				int x = moveX;
+				int y = moveY;
+				game.AddDelayedAction(timeTillNextMove, () =>
+				{
+					lastMoveStartTicks = currentTicks;
+					if (MovePlayer(x, y))
+						AfterMove();
+					moveTickCounter = 0;
+				});
+				additionalMoveRequested = false;
+			}
+			else if (!additionalMoveRequested)
+			{
+				additionalMoveRequested = (currentTicks - lastMoveStartTicks) < GetTicksPerStep();
+			}
+
+			bool wasMovingBefore = moveX != 0 || moveY != 0 || additionalMoveRequested;
 
 			if (left && !right)
 			{
@@ -275,12 +311,12 @@ namespace Amberstar.Game.Screens
 
 			if (!wasMovingBefore && (moveX != 0 || moveY != 0))
 			{
-				if (MovePlayer(ref moveX, ref moveY))
+				if (MovePlayer(moveX, moveY))
 				{
-					AfterMove();
+					lastMoveStartTicks = currentTicks;
+					moveTickCounter = -GetTicksPerStep();
 
-					var ticksPerStep = TicksPerStep[game.State.TravelType];
-					moveTickCounter = -ticksPerStep;
+					AfterMove();					
 				}
 			}
 		}
@@ -437,6 +473,8 @@ namespace Amberstar.Game.Screens
 			var tileset = tilesets![map!.TilesetIndex - 1];
 			return tileset!.Tiles[index - 1];
 		}
+
+		private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
 
 		private void LoadMap(int index)
 		{

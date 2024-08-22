@@ -23,6 +23,12 @@ public enum TileFlags : uint
 	/// </summary>
 	RandomAnimation =	0x_0000_0010,
 	/// <summary>
+	/// If set for foreground tiles, the AllowMovement bits of the
+	/// underlay tile are used. This also affects the determination
+	/// if the whole tile is a water tile.
+	/// </summary>
+	Priority =			0x_0000_0020,
+	/// <summary>
 	/// If set this tile should be drawn over the player.
 	/// </summary>
 	Foreground =		0x_0000_0040,
@@ -33,7 +39,13 @@ public enum TileFlags : uint
 	AllowShip =			0x_0000_0800,
 	AllowDisk =			0x_0000_1000,
 	AllowEagle =		0x_0000_2000,
-	AllowFly =			0x_0000_4000, // cheat mode
+	/// <summary>
+	/// Also marks the tile as water.
+	/// </summary>
+	AllowSwim =			0x_0000_4000,
+	/// <summary>
+	/// Hide player on this tile.
+	/// </summary>
 	PartyInvisible =	0x_0000_8000,
 	// TODO ...
 
