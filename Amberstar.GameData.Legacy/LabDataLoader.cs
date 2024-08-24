@@ -38,7 +38,7 @@ internal class LabDataLoader(AssetProvider assetProvider) : ILabDataLoader
 			var asset = assetProvider.GetAsset(new(AssetType.LabBlock, key));
 
 			if (asset == null)
-				throw new AmberException(ExceptionScope.Data, $"Lab block {index} not found.");
+				throw new AmberException(ExceptionScope.Data, $"Lab block {key} not found.");
 
 			var labBlock = LabBlock.Load(asset);
 

@@ -11,7 +11,7 @@ namespace Amberstar.net
 	internal static class LayerSetup
 	{
 		public static void Run(AssetProvider assetProvider, Renderer renderer,
-			out UIGraphicIndexProvider uiGraphicIndexProvider,
+			out GraphicIndexProvider uiGraphicIndexProvider,
 			out PaletteIndexProvider paletteIndexProvider,
 			out FontInfoProvider fontInfoProvider)
 		{
@@ -187,14 +187,20 @@ namespace Amberstar.net
 			graphics = [];
 			index = 0;
 			var labBlocks = assetProvider.LabDataLoader.LoadAllLabBlocks();
-			var labBlockImageIndices = new Dictionary<int, Dictionary<PerspectiveLocation, int>>();
+			var labBlockImageIndices = new Dictionary<int, Dictionary<PerspectiveLocation, Dictionary<BlockFacing, int>>>();
 			foreach (var labBlock in labBlocks)
 			{
-				var labBlockImages = new Dictionary<PerspectiveLocation, int>();
+				var labBlockImages = new Dictionary<PerspectiveLocation, Dictionary<BlockFacing, int>>();
 				
 				foreach (var perspective in labBlock.Value.Perspectives)
 				{
-					labBlockImages.Add(perspective.Location, index++);
+					if (!labBlockImages.TryGetValue(perspective.Location, out var entry))
+					{
+						entry = [];
+						labBlockImages[perspective.Location] = entry;
+					}
+
+					entry.Add(perspective.Facing, index++);
 					graphics.Add(index, perspective.Frames.ToGraphic());
 				}
 			}

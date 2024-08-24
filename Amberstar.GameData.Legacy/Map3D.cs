@@ -4,15 +4,17 @@ namespace Amberstar.GameData.Legacy;
 
 internal class Map3D : Map, IMap3D
 {
-	private Map3D(MapHeader header, MapNPC[] npcs, PositionList[] npcPositions)
+	private Map3D(MapHeader header, MapNPC[] npcs, PositionList[] npcPositions,
+		LabTile[] labTiles, Tile3D[] tiles)
 		: base(header, npcs, npcPositions)
 	{
-
+		Tiles = tiles;
+		LabTiles = labTiles;
 	}
 
-	public int LabDataIndex { get; }
-	public Tile3D[] Tiles { get; } = [];
-	public ILabTile[] LabTiles { get; }
+	public int LabDataIndex => header.LabdataIndex;
+	public Tile3D[] Tiles { get; }
+	public LabTile[] LabTiles { get; }
 
 	public static unsafe Map3D Load(int id, MapHeader header, IDataReader reader)
 	{
@@ -20,11 +22,37 @@ internal class Map3D : Map, IMap3D
 			throw new AmberException(ExceptionScope.Data, $"Map {id} is not a 3D map.");
 
 		int mapSize = header.Width * header.Height;
-		var underlay = reader.ReadBytes(mapSize);
-		var overlay = reader.ReadBytes(mapSize);
+
+		int numLabTiles = reader.ReadByte();
+		var labTileFlags = new LabTileFlags[numLabTiles];
+		var labTiles = new LabTile[numLabTiles];
+
+		for (int i = 0; i < numLabTiles; i++)
+			labTileFlags[i] = (LabTileFlags)reader.ReadDword();
+
+		var labTilePrimaryIndices = reader.ReadBytes(numLabTiles);
+		var labTileSecondaryIndices = reader.ReadBytes(numLabTiles);
+		var labTileColors = reader.ReadBytes(numLabTiles);
+
+		for (int i = 0; i < numLabTiles; i++)
+		{
+			labTiles[i] = new LabTile()
+			{
+				Flags = labTileFlags[i],
+				PrimaryLabBlockIndex = labTilePrimaryIndices[i],
+				SecondaryLabBlockIndex = labTileSecondaryIndices[i],
+				MinimapColorIndex = labTileColors[i]
+			};
+		}
+
+		var labTileIndices = reader.ReadBytes(mapSize);
 		var events = reader.ReadBytes(mapSize);
 
-		// TODO: blocks
+		var tiles = Enumerable.Range(0, mapSize).Select(index => new Tile3D
+		{
+			LabTileIndex = labTileIndices[index],
+			Event = events[index]
+		}).ToArray();
 
 		word* index = header.NPCData;
 		byte* icon = header.NPCIcon;
@@ -79,6 +107,6 @@ internal class Map3D : Map, IMap3D
 			npcPositions[i] = positions;
 		}
 
-		return new Map3D(header, npcs, npcPositions);
+		return new Map3D(header, npcs, npcPositions, labTiles, tiles);
 	}
 }

@@ -24,16 +24,16 @@ public enum LabTileFlags : uint
 
 }
 
-public interface ILabTile
+public struct LabTile
 {
 	/// <summary>
 	/// If underlay, <see cref="SecondaryLabBlockIndex"/> is not used.
 	/// If overlay, <see cref="SecondaryLabBlockIndex"/> gives the underlay.
 	/// </summary>
-	int PrimaryLabBlockIndex { get; }
-	int SecondaryLabBlockIndex { get; }
-	int MinimapColorIndex { get; }
-	LabTileFlags Flags { get; }
+	public int PrimaryLabBlockIndex;
+	public int SecondaryLabBlockIndex;
+	public int MinimapColorIndex;
+	public LabTileFlags Flags;
 }
 
 public enum LabBlockType : byte

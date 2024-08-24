@@ -1,10 +1,7 @@
-﻿using Amberstar.GameData.Serialization;
+﻿namespace Amberstar.Game;
 
-namespace Amberstar.Game
+public interface IFontInfoProvider
 {
-	public interface IFontInfoProvider
-	{
-		IReadOnlyDictionary<char, int> TextGlyphTextureIndices { get; }
-		IReadOnlyDictionary<char, int> RuneGlyphTextureIndices { get; }
-	}
+	IReadOnlyDictionary<char, int> TextGlyphTextureIndices { get; }
+	IReadOnlyDictionary<char, int> RuneGlyphTextureIndices { get; }
 }
