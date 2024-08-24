@@ -2,7 +2,7 @@
 {
     public struct Tile3D
 	{
-		public byte LabBlock;
+		public byte LabTileIndex;
 		public byte Event;
 	}
 
@@ -10,6 +10,6 @@
 	{
 	    int LabDataIndex { get; }
 		Tile3D[] Tiles { get; }
-		ILabBlock LabBlocks { get; }
+		ILabTile LabTiles { get; }
 	}
 }

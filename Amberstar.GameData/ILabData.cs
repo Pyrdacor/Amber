@@ -4,7 +4,7 @@ namespace Amberstar.GameData;
 
 // TODO
 [Flags]
-public enum Tile3DFlags : uint
+public enum LabTileFlags : uint
 {
 	/// <summary>
 	/// If set animation goes back and forth, otherwise only in one direction.
@@ -23,7 +23,7 @@ public enum Tile3DFlags : uint
 
 }
 
-public interface ILabBlock
+public interface ILabTile
 {
 	/// <summary>
 	/// If underlay, <see cref="SecondaryIndex"/> is not used.
@@ -35,7 +35,15 @@ public interface ILabBlock
 	Tile3DFlags Flags { get; }
 }
 
+public interface ILabBlock
+{
+	
+}
+
 public interface ILabData
 {
-	// TODO
+	int CeilingIndex { get; }
+	int FloorIndex { get; }
+	int PaletteIndex { get; }
+	ILabBlock[] LabBlocks { get; }
 }
