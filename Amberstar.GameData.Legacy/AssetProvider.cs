@@ -179,7 +179,36 @@ public class AssetProvider : IAssetProvider
 		throw new NotImplementedException();
 	}
 
-	private IAsset? GetAssetFromProgramData(AssetIdentifier identifier)
+	private Dictionary<int, Asset> GetProgramDataAssetList(AssetType type)
+	{
+		Dictionary<int, Asset> CreateAssets(Dictionary<int, IDataReader> source)
+		{
+			return source.ToDictionary(e => e.Key, e => new Asset(new(type, e.Key), e.Value));
+		}
+
+		return type switch
+		{
+			AssetType.Place => CreateAssets(Data.PlacesData),
+			AssetType.PlaceName => CreateAssets(Data.PlaceNames),
+			AssetType.SpellName => CreateAssets(Data.SpellNames),
+			AssetType.SpellSchoolName => CreateAssets(Data.SpellSchoolNames),
+			AssetType.ClassName => CreateAssets(Data.ClassNames),
+			AssetType.SkillName => CreateAssets(Data.SkillNames),
+			AssetType.CharInfoText => CreateAssets(Data.CharInfoTexts),
+			AssetType.RaceName => CreateAssets(Data.RaceNames),
+			AssetType.ConditionName => CreateAssets(Data.ConditionNames),
+			AssetType.ItemTypeName => CreateAssets(Data.ItemTypeNames),
+			AssetType.Layout => CreateAssets(Data.Layouts),
+			AssetType.UIGraphic => CreateAssets(Data.UIGraphics),
+			AssetType.Button => CreateAssets(Data.Buttons),
+			AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
+			AssetType.ItemGraphic => CreateAssets(Data.ItemGraphics),
+			AssetType.Font => CreateAssets(Data.Fonts),
+			_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {type} for legacy asset provider")
+		};
+	}
+
+	private Asset? GetAssetFromProgramData(AssetIdentifier identifier)
 	{
 		bool hasAssetList = assets.TryGetValue(identifier.Type, out var assetList);
 
@@ -188,36 +217,35 @@ public class AssetProvider : IAssetProvider
 
 		if (!hasAssetList)
 		{
-			Dictionary<int, Asset> CreateAssets(Dictionary<int, IDataReader> source)
-			{
-				return source.ToDictionary(e => e.Key, e => new Asset(new(identifier.Type, e.Key), e.Value));
-			}
-
-			assetList = identifier.Type switch
-			{
-				AssetType.Place => CreateAssets(Data.PlacesData),
-				AssetType.PlaceName => CreateAssets(Data.PlaceNames),
-				AssetType.SpellName => CreateAssets(Data.SpellNames),
-				AssetType.SpellSchoolName => CreateAssets(Data.SpellSchoolNames),
-				AssetType.ClassName => CreateAssets(Data.ClassNames),
-				AssetType.SkillName => CreateAssets(Data.SkillNames),
-				AssetType.CharInfoText => CreateAssets(Data.CharInfoTexts),
-				AssetType.RaceName => CreateAssets(Data.RaceNames),
-				AssetType.ConditionName => CreateAssets(Data.ConditionNames),
-				AssetType.ItemTypeName => CreateAssets(Data.ItemTypeNames),
-				AssetType.Layout => CreateAssets(Data.Layouts),
-				AssetType.UIGraphic => CreateAssets(Data.UIGraphics),
-				AssetType.Button => CreateAssets(Data.Buttons),
-				AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
-				AssetType.ItemGraphic => CreateAssets(Data.ItemGraphics),
-				AssetType.Font => CreateAssets(Data.Fonts),
-				_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {identifier.Type} for Atari asset provider")
-			};
-
+			assetList = GetProgramDataAssetList(identifier.Type);
 			assets.Add(identifier.Type, assetList);
 		}
 
 		return assetList!.GetValueOrDefault(identifier.Index);
+	}
+
+	public ICollection<int> GetAssetKeys(AssetType type)
+	{
+		if (assetContainers.TryGetValue(type, out var container))
+			return container.Files.Keys;
+
+		var fileName = FileNameByAssetType(type);
+
+		if (fileName.Length == 0)
+			return [];
+
+		if (fileName == programFileNames[Platform])
+			return GetProgramDataAssetList(type).Keys;
+
+		var file = fileSystem.GetFile(fileName);
+
+		if (file == null)
+			return [];
+
+		container = new FileReader().ReadFile(fileName, file.Stream.GetReader());
+		assetContainers.Add(type, container);
+
+		return container.Files.Keys;
 	}
 
 	public virtual IAsset? GetAsset(AssetIdentifier identifier)

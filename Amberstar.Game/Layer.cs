@@ -6,8 +6,8 @@
 		UI, // UI elements, supports transparency
 		Map2D, // all tilsets
 		Text,
-		Map3D, // freely 3D map (floor and walls)
+		Map3D, // images, block movement
 		Billboard3D, // freely 3D map (billboards)
-		Map3DLegay, // images, block movement
+		Map3DNew, // TODO: freely 3D map (floor and walls)
 	}
 }

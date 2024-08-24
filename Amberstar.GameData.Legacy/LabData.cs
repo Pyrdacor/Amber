@@ -5,26 +5,7 @@ namespace Amberstar.GameData.Legacy;
 
 internal class LabData : ILabData
 {
-	static readonly Dictionary<int, LabBlock> labBlockCache = [];
-
-	private static LabBlock GetLabBlock(int index, Amber.Assets.Common.IAssetProvider assetProvider)
-	{
-		if (labBlockCache.TryGetValue(index, out var labBlock))
-			return labBlock;
-
-		var asset = assetProvider.GetAsset(new(AssetType.LabBlock, index));
-
-		if (asset == null)
-			throw new AmberException(ExceptionScope.Data, $"Lab block {index} not found.");
-
-		labBlock = LabBlock.Load(asset);
-
-		labBlockCache.Add(index, labBlock);
-
-		return labBlock;
-	}
-
-	public static LabData Load(IAsset asset, Amber.Assets.Common.IAssetProvider assetProvider)
+	public static LabData Load(IAsset asset, Dictionary<int, ILabBlock> labBlocks)
 	{
 		var reader = asset.GetReader();
 
@@ -33,10 +14,10 @@ internal class LabData : ILabData
 
 		int numImages = reader.ReadByte();
 		int numLabBlocks = reader.ReadByte();
-		var labBlocks = new LabBlock[numLabBlocks];
+		var blocks = new ILabBlock[numLabBlocks];
 
 		for (int i = 0; i < numLabBlocks; i++)
-			labBlocks[i] = GetLabBlock(reader.ReadByte(), assetProvider);
+			blocks[i] = labBlocks[(int)reader.ReadByte()];
 
 		if (reader.ReadByte() != 0)
 			throw new AmberException(ExceptionScope.Data, "Invalid lab data.");
@@ -59,7 +40,7 @@ internal class LabData : ILabData
 			CeilingIndex = ceilingIndex,
 			FloorIndex = floorIndex,
 			PaletteIndex = paletteIndex,
-			LabBlocks = labBlocks,
+			LabBlocks = blocks,
 		};
 	}
 

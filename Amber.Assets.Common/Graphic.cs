@@ -296,3 +296,27 @@ public class PaletteGraphic : Graphic, IPaletteGraphic
 
 	public IGraphic Palette { get; }
 }
+
+public static class GraphicExtensions
+{
+	public static Graphic ToGraphic(this IEnumerable<IGraphic> frames)
+	{
+		int width = frames.Sum(frame => frame.Width);
+		int height = frames.Max(frame => frame.Height);
+		var format = frames.First().Format;
+
+		if (frames.Any(frame => frame.Format != format))
+			throw new AmberException(ExceptionScope.Data, "Frames have different format.");
+
+		var graphic = new Graphic(width, height, format);
+		int x = 0;
+
+		foreach (var frame in frames)
+		{
+			graphic.AddOverlay(x, 0, frame);
+			x += frame.Width;
+		}
+
+		return graphic;
+	}
+}

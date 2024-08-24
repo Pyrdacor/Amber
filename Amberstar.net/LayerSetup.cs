@@ -2,6 +2,7 @@
 using Amber.Renderer;
 using Ambermoon.Renderer.OpenGL;
 using Amberstar.Game;
+using Amberstar.GameData;
 using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
@@ -81,6 +82,7 @@ namespace Amberstar.net
 			renderer.AddLayer(layer);
 
 			#endregion
+
 
 			#region UI
 
@@ -179,9 +181,38 @@ namespace Amberstar.net
 
 			#endregion
 
+
+			#region Map3D
+
+			graphics = [];
+			index = 0;
+			var labBlocks = assetProvider.LabDataLoader.LoadAllLabBlocks();
+			var labBlockImageIndices = new Dictionary<int, Dictionary<PerspectiveLocation, int>>();
+			foreach (var labBlock in labBlocks)
+			{
+				var labBlockImages = new Dictionary<PerspectiveLocation, int>();
+				
+				foreach (var perspective in labBlock.Value.Perspectives)
+				{
+					labBlockImages.Add(perspective.Location, index++);
+					graphics.Add(index, perspective.Frames.ToGraphic());
+				}
+			}
+			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
+			{
+				BaseZ = 0.1f,
+				LayerFeatures = LayerFeatures.Transparency,
+				Palette = paletteTexture,
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+				Texture = renderer.TextureFactory.CreateAtlas(graphics),
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			#endregion
 			// TODO ...
 
-			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset);
+			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset, labBlockImageIndices);
 			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

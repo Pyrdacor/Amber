@@ -1,4 +1,5 @@
-﻿using Amberstar.GameData.Serialization;
+﻿using Amberstar.GameData;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game
 {
@@ -9,5 +10,6 @@ namespace Amberstar.Game
 		int GetStatusIconIndex(StatusIcon statusIcon);
 		int Get80x80ImageIndex(Image80x80 image);
 		int GetItemGraphicIndex(ItemGraphic graphic);
+		int GetLabBlockGraphicIndex(int labBlockIndex, PerspectiveLocation location);
 	}
 }
