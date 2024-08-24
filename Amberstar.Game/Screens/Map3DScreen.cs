@@ -193,6 +193,12 @@ internal class Map3DScreen : Screen
 			AfterMove();
 		}
 
+		void TurnTo(Direction newDirection)
+		{
+			game!.State.PartyDirection = newDirection;
+			UpdateView();
+		}
+
 		// TODO
 		switch (game!.State.PartyDirection)
 		{
@@ -202,9 +208,9 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(0, 1);
 				else if (left && !right)
-					Move(-1, 0);
+					TurnTo(Direction.West);
 				else if (right && !left)
-					Move(1, 0);
+					TurnTo(Direction.East);
 				break;
 			case Direction.East:
 				if (forward && !backward)
@@ -212,9 +218,9 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(-1, 0);
 				else if (left && !right)
-					Move(0, -1);
+					TurnTo(Direction.North);
 				else if (right && !left)
-					Move(0, 1);
+					TurnTo(Direction.South);
 				break;
 			case Direction.South:
 				if (forward && !backward)
@@ -222,9 +228,9 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(0, -1);
 				else if (left && !right)
-					Move(1, 0);
+					TurnTo(Direction.East);
 				else if (right && !left)
-					Move(-1, 0);
+					TurnTo(Direction.West);
 				break;
 			case Direction.West:
 				if (forward && !backward)
@@ -232,9 +238,9 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(1, 0);
 				else if (left && !right)
-					Move(0, 1);
+					TurnTo(Direction.South);
 				else if (right && !left)
-					Move(0, -1);
+					TurnTo(Direction.North);
 				break;
 		}
 	}
@@ -305,10 +311,6 @@ internal class Map3DScreen : Screen
 
 			void DrawBlock(ILabBlock labBlock)
 			{
-				// TODO: REMOVE
-				if (labBlock.Type != LabBlockType.Wall)
-					return;
-
 				var facing = labBlock.Type == LabBlockType.Overlay ? FacingByRelativeOffset(offset) : BlockFacing.FacingPlayer;
 				var perspective = labBlock.Perspectives.FirstOrDefault(p => p.Location == perspectiveLocation && p.Facing == facing);
 
