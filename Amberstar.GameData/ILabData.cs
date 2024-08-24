@@ -26,18 +26,18 @@ public enum LabTileFlags : uint
 public interface ILabTile
 {
 	/// <summary>
-	/// If underlay, <see cref="SecondaryIndex"/> is not used.
-	/// If overlay, <see cref="SecondaryIndex"/> gives the underlay.
+	/// If underlay, <see cref="SecondaryLabBlockIndex"/> is not used.
+	/// If overlay, <see cref="SecondaryLabBlockIndex"/> gives the underlay.
 	/// </summary>
-	int PrimaryIndex { get; }
-	int SecondaryIndex { get; }
+	int PrimaryLabBlockIndex { get; }
+	int SecondaryLabBlockIndex { get; }
 	int MinimapColorIndex { get; }
 	Tile3DFlags Flags { get; }
 }
 
 public interface ILabBlock
 {
-	
+
 }
 
 public interface ILabData
