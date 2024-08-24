@@ -102,6 +102,14 @@ namespace Amberstar
 				var graphic = assetProvider.GraphicLoader.Load80x80Graphic(image);
 				WriteGraphic($@"{basePath}\80x80Images\{i:000}.png", graphic, graphic.Palette.GetData(), false);
 			}
+
+			var labBlocks = assetProvider.LabDataLoader.LoadAllLabBlocks();
+
+			foreach (var labBlock in labBlocks)
+			{
+				for (int i = 0; i < labBlock.Value.Perspectives.Length; i++)
+					WriteGraphic($@"{basePath}\LabBlocks\{labBlock.Key:000}\Perspective{i:000}.png", labBlock.Value.Perspectives[i].Frames.ToGraphic(), testPal, true);
+			}
 		}
 
 		static void WriteGraphic(string filename, IGraphic graphic, byte[] palette, bool transparency)

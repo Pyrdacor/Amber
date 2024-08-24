@@ -200,8 +200,8 @@ namespace Amberstar.net
 						labBlockImages[perspective.Location] = entry;
 					}
 
-					entry.Add(perspective.Facing, index++);
-					graphics.Add(index, perspective.Frames.ToGraphic());
+					entry.Add(perspective.Facing, index);
+					graphics.Add(index++, perspective.Frames.ToGraphic());
 				}
 
 				labBlockImageIndices.Add(labBlock.Key, labBlockImages);
@@ -209,7 +209,7 @@ namespace Amberstar.net
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.1f,
-				LayerFeatures = LayerFeatures.Transparency,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),

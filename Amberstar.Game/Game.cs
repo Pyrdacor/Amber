@@ -62,11 +62,13 @@ public class Game : IDisposable
 			AddSprite(Layer.UI, position, size, i == 0 ? (int)UIGraphic.Skull : (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
 		}
 
-		/*AddSprite(Layer.UI, new Position(100, 100), new Size(80, 80),
-			UIGraphicIndexProvider.Get80x80ImageIndex(Image80x80.Castle),
-			PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.Castle), true);*/
+		//ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
 
-		ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
+		// TODO: For debugging, remove later
+		State.MapIndex = 67;
+		State.PartyDirection = Direction.Down;
+		State.SetPartyPosition(7 - 1, 15 - 1);
+		ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map3D));
 	}
 
 	internal IRenderer Renderer { get; }

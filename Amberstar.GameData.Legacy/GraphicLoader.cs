@@ -19,17 +19,30 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		if (planes != 4)
 			throw new AmberException(ExceptionScope.Data, "Unexpected plane count for legacy graphic data.");
 
-		if (width % 16 != 0) // Fix byte count in this case
-			width += 16 - width % 16;
+		int size;
 
-		return dataReader.ReadBytes(width * height * planes / 8);
+		if (width % 16 != 0) // Fix byte count in this case
+			size = (width + 16 - width % 16) * height * planes / 8;
+		else
+			size = width * height * planes / 8;
+
+		return dataReader.ReadBytes(size);
 	}
 
 	public static Graphic LoadGraphicWithHeader(IDataReader dataReader)
 	{
 		var data = LoadGraphicDataWithHeader(dataReader, out int width, out int height, out int planes);
+		int readWidth = width;
 
-		return Graphic.FromBitPlanes(width, height, data, planes);
+		if (readWidth % 16 != 0)
+			readWidth += 16 - readWidth % 16;
+
+		var graphic = Graphic.FromBitPlanes(readWidth, height, data, planes);
+
+		if (width < readWidth)
+			return graphic.GetPart(0, 0, width, height);
+
+		return graphic;
 	}
 
 	public static PaletteGraphic LoadGraphicWithHeader(IDataReader dataReader, IGraphic palette)

@@ -297,10 +297,18 @@ internal class Map3DScreen : Screen
 			int x = playerPosition.X + offset.X;
 			int y = playerPosition.Y + offset.Y;
 			var tile = map!.Tiles[x + y * map.Width];
-			var labTile = map!.LabTiles[tile.LabTileIndex];
+
+			if (tile.LabTileIndex == 0)
+				continue;
+
+			var labTile = map!.LabTiles[tile.LabTileIndex - 1];
 
 			void DrawBlock(ILabBlock labBlock)
 			{
+				// TODO: REMOVE
+				if (labBlock.Type != LabBlockType.Wall)
+					return;
+
 				var facing = labBlock.Type == LabBlockType.Overlay ? FacingByRelativeOffset(offset) : BlockFacing.FacingPlayer;
 				var perspective = labBlock.Perspectives.FirstOrDefault(p => p.Location == perspectiveLocation && p.Facing == facing);
 
@@ -330,7 +338,8 @@ internal class Map3DScreen : Screen
 			}
 
 			// Draw underlay or overlay
-			DrawBlock(primary);
+			if (labTile.PrimaryLabBlockIndex != 1) // TODO: 1 seems to be an NPC/Object marker
+				DrawBlock(primary);
 		}
 	}
 
@@ -374,7 +383,7 @@ internal class Map3DScreen : Screen
 	{
 		map = game!.AssetProvider.MapLoader.LoadMap(index) as IMap3D; // TODO: catch exceptions
 		labData = game!.AssetProvider.LabDataLoader.LoadLabData(map!.LabDataIndex);
-		palette = game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex);
+		palette = game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
 
 		game.State.MapIndex = index;
 		game.State.TravelType = TravelType.Walk;

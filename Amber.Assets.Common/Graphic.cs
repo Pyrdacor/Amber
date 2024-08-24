@@ -57,6 +57,7 @@ public class Graphic : IGraphic
 
 		if (planes < 1 || planes > 8)
 			throw new AmberException(ExceptionScope.Application, "Bit planes must be between 1 and 8.");
+
 		if (data.Length != frameCount * width * height * planes / 8)
 			throw new AmberException(ExceptionScope.Application, $"Invalid data length for {planes}-bit graphic.");
 

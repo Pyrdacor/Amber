@@ -105,7 +105,7 @@ internal class LabBlock : ILabBlock
 
 		for (int i = 0; i < perspectives.Length; i++)
 		{
-			var lcoation = LocationByIndex(i, type, out var facing);
+			var location = LocationByIndex(i, type, out var facing);
 			var frames = new IGraphic[numAnimationFrames];
 			int frameIndex = i;
 
@@ -117,7 +117,7 @@ internal class LabBlock : ILabBlock
 
 			perspectives[i] = new()
 			{
-				Location = lcoation,
+				Location = location,
 				Facing = facing,
 				RenderPosition = new(xOffsets[i], yOffsets[i]),
 				Frames = frames
