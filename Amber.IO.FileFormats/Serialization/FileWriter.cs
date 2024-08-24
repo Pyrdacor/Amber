@@ -1,5 +1,5 @@
 ﻿using Amber.Common;
-using Amber.Compression;
+using Amber.IO.FileFormats.Compression;
 
 namespace Amber.Serialization;
 
