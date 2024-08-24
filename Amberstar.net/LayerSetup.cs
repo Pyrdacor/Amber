@@ -203,6 +203,8 @@ namespace Amberstar.net
 					entry.Add(perspective.Facing, index++);
 					graphics.Add(index, perspective.Frames.ToGraphic());
 				}
+
+				labBlockImageIndices.Add(labBlock.Key, labBlockImages);
 			}
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{

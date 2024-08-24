@@ -98,7 +98,7 @@ internal class Map3DScreen : Screen
 
 	const int ViewWidth = 144;
 	const int ViewHeight = 144;
-	const int OffsetX = 16;
+	const int OffsetX = 32;
 	const int OffsetY = 49;
 	Game? game;
 	IMap3D? map;
@@ -182,7 +182,61 @@ internal class Map3DScreen : Screen
 
 	public override void KeyDown(Key key, KeyModifiers keyModifiers)
 	{
+		bool left = game!.IsKeyDown(Key.Left) || game.IsKeyDown('A');
+		bool right = game!.IsKeyDown(Key.Right) || game.IsKeyDown('D');
+		bool forward = game!.IsKeyDown(Key.Up) || game.IsKeyDown('W');
+		bool backward = game!.IsKeyDown(Key.Down) || game.IsKeyDown('S');
+
+		void Move(int x, int y)
+		{
+			game!.State.SetPartyPosition(game.State.PartyPosition.X + x, game.State.PartyPosition.Y + y);
+			AfterMove();
+		}
+
 		// TODO
+		switch (game!.State.PartyDirection)
+		{
+			case Direction.North:
+				if (forward && !backward)
+					Move(0, -1);
+				else if (backward && !forward)
+					Move(0, 1);
+				else if (left && !right)
+					Move(-1, 0);
+				else if (right && !left)
+					Move(1, 0);
+				break;
+			case Direction.East:
+				if (forward && !backward)
+					Move(1, 0);
+				else if (backward && !forward)
+					Move(-1, 0);
+				else if (left && !right)
+					Move(0, -1);
+				else if (right && !left)
+					Move(0, 1);
+				break;
+			case Direction.South:
+				if (forward && !backward)
+					Move(0, 1);
+				else if (backward && !forward)
+					Move(0, -1);
+				else if (left && !right)
+					Move(1, 0);
+				else if (right && !left)
+					Move(-1, 0);
+				break;
+			case Direction.West:
+				if (forward && !backward)
+					Move(-1, 0);
+				else if (backward && !forward)
+					Move(1, 0);
+				else if (left && !right)
+					Move(0, 1);
+				else if (right && !left)
+					Move(0, -1);
+				break;
+		}
 	}
 
 	public override void KeyUp(Key key, KeyModifiers keyModifiers)
@@ -245,12 +299,12 @@ internal class Map3DScreen : Screen
 			var tile = map!.Tiles[x + y * map.Width];
 			var labTile = map!.LabTiles[tile.LabTileIndex];
 
-			void DrawBlock(int index, ILabBlock labBlock)
+			void DrawBlock(ILabBlock labBlock)
 			{
 				var facing = labBlock.Type == LabBlockType.Overlay ? FacingByRelativeOffset(offset) : BlockFacing.FacingPlayer;
 				var perspective = labBlock.Perspectives.FirstOrDefault(p => p.Location == perspectiveLocation && p.Facing == facing);
 
-				if (perspectiveLocation == default)
+				if (perspective.Frames == null)
 					return;
 
 				var blockSprite = layer.SpriteFactory!.CreateAnimated();
@@ -258,7 +312,7 @@ internal class Map3DScreen : Screen
 				blockSprite.Size = new Size(perspective.Frames[0].Width, perspective.Frames[0].Height);
 				blockSprite.DisplayLayer = displayLayer;
 				blockSprite.PaletteIndex = palette;
-				blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(index - 1, perspectiveLocation, facing));
+				blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing));
 				blockSprite.Position = new(OffsetX + perspective.RenderPosition.X, OffsetY + perspective.RenderPosition.Y);
 				blockSprite.Visible = true;
 
@@ -272,17 +326,18 @@ internal class Map3DScreen : Screen
 			if (primary.Type == LabBlockType.Overlay && labTile.SecondaryLabBlockIndex != 0)
 			{
 				// Draw underlay for overlays
-				DrawBlock(labTile.SecondaryLabBlockIndex, labData!.LabBlocks[labTile.SecondaryLabBlockIndex - 1]);
+				DrawBlock(labData!.LabBlocks[labTile.SecondaryLabBlockIndex - 1]);
 			}
 
 			// Draw underlay or overlay
-			DrawBlock(labTile.PrimaryLabBlockIndex, primary);
+			DrawBlock(primary);
 		}
 	}
 
 	private void ClearView()
 	{
 		images.ForEach(image => image.Visible = false);
+		images.Clear();
 	}
 
 	/*private IAnimatedSprite CreateTileSprite(Dictionary<int, IAnimatedSprite> mapLayer, int gridIndex, int x, int y, int index, int baseLineOffset = 0)

@@ -81,6 +81,7 @@ public struct PerspectiveInfo
 
 public interface ILabBlock
 {
+	int Index { get; }
 	LabBlockType Type { get; }	
 	PerspectiveInfo[] Perspectives { get; }
 }

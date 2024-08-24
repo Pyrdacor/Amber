@@ -37,7 +37,7 @@ internal class LabBlock : ILabBlock
 		}
 	}
 
-	public static LabBlock Load(IAsset asset)
+	public static LabBlock Load(IAsset asset, int index)
 	{
 		var reader = asset.GetReader();
 
@@ -126,10 +126,13 @@ internal class LabBlock : ILabBlock
 
 		return new()
 		{
+			Index = index,
 			Type = type,
 			Perspectives = perspectives,
 		};
 	}
+
+	public int Index { get; private init; }
 
 	public LabBlockType Type { get; private init; }
 

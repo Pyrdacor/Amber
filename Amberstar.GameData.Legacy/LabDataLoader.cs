@@ -40,7 +40,7 @@ internal class LabDataLoader(AssetProvider assetProvider) : ILabDataLoader
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Lab block {key} not found.");
 
-			var labBlock = LabBlock.Load(asset);
+			var labBlock = LabBlock.Load(asset, key);
 
 			labBlocks.Add(key, labBlock);
 		}
