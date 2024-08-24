@@ -19,6 +19,9 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		if (planes != 4)
 			throw new AmberException(ExceptionScope.Data, "Unexpected plane count for legacy graphic data.");
 
+		if (width % 16 != 0) // Fix byte count in this case
+			width += 16 - width % 16;
+
 		return dataReader.ReadBytes(width * height * planes / 8);
 	}
 
@@ -44,13 +47,13 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		// Each even file is the next image.
 		// Each odd file is the palette for the last image.	
 
-		var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Graphics80x80, (int)index * 2 - 1));
+		var asset = assetProvider.GetAsset(new(AssetType.Graphics80x80, (int)index * 2 - 1));
 
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"80x80 graphic {index} not found.");
 
 		// Read palette
-		var paletteAsset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Graphics80x80, (int)index * 2));
+		var paletteAsset = assetProvider.GetAsset(new(AssetType.Graphics80x80, (int)index * 2));
 
 		if (paletteAsset == null)
 			throw new AmberException(ExceptionScope.Data, $"Palette for 80x80 graphic {index} not found.");
@@ -70,7 +73,7 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		if (itemGraphics.TryGetValue(index, out var graphic))
 			return graphic;
 
-		var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.ItemGraphic, (int)index));
+		var asset = assetProvider.GetAsset(new(AssetType.ItemGraphic, (int)index));
 
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"Item graphic {index} not found.");

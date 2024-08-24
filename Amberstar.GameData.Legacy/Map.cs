@@ -1,7 +1,6 @@
 ﻿using Amber.Assets.Common;
 using Amber.Serialization;
 using System.Runtime.InteropServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Amberstar.GameData.Legacy;
 

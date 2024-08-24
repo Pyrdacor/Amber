@@ -80,7 +80,7 @@ internal class PaletteLoader(Amber.Assets.Common.IAssetProvider assetProvider, I
 		if (palettes.TryGetValue(index, out var palette))
 			return palette;
 
-		var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Palette, index));
+		var asset = assetProvider.GetAsset(new(AssetType.Palette, index));
 
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"Palette {index} not found.");

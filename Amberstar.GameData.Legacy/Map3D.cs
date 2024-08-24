@@ -10,6 +10,10 @@ internal class Map3D : Map, IMap3D
 
 	}
 
+	public int LabDataIndex { get; }
+	public Tile3D[] Tiles { get; } = [];
+	public ILabTile[] LabTiles { get; }
+
 	public static unsafe Map3D Load(int id, MapHeader header, IDataReader reader)
 	{
 		if (header.MapType != MapType.Map3D)

@@ -12,7 +12,7 @@ namespace Amberstar.GameData.Legacy
 			if (savegame != null)
 				return savegame;
 
-			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Savegame, 1));
+			var asset = assetProvider.GetAsset(new(AssetType.Savegame, 1));
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"No savegame found.");

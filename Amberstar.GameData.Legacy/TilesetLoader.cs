@@ -12,7 +12,7 @@ internal class TilesetLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		if (tilesets.TryGetValue(index, out var tileset))
 			return tileset;
 
-		var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Tileset, index));
+		var asset = assetProvider.GetAsset(new(AssetType.Tileset, index));
 
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"Tileset {index} not found.");

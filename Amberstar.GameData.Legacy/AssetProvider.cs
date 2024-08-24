@@ -76,6 +76,7 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<ITilesetLoader> tilesetLoader;
 	readonly Lazy<IFontLoader> fontLoader;
 	readonly Lazy<ISavegameLoader> savegameLoader;
+	readonly Lazy<ILabDataLoader> labDataLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -88,6 +89,7 @@ public class AssetProvider : IAssetProvider
 	public ITilesetLoader TilesetLoader => tilesetLoader.Value;
 	public IFontLoader FontLoader => fontLoader.Value;
 	public ISavegameLoader SavegameLoader => savegameLoader.Value;
+	public ILabDataLoader LabDataLoader => labDataLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -121,6 +123,7 @@ public class AssetProvider : IAssetProvider
 		tilesetLoader = new(() => new TilesetLoader(this));
 		fontLoader = new(() => new FontLoader(this));
 		savegameLoader = new(() => new SavegameLoader(this));
+		labDataLoader = new(() => new LabDataLoader(this));
 	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
@@ -187,7 +190,7 @@ public class AssetProvider : IAssetProvider
 		{
 			Dictionary<int, Asset> CreateAssets(Dictionary<int, IDataReader> source)
 			{
-				return source.ToDictionary(e => e.Key, e => new Asset(new AssetIdentifier(identifier.Type, e.Key), e.Value));
+				return source.ToDictionary(e => e.Key, e => new Asset(new(identifier.Type, e.Key), e.Value));
 			}
 
 			assetList = identifier.Type switch
@@ -270,6 +273,8 @@ public class AssetProvider : IAssetProvider
 			AssetType.Graphics80x80 => "PICS80.AMB",
 			AssetType.Tileset => "ICON_DAT.AMB",
 			AssetType.Savegame => "PARTYDAT.SAV",
+			AssetType.LabData => "LAB_DATA.AMB",
+			AssetType.LabBlock => "LABBLOCK.AMB",
 			_ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
 	}

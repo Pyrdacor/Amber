@@ -10,6 +10,6 @@
 	{
 	    int LabDataIndex { get; }
 		Tile3D[] Tiles { get; }
-		ILabTile LabTiles { get; }
+		ILabTile[] LabTiles { get; }
 	}
 }

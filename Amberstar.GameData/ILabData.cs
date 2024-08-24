@@ -1,4 +1,5 @@
 ﻿using Amber.Assets.Common;
+using Amber.Common;
 
 namespace Amberstar.GameData;
 
@@ -32,12 +33,56 @@ public interface ILabTile
 	int PrimaryLabBlockIndex { get; }
 	int SecondaryLabBlockIndex { get; }
 	int MinimapColorIndex { get; }
-	Tile3DFlags Flags { get; }
+	LabTileFlags Flags { get; }
+}
+
+public enum LabBlockType : byte
+{
+	None,
+	Wall,
+	Overlay,
+	Object
+}
+
+public enum BlockFacing
+{
+	FacingPlayer,
+	LeftOfPlayer,
+	RightOfPlayer
+}
+
+
+public enum PerspectiveLocation
+{
+	Forward3Left1, // Walls also use it for Forward3Left2
+	Forward3Right1, // Walls also use it for Forward3Right2
+	Forward3,
+	Forward2Left1,
+	Forward2Right1,
+	Forward2,
+	Forward1Left1,
+	Forward1Right1,
+	Forward1,
+	Left1,	
+	Right1,	
+	PlayerLocation,
+	Forward3Left2, // TODO: Test this! Walls contain 13 perspectives.
+	Forward3Right2, // TODO: This as well
+}
+
+
+public struct PerspectiveInfo
+{
+	public PerspectiveLocation Location;
+	public IGraphic[] Frames;
+	public BlockFacing Facing;
+	public Position RenderPosition;
 }
 
 public interface ILabBlock
 {
-
+	LabBlockType Type { get; }	
+	PerspectiveInfo[] Perspectives { get; }
 }
 
 public interface ILabData

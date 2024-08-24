@@ -14,7 +14,7 @@ internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider,
 	{
 		if (!statusIcons.TryGetValue(icon, out var gfx))
 		{
-			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.StatusIcon, (int)icon));
+			var asset = assetProvider.GetAsset(new(AssetType.StatusIcon, (int)icon));
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Status icon {icon} not found.");
@@ -31,7 +31,7 @@ internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider,
 	{
 		if (!buttons.TryGetValue(button, out var gfx))
 		{
-			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Button, (int)button));
+			var asset = assetProvider.GetAsset(new(AssetType.Button, (int)button));
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Button {button} not found.");
@@ -51,7 +51,7 @@ internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider,
 
 		if (!uiGraphics.TryGetValue(graphic, out var gfx))
 		{
-			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.UIGraphic, (int)graphic));
+			var asset = assetProvider.GetAsset(new(AssetType.UIGraphic, (int)graphic));
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"UI graphic {graphic} not found.");

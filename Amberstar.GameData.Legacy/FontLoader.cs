@@ -13,7 +13,7 @@ namespace Amberstar.GameData.Legacy
 			if (font != null)
 				return font;
 
-			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Font, 0));
+			var asset = assetProvider.GetAsset(new(AssetType.Font, 0));
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Font was not found.");

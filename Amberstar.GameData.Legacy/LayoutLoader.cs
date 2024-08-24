@@ -13,7 +13,7 @@ internal class LayoutLoader(Amber.Assets.Common.IAssetProvider assetProvider, Di
 	{
 		if (!layouts.TryGetValue(index, out var layout))
 		{
-			var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Layout, index));
+			var asset = assetProvider.GetAsset(new(AssetType.Layout, index));
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Layout {index} not found.");

@@ -11,7 +11,7 @@ namespace Amberstar.GameData.Legacy
 		{
 			if (!maps.TryGetValue(index, out var map))
 			{
-				var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Map, index));
+				var asset = assetProvider.GetAsset(new(AssetType.Map, index));
 
 				if (asset == null)
 					throw new AmberException(ExceptionScope.Data, $"Map {index} not found.");

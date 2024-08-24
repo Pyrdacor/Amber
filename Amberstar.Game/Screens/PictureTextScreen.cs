@@ -43,7 +43,7 @@ namespace Amberstar.Game.Screens
 
 			game.SetLayout(Layout.PictureText, palette);
 
-			var text = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.MapText, game.State.MapIndex));
+			var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, game.State.MapIndex));
 
 			text = text.GetTextBlock(@event.TextIndex);
 

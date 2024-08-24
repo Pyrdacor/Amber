@@ -14,14 +14,14 @@ internal class PlaceLoader(Amber.Assets.Common.IAssetProvider assetProvider) : I
 		if (places.TryGetValue(index, out var place))
 			return place;
 
-		var asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.Place, index));
+		var asset = assetProvider.GetAsset(new(AssetType.Place, index));
 
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"Place data {index} not found.");
 
 		var placeData = PlaceData.ReadPlaceData(placeType, asset.GetReader());
 
-		asset = assetProvider.GetAsset(new AssetIdentifier(AssetType.PlaceName, index));
+		asset = assetProvider.GetAsset(new(AssetType.PlaceName, index));
 
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"Place name {index} not found.");
