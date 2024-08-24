@@ -206,6 +206,12 @@ namespace Amberstar.net
 
 				labBlockImageIndices.Add(labBlock.Key, labBlockImages);
 			}
+			var backgroundGraphicIndices = new Dictionary<int, int>();
+			foreach (var backgroundGraphic in assetProvider.GraphicLoader.LoadAllBackgroundGraphics())
+			{
+				backgroundGraphicIndices.Add(backgroundGraphic.Key, index);
+				graphics.Add(index++, backgroundGraphic.Value);
+			}
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.1f,
@@ -220,7 +226,8 @@ namespace Amberstar.net
 			#endregion
 			// TODO ...
 
-			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset, image80x80Offset, itemGraphicOffset, labBlockImageIndices);
+			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
+				image80x80Offset, itemGraphicOffset, backgroundGraphicIndices, labBlockImageIndices);
 			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

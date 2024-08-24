@@ -303,6 +303,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.Savegame => "PARTYDAT.SAV",
 			AssetType.LabData => "LAB_DATA.AMB",
 			AssetType.LabBlock => "LABBLOCK.AMB",
+			AssetType.Background => "BACKGRND.AMB",
 			_ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
 	}

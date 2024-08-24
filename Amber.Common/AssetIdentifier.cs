@@ -23,6 +23,7 @@
 		StatusIcon,
 		Graphics80x80,
 		ItemGraphic,
+		Background,
 		// ...
 		// Other stuff
 		Savegame,

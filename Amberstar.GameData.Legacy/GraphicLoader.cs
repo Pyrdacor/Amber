@@ -2,13 +2,15 @@
 using Amber.Common;
 using Amber.Serialization;
 using Amberstar.GameData.Serialization;
+using System;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) : IGraphicLoader
+internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 {
 	private readonly Dictionary<Image80x80, IPaletteGraphic> graphics80x80 = [];
 	private readonly Dictionary<ItemGraphic, IGraphic> itemGraphics = [];
+	private readonly Dictionary<int, IGraphic> backgroundGraphics = [];
 
 	public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
 	{
@@ -45,6 +47,34 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		return graphic;
 	}
 
+	public static Graphic[] LoadGraphicList(IDataReader dataReader)
+	{
+		long totalDataSize = dataReader.ReadDword();
+		int numGraphics = dataReader.ReadByte();
+
+		if (dataReader.ReadByte() != 0)
+			throw new AmberException(ExceptionScope.Data, "Invalid graphic list.");
+
+		var graphics = new Graphic[numGraphics];
+
+		for (int i = 0; i < numGraphics; i++)
+		{
+			var graphicDataSize = dataReader.ReadDword();
+			var expectedEndOffset = dataReader.Position + graphicDataSize;
+			graphics[i] = LoadGraphicWithHeader(dataReader);
+
+			if (dataReader.Position != expectedEndOffset)
+				throw new AmberException(ExceptionScope.Data, "Invalid graphic list.");
+
+			totalDataSize -= graphicDataSize;
+		}
+
+		if (totalDataSize != 1)
+			throw new AmberException(ExceptionScope.Data, "Invalid graphic list.");
+
+		return graphics;
+	}
+
 	public static PaletteGraphic LoadGraphicWithHeader(IDataReader dataReader, IGraphic palette)
 	{
 		var data = LoadGraphicDataWithHeader(dataReader, out int width, out int height, out int planes);
@@ -79,6 +109,29 @@ internal class GraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider) :
 		graphics80x80.Add(index, graphic);
 
 		return graphic;
+	}
+
+	public Dictionary<int, IGraphic> LoadAllBackgroundGraphics()
+	{
+		if (backgroundGraphics.Count != 0)
+			return backgroundGraphics;
+
+		foreach (var key in assetProvider.GetAssetKeys(AssetType.Background))
+		{
+			var asset = assetProvider.GetAsset(new(AssetType.Background, key));
+
+			if (asset == null)
+				throw new AmberException(ExceptionScope.Data, $"Background {key} not found.");
+
+			var reader = asset.GetReader();
+
+			// Load graphic
+			var graphic = GraphicLoader.LoadGraphicList(reader)[0];
+
+			backgroundGraphics.Add(key, graphic);
+		}
+
+		return backgroundGraphics;
 	}
 
 	public IGraphic LoadItemGraphic(ItemGraphic index)

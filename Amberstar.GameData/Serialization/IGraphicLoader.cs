@@ -6,5 +6,6 @@ namespace Amberstar.GameData.Serialization
 	{
 		IPaletteGraphic Load80x80Graphic(Image80x80 index);
 		IGraphic LoadItemGraphic(ItemGraphic index);
+		Dictionary<int, IGraphic> LoadAllBackgroundGraphics();
 	}
 }

@@ -1,4 +1,5 @@
-﻿using Amber.Common;
+﻿using Amber.Assets.Common;
+using Amber.Common;
 using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.GameData;
@@ -100,6 +101,7 @@ internal class Map3DScreen : Screen
 	const int ViewHeight = 144;
 	const int OffsetX = 32;
 	const int OffsetY = 49;
+	Dictionary<int, IGraphic> backgrounds = [];
 	Game? game;
 	IMap3D? map;
 	ILabData? labData;
@@ -119,6 +121,7 @@ internal class Map3DScreen : Screen
 	public override void Init(Game game)
 	{
 		this.game = game;
+		backgrounds = game.AssetProvider.GraphicLoader.LoadAllBackgroundGraphics();
 	}
 
 	public override void ScreenPushed(Game game, Screen screen)
@@ -294,7 +297,29 @@ internal class Map3DScreen : Screen
 		var offsets = PerspectiveMappings[game.State.PartyDirection];
 		var layer = game.Renderer.Layers[(int)Layer.Map3D];
 		var textureAtlas = layer.Config.Texture!;
-		byte displayLayer = 10;
+		byte displayLayer = 20;
+
+		var floor = backgrounds[labData!.FloorIndex];
+		var floorSprite = layer.SpriteFactory!.CreateAnimated();
+		floorSprite.Size = new(floor.Width, floor.Height);
+		floorSprite.Position = new(OffsetX, OffsetY + ViewHeight - floor.Height);
+		floorSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.FloorIndex));
+		floorSprite.Opaque = true;
+		floorSprite.DisplayLayer = 0;
+		floorSprite.PaletteIndex = palette;
+		floorSprite.Visible = true;
+		images.Add(floorSprite);
+
+		var ceiling = backgrounds[labData!.CeilingIndex];
+		var ceilingSprite = layer.SpriteFactory!.CreateAnimated();
+		ceilingSprite.Size = new(ceiling.Width, ceiling.Height);
+		ceilingSprite.Position = new(OffsetX, OffsetY);
+		ceilingSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.CeilingIndex));
+		ceilingSprite.Opaque = true;
+		ceilingSprite.DisplayLayer = 10;
+		ceilingSprite.PaletteIndex = palette;
+		ceilingSprite.Visible = true;
+		images.Add(ceilingSprite);
 
 		for (int i = 0; i < 12; i++)
 		{
