@@ -159,6 +159,11 @@ public class DataWriter : IDataWriter
         Position += bytes.Length;
     }
 
+    public void OrByte(int offset, byte value)
+    {
+        data[offset] |= value;
+    }
+
     public void Replace(int offset, bool value)
     {
         Replace(offset, (byte)(value ? 1 : 0));
