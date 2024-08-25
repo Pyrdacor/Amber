@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Configurations>Debug;Release;DebugAndroid;DebugES;ReleaseES</Configurations>
+    <Version>10.9.4</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amber.Assets.Common\Amber.Assets.Common.csproj" />
+    <ProjectReference Include="..\Amber.IO.Common\Amber.IO.Common.csproj" />
+    <ProjectReference Include="..\Amber.IO.FileFormats\Amber.IO.FileFormats.csproj" />
+    <ProjectReference Include="..\Ambermoon.Data.Legacy\Ambermoon.Data.Legacy.csproj" />
+  </ItemGroup>
+
+</Project>

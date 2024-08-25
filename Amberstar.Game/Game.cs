@@ -23,6 +23,11 @@ public class Game : IDisposable
 	List<Key>? pressedKeys = null;
 	readonly SortedStack<long, TimedAction> timedActions = new();
 	long lastTimedActionKey = -1;
+	static Random random = new();
+
+	internal static int Random(int min, int max) => random.Next(min, max);
+	internal static int Random(int max) => Random(0, max);
+	internal static bool Random() => Random(0, 1) == 1;
 
 	public Game(IRenderer renderer, IAssetProvider assetProvider,
 		IGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,

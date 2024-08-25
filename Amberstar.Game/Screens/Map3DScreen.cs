@@ -95,6 +95,82 @@ internal class Map3DScreen : Screen
 		Actions
 	}
 
+	class NPC
+	{
+		private readonly IMap3D map;
+		private readonly MapNPC data;
+		private readonly Position[] positions;
+		private int currentPathLength = 0;
+		private Direction direction = Direction.North;
+
+		public int Index { get; }
+
+		public MapNPCType Type => data.Type;
+
+		public Position Position { get; private set; }
+
+		public int Icon => data.Icon;
+
+		public NPC(IMap3D map, int index, Position[] positions, GameState gameState)
+		{
+			this.map = map;
+			Index = index;
+			data = map.NPCs[index];
+			this.positions = positions;
+
+			UpdatePosition(gameState);
+		}
+
+		private void UpdatePosition(GameState gameState)
+		{
+			switch (data.WalkType)
+			{
+				case MapNPCWalkType.Stationary:
+					Position = positions[0];
+					break;
+				case MapNPCWalkType.Path:
+				{
+					int totalSteps = gameState.Hour * 12 + gameState.Minute / 5;
+					Position = positions[totalSteps];
+					break;
+				}
+				case MapNPCWalkType.Chase:
+					// TODO
+					break;
+				default: // random
+					if (Position == new Position()) // first time
+						Position = positions[0];
+					else
+						MoveRandomly();
+					break;
+			}
+		}
+
+		private void SetupNewRandomPath()
+		{
+			currentPathLength = Game.Random(1, 4);
+			int dir = (int)direction + 1;
+			dir += Game.Random(0, 1);
+			dir &= 0x3;
+			direction = (Direction)dir;
+
+			// TODO ...
+		}
+
+		private void MoveRandomly()
+		{
+			if (currentPathLength == 0)
+				SetupNewRandomPath();
+
+
+		}
+		
+		public void Update(Game game)
+		{
+			UpdatePosition(game.State);
+		}
+	}
+
 	const int TicksPerStep = 120; // TODO
 
 	const int ViewWidth = 144;
@@ -106,9 +182,11 @@ internal class Map3DScreen : Screen
 	IMap3D? map;
 	ILabData? labData;
 	readonly List<IAnimatedSprite> images = [];
+	readonly List<NPC> npcs = [];
 	ButtonLayout buttonLayout = ButtonLayout.Movement;
 	long currentTicks = 0;
 	byte palette = 0;
+	bool paused = false;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
 
@@ -128,6 +206,8 @@ internal class Map3DScreen : Screen
 	{
 		base.ScreenPushed(game, screen);
 
+		paused = true;
+
 		// TODO: check for transparent screens?
 		images.ForEach(image => image.Visible = false);
 	}
@@ -136,6 +216,8 @@ internal class Map3DScreen : Screen
 	{
 		game.SetLayout(Layout.Map3D);
 		images.ForEach(image => image.Visible = true);
+
+		paused = false;
 
 		base.ScreenPopped(game, screen);
 	}
@@ -150,13 +232,37 @@ internal class Map3DScreen : Screen
 		buttonLayout = ButtonLayout.Movement;
 		LoadMap(game.State.MapIndex);
 		AfterMove();
+
+		game.Time.MinuteChanged += MinuteChanged;
 	}
 
 	public override void Close(Game game)
 	{
+		game.Time.MinuteChanged -= MinuteChanged;
 		ClearView();
 
 		base.Close(game);
+	}
+
+	private void MinuteChanged()
+	{
+		if (paused)
+			return;
+
+		if (npcs.Count != 0) // TODO: check for active ones only
+		{
+			foreach (var npc in npcs)
+			{
+				npc.Update(game!);
+			}
+
+			var offsets = PerspectiveMappings[game!.State.PartyDirection];
+
+			for (int i = 0; i < 12; i++)
+			{
+
+			}
+		}
 	}
 
 	public override void Update(Game game, long elapsedTicks)
@@ -288,8 +394,6 @@ internal class Map3DScreen : Screen
 
 	private void UpdateView()
 	{
-		// TODO: floor and ceiling
-
 		var playerPosition = game!.State.PartyPosition;
 
 		ClearView();
@@ -297,7 +401,7 @@ internal class Map3DScreen : Screen
 		var offsets = PerspectiveMappings[game.State.PartyDirection];
 		var layer = game.Renderer.Layers[(int)Layer.Map3D];
 		var textureAtlas = layer.Config.Texture!;
-		byte displayLayer = 20;
+		byte displayLayer = 40;
 
 		var floor = backgrounds[labData!.FloorIndex];
 		var floorSprite = layer.SpriteFactory!.CreateAnimated();
@@ -321,7 +425,7 @@ internal class Map3DScreen : Screen
 		ceilingSprite.Visible = true;
 		images.Add(ceilingSprite);
 
-		for (int i = 0; i < 12; i++)
+		for (int i = 0; i < 14; i++)
 		{
 			var perspectiveLocation = (PerspectiveLocation)i;
 			var offset = offsets[perspectiveLocation];
@@ -336,24 +440,43 @@ internal class Map3DScreen : Screen
 
 			void DrawBlock(ILabBlock labBlock)
 			{
-				var facing = labBlock.Type == LabBlockType.Overlay ? FacingByRelativeOffset(offset) : BlockFacing.FacingPlayer;
-				var perspective = labBlock.Perspectives.FirstOrDefault(p => p.Location == perspectiveLocation && p.Facing == facing);
-
-				if (perspective.Frames == null)
+				if (labBlock.Type != LabBlockType.Wall && i > 11)
 					return;
 
-				var blockSprite = layer.SpriteFactory!.CreateAnimated();
-				blockSprite.FrameCount = perspective.Frames.Length;
-				blockSprite.Size = new Size(perspective.Frames[0].Width, perspective.Frames[0].Height);
-				blockSprite.DisplayLayer = displayLayer;
-				blockSprite.PaletteIndex = palette;
-				blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing));
-				blockSprite.Position = new(OffsetX + perspective.RenderPosition.X, OffsetY + perspective.RenderPosition.Y);
-				blockSprite.Visible = true;
+				if (i > 11)
+				{
+					displayLayer = (byte)(20 + (i % 12) * 10);
+					perspectiveLocation = (PerspectiveLocation)((int)perspectiveLocation % 12);
+				}
 
-				images.Add(blockSprite);
+				var facing = labBlock.Type == LabBlockType.Overlay ? FacingByRelativeOffset(offset) : BlockFacing.FacingPlayer;
+				byte displayPlayerAdd = (byte)(facing == BlockFacing.FacingPlayer ? 10 : 5);
 
-				displayLayer += 10;
+				if (facing != BlockFacing.FacingPlayer)
+					AddBlockSprite(facing);
+
+				AddBlockSprite(BlockFacing.FacingPlayer);
+
+				void AddBlockSprite(BlockFacing facing)
+				{
+					var perspective = labBlock.Perspectives.FirstOrDefault(p => p.Location == perspectiveLocation && p.Facing == facing);
+
+					if (perspective.Frames == null)
+						return;
+
+					var blockSprite = layer.SpriteFactory!.CreateAnimated();
+					blockSprite.FrameCount = perspective.Frames.Length;
+					blockSprite.Size = new Size(perspective.Frames[0].Width, perspective.Frames[0].Height);
+					blockSprite.DisplayLayer = displayLayer;
+					blockSprite.PaletteIndex = palette;
+					blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing));
+					blockSprite.Position = new(OffsetX + perspective.RenderPosition.X, OffsetY + perspective.RenderPosition.Y);
+					blockSprite.Visible = true;
+
+					images.Add(blockSprite);
+
+					displayLayer += displayPlayerAdd;
+				}
 			}
 
 			var primary = labData!.LabBlocks[labTile.PrimaryLabBlockIndex - 1];
@@ -411,6 +534,16 @@ internal class Map3DScreen : Screen
 		map = game!.AssetProvider.MapLoader.LoadMap(index) as IMap3D; // TODO: catch exceptions
 		labData = game!.AssetProvider.LabDataLoader.LoadLabData(map!.LabDataIndex);
 		palette = game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
+
+		for (int i = 0; i < map.NPCs.Length; i++)
+		{
+			var npcData = map.NPCs[i];
+
+			if (npcData.Index != 0 && npcData.Icon != 0)
+			{
+				npcs.Add(new NPC(this, i, map.NPCPositions, game.State));
+			}
+		}
 
 		game.State.MapIndex = index;
 		game.State.TravelType = TravelType.Walk;
