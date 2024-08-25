@@ -551,29 +551,27 @@ internal class Map3DScreen : Screen
 
 					if (perspective.SpecialRenderPosition != null)
 					{
+						int graphicIndex = game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing);
 						var blockSprite = layer.SpriteFactory!.CreateAnimated();
 						blockSprite.FrameCount = 1;
 						blockSprite.Size = new Size(perspective.Frames[0].Width, perspective.Frames[0].Height);
 						blockSprite.DisplayLayer = displayLayer;
 						blockSprite.PaletteIndex = palette;
-						blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing));
-						blockSprite.Position = new(customRenderX ?? (OffsetX + perspective.RenderPosition.X), OffsetY + perspective.RenderPosition.Y);
+						blockSprite.TextureOffset = textureAtlas.GetOffset(graphicIndex);
+						blockSprite.Position = new(OffsetX + perspective.RenderPosition.X, OffsetY + perspective.RenderPosition.Y);
 						blockSprite.Visible = true;
 
 						images.Add(blockSprite);
 
 						displayLayer += (byte)(displayPlayerAdd / 2);
 
-						int x = customRenderX ?? (OffsetX + perspective.RenderPosition.X);
-						x += perspective.SpecialRenderPosition.Value.Y - perspective.RenderPosition.X;
-
 						blockSprite = layer.SpriteFactory!.CreateAnimated();
 						blockSprite.FrameCount = perspective.Frames.Length - 1;
 						blockSprite.Size = new Size(perspective.Frames[1].Width, perspective.Frames[1].Height);
 						blockSprite.DisplayLayer = displayLayer;
 						blockSprite.PaletteIndex = palette;
-						blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing) + 1);
-						blockSprite.Position = new(x, OffsetY + perspective.SpecialRenderPosition.Value.Y);
+						blockSprite.TextureOffset = textureAtlas.GetOffset(graphicIndex++);
+						blockSprite.Position = new(OffsetX + perspective.SpecialRenderPosition.Value.X, OffsetY + perspective.SpecialRenderPosition.Value.Y);
 						blockSprite.Visible = true;
 
 						images.Add(blockSprite);
