@@ -7,6 +7,7 @@ namespace Amberstar.GameData;
 [Flags]
 public enum LabTileFlags : uint
 {
+	None = 0,
 	/// <summary>
 	/// If set animation goes back and forth, otherwise only in one direction.
 	/// </summary>
@@ -77,6 +78,7 @@ public struct PerspectiveInfo
 	public IGraphic[] Frames;
 	public BlockFacing Facing;
 	public Position RenderPosition;
+	public Position? SpecialRenderPosition;
 }
 
 public interface ILabBlock

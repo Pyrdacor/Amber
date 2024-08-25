@@ -107,12 +107,11 @@ internal class LabBlock : ILabBlock
 		{
 			var location = LocationByIndex(i, type, out var facing);
 			var frames = new IGraphic[numAnimationFrames];
-			int frameIndex = i;
+			int frameIndex = i * numAnimationFrames;
 
 			for (int n = 0; n < frames.Length; n++)
 			{
-				frames[n] = images[frameIndex];
-				frameIndex += numPerspectives;
+				frames[n] = images[frameIndex++];
 			}
 
 			perspectives[i] = new()
@@ -120,6 +119,9 @@ internal class LabBlock : ILabBlock
 				Location = location,
 				Facing = facing,
 				RenderPosition = new(xOffsets[i], yOffsets[i]),
+				SpecialRenderPosition = type == LabBlockType.Object && i == 3
+					? new(xOffsets[17], yOffsets[17])
+					: null,
 				Frames = frames
 			};
 		}

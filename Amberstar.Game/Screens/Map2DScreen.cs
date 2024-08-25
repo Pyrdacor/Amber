@@ -209,6 +209,8 @@ internal class Map2DScreen : Screen
 			}
 
 			var targetTile = map!.Tiles[x + y * map.Width];
+
+			// TODO: use priority bit in flags
 			return BlocksMovement(targetTile.Underlay) || BlocksMovement(targetTile.Overlay);
 		}
 
