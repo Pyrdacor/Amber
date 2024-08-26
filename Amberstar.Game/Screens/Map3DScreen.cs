@@ -209,6 +209,7 @@ internal class Map3DScreen : Screen
 	}
 
 	const int TicksPerStep = 120; // TODO
+	const int AnimationTicksPerFrame = 20; // TODO
 
 	const int ViewWidth = 144;
 	const int ViewHeight = 144;
@@ -222,6 +223,7 @@ internal class Map3DScreen : Screen
 	readonly List<NPC> npcs = [];
 	ButtonLayout buttonLayout = ButtonLayout.Movement;
 	long currentTicks = 0;
+	long lastAnimationFrame = 0;
 	byte palette = 0;
 	bool paused = false;
 
@@ -317,6 +319,15 @@ internal class Map3DScreen : Screen
 			return;
 
 		currentTicks += elapsedTicks;
+		long animationFrame = currentTicks / AnimationTicksPerFrame;
+
+		if (animationFrame != lastAnimationFrame)
+		{
+			lastAnimationFrame = animationFrame;
+
+			foreach (var image in images)
+				image.CurrentFrameIndex++;
+		}
 	}
 
 	private void AfterMove()
@@ -552,12 +563,13 @@ internal class Map3DScreen : Screen
 					if (perspective.SpecialRenderPosition != null)
 					{
 						int graphicIndex = game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing);
+						var textureOffset = textureAtlas.GetOffset(graphicIndex);
 						var blockSprite = layer.SpriteFactory!.CreateAnimated();
 						blockSprite.FrameCount = 1;
 						blockSprite.Size = new Size(perspective.Frames[0].Width, perspective.Frames[0].Height);
 						blockSprite.DisplayLayer = displayLayer;
 						blockSprite.PaletteIndex = palette;
-						blockSprite.TextureOffset = textureAtlas.GetOffset(graphicIndex);
+						blockSprite.TextureOffset = textureOffset;
 						blockSprite.Position = new(OffsetX + perspective.RenderPosition.X, OffsetY + perspective.RenderPosition.Y);
 						blockSprite.Visible = true;
 
@@ -570,7 +582,7 @@ internal class Map3DScreen : Screen
 						blockSprite.Size = new Size(perspective.Frames[1].Width, perspective.Frames[1].Height);
 						blockSprite.DisplayLayer = displayLayer;
 						blockSprite.PaletteIndex = palette;
-						blockSprite.TextureOffset = textureAtlas.GetOffset(graphicIndex++);
+						blockSprite.TextureOffset = new(textureOffset.X + perspective.Frames[0].Width, textureOffset.Y);
 						blockSprite.Position = new(OffsetX + perspective.SpecialRenderPosition.Value.X, OffsetY + perspective.SpecialRenderPosition.Value.Y);
 						blockSprite.Visible = true;
 

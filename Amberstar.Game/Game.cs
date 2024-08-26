@@ -72,7 +72,8 @@ public class Game : IDisposable
 		// TODO: For debugging, remove later
 		State.MapIndex = 67;
 		State.PartyDirection = Direction.Down;
-		State.SetPartyPosition(7 - 1, 15 - 1);
+		//State.SetPartyPosition(7 - 1, 15 - 1);
+		State.SetPartyPosition(32 - 1, 9 - 1);
 		ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map3D));
 	}
 

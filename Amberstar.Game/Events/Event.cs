@@ -27,6 +27,8 @@ namespace Amberstar.Game.Events
 			{
 				IMapExitEvent mapExitEvent => new MapExitEvent(mapExitEvent),
 				IShowPictureTextEvent showPictureTextEvent => new ShowPictureTextEvent(showPictureTextEvent),
+				ITeleporterEvent teleportEvent => new TeleporterEvent(teleportEvent),
+				ITravelExitEvent travelExitEvent => new TravelExitEvent(travelExitEvent),
 				_ => throw new NotImplementedException()
 			};
 		}

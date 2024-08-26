@@ -59,7 +59,6 @@ internal class LabBlock : ILabBlock
 		}
 
 		int numAnimationFrames = reader.ReadByte();
-		int numOffsets = type == LabBlockType.Object ? 18 : 17;
 
 		int[] ReadWords(int count)
 		{
@@ -71,8 +70,12 @@ internal class LabBlock : ILabBlock
 			return words;
 		}
 
-		var xOffsets = ReadWords(numOffsets);
-		var yOffsets = ReadWords(numOffsets);
+		var xOffsets = ReadWords(17);
+		var yOffsets = ReadWords(17);
+
+		int specialOffsetX = type == LabBlockType.Object ? reader.ReadWord() : 0;
+		int specialOffsetY = type == LabBlockType.Object ? reader.ReadWord() : 0;
+
 		var images = new List<IGraphic>(numPerspectives * numAnimationFrames);
 
 		while (true)
@@ -121,7 +124,7 @@ internal class LabBlock : ILabBlock
 				Facing = facing,
 				RenderPosition = new(xOffsets[i], yOffsets[i]),
 				SpecialRenderPosition = type == LabBlockType.Object && i == 3 && numAnimationFrames > 1
-					? new(xOffsets[17], yOffsets[17])
+					? new(specialOffsetX, specialOffsetY)
 					: null,
 				Frames = frames
 			};
