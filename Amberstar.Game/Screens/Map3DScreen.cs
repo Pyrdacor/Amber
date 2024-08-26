@@ -127,6 +127,12 @@ internal class Map3DScreen : Screen
 
 		private void UpdatePosition(GameState gameState)
 		{
+			void TryWalkTo(Position position)
+			{
+				if (canMoveChecker(position.X - 1, position.Y - 1, data.TravelType))
+					this.position = position;
+			}
+
 			switch (data.WalkType)
 			{
 				case MapNPCWalkType.Stationary:
@@ -135,7 +141,7 @@ internal class Map3DScreen : Screen
 				case MapNPCWalkType.Path:
 				{
 					int totalSteps = gameState.Hour * 12 + gameState.Minute / 5;
-					position = positions[totalSteps];
+					TryWalkTo(positions[totalSteps]);
 					break;
 				}
 				case MapNPCWalkType.Chase:
@@ -453,15 +459,27 @@ internal class Map3DScreen : Screen
 
 	public override void KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		bool left = game!.IsKeyDown(Key.Left) || game.IsKeyDown('A');
-		bool right = game!.IsKeyDown(Key.Right) || game.IsKeyDown('D');
-		bool forward = game!.IsKeyDown(Key.Up) || game.IsKeyDown('W');
-		bool backward = game!.IsKeyDown(Key.Down) || game.IsKeyDown('S');
+		bool left = game!.IsKeyDown('A');
+		bool right = game.IsKeyDown('D');
+		bool forward = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
+		bool backward = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
+		bool turnLeft = game.IsKeyDown(Key.Left) || game.IsKeyDown('Q');
+		bool turnRight = game.IsKeyDown(Key.Right) || game.IsKeyDown('E');
 
 		void Move(int x, int y)
 		{
-			game!.State.SetPartyPosition(game.State.PartyPosition.X + x, game.State.PartyPosition.Y + y);
-			AfterMove();
+			int targetX = game.State.PartyPosition.X + x;
+			int targetY = game.State.PartyPosition.Y + y;
+
+			if (CanMoveTo(targetX, targetY, true, 0))
+			{
+				game!.State.SetPartyPosition(targetX, targetY);
+				AfterMove();
+			}
+			else
+			{
+				// TODO: ouch
+			}
 		}
 
 		void TurnTo(Direction newDirection)
@@ -479,8 +497,12 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(0, 1);
 				else if (left && !right)
-					TurnTo(Direction.West);
+					Move(1, 0);
 				else if (right && !left)
+					Move(-1, 0);
+				else if (turnLeft && !turnRight)
+					TurnTo(Direction.West);
+				else if (turnRight && !turnLeft)
 					TurnTo(Direction.East);
 				break;
 			case Direction.East:
@@ -489,8 +511,12 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(-1, 0);
 				else if (left && !right)
-					TurnTo(Direction.North);
+					Move(0, -1);
 				else if (right && !left)
+					Move(0, 1);
+				else if (turnLeft && !turnRight)
+					TurnTo(Direction.North);
+				else if (turnRight && !turnLeft)
 					TurnTo(Direction.South);
 				break;
 			case Direction.South:
@@ -499,8 +525,12 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(0, -1);
 				else if (left && !right)
-					TurnTo(Direction.East);
+					Move(-1, 0);
 				else if (right && !left)
+					Move(1, 0);
+				else if (turnLeft && !turnRight)
+					TurnTo(Direction.East);
+				else if (turnRight && !turnLeft)
 					TurnTo(Direction.West);
 				break;
 			case Direction.West:
@@ -509,8 +539,12 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(1, 0);
 				else if (left && !right)
-					TurnTo(Direction.South);
+					Move(0, 1);
 				else if (right && !left)
+					Move(0, -1);
+				else if (turnLeft && !turnRight)
+					TurnTo(Direction.South);
+				else if (turnRight && !turnLeft)
 					TurnTo(Direction.North);
 				break;
 		}
