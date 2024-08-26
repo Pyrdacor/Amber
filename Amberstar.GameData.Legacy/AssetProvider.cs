@@ -203,6 +203,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.Button => CreateAssets(Data.Buttons),
 			AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
 			AssetType.ItemGraphic => CreateAssets(Data.ItemGraphics),
+			AssetType.SkyGradient => CreateAssets(Data.SkyGradients),
 			AssetType.Font => CreateAssets(Data.Fonts),
 			_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {type} for legacy asset provider")
 		};

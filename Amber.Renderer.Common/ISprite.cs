@@ -8,6 +8,7 @@ public interface ISprite : ILayeredDrawable, ISizedDrawable
 	Size? TextureSize { get; set; }
 	byte PaletteIndex { get; set; }
 	byte? MaskColorIndex { get; set; }
+	byte? TransparentColorIndex { get; set; }
 	bool MirrorX { get; set; }
 	bool Opaque { get; set; }
 }

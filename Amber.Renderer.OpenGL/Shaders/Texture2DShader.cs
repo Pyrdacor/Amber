@@ -42,6 +42,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         in vec2 varTexCoord;
         flat in float palIndex;
         flat in float maskColIndex;
+        flat in float transparentColIndex;
         flat in float noTransparency;
         
         void main()
@@ -51,6 +52,9 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             if ({UsePaletteName} > 0.5f)
             {{
                 float colorIndex = texture({TextureName}, varTexCoord).r * 255.0f;
+
+                if (transparentColIndex > 0.5f && abs(colorIndex - transparentColIndex) < 0.5f)
+                    colorIndex = 0.0f;
                 
                 if (colorIndex < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                     discard;
@@ -84,6 +88,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         in uint {LayerName};
         in uint {PaletteIndexName};
         in uint {MaskColorIndexName};
+        in uint {TransparentColorIndexName};
         in uint {OpaqueName};
         uniform uvec2 {AtlasSizeName};
         uniform float {ZName};
@@ -92,6 +97,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         out vec2 varTexCoord;
         flat out float palIndex;
         flat out float maskColIndex;
+        flat out float transparentColIndex;
         flat out float noTransparency;
         
         void main()
@@ -101,6 +107,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             varTexCoord = atlasFactor * vec2({TexCoordName}.x, {TexCoordName}.y);
             palIndex = float({PaletteIndexName});
             maskColIndex = float({MaskColorIndexName});
+            transparentColIndex = float({TransparentColorIndexName});
             noTransparency = float({OpaqueName});
             float z = clamp(1.0f - {ZName} - float({LayerName}) * 0.00001f, 0.0f, 1.0f);
             gl_Position = {ProjectionMatrixName} * {ModelViewMatrixName} * vec4(pos, z, 1.0f);
@@ -134,7 +141,8 @@ internal class Texture2DShader : BaseShader, IPaletteShader
 		Add(BufferPurpose.DisplayLayer, LayerName, new ByteBuffer(State, true));
 		Add(BufferPurpose.PaletteIndex, PaletteIndexName, new ByteBuffer(State, true));
 		Add(BufferPurpose.MaskColorIndex, MaskColorIndexName, new ByteBuffer(State, true));
-        Add(BufferPurpose.Opaque, OpaqueName, new ByteBuffer(State, true));
+		Add(BufferPurpose.TransparentColorIndex, TransparentColorIndexName, new ByteBuffer(State, true));
+		Add(BufferPurpose.Opaque, OpaqueName, new ByteBuffer(State, true));
 
 		return buffers;
 	}

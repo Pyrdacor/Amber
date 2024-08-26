@@ -149,6 +149,28 @@ public class Graphic : IGraphic
 
 	public byte[] GetData() => data;
 
+	public Color GetColorAt(int x, int y)
+	{
+		if (x < 0 || y < 0 || x >= Width || y >= Height)
+			return Color.Transparent;
+
+		switch (Format)
+		{
+			case GraphicFormat.Alpha:
+			{
+				byte alpha = data[y * Width + x];
+				return new Color(alpha, alpha, alpha, alpha);
+			}
+			case GraphicFormat.RGBA:
+			{
+				int index = (y * Width + x) * 4;
+				return new Color(data[index++], data[index++], data[index++], data[index++]);
+			}
+			default:
+				throw new NotSupportedException($"Color format {Format} does not supporting getting a color at a position.");
+		}
+	}
+
 	public Graphic GetPart(int x, int y, int width, int height)
 	{
 		if (x < 0 || x + width > Width || y < 0 || y + height > Height)

@@ -1,4 +1,6 @@
-﻿namespace Amber.Assets.Common;
+﻿using Amber.Common;
+
+namespace Amber.Assets.Common;
 
 public enum GraphicFormat
 {
@@ -29,6 +31,7 @@ public interface IGraphic
     GraphicFormat Format { get; }
 
     byte[] GetData();
+    Color GetColorAt(int x, int y);
 }
 
 // Those directly contain and provide a palette

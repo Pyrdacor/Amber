@@ -209,16 +209,19 @@ internal class Map3DScreen : Screen
 	}
 
 	const int TicksPerStep = 120; // TODO
-	const int AnimationTicksPerFrame = 20; // TODO
+	const int AnimationTicksPerFrame = 25;
 
 	const int ViewWidth = 144;
 	const int ViewHeight = 144;
 	const int OffsetX = 32;
 	const int OffsetY = 49;
+	const int SkyTransparentColorIndex = 11;
 	Dictionary<int, IGraphic> backgrounds = [];
+	Dictionary<DayTime, Color[]> skyGradients = [];
 	Game? game;
 	IMap3D? map;
 	ILabData? labData;
+	readonly List<IColoredRect> skyGradient = [];
 	readonly List<IAnimatedSprite> images = [];
 	readonly List<NPC> npcs = [];
 	ButtonLayout buttonLayout = ButtonLayout.Movement;
@@ -239,6 +242,7 @@ internal class Map3DScreen : Screen
 	{
 		this.game = game;
 		backgrounds = game.AssetProvider.GraphicLoader.LoadAllBackgroundGraphics();
+		skyGradients = game.AssetProvider.GraphicLoader.LoadSkyGradients();
 	}
 
 	public override void ScreenPushed(Game game, Screen screen)
@@ -249,12 +253,14 @@ internal class Map3DScreen : Screen
 
 		// TODO: check for transparent screens?
 		images.ForEach(image => image.Visible = false);
+		skyGradient.ForEach(g => g.Visible = false);
 	}
 
 	public override void ScreenPopped(Game game, Screen screen)
 	{
 		game.SetLayout(Layout.Map3D);
 		images.ForEach(image => image.Visible = true);
+		skyGradient.ForEach(g => g.Visible = true);
 
 		paused = false;
 
@@ -273,20 +279,43 @@ internal class Map3DScreen : Screen
 		AfterMove();
 
 		game.Time.MinuteChanged += MinuteChanged;
+		game.CanSeeChanged += CanSeeChanged;
 	}
 
 	public override void Close(Game game)
 	{
 		game.Time.MinuteChanged -= MinuteChanged;
+		game.CanSeeChanged -= CanSeeChanged;
 		ClearView();
+		skyGradient.ForEach(g => g.Visible = false);
+		skyGradient.Clear();
 
 		base.Close(game);
+	}
+
+	private void CanSeeChanged(bool canSee)
+	{
+		if (paused)
+			return;
+
+		UpdateLight();
+
+		if (map!.Flags.HasFlag(MapFlags.City))
+			UpdateSky(canSee);
 	}
 
 	private void MinuteChanged()
 	{
 		if (paused)
 			return;
+
+		var lightMode = map!.Flags.GetLightMode();
+
+		if (lightMode != LightMode.Static)
+			UpdateLight();
+
+		if (map.Flags.HasFlag(MapFlags.City) && game!.CanSee())
+			UpdateSky(true);
 
 		if (npcs.Count != 0) // TODO: check for active ones only (or maybe remove inactive ones)
 		{
@@ -368,6 +397,44 @@ internal class Map3DScreen : Screen
 			return false;
 
 		return true;
+	}
+
+	private void UpdateLight()
+	{
+		// TODO
+	}
+
+	private void UpdateSky(bool canSee)
+	{
+		if (!canSee)
+		{
+			skyGradient.ForEach(g => g.Visible = false);
+			skyGradient.Clear();
+			return;
+		}
+
+		var dayTime = game!.State.Hour.HourToDayTime();
+		var gradient = skyGradients[dayTime];
+		var skyColor = game.AssetProvider.PaletteLoader.LoadPalette(palette).GetColorAt(SkyTransparentColorIndex, 0);
+
+		if (skyGradient.Count == 0)
+		{
+			void CreateSkyLine(int y, Color color)
+			{
+				var skyLine = game!.Renderer.Layers[(int)Layer.Map3D].ColoredRectFactory!.Create();
+				skyLine.Color = color;
+				skyLine.Position = new(OffsetX, OffsetY + y);
+				skyLine.Size = new(ViewWidth, 1);
+				skyLine.DisplayLayer = 0;
+				skyLine.Visible = true;				
+				skyGradient.Add(skyLine);
+			}
+
+			for (int y = 0; y < gradient.Length - 1; y++)
+				CreateSkyLine(y, gradient[y]);
+			
+			CreateSkyLine(gradient.Length - 1, skyColor);
+		}
 	}
 
 	private LabTileFlags GetTileFlags(int x, int y)
@@ -502,17 +569,19 @@ internal class Map3DScreen : Screen
 		floorSprite.Position = new(OffsetX, OffsetY + ViewHeight - floor.Height);
 		floorSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.FloorIndex));
 		floorSprite.Opaque = true;
-		floorSprite.DisplayLayer = 0;
+		floorSprite.DisplayLayer = 5;
 		floorSprite.PaletteIndex = palette;
 		floorSprite.Visible = true;
 		images.Add(floorSprite);
 
+		var hasSky = map!.Flags.HasFlag(MapFlags.City);
 		var ceiling = backgrounds[labData!.CeilingIndex];
 		var ceilingSprite = layer.SpriteFactory!.CreateAnimated();
 		ceilingSprite.Size = new(ceiling.Width, ceiling.Height);
 		ceilingSprite.Position = new(OffsetX, OffsetY);
 		ceilingSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.CeilingIndex));
-		ceilingSprite.Opaque = true;
+		ceilingSprite.Opaque = !hasSky;
+		ceilingSprite.TransparentColorIndex = (byte)(hasSky ? SkyTransparentColorIndex : 0);
 		ceilingSprite.DisplayLayer = 10;
 		ceilingSprite.PaletteIndex = palette;
 		ceilingSprite.Visible = true;
@@ -657,6 +726,14 @@ internal class Map3DScreen : Screen
 					(int x, int y, int collisionClass) => CanMoveTo(x, y, false, collisionClass)));
 			}
 		}
+
+		var lightMode = map.Flags.GetLightMode();
+
+		if (lightMode != LightMode.Static)
+			UpdateLight();
+
+		if (map.Flags.HasFlag(MapFlags.City) && game!.CanSee())
+			UpdateSky(true);
 
 		game.State.MapIndex = index;
 		game.State.TravelType = TravelType.Walk;

@@ -343,7 +343,7 @@ namespace Amberstar.GameData.Serialization
 			{ UIGraphic.SPBar, Info(16, 17) },
 			{ UIGraphic.Sword, Info(16, 10) },
 			{ UIGraphic.Shield, Info(16, 10) },
-			{ UIGraphic.LastUIGraphic, Info(16, 2048) } // TODO
+			{ UIGraphic.LastUIGraphic, Info(16, 1) } // TODO
 		};
 
 		public static Size GetSize(this UIGraphic graphic) => uiGraphicInfos[graphic].Item2;

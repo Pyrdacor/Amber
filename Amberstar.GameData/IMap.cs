@@ -12,6 +12,28 @@ public enum MapFlags : byte
 	City = 0x40, // Only used in 3D (if not set it's a 3D dungeon)
 }
 
+public enum LightMode
+{
+	FullLight,
+	LightChange,
+	FullDarkness,
+	Static // keep current light
+}
+
+public static class MapFlagsExtensions
+{
+	public static LightMode GetLightMode(this MapFlags flags)
+	{
+		if (flags.HasFlag(MapFlags.Light))
+			return LightMode.FullLight;
+		if (flags.HasFlag(MapFlags.LightChange))
+			return LightMode.LightChange;
+		if (flags.HasFlag(MapFlags.Darkness))
+			return LightMode.FullDarkness;
+		return LightMode.Static;
+	}
+}
+
 public enum MapType : byte
 {
 	Map2D,

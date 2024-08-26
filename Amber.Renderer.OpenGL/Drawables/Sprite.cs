@@ -10,6 +10,7 @@ namespace Amber.Renderer.OpenGL.Drawables
 		Size? textureSize;
 		byte paletteIndex;
 		byte? maskColorIndex;
+		byte? transparentColorIndex;
 		bool mirrorX;
 		bool opaque;
 
@@ -84,6 +85,21 @@ namespace Amber.Renderer.OpenGL.Drawables
 
 					if (Visible && DrawIndex != -1)
 						renderBuffer.UpdateMaskColor(DrawIndex, maskColorIndex);
+				}
+			}
+		}
+
+		public byte? TransparentColorIndex
+		{
+			get => transparentColorIndex;
+			set
+			{
+				if (transparentColorIndex != value)
+				{
+					transparentColorIndex = value;
+
+					if (Visible && DrawIndex != -1)
+						renderBuffer.UpdateTransparentColor(DrawIndex, transparentColorIndex);
 				}
 			}
 		}

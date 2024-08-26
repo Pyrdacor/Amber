@@ -86,6 +86,7 @@ public class Game : IDisposable
 	internal EventHandler EventHandler { get; }
 	internal TextManager TextManager { get; }
 	internal Time Time { get; }
+	internal event Action<bool>? CanSeeChanged;
 
 	public void Update(double delta)
 	{
@@ -150,6 +151,12 @@ public class Game : IDisposable
 	public void MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
 	{
 		ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons);
+	}
+
+	internal bool CanSee()
+	{
+		// TODO
+		return true;
 	}
 
 	internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)

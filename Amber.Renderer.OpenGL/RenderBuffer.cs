@@ -223,7 +223,19 @@ internal class RenderBuffer : IDisposable
             maskColorBuffer.Add(color, maskColorBufferIndex + 3);
         }
 
-        /*if (textColorIndexBuffer != null)
+		var transparentColorBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.TransparentColorIndex);
+
+		if (transparentColorBuffer != null)
+		{
+			byte color = sprite.TransparentColorIndex ?? 0;
+
+			int transparentColorBufferIndex = transparentColorBuffer.Add(color, index);
+			transparentColorBuffer.Add(color, transparentColorBufferIndex + 1);
+			transparentColorBuffer.Add(color, transparentColorBufferIndex + 2);
+			transparentColorBuffer.Add(color, transparentColorBufferIndex + 3);
+		}
+
+		/*if (textColorIndexBuffer != null)
         {
             if (textColorIndex == null)
                 throw new AmbermoonException(ExceptionScope.Render, "No text color index given but text color index buffer is active.");
@@ -243,7 +255,7 @@ internal class RenderBuffer : IDisposable
             alphaBuffer.Add(alpha, alphaBufferIndex + 3);
         }*/
 
-        return index;
+		return index;
     }
 
     public void UpdatePosition(int index, ISizedDrawable drawable,
@@ -287,6 +299,20 @@ internal class RenderBuffer : IDisposable
             maskColorBuffer.Update(index + 3, color);
         }
     }
+
+	public void UpdateTransparentColor(int index, byte? transparentColor)
+	{
+		var transparentColorBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.TransparentColorIndex);
+
+		if (transparentColorBuffer != null)
+		{
+			var color = transparentColor ?? 0;
+			transparentColorBuffer.Update(index, color);
+			transparentColorBuffer.Update(index + 1, color);
+			transparentColorBuffer.Update(index + 2, color);
+			transparentColorBuffer.Update(index + 3, color);
+		}
+	}
 
 	public void UpdateOpaque(int index, byte opaque)
 	{

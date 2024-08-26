@@ -44,15 +44,15 @@ internal class PaletteLoader(Amber.Assets.Common.IAssetProvider assetProvider, I
 		return Graphic.FromRGBA(size, 1, data);
 	}
 
-	public static IGraphic LoadPalette(IDataReader dataReader)
+	public static byte[] LoadPaletteColors(IDataReader dataReader, int numColors)
 	{
-		var data = dataReader.ReadBytes(16 * 2);
+		var data = dataReader.ReadBytes(numColors * 2);
 
 		// For compact palettes each color component is stored in a 4-bit nibble.
 		// But still only 3 bits are used on the Atari. So we need to map it.
 		// We achieve this by multiplying by 2 or left shifting by 1.
 		// The XR nibble can be directly shifted. The GB nibble needs special care.
-		for (int i = 0; i < 16; i++)
+		for (int i = 0; i < numColors; i++)
 		{
 			var r = data[i * 2] & 0x7;
 			r <<= 1;
@@ -70,6 +70,13 @@ internal class PaletteLoader(Amber.Assets.Common.IAssetProvider assetProvider, I
 				b = 15;
 			data[i * 2 + 1] = (byte)((g << 4) | b);
 		}
+
+		return data;
+	}
+
+	public static IGraphic LoadPalette(IDataReader dataReader)
+	{
+		var data = LoadPaletteColors(dataReader, 16);
 
 		// Note: Graphic.FromPalette will handle alpha so we don't need to care about it here.
 		return Graphic.FromPalette(data);

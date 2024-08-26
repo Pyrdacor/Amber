@@ -11,6 +11,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 	private readonly Dictionary<Image80x80, IPaletteGraphic> graphics80x80 = [];
 	private readonly Dictionary<ItemGraphic, IGraphic> itemGraphics = [];
 	private readonly Dictionary<int, IGraphic> backgroundGraphics = [];
+	private readonly Dictionary<DayTime, Color[]> skyGradients = [];
 
 	public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
 	{
@@ -152,5 +153,49 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		itemGraphics.Add(index, graphic);
 
 		return graphic;
+	}
+
+	public Dictionary<DayTime, Color[]> LoadSkyGradients()
+	{
+		if (skyGradients.Count != 0)
+			return skyGradients;
+
+		for (int i = 0; i < 3; i++)
+		{
+			var asset = assetProvider.GetAsset(new(AssetType.SkyGradient, i));
+
+			if (asset == null)
+				throw new AmberException(ExceptionScope.Data, $"Sky gradient {i} not found.");
+
+			var reader = asset.GetReader();
+			var gradient = new Color[84];
+			var colorData = PaletteLoader.LoadPaletteColors(reader, 84);
+			int colorDataIndex = 0;
+
+			for (int n = 0; n < gradient.Length; n++)
+			{
+				var r = colorData[colorDataIndex++] & 0xf;
+				var gb = colorData[colorDataIndex++];
+				var g = gb >> 4;
+				var b = gb & 0xf;
+				r |= (r << 4);
+				g |= (g << 4);
+				b |= (b << 4);
+
+				gradient[n] = new Color((byte)r, (byte)g, (byte)b);
+			}
+
+			// 0 -> 2
+			// 1 -> 0
+			// 2 -> 1
+			DayTime dayTime = (DayTime)((i + 2) % 3);
+
+			skyGradients.Add(dayTime, gradient);
+
+			if (dayTime == DayTime.Dawn)
+				skyGradients.Add(DayTime.Dusk, gradient);
+		}
+
+		return skyGradients;
 	}
 }

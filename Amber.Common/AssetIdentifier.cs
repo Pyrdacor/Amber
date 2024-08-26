@@ -24,6 +24,7 @@
 		Graphics80x80,
 		ItemGraphic,
 		Background,
+		SkyGradient,
 		// ...
 		// Other stuff
 		Savegame,

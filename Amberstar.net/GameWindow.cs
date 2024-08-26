@@ -351,8 +351,8 @@ namespace Amberstar
 
         public void Run()
         {
-            Width = 3 * 320;
-            Height = 3 * 200;
+            Width = 6 * 320;
+            Height = 6 * 200;
 
 #if GLES
             var api = new GraphicsAPI

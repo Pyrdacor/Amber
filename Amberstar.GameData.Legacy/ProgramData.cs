@@ -200,7 +200,13 @@ namespace Amberstar.GameData.Legacy
 			for (int i = (int)UIGraphic.HPBar; i <= (int)UIGraphic.LastUIGraphic; i++)
 				AddUIGraphic((UIGraphic)i);
 			#endregion
-			#region Read Version
+			#region Read sky gradients
+			// TODO: read gfx between the above and the sky gradients
+			dataReader.Position = (int)dataReader.FindByteSequence([0x00, 0x56, 0x00, 0x56], dataReader.Position);
+			for (int i = 0; i < 3; i++)
+				SkyGradients.Add(i, new DataReader(dataReader.ReadBytes(84 * 2)));
+			#endregion
+			#region Read font
 			if (!dataSeeker(EmbeddedDataOffset.TextConversionTab, dataReader))
 				throw new AmberException(ExceptionScope.Application, "Could not find the font information in the program file.");
 			Fonts.Add(0, new DataReader(dataReader.ReadBytes(0x3fe)));
@@ -298,6 +304,7 @@ namespace Amberstar.GameData.Legacy
 		public Dictionary<int, IDataReader> Buttons { get; } = [];
 		public Dictionary<int, IDataReader> StatusIcons { get; } = [];
 		public Dictionary<int, IDataReader> ItemGraphics { get; } = [];
+		public Dictionary<int, IDataReader> SkyGradients { get; } = [];
 		public Dictionary<int, IDataReader> Fonts { get; } = [];
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
