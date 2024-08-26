@@ -103,6 +103,12 @@ namespace Amberstar
 				WriteGraphic($@"{basePath}\80x80Images\{i:000}.png", graphic, graphic.Palette.GetData(), false);
 			}
 
+			var backgrounds = assetProvider.GraphicLoader.LoadAllBackgroundGraphics();
+			foreach (var background in backgrounds)
+			{
+				WriteGraphic($@"{basePath}\Backgrounds\{background.Key:000}.png", background.Value, testPal, false);
+			}
+
 			var labBlocks = assetProvider.LabDataLoader.LoadAllLabBlocks();
 
 			foreach (var labBlock in labBlocks)

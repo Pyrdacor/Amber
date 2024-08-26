@@ -11,6 +11,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 	private readonly Dictionary<Image80x80, IPaletteGraphic> graphics80x80 = [];
 	private readonly Dictionary<ItemGraphic, IGraphic> itemGraphics = [];
 	private readonly Dictionary<int, IGraphic> backgroundGraphics = [];
+	private readonly Dictionary<int, IGraphic> cloudGraphics = [];
 	private readonly Dictionary<DayTime, Color[]> skyGradients = [];
 
 	public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
@@ -112,11 +113,8 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		return graphic;
 	}
 
-	public Dictionary<int, IGraphic> LoadAllBackgroundGraphics()
+	private void LoadBackgroundsAndClouds()
 	{
-		if (backgroundGraphics.Count != 0)
-			return backgroundGraphics;
-
 		foreach (var key in assetProvider.GetAssetKeys(AssetType.Background))
 		{
 			var asset = assetProvider.GetAsset(new(AssetType.Background, key));
@@ -126,13 +124,34 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 
 			var reader = asset.GetReader();
 
-			// Load graphic
-			var graphic = GraphicLoader.LoadGraphicList(reader)[0];
+			// Load graphics
+			var graphics = GraphicLoader.LoadGraphicList(reader);
 
-			backgroundGraphics.Add(key, graphic);
+			backgroundGraphics.Add(key, graphics[0]);
+
+			if (graphics.Length > 1)
+				cloudGraphics.Add(key, graphics[1]);
 		}
+	}
+
+	public Dictionary<int, IGraphic> LoadAllBackgroundGraphics()
+	{
+		if (backgroundGraphics.Count != 0)
+			return backgroundGraphics;
+
+		LoadBackgroundsAndClouds();
 
 		return backgroundGraphics;
+	}
+
+	public Dictionary<int, IGraphic> LoadAllCloudGraphics()
+	{
+		if (cloudGraphics.Count != 0)
+			return cloudGraphics;
+
+		LoadBackgroundsAndClouds();
+
+		return cloudGraphics;
 	}
 
 	public IGraphic LoadItemGraphic(ItemGraphic index)

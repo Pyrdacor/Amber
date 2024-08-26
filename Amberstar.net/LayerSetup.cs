@@ -212,6 +212,12 @@ namespace Amberstar.net
 				backgroundGraphicIndices.Add(backgroundGraphic.Key, index);
 				graphics.Add(index++, backgroundGraphic.Value);
 			}
+			var cloudGraphicIndices = new Dictionary<int, int>();
+			foreach (var cloudGraphic in assetProvider.GraphicLoader.LoadAllCloudGraphics())
+			{
+				cloudGraphicIndices.Add(cloudGraphic.Key, index);
+				graphics.Add(index++, cloudGraphic.Value);
+			}
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.1f,
@@ -227,7 +233,7 @@ namespace Amberstar.net
 			// TODO ...
 
 			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
-				image80x80Offset, itemGraphicOffset, backgroundGraphicIndices, labBlockImageIndices);
+				image80x80Offset, itemGraphicOffset, backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices);
 			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

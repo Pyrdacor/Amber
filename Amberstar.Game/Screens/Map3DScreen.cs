@@ -217,6 +217,7 @@ internal class Map3DScreen : Screen
 	const int OffsetY = 49;
 	const int SkyTransparentColorIndex = 11;
 	Dictionary<int, IGraphic> backgrounds = [];
+	Dictionary<int, IGraphic> clouds = [];	
 	Dictionary<DayTime, Color[]> skyGradients = [];
 	Game? game;
 	IMap3D? map;
@@ -242,6 +243,7 @@ internal class Map3DScreen : Screen
 	{
 		this.game = game;
 		backgrounds = game.AssetProvider.GraphicLoader.LoadAllBackgroundGraphics();
+		clouds = game.AssetProvider.GraphicLoader.LoadAllCloudGraphics();
 		skyGradients = game.AssetProvider.GraphicLoader.LoadSkyGradients();
 	}
 
@@ -575,17 +577,37 @@ internal class Map3DScreen : Screen
 		images.Add(floorSprite);
 
 		var hasSky = map!.Flags.HasFlag(MapFlags.City);
-		var ceiling = backgrounds[labData!.CeilingIndex];
-		var ceilingSprite = layer.SpriteFactory!.CreateAnimated();
-		ceilingSprite.Size = new(ceiling.Width, ceiling.Height);
-		ceilingSprite.Position = new(OffsetX, OffsetY);
-		ceilingSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.CeilingIndex));
-		ceilingSprite.Opaque = !hasSky;
-		ceilingSprite.TransparentColorIndex = (byte)(hasSky ? SkyTransparentColorIndex : 0);
-		ceilingSprite.DisplayLayer = 10;
-		ceilingSprite.PaletteIndex = palette;
-		ceilingSprite.Visible = true;
-		images.Add(ceilingSprite);
+		var dayTime = game.State.Hour.HourToDayTime();
+
+		if (hasSky && (dayTime == DayTime.Day || dayTime == DayTime.Dusk))
+		{
+			// Clouds
+			var cloud = clouds[labData!.CeilingIndex];
+			var cloudSprite = layer.SpriteFactory!.CreateAnimated();
+			cloudSprite.Size = new(cloud.Width, cloud.Height);
+			cloudSprite.Position = new(OffsetX, OffsetY);
+			cloudSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetCloudGraphicIndex(labData.CeilingIndex));
+			cloudSprite.TransparentColorIndex = SkyTransparentColorIndex;
+			cloudSprite.DisplayLayer = 12;
+			cloudSprite.PaletteIndex = palette;
+			cloudSprite.Visible = true;
+			images.Add(cloudSprite);
+		}
+		else
+		{
+			// Normal sky or ceiling
+			var ceiling = backgrounds[labData!.CeilingIndex];
+			var ceilingSprite = layer.SpriteFactory!.CreateAnimated();
+			ceilingSprite.Size = new(ceiling.Width, ceiling.Height);
+			ceilingSprite.Position = new(OffsetX, OffsetY);
+			ceilingSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.CeilingIndex));
+			ceilingSprite.Opaque = !hasSky;
+			ceilingSprite.TransparentColorIndex = (byte)(hasSky ? SkyTransparentColorIndex : 0);
+			ceilingSprite.DisplayLayer = 10;
+			ceilingSprite.PaletteIndex = palette;
+			ceilingSprite.Visible = true;
+			images.Add(ceilingSprite);
+		}
 
 		for (int i = 0; i < 14; i++)
 		{
