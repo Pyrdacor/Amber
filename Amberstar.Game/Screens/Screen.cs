@@ -112,6 +112,7 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.Map2D => new Map2DScreen(),
 			ScreenType.Map3D => new Map3DScreen(),
 			ScreenType.PictureText => new PictureTextScreen(),
+			ScreenType.TextBox => new TextBoxScreen(),
 			_ => throw new NotImplementedException()
 		};
 

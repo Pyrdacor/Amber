@@ -66,9 +66,9 @@ namespace Amberstar.Game
 			ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons);
 		}
 
-		internal bool IsKeyDown(Key key) => inputEnabled && (pressedKeys ?? pressedKeyProvider()).Contains(key);
+		internal bool IsKeyDown(Key key) => inputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
 
-		internal bool IsKeyDown(char ch) => inputEnabled && (pressedKeys ?? pressedKeyProvider()).Contains(KeyByChar(ch));
+		internal bool IsKeyDown(char ch) => inputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(KeyByChar(ch));
 
 		private static Key KeyByChar(char ch)
 		{
