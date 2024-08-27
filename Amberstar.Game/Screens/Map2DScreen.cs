@@ -171,6 +171,7 @@ internal class Map2DScreen : Screen
 	byte palette = 0;
 
 	public override ScreenType Type { get; } = ScreenType.Map2D;
+	public IMap2D Map => map!;
 
 	internal void MapChanged()
 	{
@@ -202,27 +203,36 @@ internal class Map2DScreen : Screen
 	{
 		base.ScreenPushed(game, screen);
 
-		// TODO: check for transparent screens?
-		underlay.Values.ToList().ForEach(tile => tile.Visible = false);
-		overlay.Values.ToList().ForEach(tile => tile.Visible = false);
-		screenPushPlayerWasVisible = player!.Visible;
-		player!.Visible = false;
+		if (!screen.Transparent)
+		{
+			underlay.Values.ToList().ForEach(tile => tile.Visible = false);
+			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
+			screenPushPlayerWasVisible = player!.Visible;
+			player!.Visible = false;
 
-		timeText?.Delete();
+			timeText?.Delete();
+		}
+
+		game.Pause();
 	}
 
 	public override void ScreenPopped(Game game, Screen screen)
 	{
-		game.SetLayout(Layout.Map2D);
-		underlay.Values.ToList().ForEach(tile => tile.Visible = true);
-		overlay.Values.ToList().ForEach(tile => tile.Visible = true);
-		player!.Visible = screenPushPlayerWasVisible;
+		if (!screen.Transparent)
+		{
+			game.SetLayout(Layout.Map2D);
+			underlay.Values.ToList().ForEach(tile => tile.Visible = true);
+			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
+			player!.Visible = screenPushPlayerWasVisible;
 
-		timeText?.Delete();
-		timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
-		timeText.Show(220, 70, 100);
+			timeText?.Delete();
+			timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+			timeText.Show(220, 70, 100);
+		}
 
 		base.ScreenPopped(game, screen);
+
+		game.Resume();
 	}
 
 	public override void Open(Game game, Action? closeAction)

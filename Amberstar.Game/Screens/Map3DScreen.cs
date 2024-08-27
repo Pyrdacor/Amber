@@ -235,9 +235,9 @@ internal class Map3DScreen : Screen
 	long currentTicks = 0;
 	long lastAnimationFrame = 0;
 	byte palette = 0;
-	bool paused = false;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
+	public IMap3D Map => map!;
 
 	internal void MapChanged()
 	{
@@ -257,22 +257,28 @@ internal class Map3DScreen : Screen
 	{
 		base.ScreenPushed(game, screen);
 
-		paused = true;
+		if (!screen.Transparent)
+		{
+			// TODO: check for transparent screens?
+			images.ForEach(image => image.Visible = false);
+			skyGradient.ForEach(g => g.Visible = false);
+		}
 
-		// TODO: check for transparent screens?
-		images.ForEach(image => image.Visible = false);
-		skyGradient.ForEach(g => g.Visible = false);
+		game.Pause();
 	}
 
 	public override void ScreenPopped(Game game, Screen screen)
 	{
-		game.SetLayout(Layout.Map3D);
-		images.ForEach(image => image.Visible = true);
-		skyGradient.ForEach(g => g.Visible = true);
-
-		paused = false;
+		if (!screen.Transparent)
+		{
+			game.SetLayout(Layout.Map3D);
+			images.ForEach(image => image.Visible = true);
+			skyGradient.ForEach(g => g.Visible = true);
+		}
 
 		base.ScreenPopped(game, screen);
+
+		game.Resume();
 	}
 
 	public override void Open(Game game, Action? closeAction)
@@ -303,7 +309,7 @@ internal class Map3DScreen : Screen
 
 	private void CanSeeChanged(bool canSee)
 	{
-		if (paused)
+		if (game!.Paused)
 			return;
 
 		UpdateLight();
@@ -314,7 +320,7 @@ internal class Map3DScreen : Screen
 
 	private void MinuteChanged()
 	{
-		if (paused)
+		if (game!.Paused)
 			return;
 
 		var lightMode = map!.Flags.GetLightMode();

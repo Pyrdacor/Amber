@@ -14,6 +14,7 @@ public enum ScreenType
 	Door,
 	Chest,
 	PictureText,
+	TextBox,
 	// TODO ...
 }
 
@@ -22,6 +23,8 @@ internal abstract class Screen
 	Action? closeAction;
 
 	public abstract ScreenType Type { get; }
+
+	public virtual bool Transparent { get; } = false;
 
 	public virtual void Init(Game game)
 	{
@@ -100,6 +103,7 @@ internal class ScreenHandler(Game game) : IDisposable
 	readonly Dictionary<ScreenType, Screen> createdScreens = [];
 
 	public Screen? ActiveScreen => screens.Count == 0 ? null : screens.Peek();
+	public Screen? LastScreen => screens.Skip(1).FirstOrDefault();
 
 	public Screen Create(ScreenType screenType)
 	{
@@ -163,6 +167,17 @@ internal class ScreenHandler(Game game) : IDisposable
 	{
 		PopScreen();
 		PushScreen(screenType, followAction);
+	}
+
+	public Screen? FindScreen(ScreenType screenType)
+	{
+		foreach (var screen in screens)
+		{
+			if (screen.Type == screenType)
+				return screen;
+		}
+
+		return null;
 	}
 
 	public void Dispose()

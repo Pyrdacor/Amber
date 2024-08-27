@@ -62,7 +62,8 @@ namespace Amberstar.Game
 
 		internal void ShowText(Action? nextAction = null)
 		{
-			// TODO
+			CurrentText = null;
+			ScreenHandler.PushScreen(ScreenType.TextBox);
 		}
 
 		internal void ShowPictureWithText()
