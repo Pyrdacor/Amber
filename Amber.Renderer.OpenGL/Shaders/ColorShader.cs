@@ -61,6 +61,8 @@ internal class ColorShader : BaseShader
 
     }
 
+    public override bool NeedsBlending { get; } = true;
+
 	public override Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject)
 	{
         var buffers = new Dictionary<BufferPurpose, IBuffer>();

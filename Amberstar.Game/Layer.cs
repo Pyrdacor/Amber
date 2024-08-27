@@ -7,6 +7,7 @@ public enum Layer
 	Map2D, // all tilsets
 	Text,
 	Map3D, // images, block movement
-	Billboard3D, // freely 3D map (billboards)
+	TopMost, // colors drawn on top of everything (like fading effects)
+	Billboard3DNew, // freely 3D map (billboards)
 	Map3DNew, // TODO: freely 3D map (floor and walls)
 }

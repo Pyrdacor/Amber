@@ -40,6 +40,8 @@ internal abstract class BaseShader : IShader
 
 	private protected State State { get; }
 
+	public virtual bool NeedsBlending { get; } = false;
+
 	public ShaderProgram ShaderProgram => shaderProgram;
 
 	public abstract Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject);

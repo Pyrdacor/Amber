@@ -97,7 +97,7 @@ internal abstract class Screen
 internal class ScreenHandler(Game game) : IDisposable
 {
 	readonly Stack<Screen> screens = [];
-	readonly List<Screen> createdScreens = [];
+	readonly Dictionary<ScreenType, Screen> createdScreens = [];
 
 	public Screen? ActiveScreen => screens.Count == 0 ? null : screens.Peek();
 
@@ -112,20 +112,23 @@ internal class ScreenHandler(Game game) : IDisposable
 		};
 
 		screen.Init(game);
-		createdScreens.Add(screen);
+		createdScreens.Add(screenType, screen);
 
 		return screen;
 	}
 
-	public bool PushScreen(Screen screen, Action? followAction = null)
+	public bool PushScreen(ScreenType screenType, Action? followAction = null)
 	{
 		var currentScreen = ActiveScreen;
 
-		if (currentScreen?.Type == screen.Type)
+		if (currentScreen?.Type == screenType)
 		{
 			followAction?.Invoke();
 			return false;
 		}
+
+		if (!createdScreens.TryGetValue(screenType, out var screen))
+			screen = Create(screenType);
 
 		screens.Push(screen);
 
@@ -156,15 +159,15 @@ internal class ScreenHandler(Game game) : IDisposable
 		}
 	}
 
-	public void ReplaceScreen(Screen screen, Action? followAction = null)
+	public void ReplaceScreen(ScreenType screenType, Action? followAction = null)
 	{
 		PopScreen();
-		PushScreen(screen, followAction);
+		PushScreen(screenType, followAction);
 	}
 
 	public void Dispose()
 	{
-		createdScreens.ForEach(screen => screen.Destroy(game));
+		createdScreens.Values.ToList().ForEach(screen => screen.Destroy(game));
 		createdScreens.Clear();
 	}
 }

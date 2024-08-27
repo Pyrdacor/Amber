@@ -19,7 +19,6 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace Amber.Renderer.OpenGL;
@@ -34,6 +33,7 @@ internal partial class State : IEquatable<State>
     readonly string contextIdentifier;
 	readonly Stack<Matrix4> projectionMatrixStack = new();
 	readonly Stack<Matrix4> modelViewMatrixStack = new();
+    bool blendingEnabled = false;
 
 	public State(IContextProvider contextProvider)
     {
@@ -87,7 +87,9 @@ internal partial class State : IEquatable<State>
                 GLSLVersionMinor = int.Parse(match.Groups[2].Value);
             }
         }
-    }
+
+		Gl.Disable(EnableCap.Blend);
+	}
 
 	public GL Gl { get; }
 	public Matrix4 ProjectionMatrix2D { get; set; } = Matrix4.Identity;
@@ -143,6 +145,19 @@ internal partial class State : IEquatable<State>
         projectionMatrixStack.Clear();
         modelViewMatrixStack.Clear();
     }
+
+    public void EnableBlending(bool enable)
+    {
+        if (blendingEnabled == enable)
+            return;
+
+        if (enable)
+			Gl.Enable(EnableCap.Blend);
+        else
+			Gl.Disable(EnableCap.Blend);
+
+        blendingEnabled = enable;
+	}
 
     public bool Equals(State? other)
     {

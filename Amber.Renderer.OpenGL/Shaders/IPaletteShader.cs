@@ -25,8 +25,6 @@ internal interface IPaletteShader : ITextureShader
 {
 	void SetPalette(int textureUnit = 1);
 
-	void SetColorKey(byte colorIndex);
-
 	void SetPaletteSize(int size);
 
 	void SetPaletteCount(int count);

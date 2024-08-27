@@ -49,7 +49,6 @@ namespace Ambermoon.Renderer.OpenGL
 			state.Gl.Disable(EnableCap.CullFace);
 			state.Gl.Enable(EnableCap.Texture2D);
 
-			state.Gl.Disable(EnableCap.Blend);
 			state.Gl.BlendEquationSeparate(BlendEquationModeEXT.FuncAdd, BlendEquationModeEXT.FuncAdd);
 			state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.Zero);
 

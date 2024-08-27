@@ -15,17 +15,6 @@ namespace Amberstar.net
 			out PaletteIndexProvider paletteIndexProvider,
 			out FontInfoProvider fontInfoProvider)
 		{
-			/*
-			Layout, // opaque, drawn in the back
-			MapUnderlay, // all tilsets
-			MapOverlay, // all tilsets
-			Map3D, // freely 3D map (floor and walls)
-			Billboard3D, // freely 3D map (billboards)
-			Map3DLegay, // images, block movement
-			UI, // UI elements, supports transparency
-			Text
-			*/
-
 			// Create the palette
 			var uiPalette = assetProvider.PaletteLoader.LoadUIPalette();
 			var generalPalettes = Enumerable.Range(1, 10).Select(assetProvider.PaletteLoader.LoadPalette).ToArray();
@@ -230,6 +219,21 @@ namespace Amberstar.net
 			renderer.AddLayer(layer);
 
 			#endregion
+
+
+			#region TopMost
+
+			layer = renderer.LayerFactory.Create(LayerType.Color2D, new()
+			{
+				BaseZ = 0.9f,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			#endregion
+
 			// TODO ...
 
 			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,

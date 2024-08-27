@@ -36,6 +36,8 @@ internal class RenderBuffer : IDisposable
     readonly IndexBuffer indexBuffer;
     readonly LayerFeatures features;
 
+    public bool NeedsBlending { get; }
+
 	public RenderBuffer(State state, BaseShader shader, LayerFeatures features, int textureFactor = 1)
     {
         this.state = state;
@@ -47,6 +49,8 @@ internal class RenderBuffer : IDisposable
 
 		indexBuffer = new IndexBuffer(state);
 		vertexArrayObject.AddBuffer("index", indexBuffer);
+
+        NeedsBlending = shader.NeedsBlending;
 	}
 
     private TBuffer? GetBuffer<TBuffer, T>(BufferPurpose purpose)
@@ -445,20 +449,6 @@ internal class RenderBuffer : IDisposable
 
     public void FreeDrawIndex(int index)
     {
-        /*int newSize = -1;
-
-        if (index == (positionBuffer.Size - 8) / 8)
-        {
-            int i = (index - 1) * 4;
-            newSize = positionBuffer.Size - 8;
-
-            while (i >= 0 && !positionBuffer.IsPositionValid(i))
-            {
-                i -= 4;
-                newSize -= 8;
-            }
-        }*/
-
         foreach (var buffer in buffers)
         {
             // Note: The inverse index freeing is crucial as the next free index is taken from the end of the list.

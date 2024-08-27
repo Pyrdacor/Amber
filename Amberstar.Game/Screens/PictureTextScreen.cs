@@ -28,7 +28,7 @@ internal class PictureTextScreen : Screen
 
 		var @event = (game.EventHandler.CurrentEvent as IShowPictureTextEvent)!;
 
-		var layer = game.Renderer.Layers[(int)Layer.UI];
+		var layer = game.GetRenderLayer(Layer.UI);
 		image = layer.SpriteFactory!.Create();
 		var textureAtlas = layer.Config.Texture!;
 

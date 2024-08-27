@@ -37,7 +37,6 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         uniform float {PaletteCountName};
         uniform sampler2D {TextureName};
         uniform sampler2D {PaletteName};
-        uniform float {ColorKeyName};
         uniform float {AllowTransparencyName};
         in vec2 varTexCoord;
         flat in float palIndex;
@@ -165,14 +164,6 @@ internal class Texture2DShader : BaseShader, IPaletteShader
     public void SetAtlasSize(uint width, uint height)
     {
         shaderProgram.SetInputVector2(AtlasSizeName, width, height);
-    }
-
-    public void SetColorKey(byte colorIndex)
-    {
-        if (colorIndex > 31)
-            throw new AmberException(ExceptionScope.Render, "Color index must be in the range 0 to 31.");
-
-        shaderProgram.SetInput(ColorKeyName, (float)colorIndex);
     }
 
 	public void SetPaletteSize(int size)

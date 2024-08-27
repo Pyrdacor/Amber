@@ -44,7 +44,7 @@ internal class TextManager(Game game, IFont font,
 		IFontInfoProvider fontInfoProvider, byte paletteIndex
 	) : IRenderText
 	{
-		readonly ILayer layer = game.Renderer.Layers[(int)Layer.Text];
+		readonly ILayer layer = game.GetRenderLayer(Layer.Text);
 		readonly List<TextLine> textLines = textLines;
 		readonly List<List<ISprite>> glyphs = [];
 		readonly List<long> startedScrollAction = [];

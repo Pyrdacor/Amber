@@ -7,6 +7,11 @@ namespace Amberstar.Game.Collections
 	{
 		private readonly SortedList<TKey, List<TValue>> _sortedList = [];
 
+		public void Clear()
+		{
+			_sortedList.Clear();
+		}
+
 		public void Remove(Func<TValue, bool> filter)
 		{
 			foreach (var queue in new SortedList<TKey, List<TValue>>(_sortedList))

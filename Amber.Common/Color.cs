@@ -21,6 +21,22 @@ public readonly struct Color : IEquatable<Color>
 		A = a;
 	}
 
+	public Color(Color other)
+	{
+		R = other.R;
+		G = other.G;
+		B = other.B;
+		A = other.A;
+	}
+
+	public Color(Color other, byte alpha)
+	{
+		R = other.R;
+		G = other.G;
+		B = other.B;
+		A = alpha;
+	}
+
 	public static readonly Color Black = new(0, 0, 0);
 	public static readonly Color White = new(255, 255, 255);
 	public static readonly Color Transparent = new(0, 0, 0, 0);

@@ -429,7 +429,7 @@ internal class Map3DScreen : Screen
 		{
 			void CreateSkyLine(int y, Color color)
 			{
-				var skyLine = game!.Renderer.Layers[(int)Layer.Map3D].ColoredRectFactory!.Create();
+				var skyLine = game!.GetRenderLayer(Layer.Map3D).ColoredRectFactory!.Create();
 				skyLine.Color = color;
 				skyLine.Position = new(OffsetX, OffsetY + y);
 				skyLine.Size = new(ViewWidth, 1);
@@ -595,7 +595,7 @@ internal class Map3DScreen : Screen
 		ClearView();
 
 		var offsets = PerspectiveMappings[game.State.PartyDirection];
-		var layer = game.Renderer.Layers[(int)Layer.Map3D];
+		var layer = game.GetRenderLayer(Layer.Map3D);
 		var textureAtlas = layer.Config.Texture!;
 		byte displayLayer = 40;
 

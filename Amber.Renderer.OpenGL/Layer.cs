@@ -22,7 +22,6 @@
 using Amber.Common;
 using Amber.Renderer.OpenGL.Drawables;
 using Amber.Renderer.OpenGL.Shaders;
-using Silk.NET.OpenGL;
 
 namespace Amber.Renderer.OpenGL;
 
@@ -61,7 +60,6 @@ internal class Layer : ILayer, IDisposable
 
 	public Layer(State state, LayerType type, LayerConfig config)
     {
-        // TODO: create render buffer
         Index = NextIndex++;
         Type = type;
 		Config = config;
@@ -110,8 +108,7 @@ internal class Layer : ILayer, IDisposable
 			}
 			default:
 			{
-				// TODO
-				throw new NotImplementedException();
+				throw new NotSupportedException($"Layer type {type} is not supported.");
 			}
 		}
 	}
@@ -141,7 +138,7 @@ internal class Layer : ILayer, IDisposable
 			Config.Texture!.Use();
 			textureShader.UsePalette(usePalette);
 			textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
-			textureShader.AllowTransparency(Config.LayerFeatures.HasFlag(LayerFeatures.Transparency));					
+			textureShader.AllowTransparency(Config.LayerFeatures.HasFlag(LayerFeatures.Transparency));
 		}
 
 		foreach (var shader in shaders)
@@ -159,7 +156,6 @@ internal class Layer : ILayer, IDisposable
 				Config.Palette!.Use();
 				paletteShader.SetPaletteSize(Config.Palette.Size.Width);
 				paletteShader.SetPaletteCount(Config.Palette.Size.Height);
-				paletteShader.SetColorKey(0); // TODO
 			}
 			else if (shader is ITextureShader textureShader)
 			{
@@ -182,7 +178,10 @@ internal class Layer : ILayer, IDisposable
 		}
 
 		foreach (var buffer in renderBuffers)
+		{
+			state.EnableBlending(buffer.Value.NeedsBlending);
 			buffer.Value.Render();
+		}
 	}
 
     public void Dispose()
