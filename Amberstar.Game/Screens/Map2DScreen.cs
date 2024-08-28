@@ -3,6 +3,7 @@ using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
+using ButtonType = Amberstar.GameData.Serialization.Button;
 
 namespace Amberstar.Game.Screens;
 
@@ -171,6 +172,7 @@ internal class Map2DScreen : Screen
 	IRenderText? timeText; // for debugging, TODO: REMOVE
 	byte palette = 0;
 	long delayedMoveActionIndex = -1;
+	ButtonGrid? buttonGrid;
 
 	public override ScreenType Type { get; } = ScreenType.Map2D;
 	public IMap2D Map => map!;
@@ -250,10 +252,75 @@ internal class Map2DScreen : Screen
 		additionalMoveRequested = false;
 
 		game.SetLayout(Layout.Map2D);
+		buttonGrid = new(game);
+		buttonGrid.ClickButtonAction += ButtonClicked;
 		buttonLayout = ButtonLayout.Movement;
+		SetupButtons();		
 		LoadMap(game.State.MapIndex);
 		InitPlayer();
 		AfterMove();
+	}
+
+	private void ButtonClicked(int index)
+	{
+		if (buttonLayout == ButtonLayout.Movement)
+		{
+			if (index == 4)
+			{
+				game!.Time.Tick();
+				return;
+			}
+
+			moveX = index % 3 - 1;
+			moveY = index / 3 + 1;
+
+			if (moveY < 0)
+				game!.State.PartyDirection = Direction.Up;
+			else if (moveY > 0)
+				game!.State.PartyDirection = Direction.Down;
+			else if (moveX < 0)
+				game!.State.PartyDirection = Direction.Left;
+			else if (moveX > 0)
+				game!.State.PartyDirection = Direction.Right;
+		}
+		else // Actions
+		{
+			// TODO
+		}
+	}
+
+	private void SetupButtons()
+	{
+		if (buttonLayout == ButtonLayout.Movement)
+		{
+			// Upper row
+			buttonGrid!.SetButton(0, ButtonType.ArrowUpLeft);
+			buttonGrid.SetButton(1, ButtonType.ArrowUp);
+			buttonGrid.SetButton(2, ButtonType.ArrowUpRight);
+			// Middle row
+			buttonGrid.SetButton(3, ButtonType.ArrowLeft);
+			buttonGrid.SetButton(4, ButtonType.Sleep);
+			buttonGrid.SetButton(5, ButtonType.ArrowRight);
+			// Lower row
+			buttonGrid.SetButton(6, ButtonType.ArrowDownLeft);
+			buttonGrid.SetButton(7, ButtonType.ArrowDown);
+			buttonGrid.SetButton(8, ButtonType.ArrowDownRight);
+		}
+		else // Actions
+		{
+			// Upper row
+			buttonGrid!.SetButton(0, ButtonType.Eye);
+			buttonGrid.SetButton(1, ButtonType.Ear);
+			buttonGrid.SetButton(2, ButtonType.Mouth);
+			// Middle row
+			buttonGrid.SetButton(3, ButtonType.UseTransport);
+			buttonGrid.SetButton(4, ButtonType.UseMagic);
+			buttonGrid.SetButton(5, ButtonType.Camp);
+			// Lower row
+			buttonGrid.SetButton(6, ButtonType.Map);
+			buttonGrid.SetButton(7, ButtonType.PartyPositions);
+			buttonGrid.SetButton(8, ButtonType.Disk);
+		}
 	}
 
 	public override void Close(Game game)
@@ -264,6 +331,7 @@ internal class Map2DScreen : Screen
 		ClearMap();
 		player!.Visible = false;
 		player = null;
+		buttonGrid!.Destroy();
 
 		timeText?.Delete();
 
@@ -526,6 +594,22 @@ internal class Map2DScreen : Screen
 	public override void KeyUp(Key key, KeyModifiers keyModifiers)
 	{
 		UpdateMovement();
+	}
+
+	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	{
+		if (buttons == MouseButtons.Right)
+		{
+			if (ButtonGrid.Area.Contains(position))
+			{
+				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
+				SetupButtons();
+			}
+		}
+		else
+		{
+			buttonGrid!.MouseClick(position);
+		}
 	}
 
 	private void FillMap(int scrollOffsetX, int scrollOffsetY, bool force = false)
