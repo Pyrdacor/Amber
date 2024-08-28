@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
+using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;

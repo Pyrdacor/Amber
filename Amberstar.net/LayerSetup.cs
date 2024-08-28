@@ -13,6 +13,7 @@ namespace Amberstar.net
 		public static void Run(AssetProvider assetProvider, Renderer renderer,
 			out GraphicIndexProvider uiGraphicIndexProvider,
 			out PaletteIndexProvider paletteIndexProvider,
+			out PaletteColorProvider paletteColorProvider,
 			out FontInfoProvider fontInfoProvider)
 		{
 			// Create the palette
@@ -25,11 +26,14 @@ namespace Amberstar.net
 			palette.AddOverlay(0, 0, uiPalette);
 			byte y = 1;
 			var generalPaletteIndices = new Dictionary<int, byte>();
+			var palettes = new Dictionary<int, IGraphic>();
+			palettes.Add(0, uiPalette);
 
 			for (int i = 0; i < generalPalettes.Length; i++)
 			{
 				generalPaletteIndices.Add(i, y);
-				palette.AddOverlay(0, y++, generalPalettes[i]);				
+				palettes.Add(y, generalPalettes[i]);
+				palette.AddOverlay(0, y++, generalPalettes[i]);
 			}
 
 			var tilesetPaletteIndices = new Dictionary<int, byte>();
@@ -37,6 +41,7 @@ namespace Amberstar.net
 			for (int i = 0; i < tilesetPalettes.Length; i++)
 			{
 				tilesetPaletteIndices.Add(i + 1, y);
+				palettes.Add(y, tilesetPalettes[i]);
 				palette.AddOverlay(0, y++, tilesetPalettes[i]);
 			}
 
@@ -45,6 +50,7 @@ namespace Amberstar.net
 			for (int i = 0; i < image80x80Palettes.Length; i++)
 			{
 				image80x80PaletteIndices.Add((Image80x80)(i + 1), y);
+				palettes.Add(y, image80x80Palettes[i]);
 				palette.AddOverlay(0, y++, image80x80Palettes[i]);
 			}
 
@@ -91,6 +97,9 @@ namespace Amberstar.net
 			int itemGraphicOffset = graphics.Count;
 			foreach (var i in Enum.GetValues<ItemGraphic>().Distinct())
 				graphics.Add(itemGraphicOffset + (int)i, assetProvider.GraphicLoader.LoadItemGraphic(i));
+			int windowGraphicOffset = graphics.Count;
+			for (int i = 0; i < 2; i++)
+				graphics.Add(windowGraphicOffset + i, assetProvider.GraphicLoader.LoadWindowGraphics(i == 0).ToGraphic());
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.7f,
@@ -237,8 +246,10 @@ namespace Amberstar.net
 			// TODO ...
 
 			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
-				image80x80Offset, itemGraphicOffset, backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices);
+				image80x80Offset, itemGraphicOffset, windowGraphicOffset, backgroundGraphicIndices,
+				cloudGraphicIndices, labBlockImageIndices);
 			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
+			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}
 	}

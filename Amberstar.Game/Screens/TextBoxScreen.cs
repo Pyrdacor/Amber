@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
 
@@ -6,11 +7,13 @@ namespace Amberstar.Game.Screens;
 
 internal class TextBoxScreen : Screen
 {
-	const int TextX = 112;
-	const int TextY = 50;
-	const int TextWidth = 192;
-	const int TextHeight = 140;
+	const int WindowX = 16;
+	const int WindowY = 52;
+	const int WindowWidthInTiles = 18;
+	const int WindowMinHeightInTiles = 4;
+	const int WindowMaxHeightInTiles = 9;
 	Game? game;
+	Window? window;
 	IRenderText? displayText;
 	bool scrolling = false;
 	bool closeOnNextInput = false;
@@ -26,7 +29,7 @@ internal class TextBoxScreen : Screen
 		this.game = game;
 
 		// First check for text event
-		var @event = (game.EventHandler.CurrentEvent as IShowPictureTextEvent)!;
+		var @event = game.EventHandler.CurrentEvent as IShowPictureTextEvent;
 
 		if (@event == null)
 		{
@@ -34,7 +37,6 @@ internal class TextBoxScreen : Screen
 			return;
 		}
 
-		var map = game.CurrentMap ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened with active event but no active map.");
 		var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, game.State.MapIndex));
 		text = text.GetTextBlock(@event.TextIndex);
 
@@ -64,16 +66,36 @@ internal class TextBoxScreen : Screen
 
 	private void InitText(IText text)
 	{
-		var layer = game!.GetRenderLayer(Layer.UI);
+		var palette = GetPalette();
 
-		displayText = game.TextManager.Create(text, TextWidth, 15, TextManager.TransparentPaper, GetPalette());
-		displayText.ShowInArea(TextX, TextY, TextWidth, TextHeight, 100);
+		displayText = game!.TextManager.Create(text, (WindowWidthInTiles - 2) * Window.TileWidth, 15, TextManager.TransparentPaper, palette);
+
+		// The width is fixed at 18*16 pixels.
+		// The height can range from 4*16 pixels to 9*16 pixels.
+		// The text area is 256x32 to 256x112 pixels large (at max 16 text lines).
+		int numTextLines = displayText.TextLineCount;
+		int heightInTiles = MathUtil.Limit
+		(
+			WindowMinHeightInTiles,
+			(numTextLines * displayText.LineHeight + Window.TileHeight - 1) / Window.TileHeight + 2,
+			WindowMaxHeightInTiles
+		);
+
+		// Create the window
+		window?.Destroy();
+		window = new(game, WindowX, WindowY, WindowWidthInTiles, heightInTiles, dark: true, 100, palette);
+
+		// Show the text
+		var clientArea = window.ClientArea;
+		int textY = clientArea.Top + Math.Max(0, (clientArea.Size.Height - numTextLines * displayText.LineHeight) / 2);
+		displayText.ShowInArea(clientArea.Left, textY, clientArea.Size.Width, clientArea.Size.Height, 110);
 		closeOnNextInput = !displayText.SupportsScrolling;
 	}
 
 	public override void Close(Game game)
 	{
 		displayText?.Delete();
+		window?.Destroy();
 
 		base.Close(game);
 	}

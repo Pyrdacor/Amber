@@ -2,12 +2,12 @@
 using Amber.Common;
 using Amber.Serialization;
 using Amberstar.GameData.Serialization;
-using System;
 
 namespace Amberstar.GameData.Legacy;
 
 internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 {
+	private readonly IGraphic[]?[] windowGraphics = [null, null];
 	private readonly Dictionary<Image80x80, IPaletteGraphic> graphics80x80 = [];
 	private readonly Dictionary<ItemGraphic, IGraphic> itemGraphics = [];
 	private readonly Dictionary<int, IGraphic> backgroundGraphics = [];
@@ -82,6 +82,30 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		var data = LoadGraphicDataWithHeader(dataReader, out int width, out int height, out int planes);
 
 		return PaletteGraphic.FromBitPlanes(width, height, data, planes, palette);
+	}
+
+	public IGraphic[] LoadWindowGraphics(bool dark)
+	{
+		int index = dark ? 0 : 1;
+
+		if (windowGraphics[index] != null)
+			return windowGraphics[index]!;
+
+		var asset = assetProvider.GetAsset(new(AssetType.Window, index));
+
+		if (asset == null)
+			throw new AmberException(ExceptionScope.Data, $"Window graphics {index} not found.");
+
+		// Load graphics
+		var reader = asset.GetReader();
+		int graphicSize = 16 * 16 * 4 / 8;
+		int graphicCount = reader.Size / graphicSize;
+		var graphics = new IGraphic[graphicCount];
+
+		for (int i = 0; i < graphics.Length; i++)
+			graphics[i] = Graphic.FromBitPlanes(16, 16, reader.ReadBytes(graphicSize), 4);
+
+		return windowGraphics[index] = graphics;
 	}
 
 	public IPaletteGraphic Load80x80Graphic(Image80x80 index)

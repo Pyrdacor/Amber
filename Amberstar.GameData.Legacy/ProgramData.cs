@@ -211,6 +211,12 @@ namespace Amberstar.GameData.Legacy
 				throw new AmberException(ExceptionScope.Application, "Could not find the font information in the program file.");
 			Fonts.Add(0, new DataReader(dataReader.ReadBytes(0x3fe)));
 			#endregion
+			#region Windows
+			if (!dataSeeker(EmbeddedDataOffset.Windows, dataReader))
+				throw new AmberException(ExceptionScope.Application, "Could not find the window graphics in the program file.");
+			Windows.Add(0, new DataReader(dataReader.ReadBytes(0x800)));
+			Windows.Add(1, new DataReader(dataReader.ReadBytes(0x800)));
+			#endregion
 
 			// TODO: places
 		}
@@ -306,6 +312,7 @@ namespace Amberstar.GameData.Legacy
 		public Dictionary<int, IDataReader> ItemGraphics { get; } = [];
 		public Dictionary<int, IDataReader> SkyGradients { get; } = [];
 		public Dictionary<int, IDataReader> Fonts { get; } = [];
+		public Dictionary<int, IDataReader> Windows { get; } = [];
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;

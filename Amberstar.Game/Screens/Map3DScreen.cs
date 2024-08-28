@@ -798,6 +798,7 @@ internal class Map3DScreen : Screen
 			UpdateSky(true);
 
 		game.State.MapIndex = index;
+		game.State.SetIsWorldMap(false);
 		game.State.TravelType = TravelType.Walk;
 	}
 }

@@ -25,6 +25,7 @@
 		ItemGraphic,
 		Background,
 		SkyGradient,
+		Window,
 		// ...
 		// Other stuff
 		Savegame,

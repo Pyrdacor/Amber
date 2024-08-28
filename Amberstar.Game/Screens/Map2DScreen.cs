@@ -1,6 +1,7 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
 using Amberstar.Game.Events;
+using Amberstar.Game.UI;
 using Amberstar.GameData;
 
 namespace Amberstar.Game.Screens;
@@ -141,8 +142,8 @@ internal class Map2DScreen : Screen
 	const int WorldMapWidthInMaps = 8;
 	const int WorldMapHeightInMaps = 8;
 	const int WorldMapCount = WorldMapWidthInMaps * WorldMapHeightInMaps;
-	const int WorldMapWidth = 50;
-	const int WorldMapHeight = 50;
+	public const int WorldMapWidth = 50;
+	public const int WorldMapHeight = 50;
 	const int WorldMapPreloadOffset = 12;
 	const int OffsetX = 16;
 	const int OffsetY = 49;
@@ -169,6 +170,7 @@ internal class Map2DScreen : Screen
 	bool screenPushPlayerWasVisible = false;
 	IRenderText? timeText; // for debugging, TODO: REMOVE
 	byte palette = 0;
+	long delayedMoveActionIndex = -1;
 
 	public override ScreenType Type { get; } = ScreenType.Map2D;
 	public IMap2D Map => map!;
@@ -203,15 +205,18 @@ internal class Map2DScreen : Screen
 	{
 		base.ScreenPushed(game, screen);
 
+		// Don't move any further
+		ResetMovement();
+
 		if (!screen.Transparent)
 		{
 			underlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			screenPushPlayerWasVisible = player!.Visible;
 			player!.Visible = false;
-
-			timeText?.Delete();
 		}
+
+		timeText?.Delete();
 
 		game.Pause();
 	}
@@ -224,11 +229,11 @@ internal class Map2DScreen : Screen
 			underlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			player!.Visible = screenPushPlayerWasVisible;
-
-			timeText?.Delete();
-			timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
-			timeText.Show(220, 70, 100);
 		}
+
+		timeText?.Delete();
+		timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+		timeText.Show(220, 70, 100);
 
 		base.ScreenPopped(game, screen);
 
@@ -253,6 +258,9 @@ internal class Map2DScreen : Screen
 
 	public override void Close(Game game)
 	{
+		// Don't move any further
+		ResetMovement();
+
 		ClearMap();
 		player!.Visible = false;
 		player = null;
@@ -262,8 +270,18 @@ internal class Map2DScreen : Screen
 		base.Close(game);
 	}
 
+	private void ResetMovement()
+	{
+		moveX = 0;
+		moveY = 0;
+		game!.DeleteDelayedActions(delayedMoveActionIndex);
+	}
+
 	public override void Update(Game game, long elapsedTicks)
 	{
+		if (game.Paused || !game.InputEnabled)
+			ResetMovement();
+
 		if (elapsedTicks == 0)
 			return;
 
@@ -377,15 +395,23 @@ internal class Map2DScreen : Screen
 
 		var playerPosition = game!.State.PartyPosition;
 
-		FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
-
 		game.Time.Moved2D();
 
 		// Check for events
 		var @event = GetEvent(playerPosition.X, playerPosition.Y);
 
 		if (@event != null)
-			game.EventHandler.HandleEvent(EventTrigger.Move, Event.CreateEvent(@event), map!);
+		{
+			var mapEvent = Event.CreateEvent(@event);
+
+			if (game.EventHandler.HandleEvent(EventTrigger.Move, mapEvent, map!) && mapEvent is ITeleportEvent)
+			{
+				// Don't update the map if we are teleporting away.
+				return;
+			}
+		}
+
+		FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 	}
 
 	private void UpdateMovement()
@@ -433,7 +459,8 @@ internal class Map2DScreen : Screen
 			long timeTillNextMove = Math.Max(0, GetTicksPerStep() - (currentTicks - lastMoveStartTicks));
 			int x = moveX;
 			int y = moveY;
-			game.AddDelayedAction(timeTillNextMove, () =>
+			game.DeleteDelayedActions(delayedMoveActionIndex);
+			delayedMoveActionIndex = game.AddDelayedAction(timeTillNextMove, () =>
 			{
 				lastMoveStartTicks = currentTicks;
 				if (MovePlayer(x, y))
@@ -646,7 +673,7 @@ internal class Map2DScreen : Screen
 
 	private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
 
-	private static int GetWorldMapIndex(int index, int offsetX, int offsetY)
+	public static int GetWorldMapIndex(int index, int offsetX, int offsetY)
 	{
 		int currentX = index % WorldMapWidthInMaps;
 		int currentY = index / WorldMapWidthInMaps;
@@ -723,6 +750,8 @@ internal class Map2DScreen : Screen
 			worldMap.SetMaps(mapIndices.Select(GetMap).ToArray(), mapIndices);
 			map = worldMap;
 
+			game.State.MapIndex = newTopLeftMapIndex;
+
 			IMap2D GetMap(int index)
 			{
 				if (index == mapIndex && firstTime)
@@ -755,6 +784,7 @@ internal class Map2DScreen : Screen
 		palette = game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 		
 		game.State.MapIndex = index;
+		game.State.SetIsWorldMap(isWorldMap);
 		game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
 	}
 }

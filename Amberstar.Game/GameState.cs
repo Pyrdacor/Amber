@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amberstar.Game.Screens;
 using Amberstar.GameData;
 using System.Diagnostics.CodeAnalysis;
 
@@ -486,6 +487,29 @@ internal class GameState
 		WareCounts = savegame.WareCounts;
 	}
 
+
+	public void SaveTo(Action<ISavegame> savegameWriter)
+	{
+		int mapIndex = MapIndex;
+		int partyX = PartyX;
+		int partyY = PartyY;
+
+		// Adjust map index and party position for world maps.
+		if (WorldMap && partyX > Map2DScreen.WorldMapWidth)
+		{
+			mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 1, 0);
+			partyX -= Map2DScreen.WorldMapWidth;
+		}
+		if (WorldMap && partyY > Map2DScreen.WorldMapHeight)
+		{
+			mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 0, 1);
+			partyY -= Map2DScreen.WorldMapHeight;
+		}
+
+		// TODO: create savegame and call savegameWriter(savegame);
+	}
+
+
 	#region Time and Date
 
 	public int Year { get; set; } = 876;
@@ -533,11 +557,17 @@ internal class GameState
 	Transport[] Transports { get; } = new Transport[ISavegame.MaxTransportCount];
 	HashSet<TileChange> TileChanges { get; } = [];
 	public Position PartyPosition => new(PartyX - 1, PartyY - 1);
+	bool WorldMap { get; set; } = false;
 
 	public void SetPartyPosition(int x, int y)
 	{
 		PartyX = x + 1;
 		PartyY = y + 1;
+	}
+
+	public void SetIsWorldMap(bool worldMap)
+	{
+		WorldMap = worldMap;
 	}
 
 	public Transport? GetTransportAsLocation(int x, int y, int? mapIndex = null)

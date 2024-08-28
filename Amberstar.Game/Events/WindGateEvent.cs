@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class TeleporterEvent(ITeleporterEvent @event) : Event(@event), ITeleporterEvent, ITeleportEvent
+	internal class WindGateEvent(IWindGateEvent @event) : Event(@event), IWindGateEvent, ITeleportEvent
 	{
 		public byte X => @event.X;
 
@@ -17,6 +17,9 @@ namespace Amberstar.Game.Events
 
 		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
+			if (!game.State.SpecialItems.HasFlag(SpecialItems.WindChain))
+				return false;
+
 			if (TextIndex != 0)
 				game.ShowText(() => game.Teleport(X, Y, Direction, MapIndex, false));
 			else

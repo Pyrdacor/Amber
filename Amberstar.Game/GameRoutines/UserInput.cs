@@ -6,13 +6,13 @@ namespace Amberstar.Game
 	{
 		readonly Func<List<Key>> pressedKeyProvider;
 		List<Key>? pressedKeys = null;
-		bool inputEnabled = true;
-		
+
+		internal bool InputEnabled { get; private set; } = true;		
 		internal bool Paused { get; private set; } = false;
 
 		public void KeyDown(Key key, KeyModifiers keyModifiers)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.KeyDown(key, keyModifiers);
@@ -20,7 +20,7 @@ namespace Amberstar.Game
 
 		public void KeyUp(Key key, KeyModifiers keyModifiers)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.KeyUp(key, keyModifiers);
@@ -28,7 +28,7 @@ namespace Amberstar.Game
 
 		public void KeyChar(char ch, KeyModifiers keyModifiers)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.KeyChar(ch, keyModifiers);
@@ -36,7 +36,7 @@ namespace Amberstar.Game
 
 		public void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.MouseDown(position, buttons, keyModifiers);
@@ -44,7 +44,7 @@ namespace Amberstar.Game
 
 		public void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.MouseUp(position, buttons, keyModifiers);
@@ -52,7 +52,7 @@ namespace Amberstar.Game
 
 		public void MouseMove(Position position, MouseButtons buttons)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.MouseMove(position, buttons);
@@ -60,15 +60,15 @@ namespace Amberstar.Game
 
 		public void MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
 		{
-			if (!inputEnabled)
+			if (!InputEnabled)
 				return;
 
 			ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons);
 		}
 
-		internal bool IsKeyDown(Key key) => inputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
+		internal bool IsKeyDown(Key key) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
 
-		internal bool IsKeyDown(char ch) => inputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(KeyByChar(ch));
+		internal bool IsKeyDown(char ch) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(KeyByChar(ch));
 
 		private static Key KeyByChar(char ch)
 		{
@@ -98,7 +98,7 @@ namespace Amberstar.Game
 
 		internal void EnableInput(bool enable)
 		{
-			inputEnabled = enable;
+			InputEnabled = enable;
 		}
 	}
 }

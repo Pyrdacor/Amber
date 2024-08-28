@@ -11,6 +11,7 @@ namespace Amberstar.net
 		int uiGraphicOffset,
 		int image80x80Offset,
 		int itemGraphicOffset,
+		int windowGraphicOffset,
 		Dictionary<int, int> backgroundGraphicIndices,
 		Dictionary<int, int> cloudGraphicIndices,
 		Dictionary<int, Dictionary<PerspectiveLocation, Dictionary<BlockFacing, int>>> labBlockImageIndices
@@ -31,5 +32,7 @@ namespace Amberstar.net
 		public int GetBackgroundGraphicIndex(int index) => backgroundGraphicIndices[index];
 
 		public int GetCloudGraphicIndex(int index) => cloudGraphicIndices[index];
+
+		public int GetWindowGraphicIndex(bool dark) => windowGraphicOffset + (dark ? 0 : 1);
 	}
 }

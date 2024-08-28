@@ -219,7 +219,7 @@ internal class RenderBuffer : IDisposable
 
 		if (maskColorBuffer != null)
         {
-            byte color = sprite.MaskColorIndex ?? 0;
+            byte color = sprite.MaskColorIndex ?? byte.MaxValue;
 
             int maskColorBufferIndex = maskColorBuffer.Add(color, index);
             maskColorBuffer.Add(color, maskColorBufferIndex + 1);

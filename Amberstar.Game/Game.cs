@@ -1,6 +1,7 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
 using Amberstar.Game.Screens;
+using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 using EventHandler = Amberstar.Game.Events.EventHandler;
@@ -25,12 +26,14 @@ public partial class Game : IDisposable
 
 	public Game(IRenderer renderer, IAssetProvider assetProvider,
 		IGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
-		IFontInfoProvider fontInfoProvider, Func<List<Key>> pressedKeyProvider)
+		IPaletteColorProvider paletteColorProvider, IFontInfoProvider fontInfoProvider,
+		Func<List<Key>> pressedKeyProvider)
 	{
 		Renderer = renderer;
 		AssetProvider = assetProvider;
 		GraphicIndexProvider = uiGraphicIndexProvider;
 		PaletteIndexProvider = paletteIndexProvider;
+		PaletteColorProvider = paletteColorProvider;
 		ScreenHandler = new(this);
 		try
 		{
@@ -64,17 +67,23 @@ public partial class Game : IDisposable
 		//ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
 
 		// TODO: For debugging, remove later
+		// In Twinlake
 		State.MapIndex = 67;
 		State.PartyDirection = Direction.Down;
 		//State.SetPartyPosition(7 - 1, 15 - 1);
 		State.SetPartyPosition(32 - 1, 9 - 1);
 		ScreenHandler.PushScreen(ScreenType.Map3D);
+		// In front of crystal
+		/*State.MapIndex = 21;
+		State.SetPartyPosition(33, 23);
+		ScreenHandler.PushScreen(ScreenType.Map2D);*/
 	}
 
 	internal IRenderer Renderer { get; }
 	internal IAssetProvider AssetProvider { get; }
 	internal IGraphicIndexProvider GraphicIndexProvider { get; }
 	internal IPaletteIndexProvider PaletteIndexProvider { get; }
+	internal IPaletteColorProvider PaletteColorProvider { get; }	
 	internal ScreenHandler ScreenHandler { get; }
 	internal GameState State { get; }
 	internal EventHandler EventHandler { get; }

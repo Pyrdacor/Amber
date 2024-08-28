@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class TravelExitEvent(ITravelExitEvent @event) : Event(@event), ITravelExitEvent
+	internal class TravelExitEvent(ITravelExitEvent @event) : Event(@event), ITravelExitEvent, ITeleportEvent
 	{
 		public byte X => @event.X;
 
