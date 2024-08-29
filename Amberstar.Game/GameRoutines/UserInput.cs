@@ -52,6 +52,8 @@ namespace Amberstar.Game
 
 		public void MouseMove(Position position, MouseButtons buttons)
 		{
+			Cursor.Position = position;
+
 			if (!InputEnabled)
 				return;
 

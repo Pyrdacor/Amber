@@ -7,7 +7,7 @@ namespace Amberstar.GameData.Legacy;
 internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider, IGraphic emptyItemSlotGraphic) : IUIGraphicLoader
 {
 	private readonly Dictionary<StatusIcon, IGraphic> statusIcons = [];
-	private readonly Dictionary<Button, IGraphic> buttons = [];
+	private readonly Dictionary<ButtonType, IGraphic> buttons = [];
 	private readonly Dictionary<UIGraphic, IGraphic> uiGraphics = [];
 
 	public IGraphic LoadStatusIcon(StatusIcon icon)
@@ -27,18 +27,18 @@ internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider,
 		return gfx;
 	}
 
-	public IGraphic LoadButtonGraphic(Button button)
+	public IGraphic LoadButtonGraphic(ButtonType buttonType)
 	{
-		if (!buttons.TryGetValue(button, out var gfx))
+		if (!buttons.TryGetValue(buttonType, out var gfx))
 		{
-			var asset = assetProvider.GetAsset(new(AssetType.Button, (int)button));
+			var asset = assetProvider.GetAsset(new(AssetType.Button, (int)buttonType));
 
 			if (asset == null)
-				throw new AmberException(ExceptionScope.Data, $"Button {button} not found.");
+				throw new AmberException(ExceptionScope.Data, $"Button {buttonType} not found.");
 
 			gfx = Graphic.FromBitPlanes(32, 16, asset.GetReader().ReadBytes(32 * 16 / 2), 4);
 
-			buttons.Add(button, gfx);
+			buttons.Add(buttonType, gfx);
 		}
 
 		return gfx;

@@ -1,7 +1,6 @@
-﻿namespace Amberstar.GameData.Serialization
+﻿namespace Amberstar.GameData.Serialization;
+
+public interface ISavegameLoader
 {
-	public interface ISavegameLoader
-	{
-		ISavegame LoadSavegame();
-	}
+	ISavegame LoadSavegame();
 }

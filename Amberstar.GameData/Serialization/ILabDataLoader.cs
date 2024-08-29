@@ -1,11 +1,8 @@
-﻿using Amber.Assets.Common;
+﻿namespace Amberstar.GameData.Serialization;
 
-namespace Amberstar.GameData.Serialization
+public interface ILabDataLoader
 {
-	public interface ILabDataLoader
-	{
-		ILabData LoadLabData(int index);
+	ILabData LoadLabData(int index);
 
-		Dictionary<int, ILabBlock> LoadAllLabBlocks();
-	}
+	Dictionary<int, ILabBlock> LoadAllLabBlocks();
 }

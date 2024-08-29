@@ -1,7 +1,6 @@
-﻿namespace Amberstar.GameData.Serialization
+﻿namespace Amberstar.GameData.Serialization;
+
+public interface IFontLoader
 {
-	public interface IFontLoader
-	{
-		IFont LoadFont();
-	}
+	IFont LoadFont();
 }

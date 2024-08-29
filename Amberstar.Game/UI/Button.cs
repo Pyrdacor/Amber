@@ -1,7 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
 using Amberstar.GameData.Serialization;
-using ButtonType = Amberstar.GameData.Serialization.Button;
 
 namespace Amberstar.Game.UI;
 

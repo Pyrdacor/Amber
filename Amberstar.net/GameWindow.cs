@@ -1,7 +1,6 @@
 ﻿using Silk.NET.Core.Contexts;
 using Silk.NET.Input;
 using Silk.NET.Input.Glfw;
-using Silk.NET.SDL;
 using Silk.NET.Windowing;
 using Silk.NET.Windowing.Glfw;
 using System.Reflection;
@@ -11,15 +10,10 @@ using Amber.Renderer.OpenGL;
 using Renderer = Ambermoon.Renderer.OpenGL.Renderer;
 using Amber.Common;
 using Amber.Serialization;
-using Amber.Renderer;
-using Color = Amber.Common.Color;
-using Amber.Assets.Common;
 using Amberstar.GameData.Legacy;
 using Amber.IO.FileSystem;
 using Amberstar.net;
 using Silk.NET.OpenGL;
-using Amberstar.Game;
-using Amberstar.GameData.Serialization;
 
 namespace Amberstar
 {
@@ -32,7 +26,6 @@ namespace Amberstar
         IMouse? mouse = null;
         ICursor? cursor = null;
         Game.Game? game = null;
-        bool initialized = false;
 
         public string Identifier { get; }
         public IGLContext? GLContext => window?.GLContext;
@@ -68,6 +61,14 @@ namespace Amberstar
             }
         }
 
+		MousePosition WindowToVirtualScreen(MousePosition position)
+        {
+            float x = position.X * 320.0f / Width;
+			float y = position.Y * 200.0f / Height;
+
+            return new MousePosition(x, y);
+		}
+
         List<Game.Key> QueryPressedKeys()
         {
             return keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToList() ?? [];
@@ -78,12 +79,12 @@ namespace Amberstar
 			game?.KeyChar(keyChar, InputConverter.GetModifiers(keyboard));
 		}
 
-        void Keyboard_KeyDown(IKeyboard keyboard, Silk.NET.Input.Key key, int value)
+        void Keyboard_KeyDown(IKeyboard keyboard, Key key, int value)
         {
             game?.KeyDown(InputConverter.Convert(key), InputConverter.GetModifiers(keyboard));
 		}
 
-        void Keyboard_KeyUp(IKeyboard keyboard, Silk.NET.Input.Key key, int value)
+        void Keyboard_KeyUp(IKeyboard keyboard, Key key, int value)
         {
 			game?.KeyUp(InputConverter.Convert(key), InputConverter.GetModifiers(keyboard));
 		}
@@ -92,7 +93,7 @@ namespace Amberstar
         {
             game?.MouseDown
             (
-                InputConverter.ConvertMousePosition(mouse.Position),
+                InputConverter.ConvertMousePosition(WindowToVirtualScreen(mouse.Position)),
                 InputConverter.ConvertMouseButtons(button),
                 InputConverter.GetModifiers(keyboard!)
             );
@@ -102,7 +103,7 @@ namespace Amberstar
         {
 			game?.MouseUp
 			(
-				InputConverter.ConvertMousePosition(mouse.Position),
+				InputConverter.ConvertMousePosition(WindowToVirtualScreen(mouse.Position)),
 				InputConverter.ConvertMouseButtons(button),
 				InputConverter.GetModifiers(keyboard!)
 			);
@@ -112,7 +113,7 @@ namespace Amberstar
         {
 			game?.MouseMove
 			(
-				InputConverter.ConvertMousePosition(mouse.Position),
+				InputConverter.ConvertMousePosition(WindowToVirtualScreen(mouse.Position)),
 				InputConverter.GetMouseButtons(mouse)
 			);
 		}
@@ -121,7 +122,7 @@ namespace Amberstar
         {
 			game?.MouseWheel
 			(
-				InputConverter.ConvertMousePosition(mouse.Position),
+				InputConverter.ConvertMousePosition(WindowToVirtualScreen(mouse.Position)),
                 wheelDelta.X, wheelDelta.Y,
 				InputConverter.GetMouseButtons(mouse)
 			);
@@ -236,7 +237,7 @@ namespace Amberstar
             // Setup input
             SetupInput(window.CreateInput());
 
-            var platform = Silk.NET.Windowing.Window.GetWindowPlatform(false);
+            var platform = Window.GetWindowPlatform(false);
 
             window.Monitor = platform!.GetMainMonitor();
             window.Size = new WindowDimension(320 * 3, 200 * 3);
@@ -261,8 +262,6 @@ namespace Amberstar
 
 			game = new Game.Game(renderer, assetProvider, uiGraphicIndexProvider, paletteIndexProvider,
                 paletteColorProvider, fontInfoProvider, QueryPressedKeys);
-
-			initialized = true;
         }
 
         void Window_Render(double delta)

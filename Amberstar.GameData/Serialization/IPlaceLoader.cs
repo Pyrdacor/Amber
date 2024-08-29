@@ -1,9 +1,8 @@
 ﻿using Amberstar.GameData.Events;
 
-namespace Amberstar.GameData.Serialization
+namespace Amberstar.GameData.Serialization;
+
+public interface IPlaceLoader
 {
-	public interface IPlaceLoader
-	{
-		IPlace LoadPlace(PlaceType placeType, int index);
-	}
+	IPlace LoadPlace(PlaceType placeType, int index);
 }

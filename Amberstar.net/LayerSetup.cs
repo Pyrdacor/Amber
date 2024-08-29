@@ -86,7 +86,7 @@ namespace Amberstar.net
 			foreach (var g in Enum.GetValues<UIGraphic>().Distinct())
 				graphics.Add(uiGraphicOffset + (int)g, assetProvider.UIGraphicLoader.LoadGraphic(g));
 			int buttonOffset = graphics.Count;
-			foreach (var b in Enum.GetValues<Button>().Distinct())
+			foreach (var b in Enum.GetValues<ButtonType>().Distinct())
 				graphics.Add(buttonOffset + (int)b, assetProvider.UIGraphicLoader.LoadButtonGraphic(b));
 			int statusIconOffset = graphics.Count;
 			foreach (var i in Enum.GetValues<StatusIcon>().Distinct())

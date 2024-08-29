@@ -3,7 +3,7 @@ using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
-using ButtonType = Amberstar.GameData.Serialization.Button;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
@@ -870,5 +870,6 @@ internal class Map2DScreen : Screen
 		game.State.MapIndex = index;
 		game.State.SetIsWorldMap(isWorldMap);
 		game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
+		game.Cursor.PaletteIndex = palette;
 	}
 }

@@ -46,6 +46,7 @@ public partial class Game : IDisposable
 		EventHandler = new(this);
 		TextManager = new(this, AssetProvider.FontLoader.LoadFont(), fontInfoProvider);
 		Time = new(this);
+		Cursor = new(this);
 		this.pressedKeyProvider = pressedKeyProvider;
 
 		int uiPaletteIndex = paletteIndexProvider.UIPaletteIndex;

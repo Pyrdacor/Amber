@@ -23,9 +23,11 @@ internal class CursorLoader(AssetProvider assetProvider) : ICursorLoader
 		int hotspotX = reader.ReadWord();
 		int hotspotY = reader.ReadWord();
 
-		// Load graphics
+		// Load graphic
 		var graphic = Graphic.FromBitPlanes(16, 16, reader.ReadBytes(32), 1);
-		var mask = Graphic.FromBitPlanes(16, 16, reader.ReadBytes(32), 1); // TODO
+		var mask = Graphic.FromBitPlanes(16, 16, reader.ReadBytes(32), 1);
+
+		graphic.MaskWith(mask, 14);
 
 		cursor = new Cursor(new(hotspotX, hotspotY), graphic);
 

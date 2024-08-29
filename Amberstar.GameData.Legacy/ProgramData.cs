@@ -173,7 +173,7 @@ namespace Amberstar.GameData.Legacy
 			{
 				Buttons.Add(button, new DataReader(dataReader.ReadBytes(32 * 16 / 2)));
 			}
-			for (int i = 0; i <= (int)Button.LastButton; i++)
+			for (int i = 0; i <= (int)ButtonType.LastButton; i++)
 				AddButton(i);
 			#endregion
 			#region Read status icons
@@ -218,7 +218,7 @@ namespace Amberstar.GameData.Legacy
 			Windows.Add(1, new DataReader(dataReader.ReadBytes(0x800)));
 			#endregion
 			#region Cursors
-			if (!dataSeeker(EmbeddedDataOffset.Windows, dataReader))
+			if (!dataSeeker(EmbeddedDataOffset.Cursors, dataReader))
 				throw new AmberException(ExceptionScope.Application, "Could not find the window graphics in the program file.");
 			void AddCursor(int cursor)
 			{

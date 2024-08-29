@@ -800,5 +800,6 @@ internal class Map3DScreen : Screen
 		game.State.MapIndex = index;
 		game.State.SetIsWorldMap(false);
 		game.State.TravelType = TravelType.Walk;
+		game.Cursor.PaletteIndex = palette;
 	}
 }

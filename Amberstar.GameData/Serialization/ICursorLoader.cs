@@ -1,7 +1,6 @@
-﻿namespace Amberstar.GameData.Serialization
+﻿namespace Amberstar.GameData.Serialization;
+
+public interface ICursorLoader
 {
-	public interface ICursorLoader
-	{
-		ICursor LoadCursor(CursorType cursorType);
-	}
+	ICursor LoadCursor(CursorType cursorType);
 }

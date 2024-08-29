@@ -1,10 +1,9 @@
 ﻿using Amber.Assets.Common;
 
-namespace Amberstar.GameData.Serialization
+namespace Amberstar.GameData.Serialization;
+
+public interface IPaletteLoader
 {
-	public interface IPaletteLoader
-	{
-		IGraphic LoadPalette(int index);
-		IGraphic LoadUIPalette();
-	}
+	IGraphic LoadPalette(int index);
+	IGraphic LoadUIPalette();
 }

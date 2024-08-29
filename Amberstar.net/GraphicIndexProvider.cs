@@ -20,7 +20,7 @@ namespace Amberstar.net
 	{
 		public int Get80x80ImageIndex(Image80x80 image) => image80x80Offset + (int)image;
 
-		public int GetButtonIndex(Button button) => buttonOffset + (int)button;
+		public int GetButtonIndex(ButtonType button) => buttonOffset + (int)button;
 
 		public int GetItemGraphicIndex(ItemGraphic graphic) => itemGraphicOffset + (int)graphic;
 

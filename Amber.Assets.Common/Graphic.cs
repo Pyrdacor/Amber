@@ -293,6 +293,30 @@ public class Graphic : IGraphic
 			data[y * Width + x + i] = pixelValue;
 		}
 	}
+
+	public void MaskWith(IGraphic mask, byte transparentColorIndex = 0)
+	{
+		if (!UsesPalette)
+			throw new AmberException(ExceptionScope.Application, "Masking can only be performed on palette graphics.");
+
+		var maskData = mask.GetData();
+
+		for (int y = 0; y < Height; y++)
+		{
+			if (y >= mask.Height)
+				break;
+
+			for (int x = 0; x < Width; x++)
+			{
+				if (x >= mask.Width)
+					break;
+
+
+				if (maskData[x + y * mask.Width] != 0)
+					data[x + y * Width] = transparentColorIndex;
+			}
+		}
+	}
 }
 
 public class PaletteGraphic : Graphic, IPaletteGraphic

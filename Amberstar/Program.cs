@@ -84,9 +84,9 @@ namespace Amberstar
 				WriteGraphic($@"{basePath}\UIGraphics\{graphic}.png", assetProvider.UIGraphicLoader.LoadGraphic(graphic), testPal, false);
 			}
 
-			for (int i = 0; i <= (int)Button.LastButton; i++)
+			for (int i = 0; i <= (int)ButtonType.LastButton; i++)
 			{
-				var button = (Button)i;
+				var button = (ButtonType)i;
 				WriteGraphic($@"{basePath}\Buttons\{button}.png", assetProvider.UIGraphicLoader.LoadButtonGraphic(button), testPal, false);
 			}
 

@@ -23,7 +23,6 @@ using Amber.Common;
 using Amber.Renderer;
 using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL;
-using System.Numerics;
 
 namespace Ambermoon.Renderer.OpenGL
 {
@@ -119,6 +118,8 @@ namespace Ambermoon.Renderer.OpenGL
 				return;
 
 			// TODO
+
+			disposed = true;
 		}
 	}
 }

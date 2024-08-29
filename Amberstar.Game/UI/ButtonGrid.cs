@@ -1,5 +1,5 @@
 ﻿using Amber.Common;
-using ButtonType = Amberstar.GameData.Serialization.Button;
+using ButtonType = Amberstar.GameData.Serialization.ButtonType;
 
 namespace Amberstar.Game.UI;
 

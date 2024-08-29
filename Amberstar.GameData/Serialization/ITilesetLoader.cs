@@ -1,7 +1,6 @@
-﻿namespace Amberstar.GameData.Serialization
+﻿namespace Amberstar.GameData.Serialization;
+
+public interface ITilesetLoader
 {
-	public interface ITilesetLoader
-	{
-		ITileset LoadTileset(int index);
-	}
+	ITileset LoadTileset(int index);
 }

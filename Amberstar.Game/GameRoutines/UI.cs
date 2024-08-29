@@ -1,9 +1,12 @@
-﻿using Amberstar.GameData;
+﻿using Amberstar.Game.UI;
+using Amberstar.GameData;
 
 namespace Amberstar.Game
 {
 	partial class Game
 	{
+		internal Cursor Cursor { get; }
+
 		internal void SetLayout(Layout layout, byte? paletteIndex = null)
 		{
 			var renderLayer = GetRenderLayer(Layer.Layout);
