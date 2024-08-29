@@ -14,7 +14,7 @@ namespace Amberstar.Game
 			// Avoid triggering existing delayed actions from old screen
 			ClearDelayedActions();
 
-			if (State.MapIndex != mapIndex)
+			if (State.GetIndexOfMapWithPlayer() != mapIndex)
 				fade = true; // always fade when switching maps
 
 			if (fade)

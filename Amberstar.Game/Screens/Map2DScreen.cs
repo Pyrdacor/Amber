@@ -173,6 +173,7 @@ internal class Map2DScreen : Screen
 	byte palette = 0;
 	long delayedMoveActionIndex = -1;
 	ButtonGrid? buttonGrid;
+	bool mouseDown = false;
 
 	public override ScreenType Type { get; } = ScreenType.Map2D;
 	public IMap2D Map => map!;
@@ -250,6 +251,7 @@ internal class Map2DScreen : Screen
 		lastMoveStartTicks = 0;
 		currentTicks = 0;
 		additionalMoveRequested = false;
+		mouseDown = false;
 
 		game.SetLayout(Layout.Map2D);
 		buttonGrid = new(game);
@@ -351,6 +353,7 @@ internal class Map2DScreen : Screen
 	{
 		moveX = 0;
 		moveY = 0;
+		mouseDown = false;
 		game!.DeleteDelayedActions(delayedMoveActionIndex);
 	}
 
@@ -502,6 +505,41 @@ internal class Map2DScreen : Screen
 		bool downLeft = game.IsKeyDown('Y') || game.IsKeyDown('Z');
 		bool downRight = game.IsKeyDown('C');
 
+		if (mouseDown && game.InputEnabled && !game.Paused)
+		{
+			switch (game!.Cursor.CursorType)
+			{
+				case CursorType.ArrowUp2D:
+					up = true;
+					break;
+				case CursorType.ArrowDown2D:
+					down = true;
+					break;
+				case CursorType.ArrowLeft2D:
+					left = true;
+					break;
+				case CursorType.ArrowRight2D:
+					right = true;
+					break;
+				case CursorType.ArrowUpLeft2D:
+					up = true;
+					left = true;
+					break;
+				case CursorType.ArrowUpRight2D:
+					up = true;
+					right = true;
+					break;
+				case CursorType.ArrowDownLeft2D:
+					down = true;
+					left = true;
+					break;
+				case CursorType.ArrowDownRight2D:
+					down = true;
+					right = true;
+					break;
+			}
+		}
+
 		if (buttonLayout == ButtonLayout.Movement)
 		{
 			if (!left)
@@ -617,7 +655,87 @@ internal class Map2DScreen : Screen
 		}
 		else
 		{
+			mouseDown = true;
+			var mapArea = new Rect(OffsetX, OffsetY, TilesPerRow * TileWidth, TileRows * TileHeight);
+
+			if (mapArea.Contains(position))
+			{
+				if (game!.Cursor.CursorType == CursorType.Zzz)
+					game.Time.Tick();
+				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
+					UpdateMovement();				
+
+				return;
+			}
+
 			buttonGrid!.MouseClick(position);
+		}
+	}
+
+	public override void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	{
+		mouseDown = false;
+		UpdateMovement();
+
+		base.MouseUp(position, buttons, keyModifiers);		
+	}
+
+	public override void MouseMove(Position position, MouseButtons buttons)
+	{
+		base.MouseMove(position, buttons);
+
+		var mapArea = new Rect(OffsetX, OffsetY, TilesPerRow * TileWidth, TileRows * TileHeight);
+
+		if (mapArea.Contains(position))
+		{
+			/*int relativeX = position.X - mapArea.Left;
+			int relativeY = position.Y - mapArea.Top;
+			bool left = relativeX < mapArea.Size.Width / 4;
+			bool right = relativeX >= mapArea.Size.Width * 3 / 4;
+			bool up = relativeY < mapArea.Size.Height / 4;
+			bool down = relativeY >= mapArea.Size.Height * 3 / 4;*/
+			bool left = position.X < player!.Position.X;
+			bool right = position.X >= player.Position.X + 16;
+			bool up = position.Y < player!.Position.Y;
+			bool down = position.Y >= player.Position.Y + 16;
+
+			var lastCursor = game!.Cursor.CursorType;
+
+			if (up)
+			{
+				if (left)
+					game.Cursor.CursorType = CursorType.ArrowUpLeft2D;
+				else if (right)
+					game.Cursor.CursorType = CursorType.ArrowUpRight2D;
+				else
+					game.Cursor.CursorType = CursorType.ArrowUp2D;
+			}
+			else if (down)
+			{
+				if (left)
+					game.Cursor.CursorType = CursorType.ArrowDownLeft2D;
+				else if (right)
+					game.Cursor.CursorType = CursorType.ArrowDownRight2D;
+				else
+					game.Cursor.CursorType = CursorType.ArrowDown2D;
+			}
+			else
+			{
+				if (left)
+					game.Cursor.CursorType = CursorType.ArrowLeft2D;
+				else if (right)
+					game.Cursor.CursorType = CursorType.ArrowRight2D;
+				else
+					game.Cursor.CursorType = CursorType.Zzz;
+			}
+
+			if (mouseDown && lastCursor != game.Cursor.CursorType)
+				UpdateMovement();
+		}
+		else if (game!.Cursor.CursorType != CursorType.Sword)
+		{
+			game!.Cursor.CursorType = CursorType.Sword;
+			UpdateMovement();
 		}
 	}
 

@@ -559,6 +559,22 @@ internal class GameState
 	public Position PartyPosition => new(PartyX - 1, PartyY - 1);
 	bool WorldMap { get; set; } = false;
 
+	public int GetIndexOfMapWithPlayer()
+	{
+		int mapIndex = MapIndex;
+
+		if (!WorldMap)
+			return mapIndex;
+
+		// Adjust map index for world maps.
+		if (WorldMap && PartyX > Map2DScreen.WorldMapWidth)
+			mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 1, 0);
+		if (WorldMap && PartyY > Map2DScreen.WorldMapHeight)
+			mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 0, 1);
+
+		return mapIndex;
+	}
+
 	public void SetPartyPosition(int x, int y)
 	{
 		PartyX = x + 1;
@@ -570,9 +586,9 @@ internal class GameState
 		WorldMap = worldMap;
 	}
 
-	public Transport? GetTransportAsLocation(int x, int y, int? mapIndex = null)
+	public Transport? GetTransportAtLocation(int x, int y, int? mapIndex = null)
 	{
-		mapIndex ??= MapIndex;
+		mapIndex ??= GetIndexOfMapWithPlayer();
 
 		for (int i = 0; i < ISavegame.MaxTransportCount; i++)
 		{
@@ -585,7 +601,7 @@ internal class GameState
 
 	public Transport[] GetTransportsOnMap(int? mapIndex = null)
 	{
-		mapIndex ??= MapIndex;
+		mapIndex ??= GetIndexOfMapWithPlayer();
 
 		return Transports.Where(transport => transport.MapIndex == mapIndex).ToArray();
 	}

@@ -37,7 +37,9 @@ internal class TextBoxScreen : Screen
 			return;
 		}
 
-		var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, game.State.MapIndex));
+		// Note: Don't use game.State.MapIndex as on world maps this could be another piece of the map!
+		int mapIndex = game.State.GetIndexOfMapWithPlayer();
+		var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 		text = text.GetTextBlock(@event.TextIndex);
 
 		InitText(text);
