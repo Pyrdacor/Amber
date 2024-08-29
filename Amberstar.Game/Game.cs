@@ -65,7 +65,7 @@ public partial class Game : IDisposable
 			CreateSprite(Layer.UI, position, size, i == 0 ? (int)UIGraphic.Skull : (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
 		}
 
-		//ScreenHandler.PushScreen(ScreenHandler.Create(ScreenType.Map2D));
+		//ScreenHandler.PushScreen(ScreenType.Map2D);
 
 		// TODO: For debugging, remove later
 		// In Twinlake

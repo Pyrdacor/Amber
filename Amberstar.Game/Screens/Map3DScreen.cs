@@ -5,6 +5,8 @@ using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
+using System.Numerics;
+using System.Threading;
 
 namespace Amberstar.Game.Screens;
 
@@ -240,6 +242,7 @@ internal class Map3DScreen : Screen
 	long lastTurnTicks = 0;
 	long lastAnimationFrame = 0;
 	byte palette = 0;
+	bool mouseDown = false;
 	ButtonGrid? buttonGrid;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
@@ -270,6 +273,7 @@ internal class Map3DScreen : Screen
 			skyGradient.ForEach(g => g.Visible = false);
 		}
 
+		mouseDown = false;
 		game.Pause();
 	}
 
@@ -294,6 +298,7 @@ internal class Map3DScreen : Screen
 		currentTicks = 0;
 		lastMoveTicks = 0;
 		lastTurnTicks = 0;
+		mouseDown = false;
 
 		game.SetLayout(Layout.Map3D);
 		buttonGrid = new(game);
@@ -387,6 +392,7 @@ internal class Map3DScreen : Screen
 
 	public override void Close(Game game)
 	{
+		mouseDown = false;
 		game.Time.MinuteChanged -= MinuteChanged;
 		game.CanSeeChanged -= CanSeeChanged;
 		ClearView();
@@ -567,9 +573,9 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(0, 1);
 				else if (left && !right)
-					Move(1, 0);
-				else if (right && !left)
 					Move(-1, 0);
+				else if (right && !left)
+					Move(1, 0);
 				else if (turnLeft && !turnRight)
 					TurnTo(Direction.West);
 				else if (turnRight && !turnLeft)
@@ -595,9 +601,9 @@ internal class Map3DScreen : Screen
 				else if (backward && !forward)
 					Move(0, -1);
 				else if (left && !right)
-					Move(-1, 0);
-				else if (right && !left)
 					Move(1, 0);
+				else if (right && !left)
+					Move(-1, 0);
 				else if (turnLeft && !turnRight)
 					TurnTo(Direction.East);
 				else if (turnRight && !turnLeft)
@@ -629,6 +635,58 @@ internal class Map3DScreen : Screen
 		bool turnLeft = game.IsKeyDown(Key.Left) || game.IsKeyDown('Q');
 		bool turnRight = game.IsKeyDown(Key.Right) || game.IsKeyDown('E');
 
+		if (mouseDown && game.InputEnabled && !game.Paused)
+		{
+			switch (game!.Cursor.CursorType)
+			{
+				case CursorType.ArrowForward3D:
+					forward = true;
+					break;
+				case CursorType.ArrowBackward3D:
+					backward = true;
+					break;
+				case CursorType.ArrowLeft3D:
+					left = true;
+					break;
+				case CursorType.ArrowRight3D:
+					right = true;
+					break;
+				case CursorType.ArrowTurnLeft3D:
+					turnLeft = true;
+					break;
+				case CursorType.ArrowTurnRight3D:
+					turnRight = true;
+					break;
+				case CursorType.FullTurnLeft:
+					// TODO
+					break;
+				case CursorType.FullTurnRight:
+					// TODO
+					break;
+			}
+		}
+
+		if (buttonLayout == ButtonLayout.Movement)
+		{
+			if (!left)
+				left = game.IsKeyDown(Key.Keypad4);
+			if (!right)
+				right = game.IsKeyDown(Key.Keypad6);
+			if (!forward)
+				forward = game.IsKeyDown(Key.Keypad8);
+			if (!backward)
+				backward = game.IsKeyDown(Key.Keypad2);
+			if (!turnLeft)
+				turnLeft = game.IsKeyDown(Key.Keypad7);
+			if (!turnRight)
+				turnRight = game.IsKeyDown(Key.Keypad9);
+			// TODO
+			/*if (!fullTurnLeft)
+				fullTurnLeft = game.IsKeyDown(Key.Keypad1);
+			if (!fullTurnRight)
+				fullTurnRight = game.IsKeyDown(Key.Keypad3);*/
+		}
+
 		CheckMove(forward, backward, left, right, turnLeft, turnRight);
 	}
 
@@ -649,7 +707,81 @@ internal class Map3DScreen : Screen
 		}
 		else
 		{
+			mouseDown = true;
+			var mapArea = new Rect(OffsetX, OffsetY, ViewWidth, ViewHeight);
+
+			if (mapArea.Contains(position))
+			{
+				if (game!.Cursor.CursorType == CursorType.Zzz)
+					game.Time.Tick();
+				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
+					CheckMove();
+
+				return;
+			}
+
 			buttonGrid!.MouseClick(position);
+		}
+	}
+
+	public override void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	{
+		mouseDown = false;
+
+		base.MouseUp(position, buttons, keyModifiers);
+	}
+
+	public override void MouseMove(Position position, MouseButtons buttons)
+	{
+		base.MouseMove(position, buttons);
+
+		var mapArea = new Rect(OffsetX, OffsetY, ViewWidth, ViewHeight);
+
+		if (mapArea.Contains(position))
+		{
+			int relativeX = position.X - mapArea.Left;
+			int relativeY = position.Y - mapArea.Top;
+			bool left = relativeX < mapArea.Size.Width / 4;
+			bool right = relativeX >= mapArea.Size.Width * 3 / 4;
+			bool up = relativeY < mapArea.Size.Height / 4;
+			bool down = relativeY >= mapArea.Size.Height * 3 / 4;
+
+			var lastCursor = game!.Cursor.CursorType;
+
+			if (up)
+			{
+				if (left)
+					game.Cursor.CursorType = CursorType.ArrowTurnLeft3D;
+				else if (right)
+					game.Cursor.CursorType = CursorType.ArrowTurnRight3D;
+				else
+					game.Cursor.CursorType = CursorType.ArrowForward3D;
+			}
+			else if (down)
+			{
+				if (left)
+					game.Cursor.CursorType = CursorType.FullTurnLeft;
+				else if (right)
+					game.Cursor.CursorType = CursorType.FullTurnRight;
+				else
+					game.Cursor.CursorType = CursorType.ArrowBackward3D;
+			}
+			else
+			{
+				if (left)
+					game.Cursor.CursorType = CursorType.ArrowLeft3D;
+				else if (right)
+					game.Cursor.CursorType = CursorType.ArrowRight3D;
+				else
+					game.Cursor.CursorType = CursorType.Zzz;
+			}
+
+			if (mouseDown && lastCursor != game.Cursor.CursorType)
+				CheckMove();
+		}
+		else if (game!.Cursor.CursorType != CursorType.Sword)
+		{
+			game!.Cursor.CursorType = CursorType.Sword;
 		}
 	}
 

@@ -688,12 +688,6 @@ internal class Map2DScreen : Screen
 
 		if (mapArea.Contains(position))
 		{
-			/*int relativeX = position.X - mapArea.Left;
-			int relativeY = position.Y - mapArea.Top;
-			bool left = relativeX < mapArea.Size.Width / 4;
-			bool right = relativeX >= mapArea.Size.Width * 3 / 4;
-			bool up = relativeY < mapArea.Size.Height / 4;
-			bool down = relativeY >= mapArea.Size.Height * 3 / 4;*/
 			bool left = position.X < player!.Position.X;
 			bool right = position.X >= player.Position.X + 16;
 			bool up = position.Y < player!.Position.Y;
@@ -988,13 +982,13 @@ internal class Map2DScreen : Screen
 		}
 		else
 		{
+			game.State.MapIndex = index;
 			worldMap = null;
 		}
 
 		tileGraphicOffset = map.TilesetIndex == 1 ? 0 : tilesets![0].Graphics.Count + 1;
 		palette = game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 		
-		game.State.MapIndex = index;
 		game.State.SetIsWorldMap(isWorldMap);
 		game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
 		game.Cursor.PaletteIndex = palette;
