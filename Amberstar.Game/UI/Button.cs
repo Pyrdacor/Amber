@@ -8,7 +8,7 @@ internal class Button
 {
 	public const int Width = 32;
 	public const int Height = 16;
-	const int HighlightDelay = 250;
+	const int HighlightDelay = 80;
 	readonly Game game;
 	readonly IColoredRect background;
 	readonly ISprite sprite;
@@ -46,6 +46,13 @@ internal class Button
 		if (displayLayer > byte.MaxValue - 4)
 			displayLayer = byte.MaxValue - 4;
 
+		background = layer.ColoredRectFactory!.Create();
+		background.Position = new(x + 2, y + 2);
+		background.Size = new(Width - 4, Height - 4);
+		background.Color = Color.Black;
+		background.DisplayLayer = (byte)(displayLayer - 2);
+		background.Visible = true;
+
 		sprite = layer.SpriteFactory!.Create();
 		sprite.Position = new(x, y);
 		sprite.Size = new(Width, Height);
@@ -53,13 +60,6 @@ internal class Button
 		sprite.DisplayLayer = displayLayer;
 		sprite.PaletteIndex = paletteIndex.Value;
 		sprite.Visible = true;
-
-		background = layer.ColoredRectFactory!.Create();
-		background.Position = new(x + 2, y + 2);
-		background.Size = new(Width - 4, Height - 4);
-		background.Color = Color.Black;
-		background.DisplayLayer = (byte)(displayLayer - 2);
-		background.Visible = true;
 
 		highlightOverlay = layer.SpriteFactory.Create();
 		highlightOverlay.Position = new(x, y);

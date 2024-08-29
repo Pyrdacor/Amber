@@ -62,6 +62,8 @@ internal class Texture2DShader : BaseShader, IPaletteShader
                     if (colorIndex > {PaletteSizeName} - 0.5f)
                         colorIndex = 0.0f;
                     pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
+                    if (pixelColor.a < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                        discard;
                 }}
             }}
             else
@@ -74,8 +76,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             if (maskColIndex < {PaletteSizeName} - 0.5f)
                 pixelColor = texture({PaletteName}, vec2((maskColIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
 
-            if (noTransparency >= 0.5f || {AllowTransparencyName} < 0.5f)
-                pixelColor.a = 1.0f;
+            pixelColor.a = 1.0f;
                 
             {FragmentOutColorName} = pixelColor;
         }}

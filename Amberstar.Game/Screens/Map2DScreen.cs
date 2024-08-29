@@ -271,8 +271,8 @@ internal class Map2DScreen : Screen
 				return;
 			}
 
-			moveX = index % 3 - 1;
-			moveY = index / 3 + 1;
+			int moveX = index % 3 - 1;
+			int moveY = index / 3 - 1;
 
 			if (moveY < 0)
 				game!.State.PartyDirection = Direction.Up;
@@ -282,6 +282,13 @@ internal class Map2DScreen : Screen
 				game!.State.PartyDirection = Direction.Left;
 			else if (moveX > 0)
 				game!.State.PartyDirection = Direction.Right;
+
+			if (currentTicks - lastMoveStartTicks >= GetTicksPerStep())
+			{
+				lastMoveStartTicks = currentTicks;
+				if (MovePlayer(moveX, moveY))
+					AfterMove();
+			}
 		}
 		else // Actions
 		{
@@ -303,6 +310,7 @@ internal class Map2DScreen : Screen
 			buttonGrid.SetButton(5, ButtonType.ArrowRight);
 			// Lower row
 			buttonGrid.SetButton(6, ButtonType.ArrowDownLeft);
+			buttonGrid.EnableButton(6, true);
 			buttonGrid.SetButton(7, ButtonType.ArrowDown);
 			buttonGrid.SetButton(8, ButtonType.ArrowDownRight);
 		}
@@ -318,6 +326,7 @@ internal class Map2DScreen : Screen
 			buttonGrid.SetButton(5, ButtonType.Camp);
 			// Lower row
 			buttonGrid.SetButton(6, ButtonType.Map);
+			buttonGrid.EnableButton(6, false);
 			buttonGrid.SetButton(7, ButtonType.PartyPositions);
 			buttonGrid.SetButton(8, ButtonType.Disk);
 		}

@@ -240,7 +240,7 @@ namespace Amberstar
             var platform = Window.GetWindowPlatform(false);
 
             window.Monitor = platform!.GetMainMonitor();
-            window.Size = new WindowDimension(320 * 3, 200 * 3);
+            window.Size = new WindowDimension(320 * 4, 200 * 4);
 
             var gl = GL.GetApi(GLContext);
             gl.Viewport(new System.Drawing.Size(window.FramebufferSize.X, window.FramebufferSize.Y));

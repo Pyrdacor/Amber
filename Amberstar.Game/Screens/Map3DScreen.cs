@@ -2,7 +2,9 @@
 using Amber.Common;
 using Amber.Renderer;
 using Amberstar.Game.Events;
+using Amberstar.Game.UI;
 using Amberstar.GameData;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
@@ -214,7 +216,8 @@ internal class Map3DScreen : Screen
 		}
 	}
 
-	const int TicksPerStep = 120; // TODO
+	const int TicksPerStep = 16;
+	const int TicksPerTurn = 16;
 	const int AnimationTicksPerFrame = 25;
 
 	const int ViewWidth = 144;
@@ -233,8 +236,11 @@ internal class Map3DScreen : Screen
 	readonly List<NPC> npcs = [];
 	ButtonLayout buttonLayout = ButtonLayout.Movement;
 	long currentTicks = 0;
+	long lastMoveTicks = 0;
+	long lastTurnTicks = 0;
 	long lastAnimationFrame = 0;
 	byte palette = 0;
+	ButtonGrid? buttonGrid;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
 	public IMap3D Map => map!;
@@ -286,14 +292,97 @@ internal class Map3DScreen : Screen
 		base.Open(game, closeAction);
 
 		currentTicks = 0;
+		lastMoveTicks = 0;
+		lastTurnTicks = 0;
 
 		game.SetLayout(Layout.Map3D);
+		buttonGrid = new(game);
+		buttonGrid.ClickButtonAction += ButtonClicked;
 		buttonLayout = ButtonLayout.Movement;
+		SetupButtons();
 		LoadMap(game.State.MapIndex);
 		AfterMove();
 
 		game.Time.MinuteChanged += MinuteChanged;
 		game.CanSeeChanged += CanSeeChanged;
+	}
+
+	private void ButtonClicked(int index)
+	{
+		if (buttonLayout == ButtonLayout.Movement)
+		{
+			if (index == 4)
+			{
+				game!.Time.Tick();
+				return;
+			}
+
+			int moveX = index % 3 - 1;
+			int moveY = index / 3 - 1;
+
+			void Move()
+			{
+				bool left = moveX < 0;
+				bool right = moveX > 0;
+				bool forward = moveY < 0;
+				bool backward = moveY > 0;
+				CheckMove(forward, backward, left, right, false, false);
+			}
+
+			void Turn(int dist)
+			{
+				bool turnLeft = dist < 0;
+				bool turnRight = dist > 0;
+				CheckMove(false, false, false, false, turnLeft, turnRight);
+			}
+
+			if ((moveX == 0) != (moveY == 0)) // move up, right, down or left
+				Move();
+			else if (moveY == -1) // turn left or right
+				Turn(moveX);
+			else // rotate left or right
+				Rotate(moveX > 0);
+		}
+		else // Actions
+		{
+			// TODO
+		}
+	}
+
+	private void SetupButtons()
+	{
+		if (buttonLayout == ButtonLayout.Movement)
+		{
+			// Upper row
+			buttonGrid!.SetButton(0, ButtonType.TurnLeft);
+			buttonGrid.SetButton(1, ButtonType.MoveForward);
+			buttonGrid.SetButton(2, ButtonType.TurnRight);
+			// Middle row
+			buttonGrid.SetButton(3, ButtonType.StrafeLeft);
+			buttonGrid.EnableButton(3, true);
+			buttonGrid.SetButton(4, ButtonType.Sleep);
+			buttonGrid.SetButton(5, ButtonType.StrafeRight);
+			// Lower row
+			buttonGrid.SetButton(6, ButtonType.RotateLeft);
+			buttonGrid.SetButton(7, ButtonType.MoveBackward);
+			buttonGrid.SetButton(8, ButtonType.RotateRight);
+		}
+		else // Actions
+		{
+			// Upper row
+			buttonGrid!.SetButton(0, ButtonType.Eye);
+			buttonGrid.SetButton(1, ButtonType.Ear);
+			buttonGrid.SetButton(2, ButtonType.Mouth);
+			// Middle row
+			buttonGrid.SetButton(3, ButtonType.UseTransport);
+			buttonGrid.EnableButton(3, false);
+			buttonGrid.SetButton(4, ButtonType.UseMagic);
+			buttonGrid.SetButton(5, ButtonType.Camp);
+			// Lower row
+			buttonGrid.SetButton(6, ButtonType.Map);
+			buttonGrid.SetButton(7, ButtonType.PartyPositions);
+			buttonGrid.SetButton(8, ButtonType.Disk);
+		}
 	}
 
 	public override void Close(Game game)
@@ -304,6 +393,7 @@ internal class Map3DScreen : Screen
 		skyGradient.ForEach(g => g.Visible = false);
 		skyGradient.Clear();
 		npcs.Clear();
+		buttonGrid!.Destroy();
 
 		base.Close(game);
 	}
@@ -372,6 +462,9 @@ internal class Map3DScreen : Screen
 			foreach (var image in images)
 				image.CurrentFrameIndex++;
 		}
+
+		if (game.InputEnabled && !game.Paused && currentTicks >= lastMoveTicks + TicksPerStep)
+			CheckMove();
 	}
 
 	private void AfterMove()
@@ -464,38 +557,8 @@ internal class Map3DScreen : Screen
 		return labTile.Flags;
 	}
 
-	public override void KeyDown(Key key, KeyModifiers keyModifiers)
+	private void CheckMove(bool forward, bool backward, bool left, bool right, bool turnLeft, bool turnRight)
 	{
-		bool left = game!.IsKeyDown('A');
-		bool right = game.IsKeyDown('D');
-		bool forward = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
-		bool backward = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
-		bool turnLeft = game.IsKeyDown(Key.Left) || game.IsKeyDown('Q');
-		bool turnRight = game.IsKeyDown(Key.Right) || game.IsKeyDown('E');
-
-		void Move(int x, int y)
-		{
-			int targetX = game.State.PartyPosition.X + x;
-			int targetY = game.State.PartyPosition.Y + y;
-
-			if (CanMoveTo(targetX, targetY, true, 0))
-			{
-				game!.State.SetPartyPosition(targetX, targetY);
-				AfterMove();
-			}
-			else
-			{
-				// TODO: ouch
-			}
-		}
-
-		void TurnTo(Direction newDirection)
-		{
-			game!.State.PartyDirection = newDirection;
-			UpdateView();
-		}
-
-		// TODO
 		switch (game!.State.PartyDirection)
 		{
 			case Direction.North:
@@ -557,7 +620,70 @@ internal class Map3DScreen : Screen
 		}
 	}
 
-	public override void KeyUp(Key key, KeyModifiers keyModifiers)
+	private void CheckMove()
+	{
+		bool left = game!.IsKeyDown('A');
+		bool right = game.IsKeyDown('D');
+		bool forward = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
+		bool backward = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
+		bool turnLeft = game.IsKeyDown(Key.Left) || game.IsKeyDown('Q');
+		bool turnRight = game.IsKeyDown(Key.Right) || game.IsKeyDown('E');
+
+		CheckMove(forward, backward, left, right, turnLeft, turnRight);
+	}
+
+	public override void KeyDown(Key key, KeyModifiers keyModifiers)
+	{
+		CheckMove();
+	}
+
+	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	{
+		if (buttons == MouseButtons.Right)
+		{
+			if (ButtonGrid.Area.Contains(position))
+			{
+				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
+				SetupButtons();
+			}
+		}
+		else
+		{
+			buttonGrid!.MouseClick(position);
+		}
+	}
+
+	private void Move(int x, int y)
+	{
+		if (currentTicks - lastMoveTicks < TicksPerStep)
+			return;
+
+		lastMoveTicks = currentTicks;
+		int targetX = game!.State.PartyPosition.X + x;
+		int targetY = game.State.PartyPosition.Y + y;
+
+		if (CanMoveTo(targetX, targetY, true, 0))
+		{
+			game!.State.SetPartyPosition(targetX, targetY);
+			AfterMove();
+		}
+		else
+		{
+			// TODO: ouch
+		}
+	}
+
+	private void TurnTo(Direction newDirection)
+	{
+		if (currentTicks - lastTurnTicks < TicksPerTurn)
+			return;
+
+		lastTurnTicks = currentTicks;
+		game!.State.PartyDirection = newDirection;
+		UpdateView();
+	}
+
+	private void Rotate(bool right)
 	{
 		// TODO
 	}
