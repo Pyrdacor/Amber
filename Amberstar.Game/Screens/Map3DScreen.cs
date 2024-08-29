@@ -303,6 +303,7 @@ internal class Map3DScreen : Screen
 		ClearView();
 		skyGradient.ForEach(g => g.Visible = false);
 		skyGradient.Clear();
+		npcs.Clear();
 
 		base.Close(game);
 	}
