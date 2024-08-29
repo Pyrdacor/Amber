@@ -1060,5 +1060,6 @@ internal class Map3DScreen : Screen
 		game.State.SetIsWorldMap(false);
 		game.State.TravelType = TravelType.Walk;
 		game.Cursor.PaletteIndex = palette;
+		buttonGrid!.PaletteIndex = palette;
 	}
 }

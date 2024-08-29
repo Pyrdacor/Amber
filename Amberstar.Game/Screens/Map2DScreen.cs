@@ -992,5 +992,6 @@ internal class Map2DScreen : Screen
 		game.State.SetIsWorldMap(isWorldMap);
 		game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
 		game.Cursor.PaletteIndex = palette;
+		buttonGrid!.PaletteIndex = palette;
 	}
 }
