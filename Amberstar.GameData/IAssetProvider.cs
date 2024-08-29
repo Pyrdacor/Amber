@@ -12,6 +12,7 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
 	ILabDataLoader LabDataLoader { get; }
 	IPaletteLoader PaletteLoader { get; }
 	IGraphicLoader GraphicLoader { get; }
+	ICursorLoader CursorLoader { get; }
 	ITilesetLoader TilesetLoader { get; }
 	IFontLoader FontLoader { get; }
 	ISavegameLoader SavegameLoader { get; }

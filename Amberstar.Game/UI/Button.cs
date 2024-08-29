@@ -11,6 +11,7 @@ internal class Button
 	public const int Height = 16;
 	const int HighlightDelay = 250;
 	readonly Game game;
+	readonly IColoredRect background;
 	readonly ISprite sprite;
 	readonly ISprite highlightOverlay;
 	readonly ISprite disabledOverlay;
@@ -41,6 +42,11 @@ internal class Button
 		var textureAtlas = layer.Config.Texture!;
 		paletteIndex ??= game.PaletteIndexProvider.UIPaletteIndex;
 
+		if (displayLayer < 2)
+			displayLayer = 2;
+		if (displayLayer > byte.MaxValue - 4)
+			displayLayer = byte.MaxValue - 4;
+
 		sprite = layer.SpriteFactory!.Create();
 		sprite.Position = new(x, y);
 		sprite.Size = new(Width, Height);
@@ -49,11 +55,18 @@ internal class Button
 		sprite.PaletteIndex = paletteIndex.Value;
 		sprite.Visible = true;
 
+		background = layer.ColoredRectFactory!.Create();
+		background.Position = new(x + 2, y + 2);
+		background.Size = new(Width - 4, Height - 4);
+		background.Color = Color.Black;
+		background.DisplayLayer = (byte)(displayLayer - 2);
+		background.Visible = true;
+
 		highlightOverlay = layer.SpriteFactory.Create();
 		highlightOverlay.Position = new(x, y);
 		highlightOverlay.Size = new(Width, Height);
 		highlightOverlay.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.FeedbackIcon));
-		highlightOverlay.DisplayLayer = (byte)Math.Min(byte.MaxValue, displayLayer + 5);
+		highlightOverlay.DisplayLayer = (byte)(displayLayer + 2);
 		highlightOverlay.PaletteIndex = paletteIndex.Value;
 		highlightOverlay.Visible = false;
 
@@ -61,7 +74,7 @@ internal class Button
 		disabledOverlay.Position = new(x, y);
 		disabledOverlay.Size = new(Width, Height);
 		disabledOverlay.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.ChequeredIcon));
-		disabledOverlay.DisplayLayer = (byte)Math.Min(byte.MaxValue, displayLayer + 10);
+		disabledOverlay.DisplayLayer = (byte)(displayLayer + 4);
 		disabledOverlay.PaletteIndex = paletteIndex.Value;
 		disabledOverlay.Visible = false;
 	}
@@ -106,6 +119,7 @@ internal class Button
 	public void Destroy()
 	{
 		sprite.Visible = false;
+		background.Visible = false;
 		highlightOverlay.Visible = false;
 		disabledOverlay.Visible = false;
 	}

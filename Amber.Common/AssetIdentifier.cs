@@ -26,6 +26,7 @@
 		Background,
 		SkyGradient,
 		Window,
+		Cursor,
 		// ...
 		// Other stuff
 		Savegame,

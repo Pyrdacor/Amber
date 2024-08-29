@@ -25,6 +25,7 @@ public enum EmbeddedDataOffset
 	Graphics,
 	TextConversionTab,
 	Windows,
+	Cursors
 }
 
 public class AssetProvider : IAssetProvider
@@ -78,6 +79,7 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<IFontLoader> fontLoader;
 	readonly Lazy<ISavegameLoader> savegameLoader;
 	readonly Lazy<ILabDataLoader> labDataLoader;
+	readonly Lazy<ICursorLoader> cursorLoader;
 
 	private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -91,6 +93,7 @@ public class AssetProvider : IAssetProvider
 	public IFontLoader FontLoader => fontLoader.Value;
 	public ISavegameLoader SavegameLoader => savegameLoader.Value;
 	public ILabDataLoader LabDataLoader => labDataLoader.Value;
+	public ICursorLoader CursorLoader => cursorLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -125,6 +128,7 @@ public class AssetProvider : IAssetProvider
 		fontLoader = new(() => new FontLoader(this));
 		savegameLoader = new(() => new SavegameLoader(this));
 		labDataLoader = new(() => new LabDataLoader(this));
+		cursorLoader = new(() => new CursorLoader(this));
 	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
@@ -207,6 +211,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.SkyGradient => CreateAssets(Data.SkyGradients),
 			AssetType.Font => CreateAssets(Data.Fonts),
 			AssetType.Window => CreateAssets(Data.Windows),
+			AssetType.Cursor => CreateAssets(Data.Cursors),
 			_ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {type} for legacy asset provider")
 		};
 	}
@@ -386,6 +391,11 @@ public class AssetProvider : IAssetProvider
 				if (!FindAndGotoByteSequence(dataReader, 0x14000, 0x00, 0x0c, 0x00, 0x1d, 0x00, 0x1d))
 					return false;
 				dataReader.Position -= 0x86;
+				return true;
+			case EmbeddedDataOffset.Cursors:
+				if (!FindAndGotoByteSequence(dataReader, 0x35000, 0x70, 0x00, 0x78, 0x00, 0x5c))
+					return false;
+				dataReader.Position -= 6;
 				return true;
 			default:
 				return false;

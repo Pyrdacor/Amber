@@ -5,8 +5,8 @@ namespace Amberstar.Game.UI;
 
 internal class ButtonGrid
 {
-	public const int OffsetX = 224; // TODO
-	public const int OffsetY = 112; // TODO
+	public const int OffsetX = 208;
+	public const int OffsetY = 37 + 108;
 	public static readonly Rect Area = new(OffsetX, OffsetY, 3 * Button.Width, 3 * Button.Height);
 	const int ButtonCount = 9;
 	readonly Game game;

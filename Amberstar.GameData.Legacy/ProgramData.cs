@@ -217,6 +217,16 @@ namespace Amberstar.GameData.Legacy
 			Windows.Add(0, new DataReader(dataReader.ReadBytes(0x800)));
 			Windows.Add(1, new DataReader(dataReader.ReadBytes(0x800)));
 			#endregion
+			#region Cursors
+			if (!dataSeeker(EmbeddedDataOffset.Windows, dataReader))
+				throw new AmberException(ExceptionScope.Application, "Could not find the window graphics in the program file.");
+			void AddCursor(int cursor)
+			{
+				Cursors.Add(cursor, new DataReader(dataReader.ReadBytes(68)));
+			}
+			for (int i = 0; i <= (int)CursorType.LastCursor; i++)
+				AddCursor(i);
+			#endregion
 
 			// TODO: places
 		}
@@ -313,6 +323,7 @@ namespace Amberstar.GameData.Legacy
 		public Dictionary<int, IDataReader> SkyGradients { get; } = [];
 		public Dictionary<int, IDataReader> Fonts { get; } = [];
 		public Dictionary<int, IDataReader> Windows { get; } = [];
+		public Dictionary<int, IDataReader> Cursors { get; } = [];
 		public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;

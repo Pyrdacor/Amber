@@ -100,6 +100,9 @@ namespace Amberstar.net
 			int windowGraphicOffset = graphics.Count;
 			for (int i = 0; i < 2; i++)
 				graphics.Add(windowGraphicOffset + i, assetProvider.GraphicLoader.LoadWindowGraphics(i == 0).ToGraphic());
+			int cursorGraphicOffset = graphics.Count;
+			foreach (var i in Enum.GetValues<CursorType>().Distinct())
+				graphics.Add(cursorGraphicOffset + (int)i, assetProvider.CursorLoader.LoadCursor(i).Graphic);
 			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.7f,
@@ -246,8 +249,8 @@ namespace Amberstar.net
 			// TODO ...
 
 			uiGraphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
-				image80x80Offset, itemGraphicOffset, windowGraphicOffset, backgroundGraphicIndices,
-				cloudGraphicIndices, labBlockImageIndices);
+				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
+				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices);
 			paletteIndexProvider = new(0, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
