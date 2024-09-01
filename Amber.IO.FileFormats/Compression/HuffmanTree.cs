@@ -43,7 +43,7 @@
 
 			for (int i = 0; i < table.Length; i++)
 			{
-				nodes.Add(new() { Value = (byte)i, Frequency = additionalLiterals.Length + table[i] * (table[i] + 1) });
+				nodes.Add(new() { Value = (byte)i, Frequency = table[i] * (table[i] + 1) });
 			}
 
 			if (additionalLiterals is not null)
@@ -55,7 +55,7 @@
 				{
 					if (additionalLiterals[i] < 256)
 						throw new InvalidOperationException("Additional literals must be greater than 255.");
-					nodes.Add(new() { Value = additionalLiterals[i], Frequency = i });
+					nodes.Add(new() { Value = additionalLiterals[i], Frequency = additionalLiterals[i] * additionalLiterals[i] });
 				}
 			}
 

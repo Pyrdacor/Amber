@@ -35,7 +35,9 @@ namespace Amber.IO.FileFormats.Compression
 			var trie = new MatchTrie();
 			var compressionType = mapping[dataType];
 			var table = HuffmanTables.GetTable(compressionType);
-			var codes = new HuffmanTree(table!, MatchLiteral, RLELiteral).GenerateHuffmanCodes();
+			var codes = new HuffmanTree(table!, RLELiteral, MatchLiteral).GenerateHuffmanCodes();
+			int matchSymbolLength = codes[MatchLiteral].Length;
+			int lastCompressedBlockHeaderIndex = -1;
 
 			// Make room for block count
 			compressedData.Add(0);
@@ -43,7 +45,7 @@ namespace Amber.IO.FileFormats.Compression
 
 			void WriteOffset(int offset)
 			{
-				offset -= 2;
+				offset -= 1;
 				int bitsNeeded = (int)Math.Log2(offset) + 1;
 				int shift = ((bitsNeeded - 1) / 7) * 7;
 				int fullBytes = (bitsNeeded - 1) / 7;
@@ -84,6 +86,23 @@ namespace Amber.IO.FileFormats.Compression
 				blockSize += code.Length;
 			}
 
+			int ReadDataSize(int index)
+			{
+				int size = compressedData[index++];
+				size <<= 8;
+				size |= compressedData[index++];
+				size <<= 8;
+				size |= compressedData[index++];
+				return size;
+			}
+
+			void WriteDataSize(int index, int size)
+			{
+				compressedData[index++] = (byte)((size >> 16) & 0xff);
+				compressedData[index++] = (byte)((size >> 8) & 0xff);
+				compressedData[index] = (byte)(size & 0xff);
+			}
+
 			for (int i = 0; i < data.Length; i++)
 			{
 				if (i + 2 < data.Length)
@@ -113,13 +132,24 @@ namespace Amber.IO.FileFormats.Compression
 
 				var match = trie.GetLongestMatch(data, i, Math.Min(maxMatchLength, data.Length - i));
 
-				if (match.Value < 4) // no match found
+				bool useMatch = match.Value > 1;
+
+				if (useMatch)
+				{
+					int encodedSize = matchSymbolLength + (((int)Math.Log2(i - match.Key - 2) + 7) / 7) * 8 +
+						(((int)Math.Log2(match.Value - 2) + 3) / 3) * 4;
+
+					if (encodedSize >= match.Value * 8)
+						useMatch = false;
+				}
+
+				if (!useMatch) // no match found or not worth encoding
 				{
 					WriteSymbol(data[i]);
 					trie.Add(data, i, Math.Min(maxMatchLength, data.Length - i));
 					CheckBlock(i + 1);
 				}
-				else // match found
+				else // match found and worth encoding
 				{
 					WriteSymbol(MatchLiteral);
 					WriteOffset(i - match.Key);
@@ -148,26 +178,79 @@ namespace Amber.IO.FileFormats.Compression
 
 				if (blockReadSize <= (blockSize + 7) / 8 + 4)
 				{
-					// Not worth compressing. Store as raw block.
-					compressedData.Add((byte)StaticHuffmanType.RawData);
-					compressedData.Add((byte)((blockReadSize >> 16) & 0xff));
-					compressedData.Add((byte)((blockReadSize >> 8) & 0xff));
-					compressedData.Add((byte)(blockReadSize & 0xff));
-					compressedData.AddRange(new DataReader(data, blockOffset, blockReadSize).ReadToEnd());
+					// Last block was also raw data? Try to merge.
+					bool merged = false;
+
+					if (lastCompressedBlockHeaderIndex != -1)
+					{
+						var lastBlockType = compressedData[lastCompressedBlockHeaderIndex];
+
+						if (lastBlockType == (byte)StaticHuffmanType.RawData)
+						{
+							int currentSize = ReadDataSize(lastCompressedBlockHeaderIndex + 1);
+							int newSize = currentSize + blockReadSize;
+
+							if (newSize < (1 << 24)) // we can merge it
+							{
+								WriteDataSize(lastCompressedBlockHeaderIndex + 1, newSize);
+								compressedData.AddRange(new DataReader(data, blockOffset, blockReadSize).ReadToEnd());
+								merged = true;
+							}
+						}
+					}
+
+					if (!merged)
+					{
+						// Not worth compressing. Store as raw block.
+						lastCompressedBlockHeaderIndex = compressedData.Count;
+						compressedData.Add((byte)StaticHuffmanType.RawData);
+						compressedData.Add((byte)((blockReadSize >> 16) & 0xff));
+						compressedData.Add((byte)((blockReadSize >> 8) & 0xff));
+						compressedData.Add((byte)(blockReadSize & 0xff));
+						compressedData.AddRange(new DataReader(data, blockOffset, blockReadSize).ReadToEnd());
+
+						blockCount++;
+					}
 				}
 				else
 				{
-					compressedData.Add((byte)compressionType);
-					compressedData.Add((byte)((blockSize >> 16) & 0xff));
-					compressedData.Add((byte)((blockSize >> 8) & 0xff));
-					compressedData.Add((byte)(blockSize & 0xff));
-					compressedData.AddRange(compressedBlockData.ToArray());
+					// Last block was also compressed with same tree? Try to merge.
+					bool merged = false;
+
+					if (lastCompressedBlockHeaderIndex != -1)
+					{
+						var lastBlockType = compressedData[lastCompressedBlockHeaderIndex];
+
+						if (lastBlockType == (byte)compressionType)
+						{
+							int currentSize = ReadDataSize(lastCompressedBlockHeaderIndex + 1);
+							long newSize = currentSize + blockSize;
+
+							if (newSize < (1 << 24) && currentSize % 8 == 0) // we can merge it
+							{
+								WriteDataSize(lastCompressedBlockHeaderIndex + 1, (int)newSize);
+								compressedData.AddRange(compressedBlockData.ToArray());
+								merged = true;
+							}
+						}
+					}
+
+					if (!merged)
+					{
+						lastCompressedBlockHeaderIndex = compressedData.Count;
+						compressedData.Add((byte)compressionType);
+						compressedData.Add((byte)((blockSize >> 16) & 0xff));
+						compressedData.Add((byte)((blockSize >> 8) & 0xff));
+						compressedData.Add((byte)(blockSize & 0xff));
+						compressedData.AddRange(compressedBlockData.ToArray());
+
+						blockCount++;
+					}
 				}
 
 				compressedBlockData = new BitStreamWriter();
 				blockOffset = index;
 				blockSize = 0;
-				blockCount++;
 			}
 
 			CheckBlock(data.Length);
@@ -212,7 +295,7 @@ namespace Amber.IO.FileFormats.Compression
 				throw new NotSupportedException($"Pyr compression type {(int)type} is not supported by this decompressor.");
 
 			var bitStream = new BitStreamReader(dataReader.ReadBytes((dataSize + 7) / 8));
-			var tree = new HuffmanTree(table, MatchLiteral, RLELiteral);
+			var tree = new HuffmanTree(table, RLELiteral, MatchLiteral);
 			var decompressedData = new List<byte>();
 			byte lastLiteral = 0;
 
@@ -279,7 +362,7 @@ namespace Amber.IO.FileFormats.Compression
 					length <<= 7;
 				}
 
-				return (int)length + 2;
+				return (int)length + 1;
 			}
 
 			int ReadLength()

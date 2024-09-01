@@ -114,7 +114,7 @@ public class MatchTrie
                             LastMatchOffset = offset
                         };
 
-                        parent.Children[newBranchNode.Key] = newBranchNode;
+                        parent!.Children[newBranchNode.Key] = newBranchNode;
                         parent = newBranchNode;
 
                         for (n = 0; n < matchLength; ++n)
