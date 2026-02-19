@@ -53,7 +53,7 @@ internal class ConversationScreen : ButtonGridScreen
         person = game!.AssetProvider.PersonLoader.LoadPerson(personIndex);
         personInfoView = new(game, person, personIndex, palette);
 
-        title = game.TextManager.Create("Gespräch", 1, TextManager.TransparentPaper, palette);
+        title = game.TextManager.Create("Gespräch", 1, TextManager.TransparentPaper, palette); // TODO
     }
 
     public override void Close(Game game)

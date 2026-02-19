@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
+using Amberstar.Game.UI;
 
 namespace Amberstar.Game;
 
@@ -51,11 +52,23 @@ partial class Game
 		return coloredRect;
 	}
 
-	/// <summary>
-	/// Fades from a fully colored screen to the normal screen.
-	/// This only works if FadeOut was use before.
-	/// </summary>
-	internal void FadeIn(long durationInMs, Action? finishAction = null)
+	internal static void Destroy(IDrawable? drawable)
+	{
+		if (drawable != null)
+			drawable.Visible = false;
+	}
+
+    internal static void Destroy(IRenderText? text)
+    {
+        if (text != null)
+            text.Visible = false;
+    }
+
+    /// <summary>
+    /// Fades from a fully colored screen to the normal screen.
+    /// This only works if FadeOut was use before.
+    /// </summary>
+    internal void FadeIn(long durationInMs, Action? finishAction = null)
 	{
 		if (durationInMs <= 0)
 			return;

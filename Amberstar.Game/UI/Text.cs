@@ -44,6 +44,17 @@ internal class TextManager(Game game, IFont font,
     const int TicksPerScroll = 4; // TODO
     const byte DefaultPaletteIndex = 0; // UI
 
+    public int GetTextRenderWidth(string text)
+    {
+        if (text.Trim('\n').Length == 0)
+            return 0;
+
+        var lines = text.Split('\n');
+        int maxLineSize = lines.Max(line => line.Length);
+
+        return maxLineSize * font.Advance;
+    }
+
     struct TextBlock(int textColorIndex, int paperColorIndex, string text, bool runes)
     {
         public int TextColorIndex = textColorIndex;
