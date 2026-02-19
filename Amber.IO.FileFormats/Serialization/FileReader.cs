@@ -53,7 +53,7 @@ public class FileReader : IFileReader
     public IFileContainer ReadRawFile(string name, Stream stream)
     {
         byte[] rawData = new byte[stream.Length - stream.Position];
-        stream.Read(rawData, 0, rawData.Length);
+        stream.ReadExactly(rawData, 0, rawData.Length);
 
         return ReadRawFile(name, rawData);
     }

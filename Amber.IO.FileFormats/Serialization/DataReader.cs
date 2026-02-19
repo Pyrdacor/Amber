@@ -53,7 +53,7 @@ public class DataReader : IDataReader
     {
         long pos = stream.CanSeek ? stream.Position : -1;
         data = new byte[stream.Length];
-        stream.Read(data, 0, data.Length);
+        stream.ReadExactly(data, 0, data.Length);
         if (pos != -1)
             stream.Position = pos;
     }
@@ -67,7 +67,7 @@ public class DataReader : IDataReader
         if (offset != stream.Position)
             stream.Position = offset;
         data = new byte[size];
-        stream.Read(data, 0, size);
+        stream.ReadExactly(data, 0, size);
         if (pos != -1)
             stream.Position = pos;
     }

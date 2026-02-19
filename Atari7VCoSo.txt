@@ -1,0 +1,6 @@
+(0x36,A0): Offset into instrument data
+(0x47,A0): Instrument delay ticks
+(0x48,A0): Vibrato slope?
+(0x49,A0): Vibrato depth?
+(0x53,A0): Portando slope?
+(0x54,A0): Portando counter?

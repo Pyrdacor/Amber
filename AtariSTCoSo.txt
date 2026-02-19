@@ -1,7 +1,9 @@
+Channel data offset in A0.
+
 (0x00,A0): Division data start address
 (0x08,A0): Current instrument data address
 (0x0c,A0): Current mono pattern address
-
+(0x10,A0): Current portando delta value
 (0x14,A0): Next division offset
 (0x16,A0): Index into volume envelop data
 (0x18,A0): Index into instrument data
@@ -14,22 +16,30 @@
   - Bit 5: Portando active
 (0x20,A0): Timbre index (from division)
 (0x21,A0): Transpose (from division)
+(0x22,A0): Timbre tick counter
 (0x23,A0): Timbre speed
 (0x24,A0): Sustain counter
 (0x25,A0): Instrument delay counter
-(0x26,A0): Pitch?
+(0x26,A0): Pitch
 (0x27,A0): Vibrato slope
 (0x28,A0): Initial vibrato depth (maximum depth is twice that value)
 (0x29,A0): Current vibrato depth
 (0x2a,A0): Vibrato delay counter
 (0x2b,A0): Vibrato flags? Start with bit 5 set (= sub slope).
   - Bit 5: Add slope (0) or sub slope (1), changes everytime when depth reaches 0 or 2 * initial depth.
-(0x2c,A0): Portando slope / Instrument index
+(0x2c,A0): Portando slope / Instrument index (shared)
 (0x2d,A0): Noise period
 (0x2e,A0): Current voice (channel), 0..2
 (0x2f,A0): Volume
 (0x30,A0): Division effect volume
 (0x31,A0): Some other volume (TODO)
+(0x32,A0): Tone/noise flags (0: both active, 1: only noise, 2: only tone)
+(0x33,A0): Some flags
+  - Bit 1: If set, period is zeroed
+  - Bit 3: If set, use period / 8, otherwise use period / 16
+(0x34,A0): Total calculated period
+
+Total length 0x38. Then next channel data follows.
 
 
 (0x02,A5): Speed factor
