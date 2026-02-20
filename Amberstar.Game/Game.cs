@@ -104,19 +104,19 @@ public partial class Game : IDisposable
             }
 		}
 
-        //ScreenHandler.PushScreen(ScreenType.Map2D);
+        ScreenHandler.PushScreen(ScreenType.Map2D);
 
         // TODO: For debugging, remove later
         // In Twinlake
-        State.MapIndex = 67;
-		State.PartyDirection = Direction.Down;
+        //State.MapIndex = 67;
+		//State.PartyDirection = Direction.Down;
 		//State.SetPartyPosition(7 - 1, 15 - 1);
-		State.SetPartyPosition(32 - 1, 9 - 1);
-		ScreenHandler.PushScreen(ScreenType.Map3D);
+		//State.SetPartyPosition(32 - 1, 9 - 1);
+		//ScreenHandler.PushScreen(ScreenType.Map3D);
 		// In front of crystal
-		/*State.MapIndex = 21;
-		State.SetPartyPosition(33, 23);
-		ScreenHandler.PushScreen(ScreenType.Map2D);*/
+		//State.MapIndex = 21;
+		//State.SetPartyPosition(33, 23);
+		//ScreenHandler.PushScreen(ScreenType.Map2D);
 	}
 
 	internal IRenderer Renderer { get; }

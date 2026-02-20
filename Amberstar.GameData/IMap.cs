@@ -85,6 +85,7 @@ public interface IMap : IEventProvider
 	MapType Type { get; }
 	MapFlags Flags { get; }
 	string Name { get; }
+	int SongIndex { get; }
 	MapCharacter[] Characters { get; }
 	PositionList[] CharacterPositions { get; }
 

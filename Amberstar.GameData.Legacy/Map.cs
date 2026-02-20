@@ -113,6 +113,8 @@ internal abstract class Map : IMap
 
 	public string Name { get; }
 
+	public int SongIndex => header.Music;
+
     public MapCharacter[] Characters { get; }
 
 	public PositionList[] CharacterPositions { get; }

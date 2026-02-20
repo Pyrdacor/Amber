@@ -247,13 +247,14 @@ internal class Map3DScreen : ButtonGridScreen
 	IRenderText? mapNameText;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
-	public IMap3D Map => map!;
+    public IMap3D Map => map!;
 
 	protected override byte ButtonGridPaletteIndex => palette;
 
     internal void MapChanged()
 	{
 		LoadMap(game!.State.MapIndex);
+        ShowMapName();
 		AfterMove();
 	}
 
@@ -1139,7 +1140,10 @@ internal class Map3DScreen : ButtonGridScreen
 		if (map.Flags.HasFlag(MapFlags.City) && game!.CanSee())
 			UpdateSky(true);
 
-		game.State.MapIndex = index;
+		if (Map.SongIndex != 0)
+            game.PlaySong(1 + Map.SongIndex);
+
+        game.State.MapIndex = index;
 		game.State.SetIsWorldMap(false);
 		game.State.TravelType = TravelType.Walk;
 		game.Cursor.PaletteIndex = palette;

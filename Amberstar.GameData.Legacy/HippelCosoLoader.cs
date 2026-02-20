@@ -313,15 +313,19 @@ internal static class HippelCosoLoader
                         commands.Add(new(HippelCosoSong.Instrument.CommandType.SetInstrumentFlags, instrumentData[++b]));
                         break;
                     case 0xec:
+                        // Never used in Atari ST Amberstar.
+                        // Seems to have only an effect on some
+                        // special format marked with "MARC".
+                        // 4 bytes (command + 3 args).
                         break;
                     case 0xed:
+                        // Not sure what it does or if it is
+                        // used. 2 bytes (command + 1 arg).
                         break;
                     case 0xee:
-                        // TODO: Param is stored in (0x36,A0), then next command
-                        break;
                     case 0xef:
-                        // TODO: Param is stored in (0x37,A0), then next command
-                        break;
+                        // Not supported in Atari ST Amberstar
+                        throw new NotSupportedException("Invalid instrument command");
                     default: // Pitch
                         commands.Add(new(HippelCosoSong.Instrument.CommandType.SetPitch, command));
                         break;
@@ -366,7 +370,7 @@ internal static class HippelCosoLoader
                     var ticks = timbreData[++b];
                     commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Sustain, ticks));
                 }
-                else if(command > 0xe8)
+                else if (command > 0xe8)
                 {
                     // e2 to e7 are NOOP operations, but above e8 should not happen.
                     throw new AmberException(ExceptionScope.Data, "Invalid volume envelop command");
@@ -384,26 +388,31 @@ internal static class HippelCosoLoader
             for (int c = 0; c < data.Channels.Length; c++)
             {
                 int volumeReduction = 0;
-                int speedFactor = 1;
+                int songSpeed = -1;
                 int timbreAdjust = 0;
 
                 var effect = data.Channels[c].Effect;
 
+                // In Amberstar player only volume reduction is supported
                 if ((effect & 0xf0) == 0xf0)
                 {
                     volumeReduction = effect & 0xf;
                 }
                 else if ((effect & 0xf0) == 0xe0)
                 {
-                    speedFactor = 1 + effect & 0xf;
+                    songSpeed = effect & 0xf;
                 }
-                else if ((effect & 0x80) == 0)
+                /*else if ((effect & 0x80) == 0)
                 {
                     timbreAdjust = effect;
                 }
+                else
+                {
+                    // TODO: FULL STOP the entire song
+                }*/
 
                 channels[c] = new(data.Channels[c].Monopattern, data.Channels[c].Transpose, data.Channels[c].TimbreIndex,
-                    volumeReduction, speedFactor, timbreAdjust);
+                    volumeReduction, songSpeed, timbreAdjust);
             }
 
             divisions[i] = new(channels);
@@ -432,7 +441,7 @@ internal static class HippelCosoLoader
                 }
                 else // notes
                 {
-                    var note = command;
+                    var note = command & 0x7f;
                     var arg = patternData[++b];
                     int instrument = -1;
                     int timbreAdjust = -1;
@@ -446,8 +455,14 @@ internal static class HippelCosoLoader
                     {
                         timbreAdjust = arg & 0x1f;
 
-                        if ((arg & 0x40) != 0)
+                        if ((arg & 0x40) == 0)
+                        {
                             instrument = -1;
+                        }
+                    }
+                    else
+                    {
+                        instrument = -1;
                     }
 
                     commands.Add(new(HippelCosoSong.Pattern.CommandType.SetNote, note, timbreAdjust, instrument));

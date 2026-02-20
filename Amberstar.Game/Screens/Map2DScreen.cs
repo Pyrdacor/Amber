@@ -18,6 +18,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 	class WorldMap : IMap2D
 	{
+		const int WorldMapSong = 2;
 		IMap2D[] maps = [];
 		Dictionary<int, IMap2D> mapCache = [];
 		List<IEvent> events = [];
@@ -33,7 +34,9 @@ internal class Map2DScreen : ButtonGridScreen
 
 		public string Name => maps[0].Name;
 
-		public MapCharacter[] Characters => [];
+        public int SongIndex => WorldMapSong;
+
+        public MapCharacter[] Characters => [];
 
 		public Position[][] CharacterPositions => [];
 
@@ -257,7 +260,7 @@ internal class Map2DScreen : ButtonGridScreen
 
         base.Open(game, closeAction);
 
-		moveTickCounter = 0;
+        moveTickCounter = 0;
 		lastMoveStartTicks = 0;
 		currentTicks = 0;
 		additionalMoveRequested = false;
@@ -1014,10 +1017,15 @@ internal class Map2DScreen : ButtonGridScreen
 		if (isWorldMap)
 		{
 			UpdateWorldMap(index);
-		}
+
+            game.PlaySong(worldMap!.SongIndex);
+        }
 		else
 		{
-			game.State.MapIndex = index;
+            if (Map.SongIndex != 0)
+                game.PlaySong(1 + Map.SongIndex);
+
+            game.State.MapIndex = index;
 			worldMap = null;
 		}
 

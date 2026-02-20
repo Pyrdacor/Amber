@@ -30,7 +30,7 @@ internal abstract class Screen
 
 	public abstract ScreenType Type { get; }
 
-	public virtual bool Transparent { get; } = false;
+    public virtual bool Transparent { get; } = false;
 
 	public virtual void Init(Game game)
 	{
