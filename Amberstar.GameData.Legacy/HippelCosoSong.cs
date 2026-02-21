@@ -41,8 +41,11 @@ internal class HippelCosoSong : ISong
 
         public void ProcessNextCommand(HippelCosoSong player)
         {
-            if (--tickCounter > 0)
+            if (tickCounter > 0)
+            {
+                --tickCounter;
                 return;
+            }
 
             bool processCommands = true;
 
@@ -238,23 +241,17 @@ internal class HippelCosoSong : ISong
 
         private int currentCommandIndex = 0;
         private int tickCounter = 0;
-        private int speed = 4;
+        private int speed = 0;
 
-        public void Reset(int initialSpeed)
+        public void Reset()
         {
             currentCommandIndex = 0;
             tickCounter = 0;
-            speed = initialSpeed;
-        }
-
-        public void ResetSpeed(int speed)
-        {
-            this.speed = speed;
         }
 
         public void ProcessNextCommand(HippelCosoSong player)
         {
-            if (--tickCounter > 0)
+            if (--tickCounter >= 0)
                 return;
 
             tickCounter = speed;
@@ -524,7 +521,7 @@ internal class HippelCosoSong : ISong
                     double s = acc / OS;
 
                     // Low-pass
-                    s = voiceMixer.LowPass(s, 0.15);
+                    //s = voiceMixer.LowPass(s, 0.15);
 
                     int v = (int)Math.Round(s * short.MaxValue);
                     buffer[i] = (short)Math.Clamp(v, short.MinValue, short.MaxValue);
@@ -574,11 +571,13 @@ internal class HippelCosoSong : ISong
     0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686,*/
 
     // TODO: Normally it should be 20ms per tick, but 120 works much better for some reason...
-    const int TickTime = 120; // ms
+    const int TickTime = 20; // ms
     const int SampleRate = 44100; // Hz
     const int BufferSize = SampleRate / 4; // 0.25 second of audio
     const double BufferTime = BufferSize * 1000.0 / SampleRate; // in ms
     double elapsedTime = 0.0;
+    int songSpeedCounter = 1;
+    int songSpeed = 0;
     double totalTime = 0.0;
     double lastSampleTime = 0.0;
     bool paused = false;
@@ -610,6 +609,8 @@ internal class HippelCosoSong : ISong
         private Pattern? currentPattern;        
         private Instrument? currentInstrument;
         private Timbre? currentTimbre;
+
+        public event Action<int>? SongSpeedChanged;
 
         public int Volume { get; set; }
         public int Pitch { get; set; }
@@ -736,12 +737,8 @@ internal class HippelCosoSong : ISong
                 AllowInstrumentOverride = true;
             }
 
-            int speed = currentDivision!.SongSpeed == -1
-                ? 4//player.songInfo.InitialSpeed
-                : currentDivision.SongSpeed;
-
             currentPattern = player.patterns[currentDivision!.PatternIndex];
-            currentPattern!.Reset(speed);
+            currentPattern!.Reset();
 
             CurrentVibratoDelay = currentTimbre.Vibrato.Delay;
             CurrentVibratoSlope = currentTimbre.Vibrato.Slope;
@@ -761,9 +758,12 @@ internal class HippelCosoSong : ISong
                 Note = 0;
                 Pitch = 23;
             }
+
+            if (currentDivision.SongSpeed != -1)
+                SongSpeedChanged?.Invoke(currentDivision.SongSpeed);
         }
 
-        public void Update(double totalTime)
+        public void Update(double totalTime, bool updatePatterns)
         {
             if (currentDivision == null) // start
             {
@@ -780,9 +780,13 @@ internal class HippelCosoSong : ISong
             bool wasUsingNoise = Noise;
             bool wasUsingTone = Tone;
 
-            currentPattern!.ProcessNextCommand(player);
+            // TODO: In original the pattern processing runs after instrument
+            // and timbre processing.
+            
             currentInstrument!.ProcessNextCommand(player);
             currentTimbre!.VolumeEnvelop.ProcessNextCommand(player);
+            if (updatePatterns)
+                currentPattern!.ProcessNextCommand(player);
 
             int note = Pitch;
 
@@ -880,12 +884,14 @@ internal class HippelCosoSong : ISong
         mixedDataCounts = new byte[BufferSize];
         pcmData = new short[BufferSize];
         noiseData = new byte[BufferSize];
+        songSpeed = songInfo.InitialSpeed;
 
         for (int i = 0; i < voiceCount; ++i)
         {
             channelPcmData[i] = new short[BufferSize]; // 0.25 second of audio
             var channelPlayer = channelPlayers[i] = new();
             var channel = channels[i] = new Channel(this, channelPlayer, i);
+            channel.SongSpeedChanged += speed => songSpeed = speed;
             channel.Reset();
             channelPlayer.Reset();
         }
@@ -976,6 +982,14 @@ internal class HippelCosoSong : ISong
 
         while (ticks-- > 0)
         {
+            bool updatePatterns = false;
+
+            if (--songSpeedCounter == 0)
+            {
+                updatePatterns = true;
+                songSpeedCounter = songSpeed;
+            }
+
             currentVoice = 0;
 
             foreach (var channel in channels)
@@ -983,7 +997,7 @@ internal class HippelCosoSong : ISong
                 if (resetDivisions)
                     channel.NextDivision(false);
 
-                channel.Update(time);
+                channel.Update(time, updatePatterns);
                 currentVoice++;
             }
 
