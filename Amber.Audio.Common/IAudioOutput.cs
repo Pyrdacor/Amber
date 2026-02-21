@@ -3,7 +3,7 @@
 public enum ChannelDataFormat
 {
     Unsigned8Bit = 8,
-    Unsigned16Bit = 16,
+    Signed16Bit = 16,
 }
 
 public interface IAudioOutput

@@ -313,41 +313,24 @@ internal class HippelCosoSong : ISong
 
     internal class ChannelPlayer
     {
-        private record NoteInfo(double Time, int Note, int Volume);
+        private record NoteInfo(double Time, int Period, int Volume);
         private record NoiseInfo(double Time, int Period);
 
         private readonly Queue<NoteInfo> notePeriods = [];
         private readonly Queue<NoiseInfo> noisePeriods = [];
 
-        private int volume = 64;
-        private int notePeriod = -1;
-        private int noisePeriod = -1;
-        private int playedVolume = 64;
-        private int playedNotePeriod = 0;
         private bool useTone = true;
         private bool useNoise = false;
-        private double noteTime = 0.0;
 
         public void Reset()
         {
-            volume = 64;
-            notePeriod = -1;
-            noisePeriod = 1;
-            playedVolume = 64;
-            playedNotePeriod = 0;
             useTone = true;
             useNoise = false;
-            noteTime = 0.0;
         }
 
         // This happens every tick as long as the channel is active.
         public void PlayNote(double time, int period, int volume)
         {
-            //if (notePeriod != -1 && period == notePeriod && volume == this.volume)
-            //    return;
-
-            this.notePeriod = period;
-            this.volume = volume;
             notePeriods.Enqueue(new(time, period, volume));
         }
 
@@ -355,10 +338,6 @@ internal class HippelCosoSong : ISong
         {
             if (period <= 0)
             {
-                if (this.noisePeriod == -1)
-                    return;
-
-                this.noisePeriod = -1;
                 noisePeriods.Enqueue(new(time, -1));
                 return;
             }
@@ -366,75 +345,189 @@ internal class HippelCosoSong : ISong
             period = ~(byte)period;
             period &= 0x1f;
 
-            if (this.noisePeriod == period)
-                return;
-
-            this.noisePeriod = period;
             noisePeriods.Enqueue(new(time, period));
         }
 
-        public void SampleData(sbyte[] buffer, double time, Action<int> noisePeriodChanger,
-            Func<byte> nextNoiseTick, Action<int, bool> enableChannel)
+        class VoiceMixer
         {
-            const double frequencyFactor = 2_000_000.0 / 16.0;
+            int tonePeriod = 0x240;
+            int toneCounter;
+            int toneBit;
+            int volume = 64;
+            private double lpState = 0; // low pass
+            static bool noiseEnabled = false;
+            static int noisePeriod;
+            static int noiseCounter;
+            static uint lfsr = 0x1FFFF;
+            static int noiseBit;
+
+            public bool ToneEnabled { get; set; } = true;
+
+            public static bool NoiseEnabled
+            {
+                get => noiseEnabled;
+                set
+                {
+                    noiseEnabled = value;
+
+                    if (noiseEnabled && noiseCounter <= 0)
+                        noiseCounter = noisePeriod;
+                }
+            }
+
+            public int TonePeriod
+            {
+                set
+                {
+                    tonePeriod = Math.Max(1, value);
+                    toneBit = 0;
+                    toneCounter = tonePeriod;
+                }
+            }
+
+            public static int NoisePeriod
+            {
+                set
+                {
+                    noisePeriod = Math.Clamp(value, 1, 31);
+                    noiseBit = 0;
+
+                    if (noiseCounter <= 0)
+                        noiseCounter = noisePeriod;
+                }
+            }
+
+            public int Volume
+            {
+                set
+                {
+                    this.volume = value;
+                }
+            }
+
+            public void TickChip(bool tickNoise)
+            {
+                if (ToneEnabled)
+                {
+                    if (--toneCounter <= 0)
+                    {
+                        toneCounter += tonePeriod;
+                        toneBit ^= 1;
+                    }
+                }
+
+                if (tickNoise && noiseEnabled)
+                {
+                    if (--noiseCounter <= 0)
+                    {
+                        noiseCounter += noisePeriod;
+
+                        // 17-bit LFSR (x^17 + x^14 + 1) => taps bit0 xor bit3, shift right
+                        uint newBit = (lfsr ^ (lfsr >> 3)) & 1u;
+                        lfsr = (lfsr >> 1) | (newBit << 16);
+                        noiseBit = (int)(lfsr & 1u);
+                    }
+                }
+            }
+
+            public double GetSample()
+            {
+                int t = ToneEnabled ? toneBit : 1;
+                int n = noiseEnabled ? noiseBit : 1;
+
+                int outBit = t & n;
+
+                double vol = volume / 64.0;
+
+                return (outBit == 0 ? -1.0 : 1.0) * vol;
+            }
+
+            public double LowPass(double s, double a)
+            {
+                lpState += a * (s - lpState);
+                return lpState;
+            }
+        }
+
+        readonly VoiceMixer voiceMixer = new();
+        double tickAcc = 0.0;
+
+        public void SampleData(short[] buffer, double time,
+            Action<int, bool> enableChannel, bool firstChannel)
+        {
+            const double psgTicksPerSecond = 2_000_000.0 / 16.0;
+            double psgTicksPerSample = psgTicksPerSecond / SampleRate;
+
             const double timePerSample = 1000.0 / SampleRate;
-            var noteFrequency = frequencyFactor / playedNotePeriod;
-            var noteVolume = playedVolume / 64.0;
-            double noteDuration = 1000.0 / noteFrequency;
+
             bool wasEnabled = useTone || useNoise;
+            bool toneWasActive = useTone;
+            bool noiseWasActive = useNoise;
 
             for (int i = 0; i < buffer.Length; i++)
             {
-                if (notePeriods.Count != 0 && notePeriods.Peek().Time <= time)
+                while (notePeriods.Count != 0 && notePeriods.Peek().Time <= time)
                 {
                     var noteInfo = notePeriods.Dequeue();
-                    playedNotePeriod = noteInfo.Note;
-                    playedVolume = noteInfo.Volume;
 
-                    noteFrequency = frequencyFactor / playedNotePeriod;
-                    noteVolume = playedVolume / 64.0;
-                    useTone = playedNotePeriod > 0;
-                    noteTime = time;
-                    noteDuration = 1000.0 / noteFrequency;
+                    useTone = noteInfo.Period != -1;
+
+                    if (useTone)
+                    {
+                        voiceMixer.TonePeriod = noteInfo.Period;
+                        voiceMixer.Volume = noteInfo.Volume;
+                    }
                 }
 
-                if (noisePeriods.Count != 0 && noisePeriods.Peek().Time <= time)
+                while (noisePeriods.Count != 0 && noisePeriods.Peek().Time <= time)
                 {
                     var noiseInfo = noisePeriods.Dequeue();
-                    noisePeriodChanger(noiseInfo.Period);
-                    useNoise = noisePeriod != -1;
+
+                    useNoise = noiseInfo.Period != -1;
+
+                    if (useNoise)
+                        VoiceMixer.NoisePeriod = noiseInfo.Period;
                 }
+
+                if (useTone != toneWasActive)
+                    voiceMixer.ToneEnabled = useTone;
+                if (useNoise != noiseWasActive)
+                    VoiceMixer.NoiseEnabled = useNoise;
 
                 bool isEnabled = useTone || useNoise;
 
                 if (wasEnabled != isEnabled)
                     enableChannel(i, isEnabled);
 
-                int div = useTone ? 1 : 0;
-                div += useNoise ? 1 : 0;
-
-                if (div == 0)
+                if (!isEnabled)
                 {
                     buffer[i] = 0;
                 }
                 else
                 {
-                    double currentNoteTime = (time - noteTime) % noteDuration;
-                    double tone = useTone ? (currentNoteTime < noteDuration / 2 ? 1.0 : -1.0) : 0.0; // rectangle wave
-                    /*double tone = useTone ? Math.Sin(2 * Math.PI * noteFrequency * (0.001 * time)) : 0.0;
-                    if (useTone)
+                    const int OS = 8; // 8x oversampling
+                    double acc = 0.0;
+
+                    for (int os = 0; os < OS; os++)
                     {
-                        if (tone > 0.0)
-                            tone = 1.0;
-                        else
-                            tone = -1.0;
-                    }*/
+                        tickAcc += psgTicksPerSample / OS;
 
-                    double noise = useNoise ? (nextNoiseTick() != 0 ? 1.0 : -1.0) : 0.0;
+                        while (tickAcc >= 1.0)
+                        {
+                            voiceMixer.TickChip(firstChannel);
+                            tickAcc -= 1.0;
+                        }
 
-                    double sample = ((tone + noise) / div) * noteVolume;
+                        acc += voiceMixer.GetSample();
+                    }
 
-                    buffer[i] = (sbyte)(sample * 127); // Convert to signed byte
+                    double s = acc / OS;
+
+                    // Low-pass
+                    s = voiceMixer.LowPass(s, 0.15);
+
+                    int v = (int)Math.Round(s * short.MaxValue);
+                    buffer[i] = (short)Math.Clamp(v, short.MinValue, short.MaxValue);
                 }
 
                 time += timePerSample;
@@ -499,12 +592,11 @@ internal class HippelCosoSong : ISong
     readonly Channel[] channels;
     readonly SongInfo songInfo;
     readonly ChannelPlayer[] channelPlayers;
-    readonly sbyte[][] channelPcmData;
-    readonly short[] mixedData;
+    readonly short[][] channelPcmData;
+    readonly int[] mixedData;
     readonly byte[] mixedDataCounts;
-    readonly byte[] pcmData;
+    readonly short[] pcmData;
     readonly byte[] noiseData;
-    readonly YmNoiseGenerator noiseGenerator = new(1);
     bool prebuffered = false;
     double endOfStreamTime = 0.0;
     bool resetDivisions = false;
@@ -562,7 +654,7 @@ internal class HippelCosoSong : ISong
 
         public void Reset()
         {
-            Volume = 64;
+            Volume = 15;
             Pitch = 0;
             Note = 0;
             Sample = 0;
@@ -660,7 +752,7 @@ internal class HippelCosoSong : ISong
 
             Noise = false;
             Tone = isChannelC; // Channel C is active, rest not.
-            Volume = isChannelC ? 16 : 0;
+            Volume = isChannelC ? 15 : 0;
 
             // Channel C has the period reset to 0x400.
             // We can only set the note where 23 is almost 0x400.
@@ -705,7 +797,7 @@ internal class HippelCosoSong : ISong
             // Vibrato
             if (CurrentVibratoDelay == 0)
             {
-                // It looks like this happen only every two calls
+                // It looks like this happen only every two calls in original
                 CurrentVibratoDepth += CurrentVibratoDirection * CurrentVibratoSlope;
 
                 if (CurrentVibratoDepth < 0 || CurrentVibratoDepth > 2 * currentTimbre.Vibrato.Depth)
@@ -730,7 +822,7 @@ internal class HippelCosoSong : ISong
                 period *= (1 - (CurrentPortandoDelta * period) / 1024);
             }
 
-            if (volume != 64 && volume > 0)
+            if (volume > 0)
             {
                 byte[] volumeTable = [0, 1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 30, 38, 48, 64];
 
@@ -783,15 +875,15 @@ internal class HippelCosoSong : ISong
         this.patterns = patterns;
         channels = new Channel[voiceCount];
         channelPlayers = new ChannelPlayer[voiceCount];
-        channelPcmData = new sbyte[voiceCount][];
-        mixedData = new short[BufferSize];
+        channelPcmData = new short[voiceCount][];
+        mixedData = new int[BufferSize];
         mixedDataCounts = new byte[BufferSize];
-        pcmData = new byte[BufferSize];
+        pcmData = new short[BufferSize];
         noiseData = new byte[BufferSize];
 
         for (int i = 0; i < voiceCount; ++i)
         {
-            channelPcmData[i] = new sbyte[BufferSize]; // 0.25 second of audio
+            channelPcmData[i] = new short[BufferSize]; // 0.25 second of audio
             var channelPlayer = channelPlayers[i] = new();
             var channel = channels[i] = new Channel(this, channelPlayer, i);
             channel.Reset();
@@ -920,22 +1012,7 @@ internal class HippelCosoSong : ISong
             Array.Clear(mixedDataCounts);
             Array.Clear(noiseData);
 
-            int noiseTickIndex = 0;
-
-            byte GetNextNoiseTick()
-            {
-                if (noiseTickIndex < noiseData.Length)
-                    return noiseData[noiseTickIndex++] = noiseGenerator.Tick();
-
-                return noiseData[noiseTickIndex++ % noiseData.Length];
-            }
-
-            void ChangeNoisePeriod(int period)
-            {
-                noiseGenerator.Period = 0x280 - period * 0x10;
-                Console.WriteLine("Change noise period to " + period);
-            }
-
+            // Enable state change of voice based on buffer index.
             var enableSwitches = new Dictionary<int, bool>[voiceCount];
 
             for (int i = 0; i < voiceCount; i++)
@@ -948,7 +1025,7 @@ internal class HippelCosoSong : ISong
                 }
 
                 channelPlayers[i].SampleData(channelPcmData[i], lastSampleTime,
-                    ChangeNoisePeriod, GetNextNoiseTick, EnableChannel);
+                    EnableChannel, i == 0);
 
                 bool enabled = true;
 
@@ -970,7 +1047,7 @@ internal class HippelCosoSong : ISong
                 if (mixedDataCounts[b] == 0)
                     pcmData[b] = 0;
                 else
-                    pcmData[b] = (byte)(128 + (mixedData[b] / mixedDataCounts[b]));
+                    pcmData[b] = (short)(mixedData[b] / mixedDataCounts[b]);
             }
 
             if (EndOfStream)
@@ -1024,7 +1101,7 @@ internal class HippelCosoSong : ISong
 
     public void ResetVolume()
     {
-        channels[currentVoice].Volume = 64; // TODO: default?
+        channels[currentVoice].Volume = 15;
     }
 
     public void ResetTimbre()
@@ -1061,73 +1138,4 @@ internal class HippelCosoSong : ISong
     public int GetTimbreAdjust() => channels[currentVoice].CurrentTimbreAdjust;
 
     public int GetPitch() => channels[currentVoice].Pitch;
-
-    public class YmNoiseGenerator
-    {
-        private static readonly byte[] noiseData;
-
-        static YmNoiseGenerator()
-        {
-            //noiseData = new byte[1024]
-        }
-
-        private uint lfsr = 0x1FFFF; // 17-bit LFSR initialized with all 1s
-        private int period = 0; // Adjust based on YM noise period register (0-31)
-        private byte currentOutput = 0;
-        private int counter = 0;
-        private int sampleTicksPerNoiseStep = 1;
-        private readonly int sampleRate;
-
-        public YmNoiseGenerator(int noisePeriod, int sampleRate = 44100)
-        {
-            Period = noisePeriod;
-            this.sampleRate = sampleRate;
-
-            counter = sampleTicksPerNoiseStep;
-        }
-
-        public int Period
-        {
-            get => period;
-            set
-            {
-                //value = 1 + Math.Clamp(value, 0, 31) * 7;
-
-                if (period == value)
-                    return;
-
-                period = value;
-
-                // YM2149 noise frequency: 2 MHz / (16 * (period + 1))
-                double noiseFreq = 2_000_000.0 / (16.0 * (period + 1));
-                sampleTicksPerNoiseStep = Math.Max(1, (int)(sampleRate / noiseFreq));
-            }
-        }
-
-        // Simulate YM noise clock tick (should be called at the correct tick rate)
-        public byte Tick()
-        {
-            counter++;
-
-            if (counter >= sampleTicksPerNoiseStep)
-            {
-                counter = 0;
-
-                // XOR taps: bit 0 and bit 3 (based on real YM behavior)
-                bool bit0 = (lfsr & 1) != 0;
-                bool bit3 = (lfsr & (1 << 3)) != 0;
-                bool feedback = bit0 ^ bit3;
-
-                // Shift right and insert feedback at bit 16
-                lfsr >>= 1;
-
-                if (feedback)
-                    lfsr |= (1u << 16);
-
-                currentOutput = (byte)(lfsr & 1);
-            }
-
-            return currentOutput;
-        }
-    }
 }

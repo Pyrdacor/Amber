@@ -2,6 +2,6 @@
 {
     public interface IMusicPlayer
     {
-        void SampleData(byte[] pcmData, bool endOfStream);
+        void SampleData(short[] pcmData, bool endOfStream);
     }
 }

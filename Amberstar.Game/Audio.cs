@@ -9,7 +9,7 @@ class AudioStream(IAssetProvider assetProvider, int musicIndex, int songIndex) :
 
     public event DataStreamEventHandler? DataStreamed;
 
-    public void SampleData(byte[] pcmData, bool endOfStream)
+    public void SampleData(short[] pcmData, bool endOfStream)
     {
         DataStreamed?.Invoke(pcmData, endOfStream);
     }
@@ -77,7 +77,7 @@ partial class Game
             audioStream.Play();
 
             audioOutput.Stop();
-            audioOutput.StreamData(audioStream, 1, 44100, ChannelDataFormat.Unsigned8Bit);
+            audioOutput.StreamData(audioStream, 1, 44100, ChannelDataFormat.Signed16Bit);
         }
         else
         {

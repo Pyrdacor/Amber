@@ -25,7 +25,7 @@ internal class AudioBuffers(AL al, uint source, int channels, int sampleRate, Ch
         Stop();
     }
 
-    private void DataStreamed(byte[] pcmData, bool endOfStream)
+    private void DataStreamed(short[] pcmData, bool endOfStream)
     {
         lock (queuedBuffers)
         {

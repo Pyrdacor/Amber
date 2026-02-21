@@ -1,6 +1,6 @@
 ﻿namespace Amber.Audio;
 
-public delegate void DataStreamEventHandler(byte[] data, bool endOfStream);
+public delegate void DataStreamEventHandler(short[] data, bool endOfStream);
 
 public interface IAudioStream
 {
