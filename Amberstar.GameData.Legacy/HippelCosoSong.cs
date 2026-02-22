@@ -93,7 +93,6 @@ internal abstract class HippelCosoSong : ISong
                         ++currentCommandIndex;
                         break;
                     case CommandType.DisableToneEnableNoise:
-                        player.channels[player.currentVoice].NoisePeriod = -1; // to trigger init logic
                         player.channels[player.currentVoice].Tone = false;
                         player.channels[player.currentVoice].Noise = true;
                         ++currentCommandIndex;
@@ -371,7 +370,6 @@ internal abstract class HippelCosoSong : ISong
     0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686,
     0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686, 0x0003c686,*/
 
-    // TODO: Normally it should be 20ms per tick, but 120 works much better for some reason...
     private protected const int TickTime = 20; // ms
     private protected const int SampleRate = 44100; // Hz
     private protected const int BufferSize = SampleRate / 4; // 0.25 second of audio
@@ -617,6 +615,8 @@ internal abstract class HippelCosoSong : ISong
             // The same data is also pre-selected for timbre. Here it means:
             // Speed 1, Instrument 0, Vibrato slope, depth and delay 0.
             // Then set volume to 0 twice and hold that volume.
+
+            NoisePeriod = 0;
             
             currentInstrument?.ProcessNextCommand(player);
             currentTimbre?.VolumeEnvelop.ProcessNextCommand(player);
@@ -642,27 +642,26 @@ internal abstract class HippelCosoSong : ISong
             else if (wasUsingTone)
                 channelPlayer.PlayNote(totalTime, -1, 0);
 
-            if (NoisePeriod == -1 && Noise) // Init
-            {
-                NoisePeriod = Tone ? period : Note;
-                wasUsingNoise = false;
-            }
-
-            if (!wasUsingNoise && Noise)
+            if (Noise)
             {
                 if (Tone) // If both (tone and noise) are active, e4 was used which sets the NoisePeriod property.
                 {
-                    channelPlayer.ChangeNoise(totalTime, NoisePeriod);
+                    if (NoisePeriod != 0)
+                        channelPlayer.ChangeNoise(totalTime, NoisePeriod);
                 }
                 else if ((Pitch & 0x80) == 0) // Otherwise, e5 was used, so use the pitch logic.
                 {
                     NoisePeriod = (byte)(Note + Pitch);
-                    channelPlayer.ChangeNoise(totalTime, NoisePeriod);
+
+                    if (NoisePeriod != 0)
+                        channelPlayer.ChangeNoise(totalTime, NoisePeriod);
                 }
                 else
                 {
                     NoisePeriod = (byte)(Pitch & 0x7f);
-                    channelPlayer.ChangeNoise(totalTime, NoisePeriod);
+
+                    if (NoisePeriod != 0)
+                        channelPlayer.ChangeNoise(totalTime, NoisePeriod);
                 }
             }
             else if (wasUsingNoise && !Noise)
@@ -939,11 +938,10 @@ internal abstract class HippelCosoSong : ISong
 
     public void NextDivision()
     {
-        if (currentVoice != 0)
-            return;
+        channels[currentVoice].NextDivision(true);
 
-        channels[currentVoice].NextDivision(true); // TODO: Is this true right?
-        resetDivisions = true;
+        if (currentVoice == 0)
+            resetDivisions = true;
     }
 
     public int GetTimbre() => channels[currentVoice].CurrentTimbre;
