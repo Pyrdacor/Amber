@@ -500,8 +500,10 @@ internal class Map2DScreen : ButtonGridScreen
 
 		game.Time.Moved2D();
 
-		// Check for events
-		var @event = GetEvent(playerPosition.X, playerPosition.Y);
+        FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
+
+        // Check for events
+        var @event = GetEvent(playerPosition.X, playerPosition.Y);
 
 		if (@event != null)
 		{
@@ -521,8 +523,6 @@ internal class Map2DScreen : ButtonGridScreen
 				return;
 			}
 		}
-
-		FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 	}
 
 	private void UpdateMovement()
