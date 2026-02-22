@@ -1,4 +1,6 @@
-﻿namespace Amberstar.GameData.Legacy;
+﻿using System.Numerics;
+
+namespace Amberstar.GameData.Legacy;
 
 internal abstract class HippelCosoSong : ISong
 {
@@ -234,12 +236,20 @@ internal abstract class HippelCosoSong : ISong
             tickCounter = 0;
         }
 
-        public virtual void ProcessNextCommand(HippelCosoSong player)
+        public virtual void ProcessNextCommand(HippelCosoSong player, bool skipTickCheck = false)
         {
-            if (--tickCounter >= 0)
-                return;
+            if (skipTickCheck)
+            {
+                tickCounter = speed;
+            }
+            else
+            {
+                if (--tickCounter >= 0)
+                    return;
 
-            tickCounter = speed;
+                tickCounter = speed;
+            }
+
             bool processCommands = true;
 
             while (processCommands)
@@ -276,11 +286,8 @@ internal abstract class HippelCosoSong : ISong
                         ++currentCommandIndex;
                         break;
                     case CommandType.SetSpeedWithDelay:
-                        speed = command.Params[0];
-                        tickCounter = speed;
-                        ++currentCommandIndex;
                         processCommands = false;
-                        break;
+                        goto case CommandType.SetSpeed;
                     case CommandType.EndPattern:
                         processCommands = false;
                         player.NextDivision();
@@ -449,7 +456,8 @@ internal abstract class HippelCosoSong : ISong
                 TimbreChanged();
             }
         }
-        public int CurrentTimbreAdjust => currentDivision?.TimbreAdjust ?? 0;
+
+        public bool ResetAtNextEndPatternCommand { get; set; } = false;
 
         private protected virtual void InstumentChanged()
         {
@@ -552,22 +560,32 @@ internal abstract class HippelCosoSong : ISong
             CurrentVibratoDirection = -1;
         }
 
-        public virtual void NextDivision(bool processFirstPattern)
+        /// <summary>
+        /// Sets up the next division and immediately
+        /// process the first pattern.
+        /// 
+        /// Returns true if the last division changed
+        /// to the first division (looping).
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool NextDivision()
         {
+            bool looped = false;
             currentDivisionIndex++;
 
-            if (currentDivisionIndex >= player.songInfo.EndDivision)
+            if (ResetAtNextEndPatternCommand || currentDivisionIndex >= player.songInfo.EndDivision)
             {
+                ResetAtNextEndPatternCommand = false;
                 currentDivisionIndex = player.songInfo.StartDivision;
-                IsPlaying = false;
-                return;
+                looped = true;
             }
 
             currentDivision = player.divisions[currentDivisionIndex].Channels[channelIndex];
             InitDivision();
 
-            if (processFirstPattern)
-                currentPattern!.ProcessNextCommand(player); // Directly process the next pattern in this case.
+            currentPattern!.ProcessNextCommand(player, true); // Directly process the next pattern and skip tick check.
+
+            return looped;
         }
 
         private protected virtual void InitDivision()
@@ -800,8 +818,10 @@ internal abstract class HippelCosoSong : ISong
 
             foreach (var channel in channels)
             {
-                if (resetDivisions)
-                    channel.NextDivision(false);
+                if (resetDivisions && currentVoice != 0)
+                {
+                    channel.ResetAtNextEndPatternCommand = true;
+                }
 
                 channel.Update(time, updatePatterns);
 
@@ -938,15 +958,15 @@ internal abstract class HippelCosoSong : ISong
 
     public void NextDivision()
     {
-        channels[currentVoice].NextDivision(true);
+        bool looped = channels[currentVoice].NextDivision();
 
-        if (currentVoice == 0)
+        if (looped && currentVoice == 0)
+        {
             resetDivisions = true;
+        }
     }
 
     public int GetTimbre() => channels[currentVoice].CurrentTimbre;
-
-    public int GetTimbreAdjust() => channels[currentVoice].CurrentTimbreAdjust;
 
     public int GetPitch() => channels[currentVoice].Pitch;
 }
