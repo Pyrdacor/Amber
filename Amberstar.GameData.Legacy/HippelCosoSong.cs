@@ -104,6 +104,7 @@ internal abstract class HippelCosoSong : ISong
                         ++currentCommandIndex;
                         break;
                     case CommandType.DisableToneEnableNoise:
+                        player.channels[player.currentVoice].NoisePeriod = -1; // to trigger init logic
                         player.channels[player.currentVoice].Tone = false;
                         player.channels[player.currentVoice].Noise = true;
                         ++currentCommandIndex;
@@ -114,7 +115,7 @@ internal abstract class HippelCosoSong : ISong
                         ++currentCommandIndex;
                         break;
                     case CommandType.SetTimbre:
-                        player.channels[player.currentVoice].SetTimbre(command.Params[0]);
+                        player.channels[player.currentVoice].SetTimbre(command.Params[0], null);
                         Reset();
                         var instrument = player.instruments[player.channels[player.currentVoice].CurrentInstrument];
                         instrument.tickCounter = 1;
@@ -275,14 +276,13 @@ internal abstract class HippelCosoSong : ISong
                         player.SetNote(command.Params[0]);
                         if (command.Params.Length > 1 && command.Params[1] != -1)
                         {
+                            int? customInstrument = null;
+
+                            if (command.Params.Length > 2 && command.Params[2] != -1)
+                                customInstrument = command.Params[2];
+
                             // Set timbre
-                            player.SetTimbre(player.GetTimbre() + command.Params[1]);
-                        }
-                        if (player.channels[player.currentVoice].AllowInstrumentOverride &&
-                            command.Params.Length > 2 && command.Params[2] != -1)
-                        {
-                            // Set instrument
-                            player.SetInstrument(command.Params[2]);
+                            player.SetTimbre(player.GetTimbre() + command.Params[1], customInstrument);
                         }
                         player.channels[player.currentVoice].CurrentPortandoDelta = 0;
                         ++currentCommandIndex;
@@ -448,7 +448,6 @@ internal abstract class HippelCosoSong : ISong
         public bool Noise { get; set; } = true;
         public bool Tone { get; set; } = true;
         public int NoisePeriod { get; set; } = -1;
-        public bool AllowInstrumentOverride { get; private set; } = true;
         public int CurrentInstrument
         {
             get => currentInstrumentIndex;
@@ -557,22 +556,13 @@ internal abstract class HippelCosoSong : ISong
             currentTimbre?.VolumeEnvelop.Reset();
         }
 
-        public void SetTimbre(int index)
+        public void SetTimbre(int index, int? customInstrument)
         {
             CurrentTimbre = index;
 
-            // TODO: Should the following go into TimbreChanged?
-            if (currentTimbre!.Instrument == 0x80)
-            {
-                AllowInstrumentOverride = false;
-            }
-            else
-            {
-                CurrentInstrument = currentTimbre.Instrument;
-                AllowInstrumentOverride = true;
-            }
+            CurrentInstrument = customInstrument ?? currentTimbre!.Instrument;
 
-            CurrentVibratoDelay = currentTimbre.Vibrato.Delay;
+            CurrentVibratoDelay = currentTimbre!.Vibrato.Delay;
             CurrentVibratoSlope = currentTimbre.Vibrato.Slope;
             CurrentVibratoDepth = currentTimbre.Vibrato.Depth;
             CurrentVibratoDirection = -1;
@@ -599,16 +589,7 @@ internal abstract class HippelCosoSong : ISong
         private protected virtual void InitDivision()
         {
             CurrentTimbre = currentDivision!.TimbreIndex + currentDivision.TimbreAdjust;
-
-            if (currentTimbre!.Instrument == 0x80)
-            {
-                AllowInstrumentOverride = false;
-            }
-            else
-            {
-                CurrentInstrument = currentTimbre.Instrument;
-                AllowInstrumentOverride = true;
-            }
+            CurrentInstrument = currentTimbre!.Instrument;
 
             currentPattern = player.patterns[currentDivision!.PatternIndex];
             currentPattern!.Reset();
@@ -685,7 +666,6 @@ internal abstract class HippelCosoSong : ISong
             {
                 if (Tone) // If both (tone and noise) are active, e4 was used which sets the NoisePeriod property.
                 {
-                    NoisePeriod = period;
                     channelPlayer.ChangeNoise(totalTime, NoisePeriod);
                 }
                 else if ((Pitch & 0x80) == 0) // Otherwise, e5 was used, so use the pitch logic.
@@ -961,14 +941,9 @@ internal abstract class HippelCosoSong : ISong
         channels[currentVoice].ResetTimbre();
     }
 
-    public void SetTimbre(int index)
+    public void SetTimbre(int index, int? customInstrument)
     {
-        channels[currentVoice].SetTimbre(index < timbres.Length ? index : 0);
-    }
-
-    public void SetInstrument(int index)
-    {
-        channels[currentVoice].CurrentInstrument = index < instruments.Length ? index : 0;
+        channels[currentVoice].SetTimbre(index < timbres.Length ? index : 0, customInstrument);
     }
 
     public void SetSample(int index)
