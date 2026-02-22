@@ -166,10 +166,10 @@ internal abstract class HippelCosoSong : ISong
         private int tickCounter = 1;
         private int delayCounter = 0;
 
-        public virtual void Reset()
+        public virtual void Reset(int? newTickCounter)
         {
             currentCommandIndex = 0;
-            tickCounter = Speed;
+            tickCounter = newTickCounter ?? Speed;
             //delayCounter = 0;
         }
 
@@ -481,7 +481,7 @@ internal abstract class HippelCosoSong : ISong
 
         private protected virtual void TimbreChanged()
         {
-            currentTimbre?.VolumeEnvelop.Reset();
+            currentTimbre?.VolumeEnvelop.Reset(null);
         }
 
         private protected virtual int CalculateNotePeriod()
@@ -559,7 +559,7 @@ internal abstract class HippelCosoSong : ISong
 
         public virtual void ResetTimbre()
         {
-            currentTimbre?.VolumeEnvelop.Reset();
+            currentTimbre?.VolumeEnvelop.Reset(1);
         }
 
         public void SetTimbre(int index, int? customInstrument)
