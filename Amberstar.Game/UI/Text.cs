@@ -345,12 +345,15 @@ internal class TextManager(Game game, IFont font,
                         shadow.Position = new(shadow.Position.X, shadow.Position.Y - amount);
 					}
 
-                    glyphs.Add(firstLine);
+                    firstLine.ForEach(g => g.Visible = false);
+                    firstShadowLine.ForEach(g => g.Visible = false);
+
+                    /*glyphs.Add(firstLine);
                     glyphShadows.Add(firstShadowLine);
 
                     int offset = numDisplayedRows * font.LineHeight - scrollOffsetInPixels;
                     int lineIndex = scrollOffsetInLines + numDisplayedRows - 1;
-                    SetupTextLine(areaX, areaY + offset, glyphs.Count - 1, textLines[lineIndex]);
+                    SetupTextLine(areaX, areaY + offset, glyphs.Count - 1, textLines[lineIndex]);*/
                 }
                 else
                 {
