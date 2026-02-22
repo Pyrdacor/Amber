@@ -273,6 +273,7 @@ internal abstract class HippelCosoSong : ISong
                         // Param 0: Note
                         // Param 1: Timbre
                         // Param 2: Instrument
+                        // Param 3: Portando (0 or 1)
                         player.SetNote(command.Params[0]);
                         if (command.Params.Length > 1 && command.Params[1] != -1)
                         {
@@ -284,7 +285,9 @@ internal abstract class HippelCosoSong : ISong
                             // Set timbre
                             player.SetTimbre(player.GetTimbre() + command.Params[1], customInstrument);
                         }
+                        // Technically this is not zeroed if no note param flag was set, but it should be fine.
                         player.channels[player.currentVoice].CurrentPortandoDelta = 0;
+                        player.channels[player.currentVoice].Portando = (command.Params.Length > 3 && command.Params[3] != 0);
                         ++currentCommandIndex;
                         processCommands = false;
                         break;
@@ -524,7 +527,10 @@ internal abstract class HippelCosoSong : ISong
         {
             CurrentPortandoDelta += PortandoSlope;
 
-            period *= (1 - (CurrentPortandoDelta * period) / 1024);
+            // This code would be for the "MARC" format
+            // period -= CurrentPortandoDelta / 65536;
+
+            period -= (CurrentPortandoDelta * period / 1024);
         }
 
         public virtual void Reset()

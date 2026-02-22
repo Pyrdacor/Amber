@@ -449,6 +449,7 @@ internal static class HippelCosoLoader
                     var arg = patternData[++b];
                     int instrument = -1;
                     int timbreAdjust = -1;
+                    bool portando = (arg & 0x20) != 0;
 
                     if ((arg & 0xe0) != 0)
                     {
@@ -469,7 +470,7 @@ internal static class HippelCosoLoader
                         instrument = -1;
                     }
 
-                    commands.Add(new(HippelCosoSong.Pattern.CommandType.SetNote, note, timbreAdjust, instrument));
+                    commands.Add(new(HippelCosoSong.Pattern.CommandType.SetNote, note, timbreAdjust, instrument, portando ? 1 : 0));
                 }
             }
 
