@@ -276,45 +276,45 @@ internal static class HippelCosoLoader
                 switch (command)
                 {
                     case 0xe0:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Loop, instrumentData[++b]));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Loop, instrumentData[++b]));
                         break;
                     case 0xe1:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Complete));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Complete));
                         break;
                     case 0xe2:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.ResetTimbre));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.ResetTimbre));
                         break;
                     case 0xe3:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Vibrato, instrumentData[++b], instrumentData[++b]));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Vibrato, instrumentData[++b], instrumentData[++b]));
                         break;
                     case 0xe4:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.EnableToneAndNoise, instrumentData[++b]));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.EnableToneAndNoise, instrumentData[++b]));
                         break;
                     case 0xe5:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.DisableToneEnableNoise));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.DisableToneEnableNoise));
                         break;
                     case 0xe6:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.EnableToneDisableNoise));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.EnableToneDisableNoise));
                         break;
                     case 0xe7: // Set timbre
                         // Note: In some versions (with 4 byte indices) this defaults to command ed instead.
                         // This seems to be bugged in the original player...
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.SetTimbre, instrumentData[++b]));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.SetTimbre, instrumentData[++b]));
                         break;
                     case 0xe8: // Delay
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Delay, instrumentData[++b]));                        
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Delay, instrumentData[++b]));                        
                         break;
                     case 0xe9:
                         // It seems this is just skipping data and immediately processes the next command.
                         b++;
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.NextCommand));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.NextCommand));
                         break;
                     case 0xea: // Portando (arg = slope)
                         // Note: In some versions (with 4 byte indices) this defaults to command ec instead.
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Portando, instrumentData[++b]));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Portando, instrumentData[++b]));
                         break;
                     case 0xeb:
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.SetInstrumentFlags, instrumentData[++b]));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.SetInstrumentFlags, instrumentData[++b]));
                         break;
                     case 0xec:
                         // Never used in Atari ST Amberstar.
@@ -331,7 +331,7 @@ internal static class HippelCosoLoader
                         // Not supported in Atari ST Amberstar
                         throw new NotSupportedException("Invalid instrument command");
                     default: // Pitch
-                        commands.Add(new(HippelCosoSong.Instrument.CommandType.SetPitch, command));
+                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.SetPitch, command));
                         break;
                 }
             }
@@ -358,21 +358,20 @@ internal static class HippelCosoLoader
 
                 if (command < 0xe0)
                 {
-                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.SetVolume, command));
+                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.SetVolume, command));
                 }
                 else if (command == 0xe0) // LOOP(offset)
                 {
-                    var offset = timbreData[++b] - 5;
-                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Loop, offset));
+                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Loop, timbreData[++b]));
                 }
                 else if (command == 0xe1) // HOLD
                 {
-                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Hold));
+                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Hold));
                 }
                 else if (command == 0xe8) // SUSTAIN(ticks)
                 {
                     var ticks = timbreData[++b];
-                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Sustain, ticks));
+                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Sustain, ticks));
                 }
                 else if (command > 0xe8)
                 {

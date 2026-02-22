@@ -25,13 +25,10 @@ internal abstract class HippelCosoSong : ISong
             //ResetVolume,
         }
 
-        public record Command(CommandType Type, params int[] Params);
+        public record Command(int DataIndex, CommandType Type, params int[] Params);
 
         private int currentCommandIndex = 0;
         private int tickCounter = 1;
-
-        // Set pitch, then $e0 .. $ef
-        private protected virtual int[] CommandSizes { get; } = [1, 2, 1, 1, 3, 2, 1, 1, 2, 2, 1, 2, 2, 4, 2, 1, 1];
 
         public virtual void Reset()
         {
@@ -61,16 +58,8 @@ internal abstract class HippelCosoSong : ISong
                         processCommands = false;
                         break;
                     case CommandType.Loop:
-                        // Note: The param contains the byte offset instead of the command offset.
                         int byteOffset = command.Params[0];
-                        currentCommandIndex = 0;
-
-                        while (byteOffset != 0)
-                        {
-                            var commandType = Commands[currentCommandIndex++].Type;
-                            int size = CommandSizes[(int)commandType];
-                            byteOffset -= size;
-                        }
+                        currentCommandIndex = Commands.ToList().FindIndex(cmd => cmd.DataIndex == byteOffset);
                         break;
                     case CommandType.Complete:
                         // Do not increase the index.
@@ -158,9 +147,7 @@ internal abstract class HippelCosoSong : ISong
             Loop,
         }
 
-        public record Command(CommandType Type, params int[] Params);
-
-        private protected virtual int[] CommandSizes { get; } = [1, 1, 2, 2];
+        public record Command(int DataIndex, CommandType Type, params int[] Params);
 
         private int currentCommandIndex = 0;
         private int tickCounter = 1;
@@ -213,15 +200,8 @@ internal abstract class HippelCosoSong : ISong
                         ProcessNextCommand(player);
                         break;
                     case CommandType.Loop:
-                        // Note: The param contains the byte offset instead of the command offset.
                         int byteOffset = command.Params[0];
-                        currentCommandIndex = 0;
-
-                        while (byteOffset != 0)
-                        {
-                            int currentSize = CommandSizes[(int)Commands[currentCommandIndex++].Type];
-                            byteOffset -= currentSize;
-                        }
+                        currentCommandIndex = Commands.ToList().FindIndex(cmd => cmd.DataIndex == byteOffset);
                         break;
                     case CommandType.Hold:
                         player.SetVolume(Commands[currentCommandIndex - 1].Params[0]);
