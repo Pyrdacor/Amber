@@ -3,7 +3,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider) : ISongLoader
+internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, LegacyPlatform platform) : ISongLoader
 {
     readonly Dictionary<int, List<HippelCosoSong>> music = [];
 
@@ -16,7 +16,7 @@ internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider) : IS
             if (asset == null)
                 throw new AmberException(ExceptionScope.Data, $"Music {musicIndex} not found.");
 
-            songs = HippelCosoLoader.Load(asset.GetReader());
+            songs = HippelCosoLoader.Load(asset.GetReader(), platform);
             music.Add(musicIndex, songs);
         }
             

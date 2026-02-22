@@ -36,7 +36,7 @@ file class IndexTable
 file record DivisionData
 {
     // Atari ST uses 3 channels (voices), Amiga most likely uses 4 channels instead.
-    public const int ChannelCount = 3;
+    public int ChannelCount { get; }
 
     public record Channel
     {
@@ -54,10 +54,13 @@ file record DivisionData
         }
     }
 
-    public Channel[] Channels { get; } = new Channel[ChannelCount];
+    public Channel[] Channels { get; }
 
-    public DivisionData(IDataReader dataReader)
+    public DivisionData(IDataReader dataReader, int channelCount)
     {
+        ChannelCount = channelCount;
+        Channels = new Channel[ChannelCount];
+
         for (int i = 0; i < ChannelCount; i++)
         {
             Channels[i] = new Channel(dataReader);
@@ -71,6 +74,7 @@ internal static class HippelCosoLoader
     private readonly static byte[] TfmxHeader = Encoding.ASCII.GetBytes("TFMX"); // The Final Musicsystem eXtended
     private readonly static byte[] MmmeHeader = Encoding.ASCII.GetBytes("MMME"); // Mad Max Music Editor
     private readonly static byte[] LsmpHeader = Encoding.ASCII.GetBytes("LSMP");
+    private readonly static byte[] MarcHeader = Encoding.ASCII.GetBytes("MARC"); // Can happen (at least on Atari) but not used in Amberstar
 
     private static bool BytesMatch(byte[] a, byte[] b)
     {
@@ -93,7 +97,7 @@ internal static class HippelCosoLoader
         return readFunc(reader);
     }
 
-    public static List<HippelCosoSong> Load(IDataReader dataReader)
+    public static List<HippelCosoSong> Load(IDataReader dataReader, LegacyPlatform legacyPlatform)
     {
         var position = dataReader.Position;
         var header = dataReader.ReadBytes(4);
@@ -101,7 +105,7 @@ internal static class HippelCosoLoader
         if (BytesMatch(header, CosoHeader))
         {
             dataReader.Position = position;
-            return LoadCoso(dataReader);
+            return LoadCoso(dataReader, legacyPlatform);
         }
         else if (BytesMatch(header, TfmxHeader))
         {
@@ -112,12 +116,12 @@ internal static class HippelCosoLoader
             }
 
             dataReader.Position = position;
-            return LoadTfmx(dataReader);
+            return LoadTfmx(dataReader, legacyPlatform);
         }
         else if (BytesMatch(header, MmmeHeader))
         {
             dataReader.Position = position;
-            return LoadMmme(dataReader);
+            return LoadMmme(dataReader, legacyPlatform);
         }
         else
         {
@@ -125,7 +129,7 @@ internal static class HippelCosoLoader
         }
     }
 
-    private static List<HippelCosoSong> LoadCoso(IDataReader dataReader)
+    private static List<HippelCosoSong> LoadCoso(IDataReader dataReader, LegacyPlatform legacyPlatform)
     {
         // Load COmpressed SOng
 
@@ -149,11 +153,11 @@ internal static class HippelCosoLoader
 
         if (BytesMatch(header, TfmxHeader))
         {
-            return LoadTfmx(dataReader);
+            return LoadTfmx(dataReader, legacyPlatform);
         }
         else if (BytesMatch(header, MmmeHeader))
         {
-            return LoadMmme(dataReader);
+            return LoadMmme(dataReader, legacyPlatform);
         }
         else
         {
@@ -162,12 +166,12 @@ internal static class HippelCosoLoader
     }
 
     // Load The Final Musicsystem eXtended
-    private static List<HippelCosoSong> LoadTfmx(IDataReader dataReader) => Load(dataReader, false);
+    private static List<HippelCosoSong> LoadTfmx(IDataReader dataReader, LegacyPlatform legacyPlatform) => Load(dataReader, legacyPlatform, false);
 
     // Load Mad Max Music Editor
-    private static List<HippelCosoSong> LoadMmme(IDataReader dataReader) => Load(dataReader, true);
+    private static List<HippelCosoSong> LoadMmme(IDataReader dataReader, LegacyPlatform legacyPlatform) => Load(dataReader, legacyPlatform, true);
 
-    private static List<HippelCosoSong> Load(IDataReader dataReader, bool isMmme)
+    private static List<HippelCosoSong> Load(IDataReader dataReader, LegacyPlatform legacyPlatform, bool isMmme)
     {
         // NOTE: In some cases there are 4 byte indices used which also changes
         // some other logic. Most likely some other file format version. But
@@ -228,7 +232,7 @@ internal static class HippelCosoLoader
 
         for (int i = 0; i < numDivisions; i++)
         {
-            divisionData[i] = new DivisionData(dataReader);
+            divisionData[i] = new DivisionData(dataReader, legacyPlatform == LegacyPlatform.Atari ? 3 : 4); // TODO: 7 voices?
         }
 
         dataReader.Position = position + (int)posSongs;
@@ -472,6 +476,10 @@ internal static class HippelCosoLoader
             patterns[i] = new([.. commands]);
         }
 
-        return [..songs.Select(song => new HippelCosoSong(song, instruments, timbres, divisions, patterns))];
+        Func<HippelCosoSong.SongInfo, HippelCosoSong> factory = legacyPlatform == LegacyPlatform.Atari
+            ? (song) => new HippelCosoSongAtari(song, instruments, timbres, divisions, patterns)
+            : (song) => new HippelCosoSongAmiga(song, instruments, timbres, divisions, patterns);
+
+        return [..songs.Select(factory)];
     }
 }

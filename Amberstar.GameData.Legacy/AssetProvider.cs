@@ -188,7 +188,7 @@ public class AssetProvider : IAssetProvider
         monsterLoader = new(() => new MonsterLoader(this));
         personLoader = new(() => new PersonLoader(this, textLoader));
         itemLoader = new(() => new ItemLoader());
-        songLoader = new(() => new SongLoader(this));
+        songLoader = new(() => new SongLoader(this, Platform));
     }
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
