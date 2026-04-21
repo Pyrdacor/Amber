@@ -5,18 +5,19 @@ namespace Amber.IO.FileFormats.Serialization;
 
 public class PrgFile
 {
-	internal PrgFile(byte[] textSegment, byte[] dataSegment, int bssSegmentSize, List<string> symbolNames)
+	internal PrgFile(byte[] textSegment, byte[] dataSegment, int bssSegmentSize, List<uint> relocTable)
 	{
 		TextSegment = textSegment;
 		DataSegment = dataSegment;
 		BssSegmentSize = bssSegmentSize;
-		SymbolNames = symbolNames;
-	}
+		RelocTable = relocTable;
+
+    }
 
 	public byte[] TextSegment { get; }
 	public byte[] DataSegment { get; }
 	public int BssSegmentSize { get; }
-	public List<string> SymbolNames { get; }
+    public List<uint> RelocTable { get; }
 }
 
 /// <summary>
@@ -29,7 +30,8 @@ public static class PrgReader
 {
 	const int HeaderSize = 28;
 
-	public static PrgFile Read(IDataReader reader)
+    // See: https://freemint.github.io/tos.hyp/en/gemdos_programs.html
+    public static PrgFile Read(IDataReader reader)
 	{
 		int position = reader.Position;
 
@@ -49,68 +51,75 @@ public static class PrgReader
 		uint segmentTextLength = reader.ReadDword();
 		uint segmentDataLength = reader.ReadDword();
 		uint segmentBssLength = reader.ReadDword();
+        uint symbolTableSize = reader.ReadDword();
 
-		if (segmentTextLength > int.MaxValue || segmentDataLength > int.MaxValue || segmentBssLength > int.MaxValue)
+        if (segmentTextLength > int.MaxValue || segmentDataLength > int.MaxValue || segmentBssLength > int.MaxValue || symbolTableSize > int.MaxValue)
 			Throw("Invalid PRG file");
-
-		uint symbolTableSize = reader.ReadDword();
-		byte[] symbolTable = [];
-		var symbolNames = new List<string>();
-
-		// TODO: Symbol tables are not fully implemented yet.
-		if (false && symbolTableSize != 0)
-		{
-			// TODO...
-			if (symbolTableSize > int.MaxValue)
-				Throw("Invalid symbol table size");
-
-			// Symbol table starts behind header + TEXT segment + DATA segment
-			reader.Position = HeaderSize + (int)segmentTextLength + (int)segmentDataLength;
-			// 4-times the symbol table size of space.
-			symbolTable = reader.ReadBytes((int)symbolTableSize);
-
-			int sourceOffset = 0;
-			int targetOffset = 0;
-			int nextEntryOffset = 14;
-
-			while (sourceOffset < symbolTableSize)
-			{
-				for (int i = 0; i < 14; i++)
-					symbolTable[targetOffset++] = symbolTable[sourceOffset + i];
-
-				nextEntryOffset = sourceOffset + 14;
-
-				var symbolName = Encoding.ASCII.GetString(new ReadOnlySpan<byte>(symbolTable, sourceOffset, 8)).TrimEnd('\0');
-
-				if (symbolTable.Length == 8)
-				{
-					if (symbolTable[targetOffset - 5] == 0x48) // Extended GST-Format?
-					{
-						sourceOffset = nextEntryOffset;
-						nextEntryOffset += 14;
-
-						// Copy max 14 chars of the extension
-						symbolName += Encoding.ASCII.GetString(new ReadOnlySpan<byte>(symbolTable, sourceOffset, 14)).TrimEnd('\0');
-					}
-				}
-
-				symbolNames.Add(symbolName);
-				sourceOffset = nextEntryOffset;
-			}
-		}
 
 		reader.Position += 4; // skip reserved long
 
 		uint flags = reader.ReadDword(); // Bit0: 1 (TOS 1.4 Fast-Load)
-		int relocInfo = reader.ReadWord(); // ?
-		// TODO?
+		int relocInfo = reader.ReadWord(); // 0 = reloc info exists
+		
+		var textSegmentData = reader.ReadBytes((int)segmentTextLength);
+		List<uint> relocTable = [];
 
-		return new PrgFile
+        if (relocInfo == 0)
+		{
+            // The reloc info starts with a 32-bit integer giving the offset from text segment
+            // start to the first reloc entry. After that, single bytes are used as offsets to
+            // the next one. If 255 is not enough, a value of 1 is used (which normally is not
+            // allowed). So if a 1 is given, it basically means 254 plus the next byte. You
+            // can repeat 1-bytes for large gaps. A byte of 0 means the end of the reloc info.
+            uint offset = reader.ReadDword();
+			
+			// Note: If there are no relocactions at all the first long would be zero.
+			if (offset != 0)
+			{
+				uint GetAddress(uint offset)
+				{
+					uint address = textSegmentData[offset++];
+					address <<= 8;
+                    address |= textSegmentData[offset++];
+                    address <<= 8;
+                    address |= textSegmentData[offset++];
+                    address <<= 8;
+                    address |= textSegmentData[offset];
+
+					return address;
+                }
+
+                relocTable.Add(GetAddress(offset));
+
+				while (true)
+				{
+					uint next = reader.ReadByte();
+
+					if (next == 0)
+						break;
+
+					if (next == 1)
+						offset += 254;
+					else
+					{
+						offset += next;
+                        relocTable.Add(GetAddress(offset));
+                    }
+				}
+            }
+        }
+
+		var dataSegmentData = reader.ReadBytes((int)segmentDataLength);
+
+		// skip symbol table
+		reader.Position += (int)symbolTableSize;
+
+        return new PrgFile
 		(
-			reader.ReadBytes((int)segmentTextLength),
-			reader.ReadBytes((int)segmentDataLength),
+			textSegmentData,
+			dataSegmentData,
 			(int)segmentBssLength,
-			[] // TODO: maybe later add symbols but we only need the data segment most of the time anyway
-		);
+            relocTable
+        );
 	}
 }

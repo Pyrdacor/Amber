@@ -234,9 +234,28 @@ public class AssetProvider : IAssetProvider
 
 	private static ProgramData LoadAmigaProgramData(IReadOnlyFile file)
 	{
-		// TODO: AMBERDEV.UDO
-		throw new NotImplementedException();
-	}
+        using var fileReader = file.Stream.GetReader();
+
+        // AMBERDEV.UDO is a lob compressed (GEMDOS) Prg file.
+        // The FileReader will take care of the decompression.
+        var fileContainer = new FileReader().ReadFile("AMBERDEV.UDO", fileReader);
+
+		var reader = fileContainer.Files.Values.First();
+        var prgFile = PrgReader.Read(reader);
+
+        // In contrast to the Atari version, the Amiga version does not use
+        // the data segment for the program data, but instead has it directly
+        // in the text segment. We use the reloc table to find the offsets
+		// of the embedded data files.
+        var relocTable = prgFile.RelocTable;
+
+        bool FindOffset(EmbeddedDataOffset embeddedDataFile, IDataReader dataReader)
+		{
+			return FindAmigaOffset(embeddedDataFile, dataReader, relocTable);
+        }
+
+        return new ProgramData(new DataReader(prgFile.TextSegment), FindOffset);
+    }
 
 	private static ProgramData LoadProgramDataFromSource(IReadOnlyFileSystem fileSystem)
 	{
@@ -450,10 +469,11 @@ public class AssetProvider : IAssetProvider
 			case EmbeddedDataOffset.Graphics:
 				if (!FindAndGotoText(dataReader, 0x12000, "Illegal window handle"))
 					return false;
-				dataReader.AlignToWord();
 				while (dataReader.PeekWord() != 0)
 					dataReader.Position += 2;
-				return dataReader.PeekDword() == 0x00008000;
+				if (dataReader.PeekDword() == 0x0000_0080)
+					dataReader.Position++;
+				return dataReader.PeekDword() == 0x0000_8000;
 			case EmbeddedDataOffset.TextConversionTab:
 				if (!FindAndGotoByteSequence(dataReader, dataReader.Size - 2000, 0x01, 0x3b, 0x00, 0x00, 0x00, 0xc2))
 					return false;
@@ -482,13 +502,95 @@ public class AssetProvider : IAssetProvider
 		}
 	}
 
-	private static bool FindAmigaOffset(EmbeddedDataOffset embeddedDataFile, IDataReader dataReader)
+	private static bool FindAmigaOffset(EmbeddedDataOffset embeddedDataFile, IDataReader dataReader, List<uint> relocTable)
 	{
-		// TODO
-		throw new NotImplementedException();
-	}
+		const int VersionRelocIndex = 0x000001ed;
+        const int GlyphMappingRelocIndex = 0x000010bb;
+        const int RaceNameRelocIndex = 0x00001697;
+        const int ClassNameRelocIndex = 0x0000169c;
+        const int SpellSchoolNameRelocIndex = 0x00001d91;
+        const int GraphicRelocIndex = 0x00000a15;
+        const int PAreaRelocIndex = 0x00000aa9;
+        const int WindowRelocIndex = 0x000028b4;
+        const int CursorRelocIndex = 0x00002a13;
+		const int UITextRelocIndex = 0x00001107;
+        const int MusicRelocIndex = 0x000001c8;
 
-	private static bool FindSourceOffset(EmbeddedDataOffset embeddedDataFile, IDataReader dataReader)
+        switch (embeddedDataFile)
+		{
+            case EmbeddedDataOffset.Version:
+				return FindAndGotoText(dataReader, (int)relocTable[VersionRelocIndex], "Version");
+            case EmbeddedDataOffset.GlyphMappings:
+                dataReader.Position = (int)relocTable[GlyphMappingRelocIndex] + 2; // skip 0d 00
+                return true;
+            case EmbeddedDataOffset.RaceNames:
+                dataReader.Position = (int)relocTable[RaceNameRelocIndex];
+                return true;
+            case EmbeddedDataOffset.ClassNames:
+                dataReader.Position = (int)relocTable[ClassNameRelocIndex];
+                return true;
+            case EmbeddedDataOffset.SpellSchoolNames:
+                dataReader.Position = (int)relocTable[SpellSchoolNameRelocIndex];
+                return true;
+            case EmbeddedDataOffset.Graphics:
+                dataReader.Position = (int)relocTable[GraphicRelocIndex];
+                return true;
+            case EmbeddedDataOffset.TextConversionTab:
+				// Follows directly after the PArea which has 8 bytes.
+                dataReader.Position = (int)relocTable[PAreaRelocIndex] + 8;
+                return true;
+            case EmbeddedDataOffset.Windows:
+                dataReader.Position = (int)relocTable[WindowRelocIndex];
+                return true;
+            case EmbeddedDataOffset.Cursors:
+				dataReader.Position = (int)relocTable[CursorRelocIndex];
+				return true;
+            case EmbeddedDataOffset.UITexts:
+                dataReader.Position = (int)relocTable[UITextRelocIndex];
+                return true;
+            case EmbeddedDataOffset.Music:
+                dataReader.Position = (int)relocTable[MusicRelocIndex];
+                return true;
+            default:
+                return false;
+        }
+
+        // TODO: Remove later
+        // This can be used to search for offsets in the Amiga exe
+        // Just comment out the switch above and uncomment this code.
+        /*int n = 0;
+
+		foreach (var addr in relocTable)
+		{
+			if (addr > dataReader.Size - 4)
+			{
+				n++;
+				continue;
+			}
+
+            dataReader.Position = (int)addr;
+
+			// Prepare the byte sequence (char literals or hex values) to search for.
+			// This is just an example for the version string, adjust as needed.
+            if (dataReader.ReadByte() == '[' && 
+				dataReader.ReadByte() == 0x20 && 
+				dataReader.ReadByte() == 'A' &&
+                dataReader.ReadByte() == 'M' &&
+                dataReader.ReadByte() == 'B' &&
+                dataReader.ReadByte() == 'E')
+			{
+				// n gives you the reloc index which is used to reference the data.
+				// relocTable[n] gives you the actual offset in the text segment.
+				Console.WriteLine(n);
+            }
+
+			n++;
+        }
+		
+        return false;*/
+    }
+
+    private static bool FindSourceOffset(EmbeddedDataOffset embeddedDataFile, IDataReader dataReader)
 	{
 		return true; // TODO
 	}
