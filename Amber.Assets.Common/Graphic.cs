@@ -325,7 +325,19 @@ public class Graphic : IGraphic
 		}
 	}
 
-	public void MaskWith(IGraphic mask, byte transparentColorIndex = 0)
+	public void ReplaceColorIndex(byte oldColorIndex, byte newColorIndex)
+	{
+		if (!UsesPalette)
+			throw new AmberException(ExceptionScope.Application, "Color index replacement can only be performed on palette graphics.");
+
+		for (int i = 0; i < data.Length; i++)
+		{
+			if (data[i] == oldColorIndex)
+				data[i] = newColorIndex;
+		}
+    }
+
+    public void MaskWith(IGraphic mask, byte transparentColorIndex = 0)
 	{
 		if (!UsesPalette)
 			throw new AmberException(ExceptionScope.Application, "Masking can only be performed on palette graphics.");
@@ -341,7 +353,6 @@ public class Graphic : IGraphic
 			{
 				if (x >= mask.Width)
 					break;
-
 
 				if (maskData[x + y * mask.Width] != 0)
 					data[x + y * Width] = transparentColorIndex;

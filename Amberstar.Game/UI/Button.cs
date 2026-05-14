@@ -34,8 +34,9 @@ internal class Button
 		get => disabledOverlay.Visible || buttonType == ButtonType.Empty;
 		set => disabledOverlay.Visible = value;
 	}
+	public ButtonType ButtonType => buttonType;
 
-	public Button(Game game, int x, int y, ButtonType buttonType, byte displayLayer, byte? paletteIndex = null)
+    public Button(Game game, int x, int y, ButtonType buttonType, byte displayLayer, byte? paletteIndex = null)
 	{
 		this.game = game;
 		this.buttonType = buttonType;

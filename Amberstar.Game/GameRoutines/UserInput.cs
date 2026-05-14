@@ -6,8 +6,9 @@ partial class Game
 {
 	readonly Func<List<Key>> pressedKeyProvider;
 	List<Key>? pressedKeys = null;
+    Rect? mouseTrapArea = null;
 
-	internal bool InputEnabled { get; private set; } = true;		
+    internal bool InputEnabled { get; private set; } = true;		
 	internal bool Paused { get; private set; } = false;
 
 	public void KeyDown(Key key, KeyModifiers keyModifiers)
@@ -55,6 +56,15 @@ partial class Game
 
 	public void MouseMove(Position position, MouseButtons buttons)
 	{
+		if (mouseTrapArea != null)
+		{
+			position = new
+			(
+				MathUtil.Limit(mouseTrapArea.Value.Left, position.X, mouseTrapArea.Value.Right - 1),
+				MathUtil.Limit(mouseTrapArea.Value.Top, position.Y, mouseTrapArea.Value.Bottom - 1)
+			);
+        }
+
 		Cursor.Position = position;
 
 		if (!InputEnabled)
@@ -71,7 +81,26 @@ partial class Game
 		ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons);
 	}
 
-	internal bool IsKeyDown(Key key) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
+    public void TrapMouse(Rect rect)
+    {
+		mouseTrapArea = rect;
+
+		var position = Cursor.Position;
+
+		position = new Position(MathUtil.Limit(rect.Left, position.X, rect.Right - 1), MathUtil.Limit(rect.Top, position.Y, rect.Bottom - 1));
+
+		if (position != Cursor.Position)
+		{
+            MouseMove(position, MouseButtons.None);
+        }
+    }
+
+	public void UntrapMouse()
+	{
+		mouseTrapArea = null;
+    }
+
+    internal bool IsKeyDown(Key key) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
 
 	internal bool IsKeyDown(char ch) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(KeyByChar(ch));
 

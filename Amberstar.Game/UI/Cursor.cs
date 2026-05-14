@@ -79,7 +79,6 @@ internal class Cursor
 		sprite.DisplayLayer = byte.MaxValue; // always on top
 		sprite.PaletteIndex = paletteIndex;
 		sprite.TransparentColorIndex = 14;
-		sprite.MaskColorIndex = 15;
 		sprite.Visible = true;
 	}
 

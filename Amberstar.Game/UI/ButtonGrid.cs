@@ -60,6 +60,8 @@ internal class ButtonGrid
         return !buttons[index].Disabled;
     }
 
+	public ButtonType GetButtonType(int index) => index < 0 || index >= buttons.Length ? ButtonType.Empty : buttons[index].ButtonType;
+
     public bool MouseClick(Position position)
 	{
 		foreach (var button in buttons)

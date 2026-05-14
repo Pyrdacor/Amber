@@ -475,11 +475,11 @@ public class AssetProvider : IAssetProvider
 					dataReader.Position++;
 				return dataReader.PeekDword() == 0x0000_8000;
 			case EmbeddedDataOffset.TextConversionTab:
-				if (!FindAndGotoByteSequence(dataReader, dataReader.Size - 2000, 0x01, 0x3b, 0x00, 0x00, 0x00, 0xc2))
+                if (!FindAndGotoByteSequence(dataReader, dataReader.Size - 0x4000, 0x01, 0x3b, 0x00, 0x00, 0x00, 0xc2))
 					return false;
 				dataReader.Position += 6;
 				return true;
-			case EmbeddedDataOffset.Windows:
+            case EmbeddedDataOffset.Windows:
 				if (!FindAndGotoByteSequence(dataReader, 0x14000, 0x00, 0x0c, 0x00, 0x1d, 0x00, 0x1d))
 					return false;
 				dataReader.Position -= 0x86;

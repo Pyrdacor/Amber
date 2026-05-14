@@ -40,3 +40,21 @@ public interface ICursor
 	Position Hotspot { get; }
 	IGraphic Graphic { get; }
 }
+
+public static class CursorExtensions
+{
+	public static bool IsArrow(this CursorType cursorType)
+	{
+		return cursorType is >= CursorType.ArrowUp2D and <= CursorType.ArrowTurnLeft3D;
+    }
+
+    public static bool IsMapAction(this CursorType cursorType)
+    {
+        return cursorType is >= CursorType.Zzz and <= CursorType.Ear;
+    }
+
+    public static bool ForcesMouseTrap(this CursorType cursorType)
+    {
+        return cursorType is >= CursorType.Eye and <= CursorType.Ear;
+    }
+}

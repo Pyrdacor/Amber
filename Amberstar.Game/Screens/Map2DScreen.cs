@@ -146,7 +146,9 @@ internal class Map2DScreen : ButtonGridScreen
 	const int TileRows = 9;
 	const int TileWidth = 16;
 	const int TileHeight = 16;
-	const int WorldMapWidthInMaps = 8;
+	const int MapViewWidth = TilesPerRow * TileWidth;
+	const int MapViewHeight = TileRows * TileHeight;
+    const int WorldMapWidthInMaps = 8;
 	const int WorldMapHeightInMaps = 8;
 	const int WorldMapCount = WorldMapWidthInMaps * WorldMapHeightInMaps;
 	public const int WorldMapWidth = 50;
@@ -161,9 +163,10 @@ internal class Map2DScreen : ButtonGridScreen
 	IMap2D? map;
 	WorldMap? worldMap;
 	ITileset[]? tilesets;
+	static readonly Rect mapViewArea = new(OffsetX, OffsetY, MapViewWidth, MapViewHeight);
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
 	readonly Dictionary<int, IAnimatedSprite> overlay = [];
-	ISprite? player;
+	ISprite? player;	
 	int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
@@ -317,7 +320,37 @@ internal class Map2DScreen : ButtonGridScreen
 		}
 		else // Actions
 		{
-			// TODO
+			var buttonType = GetButtonType(index);
+
+			Rect CreateActionCursorTrapArea(bool mouth)
+			{
+                var playerPosition = game!.State.PartyPosition;
+                var playerRenderPosition = new Position(OffsetX + (playerPosition.X - lastScrollX) * TileWidth, OffsetY + (playerPosition.Y - lastScrollY) * TileHeight);
+
+				int range = mouth ? 2 : 1;
+
+				var startPosition = new Position(playerRenderPosition.X - (range - 1) * TileWidth - TileWidth / 2, playerRenderPosition.Y - (range - 1) * TileHeight - TileHeight / 2);
+				var size = new Size((range * 2) * TileWidth, (range * 2) * TileHeight);
+
+				return new Rect(startPosition, size);
+            }
+
+			switch (buttonType)
+			{
+				case ButtonType.Eye:
+					game!.Cursor.CursorType = CursorType.Eye;
+					game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
+                    break;
+                case ButtonType.Ear:
+                    game!.Cursor.CursorType = CursorType.Ear;
+                    game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
+                    break;
+                case ButtonType.Mouth:
+                    game!.Cursor.CursorType = CursorType.Mouth;
+                    game.TrapMouse(CreateActionCursorTrapArea(mouth: true));
+                    break;                
+                // TODO
+            }
 		}
 	}
 
@@ -685,7 +718,13 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		if (buttons == MouseButtons.Right)
 		{
-			if (ButtonGrid.Area.Contains(position))
+			if (game!.Cursor.CursorType.ForcesMouseTrap())
+			{
+                game.UntrapMouse();
+                game.Cursor.CursorType = CursorType.Sword;
+            }
+
+            if (ButtonGrid.Area.Contains(position))
 			{
 				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
 				RequestButtonSetup();
@@ -722,52 +761,57 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		base.MouseMove(position, buttons);
 
-		var mapArea = new Rect(OffsetX, OffsetY, TilesPerRow * TileWidth, TileRows * TileHeight);
-
-		if (mapArea.Contains(position))
+		if (game!.Cursor.CursorType != CursorType.Eye &&
+			game.Cursor.CursorType != CursorType.Ear &&
+			game.Cursor.CursorType != CursorType.Mouth)
 		{
-			bool left = position.X < player!.Position.X;
-			bool right = position.X >= player.Position.X + 16;
-			bool up = position.Y < player!.Position.Y;
-			bool down = position.Y >= player.Position.Y + 16;
+			var mapArea = new Rect(OffsetX, OffsetY, TilesPerRow * TileWidth, TileRows * TileHeight);
 
-			var lastCursor = game!.Cursor.CursorType;
+			if (mapArea.Contains(position))
+			{
+				bool left = position.X < player!.Position.X;
+				bool right = position.X >= player.Position.X + 16;
+				bool up = position.Y < player!.Position.Y;
+				bool down = position.Y >= player.Position.Y + 16;
 
-			if (up)
-			{
-				if (left)
-					game.Cursor.CursorType = CursorType.ArrowUpLeft2D;
-				else if (right)
-					game.Cursor.CursorType = CursorType.ArrowUpRight2D;
-				else
-					game.Cursor.CursorType = CursorType.ArrowUp2D;
-			}
-			else if (down)
-			{
-				if (left)
-					game.Cursor.CursorType = CursorType.ArrowDownLeft2D;
-				else if (right)
-					game.Cursor.CursorType = CursorType.ArrowDownRight2D;
-				else
-					game.Cursor.CursorType = CursorType.ArrowDown2D;
-			}
-			else
-			{
-				if (left)
-					game.Cursor.CursorType = CursorType.ArrowLeft2D;
-				else if (right)
-					game.Cursor.CursorType = CursorType.ArrowRight2D;
-				else
-					game.Cursor.CursorType = CursorType.Zzz;
-			}
+				var lastCursor = game.Cursor.CursorType;
 
-			if (mouseDown && lastCursor != game.Cursor.CursorType)
+				if (up)
+				{
+					if (left)
+						game.Cursor.CursorType = CursorType.ArrowUpLeft2D;
+					else if (right)
+						game.Cursor.CursorType = CursorType.ArrowUpRight2D;
+					else
+						game.Cursor.CursorType = CursorType.ArrowUp2D;
+				}
+				else if (down)
+				{
+					if (left)
+						game.Cursor.CursorType = CursorType.ArrowDownLeft2D;
+					else if (right)
+						game.Cursor.CursorType = CursorType.ArrowDownRight2D;
+					else
+						game.Cursor.CursorType = CursorType.ArrowDown2D;
+				}
+				else
+				{
+					if (left)
+						game.Cursor.CursorType = CursorType.ArrowLeft2D;
+					else if (right)
+						game.Cursor.CursorType = CursorType.ArrowRight2D;
+					else
+						game.Cursor.CursorType = CursorType.Zzz;
+				}
+
+				if (mouseDown && lastCursor != game.Cursor.CursorType)
+					UpdateMovement();
+			}
+			else if (game!.Cursor.CursorType.IsArrow())
+			{
+				game!.Cursor.CursorType = CursorType.Sword;
 				UpdateMovement();
-		}
-		else if (game!.Cursor.CursorType != CursorType.Sword)
-		{
-			game!.Cursor.CursorType = CursorType.Sword;
-			UpdateMovement();
+			}
 		}
 	}
 

@@ -50,11 +50,12 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             if ({UsePaletteName} > 0.5f)
             {{
                 float colorIndex = texture({TextureName}, varTexCoord).r * 255.0f;
+                float transparentPixel = 0.0f;
 
-                if (transparentColIndex > 0.5f && abs(colorIndex - transparentColIndex) < 0.5f)
-                    colorIndex = 0.0f;
+                if (abs(colorIndex - transparentColIndex) < 0.5f)
+                    transparentPixel = 1.0f;
                 
-                if (colorIndex < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                if (transparentPixel >= 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                     discard;
                 else
                 {{

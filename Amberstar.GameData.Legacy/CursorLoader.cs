@@ -28,8 +28,9 @@ internal class CursorLoader(AssetProvider assetProvider) : ICursorLoader
 		var mask = Graphic.FromBitPlanes(16, 16, reader.ReadBytes(32), 1);
 
 		graphic.MaskWith(mask, 14);
+		graphic.ReplaceColorIndex(1, 15);
 
-		cursor = new Cursor(new(hotspotX, hotspotY), graphic);
+        cursor = new Cursor(new(hotspotX, hotspotY), graphic);
 
 		cursors.Add(cursorType, cursor);
 

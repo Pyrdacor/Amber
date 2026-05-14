@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amberstar.Game.UI;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
@@ -12,6 +13,8 @@ internal abstract class ButtonGridScreen : Screen
     protected abstract byte ButtonGridPaletteIndex { get; }
     protected void RequestButtonSetup() => SetupButtons(buttonGrid!);
     protected void RequestButtonGridPaletteUpdate() => buttonGrid!.PaletteIndex = ButtonGridPaletteIndex;
+
+    public ButtonType GetButtonType(int index) => buttonGrid?.GetButtonType(index) ?? ButtonType.Empty;
 
     public override void Open(Game game, Action? closeAction)
 	{
