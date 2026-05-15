@@ -110,4 +110,10 @@ public readonly struct Rect : IEquatable<Rect>
 	}
 
 	public override readonly string ToString() => $"{Position} {Size}";
+
+    public void Deconstruct(out int x, out int y, out int width, out int height)
+    {
+        (x, y) = Position;
+		(width, height) = Size;
+    }
 }

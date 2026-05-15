@@ -707,13 +707,13 @@ internal class GameState
 
 	int BitFromMapEventIndex(int mapIndex, int eventIndex) => (mapIndex - 1) * 65 + eventIndex;
 
-	public bool IsEventActive(int mapIndex, int eventIndex) => IsBitSet(EventBits, BitFromMapEventIndex(mapIndex, eventIndex));
+	public bool IsEventActive(int mapIndex, int eventIndex) => !IsBitSet(EventBits, BitFromMapEventIndex(mapIndex, eventIndex));
 
 	public void SaveEvent(int mapIndex, int mapCharIndex) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, mapCharIndex), true);
 
 	int BitFromMapCharIndex(int mapIndex, int mapCharIndex) => (mapIndex - 1) * 24 + mapCharIndex;
 
-	public bool IsMapCharacterActive(int mapIndex, int mapCharIndex) => IsBitSet(CharacterBits, BitFromMapCharIndex(mapIndex, mapCharIndex));
+	public bool IsMapCharacterActive(int mapIndex, int mapCharIndex) => !IsBitSet(CharacterBits, BitFromMapCharIndex(mapIndex, mapCharIndex));
 
 	public void SetMapCharacterActive(int mapIndex, int mapCharIndex, bool active) => SetBit(CharacterBits, BitFromMapCharIndex(mapIndex, mapCharIndex), !active);
 

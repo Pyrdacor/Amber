@@ -24,7 +24,9 @@ internal class Map2DScreen : ButtonGridScreen
 		List<IEvent> events = [];
 		Tile2D[] tiles = [];
 
-		public int Width => WorldMapWidth * 2;
+		public int Index => maps[0].Index;
+
+        public int Width => WorldMapWidth * 2;
 
 		public int Height => WorldMapHeight * 2;
 
@@ -89,9 +91,10 @@ internal class Map2DScreen : ButtonGridScreen
 
 		public IMap2D? GetMapByIndex(int index) => mapCache.GetValueOrDefault(index);
 
-		public IEvent? GetEvent(int x, int y)
+		public IEvent? GetEvent(Game game, int x, int y, bool onlyActive = true)
 		{
-			int eventIndex = 0;
+			int eventIndex;
+			IMap2D map;
 
 			static int AdjustEventIndex(int eventIndex, int offset)
 			{
@@ -104,19 +107,34 @@ internal class Map2DScreen : ButtonGridScreen
 			if (x < WorldMapWidth)
 			{
 				if (y < WorldMapHeight)
+				{
+					map = maps[0];
 					eventIndex = maps[0].Tiles[x + y * WorldMapWidth].Event;
+				}
 				else
-					eventIndex = AdjustEventIndex(maps[2].Tiles[x + (y - WorldMapHeight) * WorldMapWidth].Event, 2 * IMap.EventCount);
+				{
+                    map = maps[2];
+                    eventIndex = AdjustEventIndex(maps[2].Tiles[x + (y - WorldMapHeight) * WorldMapWidth].Event, 2 * IMap.EventCount);
+				}
 			}
 			else
 			{
 				if (y < WorldMapHeight)
+				{
+					map = maps[1];
 					eventIndex = AdjustEventIndex(maps[1].Tiles[x - WorldMapWidth + y * WorldMapWidth].Event, 1 * IMap.EventCount);
+				}
 				else
+				{
+					map = maps[3];
 					eventIndex = AdjustEventIndex(maps[3].Tiles[x - WorldMapWidth + (y - WorldMapHeight) * WorldMapWidth].Event, 3 * IMap.EventCount);
+				}
 			}
 
 			if (eventIndex == 0)
+				return null;
+
+			if (onlyActive && !game.State.IsEventActive(map.Index, eventIndex))
 				return null;
 
 			return events[eventIndex - 1];
@@ -535,28 +553,38 @@ internal class Map2DScreen : ButtonGridScreen
 
         FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 
-        // Check for events
-        var @event = GetEvent(playerPosition.X, playerPosition.Y);
+		// Check for events
+		TryExecuteMapEvent(EventTrigger.Move);
+    }
 
-		if (@event != null)
+	private bool TryExecuteMapEvent(EventTrigger trigger, int x = 0, int y = 0)
+	{
+		if (x == 0)
 		{
-			var mapEvent = Event.CreateEvent(@event);
+            (x, y) = game!.State.PartyPosition;
+        }
+
+        var @event = GetEvent(x, y);
+
+        if (@event != null)
+        {
+            var mapEvent = Event.CreateEvent(@event);
 
             if (mapEvent is IPlaceEvent)
             {
-                game.State.ResetPartyPosition();
+                game!.State.ResetPartyPosition();
 
                 if (worldMap != null)
                     UpdateWorldMap();
             }
 
-            if (game.EventHandler.HandleEvent(EventTrigger.Move, mapEvent, map!) && mapEvent is ITeleportEvent)
-			{
-				// Don't update the map if we are teleporting away.
-				return;
-			}
-		}
-	}
+			game!.EventHandler.HandleEvent(trigger, mapEvent, map!);
+
+			return true;
+        }
+
+		return false;
+    }
 
 	private void UpdateMovement()
 	{
@@ -601,6 +629,8 @@ internal class Map2DScreen : ButtonGridScreen
 					down = true;
 					right = true;
 					break;
+				default:
+					return;
 			}
 		}
 
@@ -635,17 +665,21 @@ internal class Map2DScreen : ButtonGridScreen
 
 		if (additionalMoveRequested && !left && !right && !up && !down)
 		{
-			long timeTillNextMove = Math.Max(0, GetTicksPerStep() - (currentTicks - lastMoveStartTicks));
-			int x = moveX;
-			int y = moveY;
-			game.DeleteDelayedActions(delayedMoveActionIndex);
-			delayedMoveActionIndex = game.AddDelayedAction(timeTillNextMove, () =>
+			if (moveX != 0 || moveY != 0)
 			{
-				lastMoveStartTicks = currentTicks;
-				if (MovePlayer(x, y))
-					AfterMove();
-				moveTickCounter = 0;
-			});
+				long timeTillNextMove = Math.Max(0, GetTicksPerStep() - (currentTicks - lastMoveStartTicks));
+				int x = moveX;
+				int y = moveY;
+				game.DeleteDelayedActions(delayedMoveActionIndex);
+				delayedMoveActionIndex = game.AddDelayedAction(timeTillNextMove, () =>
+				{
+					lastMoveStartTicks = currentTicks;
+					if (MovePlayer(x, y))
+						AfterMove();
+					moveTickCounter = 0;
+				});
+			}
+
 			additionalMoveRequested = false;
 		}
 		else if (!additionalMoveRequested)
@@ -714,6 +748,17 @@ internal class Map2DScreen : ButtonGridScreen
 		UpdateMovement();
 	}
 
+	private Position MousePositionToMapTilePosition(Position mousePosition)
+	{
+		if (map == null)
+			return new();
+
+		int x = lastScrollX + MathUtil.Limit(0, (mousePosition.X - OffsetX) / TileWidth, map.Width - 1);
+		int y = lastScrollY + MathUtil.Limit(0, (mousePosition.Y - OffsetY) / TileHeight, map.Height - 1);
+
+		return new(x, y);
+    }
+
 	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		if (buttons == MouseButtons.Right)
@@ -739,6 +784,12 @@ internal class Map2DScreen : ButtonGridScreen
 			{
 				if (game!.Cursor.CursorType == CursorType.Zzz)
 					game.Time.Tick();
+				else if (game.Cursor.CursorType >= CursorType.Eye && game.Cursor.CursorType <= CursorType.Ear)
+				{
+					var (x, y) = MousePositionToMapTilePosition(position);
+                    TryExecuteMapEvent(game.Cursor.CursorType.ToEventTrigger(), x, y);
+					return;
+				}
 				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
 					UpdateMovement();				
 
@@ -971,17 +1022,20 @@ internal class Map2DScreen : ButtonGridScreen
 		return currentX + currentY * WorldMapWidthInMaps;
 	}
 
-	private IEvent? GetEvent(int x, int y)
+	private IEvent? GetEvent(int x, int y, bool onlyActive = true)
 	{
 		if (map is WorldMap worldMap)
-			return worldMap.GetEvent(x, y);
+			return worldMap.GetEvent(game!, x, y, onlyActive);
 		
 		var eventIndex = map!.Tiles[x + y * map.Width].Event;
 
 		if (eventIndex == 0)
 			return null;
 
-		return map.Events[eventIndex - 1];
+        if (onlyActive && !game!.State.IsEventActive(map.Index, eventIndex))
+            return null;
+
+        return map.Events[eventIndex - 1];
 	}
 
 	private void UpdateWorldMap(int? mapIndex = null)

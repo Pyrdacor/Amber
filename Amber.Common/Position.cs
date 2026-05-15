@@ -1,4 +1,6 @@
-﻿namespace Amber.Common;
+﻿using System.Reflection;
+
+namespace Amber.Common;
 
 public readonly struct Position : IEquatable<Position>
 {
@@ -58,6 +60,12 @@ public readonly struct Position : IEquatable<Position>
     public static Position operator -(Position left, Position right) => new(left.X - right.X, left.Y - right.Y);
 
     public override readonly string ToString() => $"({X}, {Y})";
+
+    public void Deconstruct(out int x, out int y)
+    {
+		x = X;
+		y = Y;
+    }
 }
 
 public readonly struct FloatPosition : IEquatable<FloatPosition>
@@ -118,6 +126,12 @@ public readonly struct FloatPosition : IEquatable<FloatPosition>
     public static FloatPosition operator -(FloatPosition left, FloatPosition right) => new(left.X - right.X, left.Y - right.Y);
 
     public override readonly string ToString() => $"({X:0.00}, {Y:0.00})";
+
+    public void Deconstruct(out float x, out float y)
+    {
+        x = X;
+        y = Y;
+    }
 }
 
 public delegate FloatPosition PositionTransformation(FloatPosition position);

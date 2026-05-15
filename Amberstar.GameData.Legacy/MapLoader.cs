@@ -16,9 +16,12 @@ namespace Amberstar.GameData.Legacy
 				if (asset == null)
 					throw new AmberException(ExceptionScope.Data, $"Map {index} not found.");
 
-				map = Map.Load(asset);
-				maps.Add(index, map);
-			}
+				var loadedMap = Map.Load(asset);
+                loadedMap.Index = index;
+                maps.Add(index, loadedMap);
+				map = loadedMap;
+
+            }
 
 			return map;
 		}

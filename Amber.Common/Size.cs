@@ -67,6 +67,12 @@ public readonly struct Size : IEquatable<Size>
 	}
 
 	public override readonly string ToString() => $"[{Width}x{Height}]";
+
+    public void Deconstruct(out int width, out int height)
+    {
+        width = Width;
+        height = Height;
+    }
 }
 
 public readonly struct FloatSize : IEquatable<FloatSize>
@@ -127,6 +133,12 @@ public readonly struct FloatSize : IEquatable<FloatSize>
 	}
 
 	public override readonly string ToString() => $"[{Width:0.00}x{Height:0.00}]";
+
+    public void Deconstruct(out float width, out float height)
+    {
+        width = Width;
+        height = Height;
+    }
 }
 
 public delegate FloatSize SizeTransformation(FloatSize size);

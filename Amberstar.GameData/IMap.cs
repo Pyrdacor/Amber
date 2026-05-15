@@ -80,6 +80,7 @@ public struct MapCharacter
 
 public interface IMap : IEventProvider
 {
+	int Index { get; }
 	int Width { get; }
 	int Height { get; }
 	MapType Type { get; }

@@ -13,6 +13,20 @@ namespace Amberstar.Game.Events
 		UseItem
 	}
 
+	public static class EventTriggerExtensions
+	{
+		internal static EventTrigger ToEventTrigger(this CursorType cursorType)
+		{
+			return cursorType switch
+			{
+				CursorType.Eye => EventTrigger.Eye,
+				CursorType.Ear => EventTrigger.Ear,
+				CursorType.Mouth => EventTrigger.Mouth,
+				_ => throw new InvalidOperationException($"Cursor type '{cursorType}' does not have a corresponding event trigger.")
+			};
+		}
+    }
+
 	internal abstract class Event(IEvent @event) : IEvent
 	{
 		public EventType Type => @event.Type;
