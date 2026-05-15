@@ -28,6 +28,20 @@ public static class BattleCharacterExtensions
         character.PhysicalConditions.HasFlag(PhysicalCondition.Ashes) ||
         character.PhysicalConditions.HasFlag(PhysicalCondition.Dust);
 
+    public static void Damage(this IBattleCharacter character, word amount, Action? finishHandler = null)
+    {
+        character.HitPoints.CurrentValue = (word)Math.Max(character.HitPoints.CurrentValue - amount, 0);
+
+        if (character.HitPoints.CurrentValue == 0)
+        {
+            character.AddCondition(Condition.Dead);
+
+            // TODO
+        }
+
+        finishHandler?.Invoke();
+    }
+
     public static void HealHitPoints(this IBattleCharacter character, word amount)
     {
         character.HitPoints.CurrentValue = (word)Math.Min(character.HitPoints.CurrentValue + amount, character.HitPoints.TotalMax);
