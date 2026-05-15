@@ -786,8 +786,17 @@ internal class Map2DScreen : ButtonGridScreen
 					game.Time.Tick();
 				else if (game.Cursor.CursorType >= CursorType.Eye && game.Cursor.CursorType <= CursorType.Ear)
 				{
-					var (x, y) = MousePositionToMapTilePosition(position);
-                    TryExecuteMapEvent(game.Cursor.CursorType.ToEventTrigger(), x, y);
+					var oldCursorType = game.Cursor.CursorType;
+					var eventTrigger = game.Cursor.CursorType.ToEventTrigger();
+                    var (x, y) = MousePositionToMapTilePosition(position);
+
+					game.Cursor.CursorType = CursorType.Sword;
+
+					if (!TryExecuteMapEvent(eventTrigger, x, y))
+						game.Cursor.CursorType = oldCursorType;
+					else
+						game.UntrapMouse();
+
 					return;
 				}
 				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
