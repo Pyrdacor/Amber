@@ -3,8 +3,8 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class ShowPictureTextEvent(IShowPictureTextEvent @event) : Event(@event), IShowPictureTextEvent
-	{
+	internal class ShowPictureTextEvent(IShowPictureTextEvent @event) : Event(@event), IShowPictureTextEvent, ITextEvent
+    {
 		public byte Picture => @event.Picture;
 
 		public byte TextIndex => @event.TextIndex;

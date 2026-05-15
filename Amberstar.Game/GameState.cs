@@ -489,7 +489,6 @@ internal class GameState
 		WareCounts = savegame.WareCounts;
 	}
 
-
 	public void SaveTo(Action<ISavegame> savegameWriter)
 	{
 		int mapIndex = MapIndex;
@@ -548,12 +547,39 @@ internal class GameState
 		return true;
 	}
 
-	#endregion
+	public IEnumerable<IPartyMember> GetPartyMembers(Game game)
+	{
+		for (int i = 0; i < Game.MaxPartyMembers; i++)
+		{
+			int characterIndex = PartyCharacterIndices[i];
+
+			if (characterIndex == 0)
+				continue;
+
+            if (game.AssetProvider.PersonLoader.LoadPerson(characterIndex) is IPartyMember partyMember)
+                yield return partyMember;
+        }
+    }
+
+    public IEnumerable<(int SlotIndex, IPartyMember? PartyMember)> GetPartyMembersWithSlot(Game game)
+    {
+        for (int i = 0; i < Game.MaxPartyMembers; i++)
+        {
+            int characterIndex = PartyCharacterIndices[i];
+
+            if (characterIndex != 0 && game.AssetProvider.PersonLoader.LoadPerson(characterIndex) is IPartyMember partyMember)
+                yield return (i, partyMember);
+			else
+                yield return (i, null);
+        }
+    }
+
+    #endregion
 
 
-	#region Map
+    #region Map
 
-	public int MapIndex { get; set; } = 65; // 65 is the Twinlake graveyard
+    public int MapIndex { get; set; } = 65; // 65 is the Twinlake graveyard
 	int PartyX { get; set; } = 8;
 	int PartyY { get; set; } = 11;
 	public Direction PartyDirection { get; set; } = Direction.Right;

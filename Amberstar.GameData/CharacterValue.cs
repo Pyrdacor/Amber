@@ -2,6 +2,10 @@
 
 public record CharacterValue(word CurrentValue, word MaxValue, word BonusValue)
 {
-    public int TotalCurrent => CurrentValue + BonusValue;
-    public int TotalMax => MaxValue + BonusValue;
+    public word CurrentValue { get; set; } = CurrentValue;
+    public word MaxValue { get; set; } = MaxValue;
+    public word BonusValue { get; set; } = BonusValue;
+
+    public word TotalCurrent => (word)(CurrentValue + BonusValue);
+    public word TotalMax => (word)(MaxValue + BonusValue);
 }

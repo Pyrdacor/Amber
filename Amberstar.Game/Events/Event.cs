@@ -45,7 +45,9 @@ namespace Amberstar.Game.Events
 				ITravelExitEvent travelExitEvent => new TravelExitEvent(travelExitEvent),
 				IWindGateEvent windGateEvent => new WindGateEvent(windGateEvent),
 				IPlaceEvent placeEvent => new PlaceEvent(placeEvent),
-				_ => throw new NotImplementedException()
+				IHPRegenerationEvent hpRegenerationEvent => new HPRegenerationEvent(hpRegenerationEvent),
+                ISPRegenerationEvent spRegenerationEvent => new SPRegenerationEvent(spRegenerationEvent),
+                _ => throw new NotImplementedException()
 			};
 		}
 	}

@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
@@ -29,17 +30,16 @@ internal class TextBoxScreen : Screen
 
 		this.game = game;
 
-		// First check for text event
-		var @event = game.EventHandler.CurrentEvent as IShowPictureTextEvent;
+        // First check for text event
 
-		if (@event == null)
-		{
-			InitText(game.CurrentText ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened without providing a text."));
-			return;
-		}
+        if (game.EventHandler.CurrentEvent is not ITextEvent @event)
+        {
+            InitText(game.CurrentText ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened without providing a text."));
+            return;
+        }
 
-		// Note: Don't use game.State.MapIndex as on world maps this could be another piece of the map!
-		int mapIndex = game.State.GetIndexOfMapWithPlayer();
+        // Note: Don't use game.State.MapIndex as on world maps this could be another piece of the map!
+        int mapIndex = game.State.GetIndexOfMapWithPlayer();
 		var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 		text = text.GetTextBlock(@event.TextIndex);
 

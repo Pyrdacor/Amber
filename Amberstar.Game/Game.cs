@@ -64,46 +64,47 @@ public partial class Game : IDisposable
 		// Show layout
 		layoutSprite = CreateSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 0, 14)!;
 
-		// Show empty char slots
-		for (int i = 0; i < MaxPartyMembers; i++)
+		// Show party member (and empty) slots
+		var partyMemberSlots = State.GetPartyMembersWithSlot(this);
+
+		foreach (var partyMemberSlot in partyMemberSlots)
 		{
-			var position = new Position(16 + i * 48, 1);
-			var size = new Size(32, 34);
+			(int i, IPartyMember? partyMember) = partyMemberSlot;
 
-			if (i == 0)
-			{
-				// TODO: Load party from save data later
-				var hero = assetProvider.PersonLoader.LoadPerson(1);
+            var position = new Position(16 + i * 48, 1);
+            var size = new Size(32, 34);
 
+            if (partyMember != null)
+            {
                 var sprite = portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetPersonPortraitIndex(1), uiPaletteIndex);
-				sprite!.DisplayLayer = 0;
+                sprite!.DisplayLayer = 0;
 
-				string name = hero.Name;
+                string name = partyMember.Name;
 
-				if (name.Length > 5)
-					name = name[..5];
+                if (name.Length > 5)
+                    name = name[..5];
 
                 var namePosition = position + new Position(2, size.Height - 4);
-				var nameSize = new Size(TextManager.GetTextRenderWidth(name), 6);
+                var nameSize = new Size(TextManager.GetTextRenderWidth(name), 6);
 
-				var nameBackground = partyMemberNameBackgrounds[i] = CreateColoredRect(Layer.UI, namePosition, nameSize, Color.Black);
-				nameBackground!.DisplayLayer = 5;
+                var nameBackground = partyMemberNameBackgrounds[i] = CreateColoredRect(Layer.UI, namePosition, nameSize, Color.Black);
+                nameBackground!.DisplayLayer = 5;
 
                 var nameText = partyMemberNames[i] = TextManager.Create(name, 8);
                 nameText.ShowInArea(new Rect(namePosition, nameSize), 10);
             }
             else
-			{
+            {
                 portraitSprites[i] = CreateSprite(Layer.UI, position, size, (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
 
                 Destroy(partyMemberNameBackgrounds[i]);
-				partyMemberNameBackgrounds[i] = null;
+                partyMemberNameBackgrounds[i] = null;
 
                 Destroy(partyMemberNames[i]);
                 partyMemberNames[i] = null;
 
             }
-		}
+        }
 
         ScreenHandler.PushScreen(ScreenType.Map2D);
 

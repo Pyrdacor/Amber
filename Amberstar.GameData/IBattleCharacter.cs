@@ -27,4 +27,42 @@ public static class BattleCharacterExtensions
         character.PhysicalConditions.HasFlag(PhysicalCondition.Dead) ||
         character.PhysicalConditions.HasFlag(PhysicalCondition.Ashes) ||
         character.PhysicalConditions.HasFlag(PhysicalCondition.Dust);
+
+    public static void HealHitPoints(this IBattleCharacter character, word amount)
+    {
+        character.HitPoints.CurrentValue = (word)Math.Min(character.HitPoints.CurrentValue + amount, character.HitPoints.TotalMax);
+    }
+
+    public static void HealSpellPoints(this IBattleCharacter character, word amount)
+    {
+        character.SpellPoints.CurrentValue = (word)Math.Min(character.SpellPoints.CurrentValue + amount, character.SpellPoints.TotalMax);
+    }
+
+    public static void FillHitPoints(this IBattleCharacter character)
+    {
+        character.HitPoints.CurrentValue = character.HitPoints.TotalMax;
+    }
+
+    public static void FillSpellPoints(this IBattleCharacter character)
+    {
+        character.SpellPoints.CurrentValue = character.SpellPoints.TotalMax;
+    }
+
+    public static void AddCondition(this IBattleCharacter battleCharacter, Condition condition)
+    {
+        battleCharacter.PhysicalConditions |= condition.ToPhysical();
+        battleCharacter.MentalConditions |= condition.ToMental();
+    }
+
+    public static void RemoveCondition(this IBattleCharacter battleCharacter, Condition condition)
+    {
+        battleCharacter.PhysicalConditions &= ~condition.ToPhysical();
+        battleCharacter.MentalConditions &= ~condition.ToMental();
+    }
+
+    public static bool HasAnyConditionOf(this IBattleCharacter battleCharacter, Condition conditions)
+    {
+        return (battleCharacter.PhysicalConditions & conditions.ToPhysical()) != 0 ||
+               (battleCharacter.MentalConditions & conditions.ToMental()) != 0;
+    }
 }

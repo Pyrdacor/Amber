@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class TeleporterEvent(ITeleporterEvent @event) : Event(@event), ITeleporterEvent, ITeleportEvent
+	internal class TeleporterEvent(ITeleporterEvent @event) : Event(@event), ITeleporterEvent, ITeleportEvent, ITextEvent
 	{
 		public byte X => @event.X;
 
@@ -17,10 +17,12 @@ namespace Amberstar.Game.Events
 
 		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
-			if (TextIndex != 0)
-				game.ShowText(() => game.Teleport(X, Y, Direction, MapIndex, false));
+			void Teleport() => game.Teleport(X, Y, Direction, MapIndex, false);
+
+            if (TextIndex != 0)
+				game.ShowText(Teleport);
 			else
-				game.Teleport(X, Y, Direction, MapIndex, false);
+				Teleport();
 
 			return true;
 		}

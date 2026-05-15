@@ -65,7 +65,7 @@ partial class Game
 	internal void ShowText(Action? nextAction = null)
 	{
 		CurrentText = null;
-		ScreenHandler.PushScreen(ScreenType.TextBox);
+		ScreenHandler.PushScreen(ScreenType.TextBox, nextAction);
 	}
 
 	internal void ShowPictureWithText()

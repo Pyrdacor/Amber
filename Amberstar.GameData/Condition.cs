@@ -5,6 +5,7 @@ namespace Amberstar.GameData;
 [Flags]
 public enum PhysicalCondition : byte
 {
+	None = 0,
 	Stunned = 0x01,
 	Poisoned = 0x02,
 	Petrified = 0x04,
@@ -18,7 +19,8 @@ public enum PhysicalCondition : byte
 [Flags]
 public enum MentalCondition : byte
 {
-	Irritated = 0x01,
+    MentalCondition = 0,
+    Irritated = 0x01,
 	Mad = 0x02,
 	Sleeping = 0x04,
 	Panicked = 0x08,
@@ -29,6 +31,7 @@ public enum MentalCondition : byte
 [Flags]
 public enum Condition : word
 {
+	None = 0,
 	Irritated = 0x0001,
 	Mad = 0x0002,
 	Sleeping = 0x0004,
