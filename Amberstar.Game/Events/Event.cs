@@ -27,26 +27,29 @@ namespace Amberstar.Game.Events
 		}
     }
 
-	internal abstract class Event(IEvent @event) : IEvent
+	internal abstract class Event(IEvent @event, int eventIndex) : IEvent
 	{
+		public int Index { get; } = eventIndex;
+
 		public EventType Type => @event.Type;
 
 		public bool SaveEvent => @event.SaveEvent;
 
 		public abstract bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider);
 
-		public static Event CreateEvent(IEvent @event)
+		public static Event CreateEvent(IEvent @event, int eventIndex)
 		{
 			return @event switch
 			{
-				IMapExitEvent mapExitEvent => new MapExitEvent(mapExitEvent),
-				IShowPictureTextEvent showPictureTextEvent => new ShowPictureTextEvent(showPictureTextEvent),
-				ITeleporterEvent teleportEvent => new TeleporterEvent(teleportEvent),
-				ITravelExitEvent travelExitEvent => new TravelExitEvent(travelExitEvent),
-				IWindGateEvent windGateEvent => new WindGateEvent(windGateEvent),
-				IPlaceEvent placeEvent => new PlaceEvent(placeEvent),
-				IHPRegenerationEvent hpRegenerationEvent => new HPRegenerationEvent(hpRegenerationEvent),
-                ISPRegenerationEvent spRegenerationEvent => new SPRegenerationEvent(spRegenerationEvent),
+				IMapExitEvent mapExitEvent => new MapExitEvent(mapExitEvent, eventIndex),
+				IShowPictureTextEvent showPictureTextEvent => new ShowPictureTextEvent(showPictureTextEvent, eventIndex),
+				ITeleporterEvent teleportEvent => new TeleporterEvent(teleportEvent, eventIndex),
+				ITravelExitEvent travelExitEvent => new TravelExitEvent(travelExitEvent, eventIndex),
+				IWindGateEvent windGateEvent => new WindGateEvent(windGateEvent, eventIndex),
+				IPlaceEvent placeEvent => new PlaceEvent(placeEvent, eventIndex),
+				IHPRegenerationEvent hpRegenerationEvent => new HPRegenerationEvent(hpRegenerationEvent, eventIndex),
+                ISPRegenerationEvent spRegenerationEvent => new SPRegenerationEvent(spRegenerationEvent, eventIndex),
+                IDamageFieldEvent damageFieldEvent => new DamageFieldEvent(damageFieldEvent, eventIndex),
                 _ => throw new NotImplementedException()
 			};
 		}

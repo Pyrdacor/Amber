@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class WindGateEvent(IWindGateEvent @event) : Event(@event), IWindGateEvent, ITeleportEvent, ITextEvent
+	internal class WindGateEvent(IWindGateEvent @event, int eventIndex) : Event(@event, eventIndex), IWindGateEvent, ITeleportEvent, ITextEvent
 	{
 		public byte X => @event.X;
 

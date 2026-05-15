@@ -8,6 +8,12 @@ namespace Amberstar.Game;
 
 partial class Game
 {
+	internal void SaveEvent(int eventIndex)
+	{
+		// TODO: Is the map index always correct on world maps?
+		State.SaveEvent(State.MapIndex, eventIndex);
+	}
+
 	internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
 	{
 		EnableInput(false);

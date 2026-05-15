@@ -93,53 +93,58 @@ internal class Map2DScreen : ButtonGridScreen
 
 		public IEvent? GetEvent(Game game, int x, int y, bool onlyActive = true)
 		{
-			int eventIndex;
-			IMap2D map;
+			return GetEventWithIndex(game, x, y, onlyActive)?.Event;
+        }
 
-			static int AdjustEventIndex(int eventIndex, int offset)
-			{
-				if (eventIndex == 0)
-					return 0;
+        public (int Index, IEvent Event)? GetEventWithIndex(Game game, int x, int y, bool onlyActive = true)
+        {
+            int eventIndex;
+            IMap2D map;
 
-				return offset + eventIndex;
-			}
+            static int AdjustEventIndex(int eventIndex, int offset)
+            {
+                if (eventIndex == 0)
+                    return 0;
 
-			if (x < WorldMapWidth)
-			{
-				if (y < WorldMapHeight)
-				{
-					map = maps[0];
-					eventIndex = maps[0].Tiles[x + y * WorldMapWidth].Event;
-				}
-				else
-				{
+                return offset + eventIndex;
+            }
+
+            if (x < WorldMapWidth)
+            {
+                if (y < WorldMapHeight)
+                {
+                    map = maps[0];
+                    eventIndex = maps[0].Tiles[x + y * WorldMapWidth].Event;
+                }
+                else
+                {
                     map = maps[2];
                     eventIndex = AdjustEventIndex(maps[2].Tiles[x + (y - WorldMapHeight) * WorldMapWidth].Event, 2 * IMap.EventCount);
-				}
-			}
-			else
-			{
-				if (y < WorldMapHeight)
-				{
-					map = maps[1];
-					eventIndex = AdjustEventIndex(maps[1].Tiles[x - WorldMapWidth + y * WorldMapWidth].Event, 1 * IMap.EventCount);
-				}
-				else
-				{
-					map = maps[3];
-					eventIndex = AdjustEventIndex(maps[3].Tiles[x - WorldMapWidth + (y - WorldMapHeight) * WorldMapWidth].Event, 3 * IMap.EventCount);
-				}
-			}
+                }
+            }
+            else
+            {
+                if (y < WorldMapHeight)
+                {
+                    map = maps[1];
+                    eventIndex = AdjustEventIndex(maps[1].Tiles[x - WorldMapWidth + y * WorldMapWidth].Event, 1 * IMap.EventCount);
+                }
+                else
+                {
+                    map = maps[3];
+                    eventIndex = AdjustEventIndex(maps[3].Tiles[x - WorldMapWidth + (y - WorldMapHeight) * WorldMapWidth].Event, 3 * IMap.EventCount);
+                }
+            }
 
-			if (eventIndex == 0)
-				return null;
+            if (eventIndex == 0)
+                return null;
 
-			if (onlyActive && !game.State.IsEventActive(map.Index, eventIndex))
-				return null;
+            if (onlyActive && !game.State.IsEventActive(map.Index, eventIndex))
+                return null;
 
-			return events[eventIndex - 1];
-		}
-	}
+            return (eventIndex, events[eventIndex - 1]);
+        }
+    }
 
 	// Note: In original you could only move by mouse or buttons on 2D maps.
 	// In general travel types had a delay which was given in number
@@ -564,11 +569,12 @@ internal class Map2DScreen : ButtonGridScreen
             (x, y) = game!.State.PartyPosition;
         }
 
-        var @event = GetEvent(x, y);
+        var eventWithIndex = GetEventWithIndex(x, y);
 
-        if (@event != null)
+        if (eventWithIndex != null)
         {
-            var mapEvent = Event.CreateEvent(@event);
+			(int eventIndex, IEvent @event) = eventWithIndex.Value;
+            var mapEvent = Event.CreateEvent(@event, eventIndex);
 
             if (mapEvent is IPlaceEvent)
             {
@@ -1047,7 +1053,23 @@ internal class Map2DScreen : ButtonGridScreen
         return map.Events[eventIndex - 1];
 	}
 
-	private void UpdateWorldMap(int? mapIndex = null)
+    private (int Index, IEvent Event)? GetEventWithIndex(int x, int y, bool onlyActive = true)
+    {
+        if (map is WorldMap worldMap)
+            return worldMap.GetEventWithIndex(game!, x, y, onlyActive);
+
+        var eventIndex = map!.Tiles[x + y * map.Width].Event;
+
+        if (eventIndex == 0)
+            return null;
+
+        if (onlyActive && !game!.State.IsEventActive(map.Index, eventIndex))
+            return null;
+
+        return (eventIndex, map.Events[eventIndex - 1]);
+    }
+
+    private void UpdateWorldMap(int? mapIndex = null)
 	{
 		// The first 64 maps (index 1 to 64) are the world maps.
 

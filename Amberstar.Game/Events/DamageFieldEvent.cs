@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class DamageFieldEvent(IDamageFieldEvent @event) : Event(@event), IDamageFieldEvent, ITextEvent
+	internal class DamageFieldEvent(IDamageFieldEvent @event, int eventIndex) : Event(@event, eventIndex), IDamageFieldEvent, ITextEvent
     {
         public byte Damage { get; }
 

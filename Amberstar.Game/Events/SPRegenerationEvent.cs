@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class SPRegenerationEvent(ISPRegenerationEvent @event) : Event(@event), ISPRegenerationEvent, ITextEvent
+	internal class SPRegenerationEvent(ISPRegenerationEvent @event, int eventIndex) : Event(@event, eventIndex), ISPRegenerationEvent, ITextEvent
     {
 		public byte Amount => @event.Amount;
 

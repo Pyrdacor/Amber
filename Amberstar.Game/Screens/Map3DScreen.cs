@@ -379,7 +379,9 @@ internal class Map3DScreen : ButtonGridScreen
 					forwardPosition.Y >= 0 && forwardPosition.Y < map.Height &&
 					map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width].Event != 0)
 				{
-                    game.EventHandler.HandleEvent(EventTrigger.Eye, Event.CreateEvent(map.Events[map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width].Event - 1]), map);
+					var tile = map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width];
+					int eventIndex = tile.Event - 1;
+                    game.EventHandler.HandleEvent(EventTrigger.Eye, Event.CreateEvent(map.Events[eventIndex], eventIndex), map);
                 }
             }
 			else if (index == 1) // ear
@@ -554,7 +556,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 		if (eventIndex != 0)
 		{
-			var mapEvent = Event.CreateEvent(map.Events[eventIndex - 1]);
+			var mapEvent = Event.CreateEvent(map.Events[eventIndex - 1], eventIndex);
 
 			if (mapEvent is IPlaceEvent)
 			{

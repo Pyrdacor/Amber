@@ -731,13 +731,13 @@ internal class GameState
 
 	public void SetQuestBit(int bit, bool set = true) => SetBit(QuestBits, bit, set);
 
-	int BitFromMapEventIndex(int mapIndex, int eventIndex) => (mapIndex - 1) * 65 + eventIndex;
+	static int BitFromMapEventIndex(int mapIndex, int eventIndex) => (mapIndex - 1) * 65 + eventIndex;
 
 	public bool IsEventActive(int mapIndex, int eventIndex) => !IsBitSet(EventBits, BitFromMapEventIndex(mapIndex, eventIndex));
 
-	public void SaveEvent(int mapIndex, int mapCharIndex) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, mapCharIndex), true);
+	public void SaveEvent(int mapIndex, int eventIndex) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, eventIndex), true);
 
-	int BitFromMapCharIndex(int mapIndex, int mapCharIndex) => (mapIndex - 1) * 24 + mapCharIndex;
+    static int BitFromMapCharIndex(int mapIndex, int mapCharIndex) => (mapIndex - 1) * 24 + mapCharIndex;
 
 	public bool IsMapCharacterActive(int mapIndex, int mapCharIndex) => !IsBitSet(CharacterBits, BitFromMapCharIndex(mapIndex, mapCharIndex));
 

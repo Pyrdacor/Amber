@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class PlaceEvent(IPlaceEvent @event) : Event(@event), IPlaceEvent
+	internal class PlaceEvent(IPlaceEvent @event, int eventIndex) : Event(@event, eventIndex), IPlaceEvent
 	{
 		public byte OpeningHour => @event.OpeningHour;
 

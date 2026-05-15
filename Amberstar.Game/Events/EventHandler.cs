@@ -12,6 +12,11 @@ namespace Amberstar.Game.Events
 
 			bool result = @event.Handle(trigger, game, eventProvider);
 
+			if (@event.SaveEvent)
+			{
+				game.SaveEvent(@event.Index);
+            }
+
 			CurrentEvent = null;
 
 			return result;

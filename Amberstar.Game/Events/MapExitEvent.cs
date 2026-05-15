@@ -3,7 +3,7 @@ using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
 {
-	internal class MapExitEvent(IMapExitEvent @event) : Event(@event), IMapExitEvent, ITeleportEvent
+	internal class MapExitEvent(IMapExitEvent @event, int eventIndex) : Event(@event, eventIndex), IMapExitEvent, ITeleportEvent
 	{
 		public byte X => @event.X;
 
