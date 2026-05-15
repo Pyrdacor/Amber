@@ -33,7 +33,7 @@ public partial class Game : IDisposable
     public Game(IRenderer renderer, IAssetProvider assetProvider, IAudioOutput audioOutput,
 		IGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
 		IPaletteColorProvider paletteColorProvider, IFontInfoProvider fontInfoProvider,
-		Func<List<Key>> pressedKeyProvider)
+		Func<List<Key>> pressedKeyProvider, Action<Position> setMousePosition)
 	{
 		Renderer = renderer;
 		AssetProvider = assetProvider;
@@ -55,8 +55,9 @@ public partial class Game : IDisposable
 		Time = new(this);
 		Cursor = new(this);
 		this.pressedKeyProvider = pressedKeyProvider;
+		this.setMousePosition = setMousePosition;
 
-		int uiPaletteIndex = paletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        int uiPaletteIndex = paletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
 		// Show portrait area
 		portraitBackgroundSprite = CreateSprite(Layer.Layout, new Position(0, 0), new Size(320, 36), 0, uiPaletteIndex)!;

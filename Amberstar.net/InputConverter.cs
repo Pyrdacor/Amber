@@ -81,5 +81,5 @@ namespace Amberstar.net
 		{
 			return new Position(MathUtil.Round(position.X), MathUtil.Round(position.Y));
 		}
-	}
+    }
 }

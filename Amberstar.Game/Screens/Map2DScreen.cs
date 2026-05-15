@@ -720,8 +720,8 @@ internal class Map2DScreen : ButtonGridScreen
 		{
 			if (game!.Cursor.CursorType.ForcesMouseTrap())
 			{
-                game.UntrapMouse();
                 game.Cursor.CursorType = CursorType.Sword;
+                game.UntrapMouse();                
             }
 
             if (ButtonGrid.Area.Contains(position))

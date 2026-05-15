@@ -330,6 +330,9 @@ public class Graphic : IGraphic
 		if (!UsesPalette)
 			throw new AmberException(ExceptionScope.Application, "Color index replacement can only be performed on palette graphics.");
 
+		if (oldColorIndex == newColorIndex)
+			return;
+
 		for (int i = 0; i < data.Length; i++)
 		{
 			if (data[i] == oldColorIndex)

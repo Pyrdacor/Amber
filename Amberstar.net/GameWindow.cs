@@ -70,9 +70,26 @@ namespace Amberstar
             return new MousePosition(x, y);
 		}
 
+        Position VirtualScreenToWindow(Position position)
+        {
+            float x = position.X * Width / 320.0f;
+            float y = position.Y * Height / 200.0f;
+
+            return new Position(MathUtil.Round(x), MathUtil.Round(y));
+        }
+
         List<Game.Key> QueryPressedKeys()
         {
             return keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToList() ?? [];
+        }
+
+        void SetMousePosition(Position position)
+        {
+            if (mouse != null)
+            {
+                position = VirtualScreenToWindow(position);
+                mouse.Position = new(position.X, position.Y);
+            }
         }
 
         void Keyboard_KeyChar(IKeyboard keyboard, char keyChar)
@@ -264,7 +281,8 @@ namespace Amberstar
             var audioOuput = new AudioOutput();
 
 			game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
-                paletteIndexProvider, paletteColorProvider, fontInfoProvider, QueryPressedKeys);
+                paletteIndexProvider, paletteColorProvider, fontInfoProvider, QueryPressedKeys,
+                SetMousePosition);
         }
 
         void Window_Render(double delta)

@@ -4,9 +4,11 @@ namespace Amberstar.Game;
 
 partial class Game
 {
-	readonly Func<List<Key>> pressedKeyProvider;
-	List<Key>? pressedKeys = null;
+    readonly Action<Position> setMousePosition;
+    readonly Func<List<Key>> pressedKeyProvider;	
+    List<Key>? pressedKeys = null;
     Rect? mouseTrapArea = null;
+	Position lastMousePosition = new();
 
     internal bool InputEnabled { get; private set; } = true;		
 	internal bool Paused { get; private set; } = false;
@@ -56,7 +58,9 @@ partial class Game
 
 	public void MouseMove(Position position, MouseButtons buttons)
 	{
-		if (mouseTrapArea != null)
+		lastMousePosition = position;
+
+        if (mouseTrapArea != null)
 		{
 			position = new
 			(
@@ -85,19 +89,20 @@ partial class Game
     {
 		mouseTrapArea = rect;
 
-		var position = Cursor.Position;
+		var position = lastMousePosition;
 
 		position = new Position(MathUtil.Limit(rect.Left, position.X, rect.Right - 1), MathUtil.Limit(rect.Top, position.Y, rect.Bottom - 1));
 
-		if (position != Cursor.Position)
+		if (position != lastMousePosition)
 		{
-            MouseMove(position, MouseButtons.None);
+            setMousePosition(position);
         }
     }
 
 	public void UntrapMouse()
 	{
 		mouseTrapArea = null;
+		ScreenHandler.ActiveScreen?.MouseMove(lastMousePosition, MouseButtons.None);
     }
 
     internal bool IsKeyDown(Key key) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
