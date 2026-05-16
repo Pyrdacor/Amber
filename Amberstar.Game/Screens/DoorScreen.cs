@@ -1,26 +1,31 @@
 ﻿using Amber.Common;
+using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
+using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
 internal class DoorScreen : ButtonGridScreen
 {
-	Game? game;
+    Game? game;
     bool trapFound = false;
     bool trapDisarmed = false;
     bool itemDragged = false;
     bool pickItem = false;
     bool waitForClick = false;
     bool closeAfterClick = false;
+    int lockpickReduction = 0;
     readonly Action draggingStartedHandler;
     readonly Action draggingEndedHandler;
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
     readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
     readonly static Rect MessageDisplayArea = new(16, 50, 176, 14);
+    ISprite? image;
     IRenderText? message;
+    DoorEvent? doorEvent;
 
     static DoorScreen()
     {
@@ -107,13 +112,25 @@ internal class DoorScreen : ButtonGridScreen
     }
 
     public override void Open(Game game, Action? closeAction)
-	{
-		base.Open(game, closeAction);
+    {
+        base.Open(game, closeAction);
 
-        var palette = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        doorEvent = (game.EventHandler.CurrentEvent as DoorEvent)!;
+        lockpickReduction = doorEvent.LockpickReduction;
+
+        var palette = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.LockedDoor);
 
         game.SetLayout(Layout.Door, palette);
         game.Cursor.CursorType = CursorType.Sword;
+
+        var layer = game.GetRenderLayer(Layer.UI);
+        image = layer.SpriteFactory!.Create();
+        var textureAtlas = layer.Config.Texture!;
+        image.Position = new(16, 49);
+        image.Size = new(80, 80);
+        image.Opaque = true;
+        image.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.Get80x80ImageIndex(Image80x80.LockedDoor));
+        image.Visible = true;
 
         trapFound = false;
         trapDisarmed = false;
@@ -172,10 +189,11 @@ internal class DoorScreen : ButtonGridScreen
     }
 
     public override void KeyDown(Key key, KeyModifiers keyModifiers)
-	{
+    {
         if (waitForClick)
         {
             waitForClick = false;
+            game.Cursor.CursorType = CursorType.Sword;
             HideMessage();
 
             if (closeAfterClick)
@@ -188,10 +206,10 @@ internal class DoorScreen : ButtonGridScreen
             game!.ScreenHandler.PopScreen();
 
         base.KeyDown(key, keyModifiers);
-	}
+    }
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
-	{
+    public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+    {
         if (waitForClick)
         {
             waitForClick = false;
@@ -264,10 +282,10 @@ internal class DoorScreen : ButtonGridScreen
                 game?.ScreenHandler.PopScreen();
                 break;
             case 3: // Find trap
-                // TODO
+                TryFindTrap();
                 break;
             case 6: // Disarm trap
-                // TODO
+                TryDisarmTrap();
                 break;
         }
     }
@@ -295,6 +313,9 @@ internal class DoorScreen : ButtonGridScreen
 
         this.waitForClick = waitForClick;
         this.closeAfterClick = closeAfterClick;
+
+        if (waitForClick)
+            game.Cursor.CursorType = CursorType.Zzz;
     }
 
     private void HideMessage()
@@ -305,30 +326,26 @@ internal class DoorScreen : ButtonGridScreen
 
     private void TryPickLock()
     {
-        var doorEvent = (game!.EventHandler.CurrentEvent as DoorEvent)!;
-
-        if (doorEvent.LockpickReduction == 100)
+        if (lockpickReduction == 100)
         {
             ShowMessage(Message.LockCannotBeOpened);
             return;
         }
 
-        int lockpickSkill = game.State.ActivePartyMember!.Skills[Skill.PickLocks].TotalCurrent;
-        lockpickSkill -= doorEvent.LockpickReduction;
+        int lockpickSkill = game!.State.ActivePartyMember!.Skills[Skill.PickLocks].TotalCurrent;
+        lockpickSkill -= lockpickReduction;
 
         if (game.Probe(lockpickSkill))
         {
-            // TODO: Set door state to open
-
-            ShowMessage(Message.LockOpened);
+            game.SaveEvent(doorEvent!.Index);
+            ShowMessage(Message.LockOpened, true, true);
         }
         else
         {
-            // TODO: The original code increases the lockpick reduction by 10% on each failure, but at the moment this is
-            // not possible here
-            //doorEvent.LockpickReduction = Math.Min(doorEvent.LockpickReduction + 10, 99);
+            // Reduce chance of lockpicking by 10% for each failed attempt, up to a maximum of 99%.
+            lockpickReduction = Math.Min(lockpickReduction + 10, 99);
 
-            if (trapDisarmed || doorEvent.TrapType == GameData.Events.TrapType.None)
+            if (trapDisarmed || doorEvent!.TrapType == TrapType.None)
             {
                 ShowMessage(Message.LockCannotBeOpened);
             }
@@ -342,9 +359,63 @@ internal class DoorScreen : ButtonGridScreen
                 }
                 else
                 {
-                    // TODO: Trigger trap
+                    TriggerTrap();
                 }
             }
         }
+    }
+
+    private void TryFindTrap()
+    {
+        if (doorEvent!.TrapType == TrapType.None)
+        {
+            ShowMessage(Message.NoTrapDiscovered);
+            return;
+        }
+
+        int findTrapSkill = game!.State.ActivePartyMember!.Skills[Skill.FindTraps].TotalCurrent;
+
+        if (game.Probe(findTrapSkill))
+        {
+            ShowMessage(Message.TrapDiscovered);
+            trapFound = true;
+            RequestButtonSetup();
+        }
+        else
+        {
+            ShowMessage(Message.NoTrapDiscovered);
+        }
+    }
+
+    private void TryDisarmTrap()
+    {
+        int disarmTrapSkill = game!.State.ActivePartyMember!.Skills[Skill.DisarmTraps].TotalCurrent;
+
+        if (game.Probe(disarmTrapSkill))
+        {
+            ShowMessage(Message.TrapDisarmed);
+            trapDisarmed = true;
+            RequestButtonSetup();
+        }
+        else
+        {
+            int dexterity = game.State.ActivePartyMember!.Attributes[GameData.Attribute.Dexterity].TotalCurrent;
+
+            if (game.Probe(dexterity))
+            {
+                ShowMessage(Message.HeardStrangeNoise);
+            }
+            else
+            {
+                TriggerTrap();
+            }
+
+            ShowMessage(Message.NoTrapDiscovered);
+        }
+    }
+
+    private void TriggerTrap()
+    {
+        game!.TriggerTrap(doorEvent!.TrapType, doorEvent!.TrapDamage);
     }
 }

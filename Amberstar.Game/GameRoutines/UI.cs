@@ -40,6 +40,12 @@ partial class Game
         ScreenHandler.PushScreen(ScreenType.TextBox);
     }
 
+    internal void ShowTextMessage(Message message, Action? nextAction = null)
+    {
+        var text = AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)message));
+        ShowTextMessage(text, nextAction);
+    }
+
     /// <summary>
     /// Amberstar gives some format strings in the form of:
     /// 

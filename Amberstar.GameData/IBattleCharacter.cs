@@ -64,6 +64,9 @@ public static class BattleCharacterExtensions
 
     public static void AddCondition(this IBattleCharacter battleCharacter, Condition condition)
     {
+        if (condition == Condition.None)
+            return;
+
         battleCharacter.PhysicalConditions |= condition.ToPhysical();
         battleCharacter.MentalConditions |= condition.ToMental();
     }

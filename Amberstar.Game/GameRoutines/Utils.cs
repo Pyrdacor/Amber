@@ -14,7 +14,7 @@ partial class Game
 	internal static int Random(int max) => Random(0, max);
 	internal static bool Random() => Random(0, 1) == 1;
 
-	internal bool Probe(int chance) => Random(100) < chance; // TODO: Super chicken (cheat) mode always succeeds
+	internal bool Probe(int chance) => State.TravelType == TravelType.SuperChicken || chance == 100 || chance >= Random(1, 100);
 
     internal long AddDelayedAction(long delayInTicks, Action action)
 	{

@@ -13,6 +13,9 @@ namespace Amberstar.Game.Events
 
         public ushort ItemIndex => @event.ItemIndex;
 
+        // We need to save it only if the door was opened!
+        public override bool AutoSave => false;
+
         public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
             if (trigger == EventTrigger.Eye || trigger == EventTrigger.Move)

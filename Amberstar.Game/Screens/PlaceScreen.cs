@@ -112,9 +112,7 @@ internal class PlaceScreen : Screen
 
 		closeOnNextInput = true; // TODO
 
-
         initPlaceFunction();
-
     }
 
 	private void OpenGuild(Class @class, PlaceEvent placeEvent)

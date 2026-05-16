@@ -8,7 +8,18 @@ namespace Amberstar.Game;
 
 partial class Game
 {
-	internal void SaveEvent(int eventIndex)
+	readonly Dictionary<TrapType, (bool ActivePlayerOnly, Condition Condition, Message Message)> TrapTable = new()
+	{
+		{ TrapType.DamageTrap, (false, Condition.None, Message.TrapExplosion) },
+		{ TrapType.PoisonNeedle, (true, Condition.Poisoned, Message.TrapPoisonedArrows) },
+		{ TrapType.PoisonGasCloud, (true, Condition.Poisoned, Message.TrapPoisonGas) },
+		{ TrapType.BlindingFlash, (false, Condition.Blind, Message.TrapBlindingFlash) },
+		{ TrapType.ParalyzingGasCloud, (false, Condition.Stunned, Message.TrapSleepGas) },
+        { TrapType.StoneGaze, (false, Condition.Petrified, Message.TrapBasiliskEye) },
+        { TrapType.Disease, (false, Condition.Diseased, Message.TrapSpores) },
+    };
+
+    internal void SaveEvent(int eventIndex)
 	{
 		// TODO: Is the map index always correct on world maps?
 		State.SaveEvent(State.MapIndex, eventIndex);
@@ -103,5 +114,72 @@ partial class Game
     internal void ShowChest()
     {
         ScreenHandler.PushScreen(ScreenType.Chest);
+    }
+
+	internal void TriggerTrap(TrapType trapType, word? damage, Action? finishHandler = null)
+	{
+		if (trapType == TrapType.None)
+			return;
+
+		if (trapType == TrapType.DamageTrap && (damage == null || damage <= 0))
+			return;
+
+		bool ProbeLuck(IPartyMember partyMember)
+		{
+			int totalLuck = partyMember.Attributes[GameData.Attribute.Luck].TotalCurrent;
+			return Probe(totalLuck);
+		}
+
+        if (TrapTable.TryGetValue(trapType, out var trapInfo))
+		{
+            void ShowMessageAndFinish()
+            {
+                ShowTextMessage(trapInfo.Message, finishHandler);
+            }
+
+            if (trapInfo.ActivePlayerOnly)
+			{
+				var activePartyMember = State.ActivePartyMember!;
+
+				if (ProbeLuck(activePartyMember))
+					return;
+
+                activePartyMember.AddCondition(trapInfo.Condition);
+
+                if (trapType == TrapType.DamageTrap)
+				{
+                    activePartyMember.Damage(damage!.Value, ShowMessageAndFinish);
+                }
+				else
+				{
+                    ShowMessageAndFinish();
+                }
+			}
+			else
+			{
+                var disallowedConditions = Condition.Petrified | Condition.Dead | Condition.Ashes | Condition.Dust;
+
+				Action finishAndOptionallyShowMessage = () => finishHandler?.Invoke();
+
+                ForeachPartyMember((partyMember, next) =>
+				{
+                    if (ProbeLuck(partyMember))
+					{
+                        next();
+						return;
+                    }
+
+					// If at least one party member was affected by the trap, show the message at the end of the loop.
+					finishAndOptionallyShowMessage = ShowMessageAndFinish;
+
+                    partyMember.AddCondition(trapInfo.Condition);
+
+					if (trapType == TrapType.DamageTrap)
+						partyMember.Damage(damage!.Value, next);
+					else
+						next();
+				}, finishAndOptionallyShowMessage, disallowedConditions);
+            }
+        }
     }
 }

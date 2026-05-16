@@ -231,14 +231,6 @@ internal class ExecuteTrapEvent(EventData eventData) : Event(eventData), IExecut
 	public byte Damage => eventData.Byte3;
 
 	public byte TextIndex => eventData.Byte4;
-
-	public bool AffectAllPlayers =>
-		TrapType == TrapType.DamageTrap ||
-		TrapType == TrapType.PoisonGasCloud ||
-		TrapType == TrapType.BlindingFlash ||
-		TrapType == TrapType.ParalyzingGasCloud;
-
-	public byte TrapEffectTextIndex => (byte)(6 + (int)TrapType);
 }
 
 internal class RiddleMouthEvent(EventData eventData) : Event(eventData), IRiddleMouthEvent

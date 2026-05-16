@@ -35,7 +35,9 @@ namespace Amberstar.Game.Events
 
 		public bool SaveEvent => @event.SaveEvent;
 
-		public abstract bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider);
+		public virtual bool AutoSave => true;
+
+        public abstract bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider);
 
 		public static Event CreateEvent(IEvent @event, int eventIndex)
 		{
@@ -48,7 +50,8 @@ namespace Amberstar.Game.Events
 				ITravelExitEvent travelExitEvent => new TravelExitEvent(travelExitEvent, eventIndex),
 				IWindGateEvent windGateEvent => new WindGateEvent(windGateEvent, eventIndex),
 				IPlaceEvent placeEvent => new PlaceEvent(placeEvent, eventIndex),
-				IHPRegenerationEvent hpRegenerationEvent => new HPRegenerationEvent(hpRegenerationEvent, eventIndex),
+                IExecuteTrapEvent executeTrapEvent => new ExecuteTrapEvent(executeTrapEvent, eventIndex),
+                IHPRegenerationEvent hpRegenerationEvent => new HPRegenerationEvent(hpRegenerationEvent, eventIndex),
                 ISPRegenerationEvent spRegenerationEvent => new SPRegenerationEvent(spRegenerationEvent, eventIndex),
                 IDamageFieldEvent damageFieldEvent => new DamageFieldEvent(damageFieldEvent, eventIndex),
                 _ => throw new NotImplementedException()
