@@ -8,6 +8,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+// TODO: After door screen exit, the map is full of wrong tiles until you move.
 internal class Map2DScreen : ButtonGridScreen
 {
 	enum ButtonLayout

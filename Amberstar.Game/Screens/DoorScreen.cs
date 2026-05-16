@@ -5,6 +5,7 @@ using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Amberstar.Game.Screens;
 
@@ -22,7 +23,7 @@ internal class DoorScreen : ButtonGridScreen
     readonly Action draggingEndedHandler;
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
     readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
-    readonly static Rect MessageDisplayArea = new(16, 50, 176, 14);
+    readonly static Rect MessageDisplayArea = new(112, 49, 192, 48);
     ISprite? image;
     IRenderText? message;
     DoorEvent? doorEvent;
@@ -55,7 +56,7 @@ internal class DoorScreen : ButtonGridScreen
 
     public override ScreenType Type { get; } = ScreenType.Door;
 
-    protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.LockedDoor) ?? 0;
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
@@ -130,6 +131,7 @@ internal class DoorScreen : ButtonGridScreen
         image.Size = new(80, 80);
         image.Opaque = true;
         image.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.Get80x80ImageIndex(Image80x80.LockedDoor));
+        image.PaletteIndex = palette;
         image.Visible = true;
 
         trapFound = false;
@@ -155,6 +157,12 @@ internal class DoorScreen : ButtonGridScreen
 
         CleanUpItems();
 
+        if (image != null)
+        {
+            image.Visible = false;
+            image = null;
+        }
+
         base.Close(game);
     }
 
@@ -166,6 +174,8 @@ internal class DoorScreen : ButtonGridScreen
         {
             if (message != null)
                 message.Visible = false;
+            if (image != null)
+                image.Visible = false;
 
             inventoryItemSlots.ToList().ForEach(slot => slot.Visible = false);
         }
@@ -183,22 +193,29 @@ internal class DoorScreen : ButtonGridScreen
         {
             if (message != null)
                 message.Visible = true;
+            if (image != null)
+                image.Visible = true;
 
             inventoryItemSlots.ToList().ForEach(slot => slot.Visible = true);
         }
+    }
+
+    private void EndClickWait()
+    {
+        waitForClick = false;
+        game!.Cursor.CursorType = CursorType.Sword;
+        HideMessage();
+        game.UntrapMouse();
+
+        if (closeAfterClick)
+            game!.ScreenHandler.PopScreen();
     }
 
     public override void KeyDown(Key key, KeyModifiers keyModifiers)
     {
         if (waitForClick)
         {
-            waitForClick = false;
-            game!.Cursor.CursorType = CursorType.Sword;
-            HideMessage();
-
-            if (closeAfterClick)
-                game!.ScreenHandler.PopScreen();
-
+            EndClickWait();
             return;
         }
 
@@ -212,12 +229,7 @@ internal class DoorScreen : ButtonGridScreen
     {
         if (waitForClick)
         {
-            waitForClick = false;
-            HideMessage();
-
-            if (closeAfterClick)
-                game!.ScreenHandler.PopScreen();
-
+            EndClickWait();
             return;
         }
 
@@ -306,7 +318,7 @@ internal class DoorScreen : ButtonGridScreen
     {
         message?.Delete();
 
-        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), MessageDisplayArea.Size.Width, 15);
+        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), MessageDisplayArea.Size.Width, 15, 0, ButtonGridPaletteIndex);
         message.ShowInArea(MessageDisplayArea, 20, TextAlignment.Left);
 
         // TODO: Scrolling
@@ -315,7 +327,10 @@ internal class DoorScreen : ButtonGridScreen
         this.closeAfterClick = closeAfterClick;
 
         if (waitForClick)
+        {
             game.Cursor.CursorType = CursorType.Zzz;
+            game.TrapMouse(MessageDisplayArea);
+        }
     }
 
     private void HideMessage()
