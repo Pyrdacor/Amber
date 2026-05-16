@@ -490,7 +490,9 @@ namespace Amberstar
 					RenderMapBackground(legendGraphics, legendBitmap.Width, legendBitmap.Height);
 
 					char legendLetter = (char)('A' + legend.Count - 1);
-					int textX = 32;
+					const int firstColumnX = 32;
+					int secondColumnX = legendBitmap.Width / 2 + 8;
+                    int textX = legend2Columns && legend.Count % 2 == 0 ? secondColumnX : firstColumnX;
 					int textY = legendBitmap.Height - 32 - 12;
 
 					while (legend.Count != 0)
@@ -500,14 +502,15 @@ namespace Amberstar
                         legendGraphics.DrawString($"{legendLetter}: {text}", smallFont, Brushes.White, textX, textY);
 						legendLetter--;
 
-						if (textX == 32 && legend2Columns)
-							textX = legendBitmap.Width / 2;
-						else
+						if (textX == firstColumnX)
 						{
 							textY -= 12;
-							textX = 32;
-
-                        }
+							textX = legend2Columns ? secondColumnX : firstColumnX;
+						}
+						else
+						{
+							textX = firstColumnX;
+						}
 					}
 				}
 
