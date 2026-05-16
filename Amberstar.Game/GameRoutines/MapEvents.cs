@@ -94,4 +94,14 @@ partial class Game
 
 		ScreenHandler.PushScreen(ScreenType.Place);
 	}
+
+	internal void ShowDoor()
+	{
+		ScreenHandler.PushScreen(ScreenType.Door);
+    }
+
+    internal void ShowChest()
+    {
+        ScreenHandler.PushScreen(ScreenType.Chest);
+    }
 }

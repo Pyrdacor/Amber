@@ -135,7 +135,7 @@ internal class InventoryScreen : ButtonGridScreen
 
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
-            int index = i; // important to capture is for the click handler
+            int index = i; // important to capture this for the click handler
             inventoryItemSlots[i] = new ItemContainer(game, InventorySlotPositions[i], 0, null, 10) { Draggable = true };
             inventoryItemSlots[i].Clicked += (mouseButtons, keyModifiers) => InventorySlotClicked(index, mouseButtons, keyModifiers);
             inventoryItemSlots[i].SlotChanged += () => UpdateInventoryItem(index);
@@ -143,7 +143,7 @@ internal class InventoryScreen : ButtonGridScreen
 
         foreach (var equipmentSlot in Enum.GetValues<EquipmentSlot>())
         {
-            var targetSlot = equipmentSlot; // important to capture is for the click handler
+            var targetSlot = equipmentSlot; // important to capture this for the click handler
             var slot = new ItemContainer(game, EquipmentSlotPositions[equipmentSlot], 0, null, 10) { Draggable = true };
             equippedItemSlots.Add(equipmentSlot, slot);
             slot.Clicked += (mouseButtons, keyModifiers) => EquipmentSlotClicked(targetSlot, mouseButtons, keyModifiers);
@@ -284,9 +284,8 @@ internal class InventoryScreen : ButtonGridScreen
 
         CleanUpItems();
 
-        game!.State.CurrentInventoryIndex = index;
-        int partyMemberIndex = 1; // TODO: get from savegame, slot is index
-        partyMember = (game!.AssetProvider.PersonLoader.LoadPerson(partyMemberIndex) as IPartyMember)!;
+        game!.State.SetCurrentInventory(index);
+        partyMember = game.State.CurrentInventory!;
         var graphicLoader = game!.AssetProvider.GraphicLoader;
         var uiPaletteIndex = game!.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
@@ -320,7 +319,7 @@ internal class InventoryScreen : ButtonGridScreen
         }
 
         personInfoView?.Destroy();
-        personInfoView = new(game, partyMember, partyMemberIndex, uiPaletteIndex);
+        personInfoView = new(game, partyMember, index, uiPaletteIndex);
 
         var weightString = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.WeightTwoValues)).GetString();
         weightString = Game.InsertNumberIntoString(weightString, " KG", false, partyMember.TotalWeight / 1000, 3, '0');
@@ -425,7 +424,7 @@ internal class InventoryScreen : ButtonGridScreen
 
         if (targetSlot == null) // Not equipable
         {
-            ShowMessage(InventoryMessage.ItemNotEquippable);
+            ShowMessage(Message.ItemNotEquippable);
             return;
         }
 
@@ -436,31 +435,31 @@ internal class InventoryScreen : ButtonGridScreen
 
         if (targetItemSlot.ItemCount > 0)
         {
-            ShowMessage(InventoryMessage.ItemNotEquippable);
+            ShowMessage(Message.ItemNotEquippable);
             return;
         }
 
         if (!item.UsableClasses.HasFlag((ClassFlags)(1 << (int)partyMember!.Class)))
         {
-            ShowMessage(InventoryMessage.WrongClass);
+            ShowMessage(Message.WrongClass);
             return;
         }
 
         if (item.Genders != GenderFlags.Both && !item.Genders.HasFlag((GenderFlags)(1 << (int)partyMember.Gender)))
         {
-            ShowMessage(InventoryMessage.WrongGender);
+            ShowMessage(Message.WrongGender);
             return;
         }
 
         if (item.Hands > 2 - partyMember.UsedHands)
         {
-            ShowMessage(InventoryMessage.NotEnoughFreeHands);
+            ShowMessage(Message.NotEnoughFreeHands);
             return;
         }
 
         if (item.Fingers > 2 - partyMember.UsedFingers)
         {
-            ShowMessage(InventoryMessage.NotEnoughFreeFingers);
+            ShowMessage(Message.NotEnoughFreeFingers);
             return;
         }
 
@@ -486,7 +485,7 @@ internal class InventoryScreen : ButtonGridScreen
 
         if (item.Flags.HasFlag(ItemFlags.Cursed))
         {
-            ShowMessage(InventoryMessage.ItemIsCursed);
+            ShowMessage(Message.ItemIsCursed);
             return;
         }
 
@@ -503,7 +502,7 @@ internal class InventoryScreen : ButtonGridScreen
 
         if (targetSlotIndex == -1)
         {
-            ShowMessage(InventoryMessage.NoRoomForItem);
+            ShowMessage(Message.NoRoomForItem);
             return;
         }
 
@@ -513,11 +512,11 @@ internal class InventoryScreen : ButtonGridScreen
         slot.ReduceItemCount(1);
     }
 
-    private void ShowMessage(InventoryMessage messageIndex, bool waitForClick = true)
+    private void ShowMessage(Message messageIndex, bool waitForClick = true)
     {
         message?.Delete();
 
-        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.InventoryMessage, (int)messageIndex)), MessageDisplayArea.Size.Width, 15);
+        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), MessageDisplayArea.Size.Width, 15);
         message.ShowInArea(MessageDisplayArea, 20, TextAlignment.Left);
 
         // TODO: Scrolling
@@ -552,7 +551,7 @@ internal class InventoryScreen : ButtonGridScreen
         {
             base.Open(game, closeAction);
 
-            inventoryScreen?.ShowMessage(InventoryMessage.DropWhichItem);
+            inventoryScreen?.ShowMessage(Message.DropWhichItem);
         }
 
         public override void Close(Game game)

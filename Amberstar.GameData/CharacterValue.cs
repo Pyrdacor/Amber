@@ -8,4 +8,6 @@ public record CharacterValue(word CurrentValue, word MaxValue, word BonusValue)
 
     public word TotalCurrent => (word)(CurrentValue + BonusValue);
     public word TotalMax => (word)(MaxValue + BonusValue);
+
+    public CharacterValue Copy() => new(CurrentValue, MaxValue, BonusValue);
 }

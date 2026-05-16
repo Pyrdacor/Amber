@@ -5,6 +5,7 @@ using Amber.IO.FileFormats.Serialization;
 using Amber.Serialization;
 using Amberstar.GameData.Serialization;
 using Amiga.FileFormats.LHA;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Amberstar.GameData.Legacy;
 
@@ -186,7 +187,7 @@ public class AssetProvider : IAssetProvider
 		labDataLoader = new(() => new LabDataLoader(this));
 		cursorLoader = new(() => new CursorLoader(this));
         monsterLoader = new(() => new MonsterLoader(this));
-        personLoader = new(() => new PersonLoader(this, textLoader));
+        personLoader = new(() => new PersonLoader(this, textLoader, GetAssetKeys(AssetType.Person)));
         itemLoader = new(() => new ItemLoader());
         songLoader = new(() => new SongLoader(this, Platform));
     }
@@ -277,9 +278,9 @@ public class AssetProvider : IAssetProvider
 			AssetType.SpellName => CreateAssets(Data.SpellNames),
 			AssetType.SpellSchoolName => CreateAssets(Data.SpellSchoolNames),
 			AssetType.ClassName => CreateAssets(Data.ClassNames),
-            AssetType.RaceName => CreateAssets(Data.RaceNames),
-            AssetType.AttributeName => CreateAssets(Data.AttributeNames),
-            AssetType.SkillName => CreateAssets(Data.SkillNames),
+			AssetType.RaceName => CreateAssets(Data.RaceNames),
+			AssetType.AttributeName => CreateAssets(Data.AttributeNames),
+			AssetType.SkillName => CreateAssets(Data.SkillNames),
 			AssetType.CharInfoText => CreateAssets(Data.CharInfoTexts),
 			AssetType.LanguageName => CreateAssets(Data.LanguageNames),
 			AssetType.ConditionName => CreateAssets(Data.ConditionNames),
@@ -293,9 +294,9 @@ public class AssetProvider : IAssetProvider
 			AssetType.Font => CreateAssets(Data.Fonts),
 			AssetType.Window => CreateAssets(Data.Windows),
 			AssetType.Cursor => CreateAssets(Data.Cursors),
-            AssetType.UIText => CreateAssets(Data.UITexts),
+			AssetType.UIText => CreateAssets(Data.UITexts),
 			AssetType.Music => CreateAssets(Data.Songs),
-            AssetType.InventoryMessage => new Dictionary<int, Asset>() { { 1, new Asset(new(AssetType.InventoryMessage, 1), Data.InventoryMessageData) } },
+			AssetType.Message => Data.MessageData.Select((data, index) => (data, index)).ToDictionary(x => 1 + x.index, x => new Asset(new(AssetType.Message, 1 + x.index), x.data)),
             _ => throw new AmberException(ExceptionScope.Application, $"Unsupported asset type {type} for legacy asset provider")
 		};
 	}

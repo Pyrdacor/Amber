@@ -72,6 +72,21 @@ internal class Character : ICharacter
             character.inventory[i] = new ItemSlot(itemCounts[9 + i], items[9 + i]);
     }
 
+    protected void CloneInto(Character character)
+    {
+        character.type = type;
+        character.gender = gender;
+        character.race = race;
+        character.@class = @class;
+        character.name = name;
+
+        for (int i = 0; i < 9; i++)
+            character.equipment[(EquipmentSlot)i] = new ItemSlot(equipment[(EquipmentSlot)i].Count, equipment[(EquipmentSlot)i].Item?.Clone());
+
+        for (int i = 0; i < ICharacter.InventorySlotCount; i++)
+            character.inventory[i] = new ItemSlot(inventory[i].Count, inventory[i].Item?.Clone());
+    }
+
     CharacterType ICharacter.Type { get => type; init => type = value; }
     Gender ICharacter.Gender { get => gender; init => gender = value; }
     Race ICharacter.Race { get => race; init => race = value; }

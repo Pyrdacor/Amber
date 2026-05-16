@@ -69,4 +69,33 @@ internal class PartyMember : BattleCharacter, IPartyMember
     public dword LearnedSpecialSpells { get; set; }
     public dword TotalWeight { get; }
     public IConversationData ConversationData { get => conversationData ?? throw new NullReferenceException("conversationData is null"); init => conversationData = value; }
+
+
+    public IPartyMember Clone()
+    {
+        var clone = new PartyMember();
+
+        // Clone base class state (Character and BattleCharacter)
+        base.CloneInto(clone);
+
+        // Copy PartyMember-specific fields
+        clone.possibleClasses = possibleClasses;
+        clone.defaultBattlePosition = defaultBattlePosition;
+        clone.attackPerRoundLevel = attackPerRoundLevel;
+        clone.hitPointsPerLevel = hitPointsPerLevel;
+        clone.spellPointsPerLevel = spellPointsPerLevel;
+        clone.spellLearningPointsPerLevel = spellLearningPointsPerLevel;
+        clone.spellLearningPoints = spellLearningPoints;
+        clone.conversationData = conversationData;
+
+        // Copy properties
+        clone.ExperiencePoints = ExperiencePoints;
+        clone.LearnedSpellSchools = LearnedSpellSchools;
+        clone.LearnedWhiteSpells = LearnedWhiteSpells;
+        clone.LearnedGraySpells = LearnedGraySpells;
+        clone.LearnedBlackSpells = LearnedBlackSpells;
+        clone.LearnedSpecialSpells = LearnedSpecialSpells;
+
+        return clone;
+    }
 }

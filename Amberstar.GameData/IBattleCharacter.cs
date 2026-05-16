@@ -79,4 +79,12 @@ public static class BattleCharacterExtensions
         return (battleCharacter.PhysicalConditions & conditions.ToPhysical()) != 0 ||
                (battleCharacter.MentalConditions & conditions.ToMental()) != 0;
     }
+
+    public static bool CanMove(this IBattleCharacter battleCharacter, bool inBattle)
+    {
+        if (inBattle)
+            return !battleCharacter.HasAnyConditionOf(Condition.Stunned | Condition.Sleeping | Condition.Petrified | Condition.Mad | Condition.Overloaded | Condition.Panicked);
+
+        return !battleCharacter.HasAnyConditionOf(Condition.Overloaded);
+    }
 }

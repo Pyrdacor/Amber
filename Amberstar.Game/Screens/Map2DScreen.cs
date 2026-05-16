@@ -391,9 +391,16 @@ internal class Map2DScreen : ButtonGridScreen
 			buttonGrid.SetButton(5, ButtonType.ArrowRight);
 			// Lower row
 			buttonGrid.SetButton(6, ButtonType.ArrowDownLeft);
-			buttonGrid.EnableButton(6, true);
 			buttonGrid.SetButton(7, ButtonType.ArrowDown);
 			buttonGrid.SetButton(8, ButtonType.ArrowDownRight);
+
+			bool enableMoveButtons = game!.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
+
+            for (int i = 0; i< 9; i++)
+			{
+				if (i != 4)
+					buttonGrid.EnableButton(i, enableMoveButtons);
+			}
 		}
 		else // Actions
 		{
@@ -741,8 +748,11 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		if (key >= Key.F1 && key <= Key.F6)
 		{
-			game!.State.CurrentInventoryIndex = key - Key.F1;
-            game.ScreenHandler.PushScreen(ScreenType.Inventory);
+			int characterSlotIndex = 1 + (key - Key.F1);
+
+            if (game!.State.HasPartyMemberInSlot(characterSlotIndex))
+				game!.OpenInventory(1 + (key - Key.F1));
+
             return;
         }
 
@@ -774,12 +784,18 @@ internal class Map2DScreen : ButtonGridScreen
                 game.Cursor.CursorType = CursorType.Sword;
                 game.UntrapMouse();                
             }
-
-            if (ButtonGrid.Area.Contains(position))
+            else if (ButtonGrid.Area.Contains(position))
 			{
 				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
 				RequestButtonSetup();
             }
+			else
+			{
+				int? characterSlotIndex = game.TestPartyPortraitHit(position);
+
+				if (characterSlotIndex != null)
+					game.OpenInventory(characterSlotIndex.Value);
+			}
 		}
 		else
 		{

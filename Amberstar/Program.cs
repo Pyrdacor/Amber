@@ -71,6 +71,7 @@ namespace Amberstar
 			WriteTexts(AssetType.PuzzleText, 1, 1, false, true);
 			WriteTexts(AssetType.ItemText, 2, 1, false, true);
             WriteTexts(AssetType.UIText, Enum.GetValues<UIText>().Length);
+            WriteTexts(AssetType.Message, 202);
 
             byte[] uiPalette = assetProvider.PaletteLoader.LoadBuiltinPalette(BuiltinPalette.UI).GetData();
             byte[] itemPalette = assetProvider.PaletteLoader.LoadBuiltinPalette(BuiltinPalette.Item).GetData();

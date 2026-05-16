@@ -21,6 +21,19 @@ partial class Game
 			layoutSprite.PaletteIndex = paletteIndex.Value;
 	}
 
+    internal int? TestPartyPortraitHit(Position position)
+    {
+        if (position.X < 16 || position.X >= 304 || position.Y < 1 || position.Y >= 35)
+            return null;
+
+        int slotIndex = 1 + (position.X - 16) / 48;
+
+        if (State.HasPartyMemberInSlot(slotIndex))
+            return slotIndex;
+
+        return null;
+    }
+
     internal void ShowTextMessage(IText text, Action? nextAction = null)
     {
         CurrentText = text;

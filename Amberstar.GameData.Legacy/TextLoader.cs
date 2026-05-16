@@ -44,7 +44,7 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
 			case AssetType.PuzzleText:
                 singleString = false;
 				break;
-            case AssetType.InventoryMessage:
+            case AssetType.Message:
                 containerAsset = true;                
 				break;
             case AssetType.UIText:
@@ -56,28 +56,36 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
 
 		if (containerAsset)
 		{
-            // In this case we use index 1 to store the container and the text index
-			// is the text block index inside the container.
-            var containerAssetIdentifier = new AssetIdentifier(assetIdentifier.Type, 1);
+			int textBlockIndex = assetIdentifier.Index;
 
-            if (!texts.TryGetValue(containerAssetIdentifier, out var container))
+			for (int containerIndex = 1; containerIndex < 100; containerIndex++)
 			{
-                var asset = assetProvider.GetAsset(containerAssetIdentifier);
+				var containerAssetIdentifier = new AssetIdentifier(assetIdentifier.Type, containerIndex);
 
-                if (asset == null)
-                    throw new AmberException(ExceptionScope.Data, $"Asset {assetIdentifier} not found.");
+				if (!texts.TryGetValue(containerAssetIdentifier, out var container))
+				{
+					var asset = assetProvider.GetAsset(containerAssetIdentifier);
 
-                container = Text.Load(asset, textFragments);
+					if (asset == null)
+						throw new AmberException(ExceptionScope.Data, $"Asset {assetIdentifier} not found.");
 
-                texts.Add(containerAssetIdentifier, container);
-            }
+					container = Text.Load(asset, textFragments);
 
-            return container.GetTextBlock(assetIdentifier.Index);
+					texts.Add(containerAssetIdentifier, container);
+				}
+
+				if (textBlockIndex < container.TextBlockCount)
+				{
+					return container.GetTextBlock(textBlockIndex);
+				}
+
+				textBlockIndex -= container.TextBlockCount;
         }
+		}
 
-		if (!texts.TryGetValue(assetIdentifier, out var text))
+        if (!texts.TryGetValue(assetIdentifier, out var text))
 		{
-			var asset = assetProvider.GetAsset(assetIdentifier);
+            var asset = assetProvider.GetAsset(assetIdentifier);
 
 			if (asset == null)
 				throw new AmberException(ExceptionScope.Data, $"Asset {assetIdentifier} not found.");

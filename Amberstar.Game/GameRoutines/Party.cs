@@ -1,4 +1,5 @@
-﻿using Amberstar.GameData;
+﻿using Amberstar.Game.Screens;
+using Amberstar.GameData;
 
 namespace Amberstar.Game;
 
@@ -7,8 +8,6 @@ public delegate void AsyncForeachPartyMemberAction(IPartyMember partyMember, Act
 
 partial class Game
 {
-    public IEnumerable<IPartyMember> PartyMembers => State.GetPartyMembers(this);
-
     public void ForeachPartyMember(ForeachPartyMemberAction action, bool alive, Gender? allowedGenders = null)
     {
         ForeachPartyMember(action, alive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None, allowedGenders);
@@ -21,7 +20,7 @@ partial class Game
 
     public void ForeachPartyMember(ForeachPartyMemberAction action, Condition disallowedConditions = Condition.None, Gender? allowedGenders = null)
     {
-        foreach (var partyMember in PartyMembers)
+        foreach (var partyMember in State.PartyMembers)
         {
             if (!partyMember.HasAnyConditionOf(disallowedConditions) && (allowedGenders == null || partyMember.Gender == allowedGenders))
                 action(partyMember);
@@ -30,7 +29,7 @@ partial class Game
 
     public void ForeachPartyMember(AsyncForeachPartyMemberAction action, Action? finishedHandler, Condition disallowedConditions = Condition.None, Gender? allowedGenders = null)
     {
-        var partyMembers = new Queue<IPartyMember>(PartyMembers.Where(p => !p.HasAnyConditionOf(disallowedConditions) && (allowedGenders == null || p.Gender == allowedGenders)));
+        var partyMembers = new Queue<IPartyMember>(State.PartyMembers.Where(p => !p.HasAnyConditionOf(disallowedConditions) && (allowedGenders == null || p.Gender == allowedGenders)));
 
         void ProcessNext()
         {
@@ -45,5 +44,11 @@ partial class Game
         }
 
         ProcessNext();
+    }
+
+    public void OpenInventory(int characterSlotIndex)
+    {
+        State.SetCurrentInventory(characterSlotIndex);
+        ScreenHandler.PushScreen(ScreenType.Inventory);
     }
 }

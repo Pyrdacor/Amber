@@ -3,7 +3,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy
 {
-	public class PersonLoader(Amber.Assets.Common.IAssetProvider assetProvider, Lazy<ITextLoader> textLoader) : IPersonLoader
+	public class PersonLoader(Amber.Assets.Common.IAssetProvider assetProvider, Lazy<ITextLoader> textLoader, ICollection<int> personKeys) : IPersonLoader
     {
 		readonly Dictionary<int, IPerson> persons = [];
 
@@ -24,5 +24,21 @@ namespace Amberstar.GameData.Legacy
 
 			return person;
 		}
-	}
+
+        public Dictionary<int, IPartyMember> GetPartyMemberCopies()
+        {
+            IEnumerable<(int Index, IPartyMember PartyMember)> GetCopies()
+            {
+                foreach (var key in personKeys)
+                {
+                    var person = LoadPerson(key);
+
+                    if (person is IPartyMember partyMember)
+                        yield return (key, partyMember.Clone());
+                }
+            }
+
+            return GetCopies().ToDictionary(x => x.Index, x => x.PartyMember);
+        }
+    }
 }

@@ -39,6 +39,8 @@ public interface IItem
     word BuyPrice { get; }
     word Weight { get; }
     word NameIndex { get; }
+
+    IItem Clone();
 }
 
 public static class ItemExtensions

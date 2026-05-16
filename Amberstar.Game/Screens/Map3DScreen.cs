@@ -433,14 +433,21 @@ internal class Map3DScreen : ButtonGridScreen
 			buttonGrid.SetButton(2, ButtonType.TurnRight);
 			// Middle row
 			buttonGrid.SetButton(3, ButtonType.StrafeLeft);
-			buttonGrid.EnableButton(3, true);
 			buttonGrid.SetButton(4, ButtonType.Sleep);
 			buttonGrid.SetButton(5, ButtonType.StrafeRight);
 			// Lower row
 			buttonGrid.SetButton(6, ButtonType.RotateLeft);
 			buttonGrid.SetButton(7, ButtonType.MoveBackward);
 			buttonGrid.SetButton(8, ButtonType.RotateRight);
-		}
+
+            bool enableMoveButtons = game!.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
+
+            for (int i = 0; i < 9; i++)
+            {
+                if (i != 4)
+                    buttonGrid.EnableButton(i, enableMoveButtons);
+            }
+        }
 		else // Actions
 		{
 			// Upper row
@@ -773,9 +780,12 @@ internal class Map3DScreen : ButtonGridScreen
 	{
         if (key >= Key.F1 && key <= Key.F6)
         {
-            game!.State.CurrentInventoryIndex = key - Key.F1;
-            game.ScreenHandler.PushScreen(ScreenType.Inventory);
-			return;
+            int characterSlotIndex = 1 + (key - Key.F1);
+
+            if (game!.State.HasPartyMemberInSlot(characterSlotIndex))
+                game!.OpenInventory(1 + (key - Key.F1));
+
+            return;
         }
 
         CheckMove();
@@ -790,7 +800,14 @@ internal class Map3DScreen : ButtonGridScreen
 				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
 				RequestButtonSetup();
 			}
-		}
+            else
+            {
+                int? characterSlotIndex = game!.TestPartyPortraitHit(position);
+
+                if (characterSlotIndex != null)
+                    game.OpenInventory(characterSlotIndex.Value);
+            }
+        }
 		else
 		{
 			mouseDown = true;

@@ -3,4 +3,6 @@
 public interface IPersonLoader
 {
 	IPerson LoadPerson(int index);
+
+	Dictionary<int, IPartyMember> GetPartyMemberCopies();
 }

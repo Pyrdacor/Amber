@@ -42,14 +42,7 @@ public partial class Game : IDisposable
 		PaletteColorProvider = paletteColorProvider;
 		this.audioOutput = audioOutput;
         ScreenHandler = new(this);
-		try
-		{
-			State = new(assetProvider.SavegameLoader.LoadSavegame());
-		}
-		catch
-		{
-			State = new();
-		}
+		State = new(assetProvider.SavegameLoader.LoadSavegame(), assetProvider);
 		EventHandler = new(this);
 		TextManager = new(this, AssetProvider.FontLoader.LoadFont(), fontInfoProvider);
 		Time = new(this);
@@ -65,7 +58,7 @@ public partial class Game : IDisposable
 		layoutSprite = CreateSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 0, 14)!;
 
 		// Show party member (and empty) slots
-		var partyMemberSlots = State.GetPartyMembersWithSlot(this);
+		var partyMemberSlots = State.PartyMembersWithSlot;
 
 		foreach (var partyMemberSlot in partyMemberSlots)
 		{

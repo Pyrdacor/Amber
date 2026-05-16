@@ -27,6 +27,7 @@ public enum ScreenType
 internal abstract class Screen
 {
 	Action? closeAction;
+	Game? game;
 
 	public abstract ScreenType Type { get; }
 
@@ -34,7 +35,7 @@ internal abstract class Screen
 
 	public virtual void Init(Game game)
 	{
-		// default: empty
+		this.game = game;
 	}
 
 	public virtual void Destroy(Game game)
@@ -79,7 +80,10 @@ internal abstract class Screen
 
 	public virtual void KeyChar(char ch, KeyModifiers keyModifiers)
 	{
-		// default: empty
+		if (keyModifiers == KeyModifiers.None && ch >= '1' && ch <= '6')
+		{
+			game!.State.SetActivePartyMember(ch - '0');
+        }
 	}
 
 	public virtual void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
@@ -147,7 +151,8 @@ internal class ScreenHandler(Game game) : IDisposable
 		{
 			ScreenType.Map2D => new Map2DScreen(),
 			ScreenType.Map3D => new Map3DScreen(),
-			ScreenType.PictureText => new PictureTextScreen(),
+            ScreenType.Door => new DoorScreen(),
+            ScreenType.PictureText => new PictureTextScreen(),
 			ScreenType.TextBox => new TextBoxScreen(),
             ScreenType.Inventory => new InventoryScreen(),
             ScreenType.CharacterStats => new CharacterStatsScreen(),

@@ -28,4 +28,6 @@ public interface IPartyMember : IBattleCharacter, IPerson
      * -  SP += (TotalINT / 20) + SPPerLvl
      * -  SLP += (TotalINT / 20) + SLPPerLvl
      */
+
+    IPartyMember Clone();
 }

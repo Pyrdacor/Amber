@@ -292,8 +292,12 @@ namespace Amberstar.GameData.Legacy
                 PlaceNames[i] = new DataReader(dataReader.ReadBytes(30));
             #endregion
             #region Messages
-            // The inventory messages directly follow the place names.
-            InventoryMessageData = new DataReader(Text.DetermineLengthAndReadAsBytes(dataReader));
+            // There are 8 message files (CODE0001.SYS to CODE0008.SYS) which contain the messages for inventory, places, etc.
+            // The inventory messages [CODE0001.SYS] directly follow the place names.
+            MessageData = new IDataReader[8];
+            
+            for (int i = 0; i < MessageData.Length; i++)
+                MessageData[i] = new DataReader(Text.DetermineLengthAndReadAsBytes(dataReader));
             #endregion
             #region Music
             if (!dataSeeker(EmbeddedDataOffset.Music, dataReader))
@@ -433,6 +437,6 @@ namespace Amberstar.GameData.Legacy
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;
         public Dictionary<int, IDataReader> UITexts { get; } = [];
-		public IDataReader InventoryMessageData { get; }
+        public IDataReader[] MessageData { get; } = [];
     }
 }

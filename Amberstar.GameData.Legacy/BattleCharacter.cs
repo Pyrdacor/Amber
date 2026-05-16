@@ -132,6 +132,38 @@ internal class BattleCharacter : Character, IBattleCharacter
         character.SpellPoints = new(currentSpellPoints, maxSpellPoints, bonusSpellPoints);
     }
 
+    protected void CloneInto(BattleCharacter character)
+    {
+        // Clone base character fields
+        base.CloneInto(character);
+
+        // Simple scalar properties
+        character.UsedHands = UsedHands;
+        character.UsedFingers = UsedFingers;
+        character.Defense = Defense;
+        character.Damage = Damage;
+        character.BonusDefense = BonusDefense;
+        character.BonusDamage = BonusDamage;
+        character.PhysicalConditions = PhysicalConditions;
+        character.MentalConditions = MentalConditions;
+        character.MagicBonusWeapon = MagicBonusWeapon;
+        character.MagicBonusArmor = MagicBonusArmor;
+        character.AttacksPerRound = AttacksPerRound;
+
+        // Copy hit/spell points
+        character.HitPoints = HitPoints.Copy();
+        character.SpellPoints = SpellPoints.Copy();
+
+        // Copy dictionaries
+        character.skills.Clear();
+        foreach (var kv in skills)
+            character.skills[kv.Key] = kv.Value.Copy();
+
+        character.attributes.Clear();
+        foreach (var kv in attributes)
+            character.attributes[kv.Key] = kv.Value.Copy();
+    }
+
     public byte UsedHands { get; set; }
     public byte UsedFingers { get; set; }
     public byte Defense { get; set; }

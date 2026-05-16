@@ -73,4 +73,46 @@ internal class Item : IItem
     public required word Weight { get; init; }
 
     public required word NameIndex { get; init; }
+
+    public IItem Clone()
+    {
+        return new Item
+        {
+            Index = Index,
+            Type = Type,
+            GraphicIndex = GraphicIndex,
+            UsedAmmoType = UsedAmmoType,
+            Genders = Genders,
+            Hands = Hands,
+            Fingers = Fingers,
+            HitPoints = HitPoints,
+            SpellPoints = SpellPoints,
+            Attribute = Attribute,
+            AttributeValue = AttributeValue,
+            Skill = Skill,
+            SkillValue = SkillValue,
+            SpellSchool = SpellSchool,
+            SpellIndex = SpellIndex,
+            SpellCharges = SpellCharges,
+            AmmoType = AmmoType,
+            Defense = Defense,
+            Damage = Damage,
+            EquipmentSlot = EquipmentSlot,
+            MagicWeaponBonus = MagicWeaponBonus,
+            MagicArmorBonus = MagicArmorBonus,
+            SpecialIndex = SpecialIndex,
+            InitialCharges = InitialCharges,
+            MaxCharges = MaxCharges,
+            Flags = Flags,
+            MalusSkill1 = MalusSkill1,
+            MalusSkill2 = MalusSkill2,
+            Malus1 = Malus1,
+            Malus2 = Malus2,
+            TextIndex = TextIndex,
+            UsableClasses = UsableClasses,
+            BuyPrice = BuyPrice,
+            Weight = Weight,
+            NameIndex = NameIndex
+        };
+    }
 }

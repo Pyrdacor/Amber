@@ -83,7 +83,19 @@ internal class ItemContainer
         }
     }
 
-	public int ItemCount { get; private set; }
+	public bool Visible
+	{
+		get => sprite?.Visible ?? false;
+		set
+		{
+			if (sprite != null)
+				sprite.Visible = value;
+			if (brokenOverlay != null)
+				brokenOverlay.Visible = value;
+		}
+    }
+
+    public int ItemCount { get; private set; }
 
 	public IItem? Item { get; private set; }
 

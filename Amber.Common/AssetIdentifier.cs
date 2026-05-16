@@ -19,9 +19,9 @@
 		ItemText,
 		PuzzleText, // Amberstar assembling texts
 		UIText,
-		InventoryMessage,
-		// Graphics
-		Layout,
+		Message,
+        // Graphics
+        Layout,
 		UIGraphic,
 		Button,
 		StatusIcon,

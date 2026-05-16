@@ -42,7 +42,8 @@ namespace Amberstar.Game.Events
 			return @event switch
 			{
 				IMapExitEvent mapExitEvent => new MapExitEvent(mapExitEvent, eventIndex),
-				IShowPictureTextEvent showPictureTextEvent => new ShowPictureTextEvent(showPictureTextEvent, eventIndex),
+                IDoorEvent doorEvent => new DoorEvent(doorEvent, eventIndex),
+                IShowPictureTextEvent showPictureTextEvent => new ShowPictureTextEvent(showPictureTextEvent, eventIndex),
 				ITeleporterEvent teleportEvent => new TeleporterEvent(teleportEvent, eventIndex),
 				ITravelExitEvent travelExitEvent => new TravelExitEvent(travelExitEvent, eventIndex),
 				IWindGateEvent windGateEvent => new WindGateEvent(windGateEvent, eventIndex),

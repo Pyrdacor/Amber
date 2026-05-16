@@ -42,6 +42,7 @@ internal class ButtonGrid
 			return;
 
 		buttons[index].SetType(buttonType);
+		buttons[index].Disabled = false; // When setting a button, also enable it
     }
 
 	public void EnableButton(int index, bool enable)
