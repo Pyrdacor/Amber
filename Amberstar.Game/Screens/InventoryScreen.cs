@@ -5,11 +5,13 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal class InventoryScreen : ButtonGridScreen
+internal class InventoryScreen : ItemGridScreen
 {
 	Game? game;
     IPartyMember? partyMember;
     bool itemDragged = false;
+    bool waitForClick = false;
+    bool closeAfterClick = false;
     readonly Action draggingStartedHandler;
     readonly Action draggingEndedHandler;
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
@@ -61,6 +63,8 @@ internal class InventoryScreen : ButtonGridScreen
     public override ScreenType Type { get; } = ScreenType.Inventory;
 
     protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+
+    internal override ItemContainer[] ItemContainers => [.. equippedItemSlots.Values, .. inventoryItemSlots];
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
@@ -241,6 +245,14 @@ internal class InventoryScreen : ButtonGridScreen
 
     public override void KeyDown(Key key, KeyModifiers keyModifiers)
 	{
+        if (waitForClick)
+        {
+            if (key == Key.Space || key == Key.Escape)
+                EndClickWait();
+
+            return;
+        }
+
         if (key == Key.Escape)
             game!.ScreenHandler.PopScreen();
 
@@ -249,6 +261,12 @@ internal class InventoryScreen : ButtonGridScreen
 
 	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
+        if (waitForClick)
+        {
+            EndClickWait();
+            return;
+        }
+
         if (itemDragged && buttons == MouseButtons.Right)
         {
             ItemContainer.AbortDrag();
@@ -512,7 +530,18 @@ internal class InventoryScreen : ButtonGridScreen
         slot.ReduceItemCount(1);
     }
 
-    private void ShowMessage(Message messageIndex, bool waitForClick = true)
+    private void EndClickWait()
+    {
+        waitForClick = false;
+        game!.Cursor.CursorType = CursorType.Sword;
+        HideMessage();
+        game.UntrapMouse();
+
+        if (closeAfterClick)
+            game!.ScreenHandler.PopScreen();
+    }
+
+    internal override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
         message?.Delete();
 
@@ -520,61 +549,34 @@ internal class InventoryScreen : ButtonGridScreen
         message.ShowInArea(MessageDisplayArea, 20, TextAlignment.Left);
 
         // TODO: Scrolling
+
+        this.waitForClick = waitForClick;
+        this.closeAfterClick = closeAfterClick;
+
+        if (waitForClick)
+        {
+            game.Cursor.CursorType = CursorType.Zzz;
+            game.TrapMouse(MessageDisplayArea);
+        }
     }
 
-    private void HideMessage()
+    internal override void HideMessage()
     {
         message?.Delete();
         message = null;
     }
 
-    internal class DropItemScreen : Screen
+    internal override void PickItem(int? index)
     {
-        Game? game;
-        InventoryScreen? inventoryScreen;
+        // TODO
+    }
 
-        public override bool Transparent => true;
-
+    internal class DropItemScreen : ItemPickerScreen<InventoryScreen>
+    {
         public override ScreenType Type { get; } = ScreenType.InventoryDropItem;
 
-        public override void Init(Game game)
-        {
-            base.Init(game);
+        public override Message Message { get; } = Message.DropWhichItem;
 
-            this.game = game;
-
-            // Note: During Init the ActiveScreen is still the last one.
-            inventoryScreen = game.ScreenHandler.ActiveScreen as InventoryScreen;
-        }
-
-        public override void Open(Game game, Action? closeAction)
-        {
-            base.Open(game, closeAction);
-
-            inventoryScreen?.ShowMessage(Message.DropWhichItem);
-        }
-
-        public override void Close(Game game)
-        {
-            inventoryScreen?.HideMessage();
-
-            base.Close(game);
-        }
-
-        public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
-        {
-            base.MouseDown(position, buttons, keyModifiers);
-        }
-
-        public override void KeyDown(Key key, KeyModifiers keyModifiers)
-        {
-            if (key == Key.Escape)
-            {
-                game?.ScreenHandler.PopScreen();
-                return;
-            }
-
-            base.KeyDown(key, keyModifiers);
-        }
+        public override Rect MouseTrapArea { get; } = MessageDisplayArea;
     }
 }

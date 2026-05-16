@@ -5,23 +5,18 @@ using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Amberstar.Game.Screens;
 
-internal class DoorScreen : ButtonGridScreen
+internal class DoorScreen : ItemGridScreen
 {
     Game? game;
     bool trapFound = false;
     bool trapDisarmed = false;
-    bool itemDragged = false;
-    bool pickItem = false;
     bool waitForClick = false;
     bool closeAfterClick = false;
     bool doorOpened = false;
     int lockpickReduction = 0;
-    readonly Action draggingStartedHandler;
-    readonly Action draggingEndedHandler;
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
     readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
     readonly static Rect MessageDisplayArea = new(112, 49, 192, 48);
@@ -41,23 +36,11 @@ internal class DoorScreen : ButtonGridScreen
         }
     }
 
-    public DoorScreen()
-    {
-        draggingStartedHandler = () =>
-        {
-            itemDragged = true;
-            game!.Cursor.Visible = false;
-        };
-        draggingEndedHandler = () =>
-        {
-            itemDragged = false;
-            game!.Cursor.Visible = true;
-        };
-    }
-
     public override ScreenType Type { get; } = ScreenType.Door;
 
     protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.LockedDoor) ?? 0;
+
+    internal override ItemContainer[] ItemContainers => inventoryItemSlots;
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
@@ -83,20 +66,6 @@ internal class DoorScreen : ButtonGridScreen
         buttonGrid.EnableButton(1, hasInventoryItems);
         buttonGrid.EnableButton(3, !trapFound && !partyMember.MentalConditions.HasFlag(MentalCondition.Blind));
         buttonGrid.EnableButton(6, trapFound && !trapDisarmed && !partyMember.MentalConditions.HasFlag(MentalCondition.Blind));
-    }
-
-    private void SetupEventHandlers()
-    {
-        ItemContainer.DraggingStarted += draggingStartedHandler;
-        ItemContainer.DraggingEnded += draggingEndedHandler;
-        game!.State.ActivePartyMemberChanged += UpdateItems;
-    }
-
-    private void CleanUpEventHandlers()
-    {
-        ItemContainer.DraggingStarted -= draggingStartedHandler;
-        ItemContainer.DraggingEnded -= draggingEndedHandler;
-        game!.State.ActivePartyMemberChanged -= UpdateItems;
     }
 
     public override void Init(Game game)
@@ -137,11 +106,10 @@ internal class DoorScreen : ButtonGridScreen
 
         trapFound = false;
         trapDisarmed = false;
-        itemDragged = false;
-        pickItem = false;
-
-        UpdateItems();
-        SetupEventHandlers();
+        waitForClick = false;
+        closeAfterClick = false;
+        doorOpened = false;
+        lockpickReduction = 0;
     }
 
     private void CleanUpItems()
@@ -153,9 +121,6 @@ internal class DoorScreen : ButtonGridScreen
     public override void Close(Game game)
     {
         HideMessage();
-
-        CleanUpEventHandlers();
-
         CleanUpItems();
 
         if (image != null)
@@ -169,16 +134,35 @@ internal class DoorScreen : ButtonGridScreen
             // Note: At this point, ActiveScreen is already the previous one!
             if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
                 map2dScreen.ResetPartyPosition();
-            // TODO: 3D map as well?
+            else
+                game.State.ResetPartyPosition();
         }
 
         base.Close(game);
+
+        if (doorOpened)
+        {
+            var extraEvent = doorEvent?.OpenedEventIndex;
+
+            if (extraEvent != null && extraEvent != 0)
+            {
+                IEventProvider eventProvider;
+
+                if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
+                    eventProvider = map2dScreen.Map;
+                else if (game!.ScreenHandler.ActiveScreen is Map3DScreen map3dScreen)
+                    eventProvider = map3dScreen.Map;
+                else
+                    return;
+
+                var @event = eventProvider.Events[extraEvent.Value - 1];
+                game.EventHandler.HandleEvent(EventTrigger.Move, (@event as Event)!, eventProvider);
+            }
+        }
     }
 
     public override void ScreenPushed(Game game, Screen screen)
     {
-        CleanUpEventHandlers();
-
         if (!screen.Transparent)
         {
             if (message != null)
@@ -189,14 +173,15 @@ internal class DoorScreen : ButtonGridScreen
             inventoryItemSlots.ToList().ForEach(slot => slot.Visible = false);
         }
 
+        if (screen is UseItemScreen)
+            UpdateItems();
+
         base.ScreenPushed(game, screen);
     }
 
     public override void ScreenPopped(Game game, Screen screen)
     {
         base.ScreenPopped(game, screen);
-
-        SetupEventHandlers();
 
         if (!screen.Transparent)
         {
@@ -224,7 +209,9 @@ internal class DoorScreen : ButtonGridScreen
     {
         if (waitForClick)
         {
-            EndClickWait();
+            if (key == Key.Space || key == Key.Escape)
+                EndClickWait();
+
             return;
         }
 
@@ -242,34 +229,12 @@ internal class DoorScreen : ButtonGridScreen
             return;
         }
 
-        if (itemDragged && buttons == MouseButtons.Right)
-        {
-            ItemContainer.AbortDrag();
-            return;
-        }
-
-        foreach (var inventorySlot in inventoryItemSlots)
-        {
-            if (inventorySlot.MouseClick(position, buttons, keyModifiers))
-                return;
-        }
-
         base.MouseDown(position, buttons, keyModifiers);
-    }
-
-    public override void MouseMove(Position position, MouseButtons buttons)
-    {
-        base.MouseMove(position, buttons);
-
-        ItemContainer.UpdateDragPosition(game!, position);
     }
 
     public void UpdateItems()
     {
         CleanUpItems();
-
-        if (!pickItem)
-            return;
 
         var partyMember = game!.State.ActivePartyMember;
 
@@ -297,7 +262,7 @@ internal class DoorScreen : ButtonGridScreen
                 TryPickLock();
                 break;
             case 1: // Use item
-                // TODO
+                game?.ScreenHandler.PushScreen(ScreenType.DoorUseItem);
                 break;
             case 2: // Exit
                 game?.ScreenHandler.PopScreen();
@@ -323,7 +288,7 @@ internal class DoorScreen : ButtonGridScreen
         // TODO
     }
 
-    private void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
+    internal override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
         message?.Delete();
 
@@ -342,7 +307,7 @@ internal class DoorScreen : ButtonGridScreen
         }
     }
 
-    private void HideMessage()
+    internal override void HideMessage()
     {
         message?.Delete();
         message = null;
@@ -442,5 +407,66 @@ internal class DoorScreen : ButtonGridScreen
     private void TriggerTrap()
     {
         game!.TriggerTrap(doorEvent!.TrapType, doorEvent!.TrapDamage);
+    }
+
+    internal override void PickItem(int? index)
+    {
+        if (index == null)
+        {
+            CleanUpItems();
+            return;
+        }
+
+        var item = inventoryItemSlots[index.Value];
+
+        if (item.Item != null && item.Item.Index == doorEvent!.ItemIndex)
+        {
+            // Is it the right key/item?
+
+            if (item.Item.Flags.HasFlag(ItemFlags.DestroyAfterUsage) && doorEvent.SaveEvent)
+            {
+                // TODO: Move this weight update logic (and similar logic) to party functions
+                game!.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
+                item.ReduceItemCount(1, true);
+
+                doorOpened = true;
+                game.SaveEvent(doorEvent!.Index);
+                ShowMessage(Message.LockOpened, true, true);
+            }
+        }
+        else if (item.Item != null && item.Item.SpellSchool == SpellSchool.Special && item.Item.SpellIndex == (byte)SpecialSpell.PickLock)
+        {
+            // Is it a lockpick?
+
+            // TODO: Move this weight update logic (and similar logic) to party functions
+            game!.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
+            item.ReduceItemCount(1, true, CleanUpItems);
+
+            if (doorEvent!.LockpickReduction >= 100) // Fully locked?
+            {
+                RequestButtonSetup(); // use item button might be disabled now
+                ShowMessage(Message.LockpickBreaks);
+            }
+            else
+            {
+                doorOpened = true;
+                game.SaveEvent(doorEvent!.Index);
+                ShowMessage(Message.LockpickOpensLock, true, true);
+            }
+        }
+        else
+        {
+            // Reopen item selection
+            game?.ScreenHandler.PushScreen(ScreenType.DoorUseItem);
+        }
+    }
+
+    internal class UseItemScreen : ItemPickerScreen<DoorScreen>
+    {
+        public override ScreenType Type { get; } = ScreenType.DoorUseItem;
+
+        public override Rect MouseTrapArea { get; } = MessageDisplayArea;
+
+        public override Message Message { get; } = Message.UseWhichItem;
     }
 }

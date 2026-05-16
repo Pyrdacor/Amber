@@ -13,6 +13,8 @@ namespace Amberstar.Game.Events
 
         public ushort ItemIndex => @event.ItemIndex;
 
+        public byte? OpenedEventIndex => @event is IDoorExitEvent doorExitEvent ? doorExitEvent.OpenedEventIndex : null;
+
         // We need to save it only if the door was opened!
         public override bool AutoSave => false;
 

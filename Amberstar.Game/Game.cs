@@ -18,7 +18,7 @@ public partial class Game : IDisposable
 	record TimedAction(long Key, Action Action);
 
 	public const int MaxPartyMembers = 6;
-	const long TicksPerSecond = 60;
+	public const long TicksPerSecond = 60;
 	const long DefaultFadeTime = 1000;
 	double totalTime = 0.0;
 	long lastGameTicks = 0;

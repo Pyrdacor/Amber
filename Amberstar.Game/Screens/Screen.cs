@@ -21,6 +21,8 @@ public enum ScreenType
 	Place,
     // Inventory sub screens
     InventoryDropItem,
+	// Door sub screens
+	DoorUseItem,
     // TODO ...
 }
 
@@ -160,6 +162,8 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.Place => new PlaceScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
+			// Door sub screens
+			ScreenType.DoorUseItem => new DoorScreen.UseItemScreen(),
             _ => throw new NotImplementedException()
 		};
 

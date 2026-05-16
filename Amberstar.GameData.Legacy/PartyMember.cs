@@ -67,7 +67,7 @@ internal class PartyMember : BattleCharacter, IPartyMember
     public dword LearnedGraySpells { get; set; }
     public dword LearnedBlackSpells { get; set; }
     public dword LearnedSpecialSpells { get; set; }
-    public dword TotalWeight { get; }
+    public dword TotalWeight { get; set; }
     public IConversationData ConversationData { get => conversationData ?? throw new NullReferenceException("conversationData is null"); init => conversationData = value; }
 
 

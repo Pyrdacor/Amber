@@ -20,6 +20,7 @@ internal class ItemContainer
 	Position position;
     ISprite? sprite;
 	ISprite? brokenOverlay; // TODO
+	IAnimatedSprite? destroyAnimation;
 	// TODO: Item count display
 	byte paletteIndex;
 	byte displayLayer;
@@ -45,6 +46,8 @@ internal class ItemContainer
 				sprite.PaletteIndex = value;
 			if (brokenOverlay != null)
                 brokenOverlay.PaletteIndex = value;
+			if (destroyAnimation != null)
+				destroyAnimation.PaletteIndex = value;
 		}
 	}
 
@@ -92,7 +95,10 @@ internal class ItemContainer
 				sprite.Visible = value;
 			if (brokenOverlay != null)
 				brokenOverlay.Visible = value;
-		}
+			if (destroyAnimation != null)
+                destroyAnimation.Visible = value;
+
+        }
     }
 
     public int ItemCount { get; private set; }
@@ -250,19 +256,77 @@ internal class ItemContainer
         }
     }
 
-    public void ReduceItemCount(int amount)
+    public void ReduceItemCount(int amount, bool playAnimation = false, Action? animationFinishedHandler = null)
     {
-        if (amount >= ItemCount)
-        {
-            ClearItem();
-            return;
+		bool slotCleared = amount >= ItemCount;
+
+        void Reduce()
+		{
+			if (slotCleared)
+			{
+				ClearItem();
+				return;
+			}
+
+			ItemCount -= amount;
+
+			// TODO: update item count display
+
+			SlotChanged?.Invoke();
+		}
+
+		if (playAnimation)
+		{
+			bool inputWasEnbaled = game.InputEnabled;
+			bool wasPaused = game.Paused;
+
+			game.EnableInput(false);
+			game.Pause();
+
+			var layer = game.GetRenderLayer(Layer.UI);
+			var textureAtlas = layer.Config.Texture!;
+
+            destroyAnimation ??= layer.SpriteFactory!.CreateAnimated();
+            destroyAnimation.Position = Position;
+            destroyAnimation.Size = new(Width, Height);
+            destroyAnimation.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.CurseAnimation));
+            destroyAnimation.DisplayLayer = (byte)(sprite!.DisplayLayer + 5);
+            destroyAnimation.PaletteIndex = paletteIndex;
+			destroyAnimation.FrameCount = 16;
+			destroyAnimation.CurrentFrameIndex = 0;
+            destroyAnimation.Visible = true;
+
+			game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+
+            void NextFrame()
+			{
+				if (++destroyAnimation.CurrentFrameIndex == destroyAnimation.FrameCount)
+				{
+					destroyAnimation.Visible = false;
+                    Reduce();
+					if (!wasPaused)
+						game.Resume();
+					if (inputWasEnbaled)
+						game.EnableInput(true);
+                    animationFinishedHandler?.Invoke();
+                    return;
+				}
+				else if (slotCleared && destroyAnimation.CurrentFrameIndex == destroyAnimation.FrameCount / 2)
+				{
+					sprite.Visible = false;
+
+					if (brokenOverlay != null)
+						brokenOverlay.Visible = false;
+				}
+
+                game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+            }
+		}
+		else
+		{
+			Reduce();
+			animationFinishedHandler?.Invoke();
         }
-
-        ItemCount -= amount;
-
-        // TODO: update item count display
-
-        SlotChanged?.Invoke();
     }
 
     public void ClearItem()
@@ -280,6 +344,12 @@ internal class ItemContainer
 		{
             brokenOverlay.Visible = false;
             brokenOverlay = null;
+        }
+
+		if (destroyAnimation != null)
+		{
+            destroyAnimation.Visible = false;
+			destroyAnimation = null;
         }
 
         // TODO: item count display
@@ -334,6 +404,9 @@ internal class ItemContainer
 
         if (brokenOverlay != null)
             brokenOverlay.Position = position;
+
+		if (destroyAnimation != null)
+			destroyAnimation.Position = position;
 
         // TODO: item count display
     }
@@ -415,5 +488,10 @@ internal class ItemContainer
 	public void Destroy()
 	{
 		ClearItem();
+	}
+
+	public bool Contains(Position position)
+	{
+		return new Rect(this.position, new Size(Width, Height)).Contains(position);
 	}
 }

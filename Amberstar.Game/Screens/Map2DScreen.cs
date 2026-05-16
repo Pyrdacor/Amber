@@ -20,7 +20,7 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		const int WorldMapSong = 2;
 		IMap2D[] maps = [];
-		Dictionary<int, IMap2D> mapCache = [];
+		readonly Dictionary<int, IMap2D> mapCache = [];
 		List<IEvent> events = [];
 		Tile2D[] tiles = [];
 

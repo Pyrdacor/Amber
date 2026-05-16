@@ -15,7 +15,7 @@ public interface IPartyMember : IBattleCharacter, IPerson
     dword LearnedGraySpells { get; set; }
     dword LearnedBlackSpells { get; set; }
     dword LearnedSpecialSpells { get; set; }
-    dword TotalWeight { get; } // We should calculate it and only use it for display etc
+    dword TotalWeight { get; set; } // We should calculate it and only use it for display etc
 
     /*
      * Level Up:
