@@ -20,9 +20,10 @@ internal class HippelCosoSongAtari : HippelCosoSong
     internal class ChannelPlayerAtari : ChannelPlayer
     {
         bool useTone = true;
-        bool useNoise = false;        
+        bool useNoise = false;
         double tickAccumulator = 0.0;
         double blepPhase = 0.0;
+        double noiseAccumulator = 0.0;
         readonly VoiceHelper voiceHelper = new();
 
         public ChannelPlayerAtari()
@@ -33,10 +34,7 @@ internal class HippelCosoSongAtari : HippelCosoSong
 
         static int ConvertNoisePeriod(int period)
         {
-            period = ~(byte)period;
-            period &= 0x1f;
-
-            return period;
+            return (~period) & 0x1f;
         }
 
         public override void Reset()
@@ -51,13 +49,13 @@ internal class HippelCosoSongAtari : HippelCosoSong
         {
             double lpState = 0; // low pass
             int tonePeriod = 0;
-            static bool noiseEnabled = false;
-            static int noisePeriod;
-            static int noiseCounter;
-            static uint lfsr = 0x1FFFF;
-            static int noiseBit;
+            bool noiseEnabled = false;
+            int noisePeriod;
+            int noiseCounter;
+            uint lfsr = 0x1FFFF;
+            int noiseBit;
 
-            public static bool NoiseEnabled
+            public bool NoiseEnabled
             {
                 get => noiseEnabled;
                 set
@@ -78,13 +76,13 @@ internal class HippelCosoSongAtari : HippelCosoSong
                 }
             }
 
-            public static int NoisePeriod
+            public int NoisePeriod
             {
                 get => noisePeriod;
                 set
                 {
                     noisePeriod = Math.Clamp(value, 1, 31);
-                    noiseBit = 0;
+                    //noiseBit = 0;
 
                     if (noiseCounter <= 0)
                         noiseCounter = noisePeriod;
@@ -93,7 +91,15 @@ internal class HippelCosoSongAtari : HippelCosoSong
 
             public int Volume { get; set; } = 64;
 
-            public static void TickChip()
+            public void StepNoiseLfsr()
+            {
+                // 17-bit LFSR (x^17 + x^14 + 1) => taps bit0 xor bit3, shift right
+                uint newBit = (lfsr ^ (lfsr >> 3)) & 1u;
+                lfsr = (lfsr >> 1) | (newBit << 16);
+                noiseBit = (int)(lfsr & 1u);
+            }
+
+            public void TickChip()
             {
                 if (noiseEnabled)
                 {
@@ -101,15 +107,12 @@ internal class HippelCosoSongAtari : HippelCosoSong
                     {
                         noiseCounter += noisePeriod;
 
-                        // 17-bit LFSR (x^17 + x^14 + 1) => taps bit0 xor bit3, shift right
-                        uint newBit = (lfsr ^ (lfsr >> 3)) & 1u;
-                        lfsr = (lfsr >> 1) | (newBit << 16);
-                        noiseBit = (int)(lfsr & 1u);
+                        StepNoiseLfsr();
                     }
                 }
             }
 
-            public static int GetNoiseBit() => noiseEnabled ? noiseBit : 1;
+            public int GetNoiseBit() => noiseEnabled ? noiseBit : 1;
 
             public double LowPass(double s, double a)
             {
@@ -119,15 +122,17 @@ internal class HippelCosoSongAtari : HippelCosoSong
         }
 
         public override void SampleData(short[] buffer, double time,
-            Action<int, bool> enableChannel, bool firstChannel)
+            Action<int, bool> enableChannel)
         {
-            const double psgTicksPerSecond = 2_000_000.0 / 8.0;
+            const double psgTicksPerSecond = 2_000_000.0 / 16.0;
             double psgTicksPerSample = psgTicksPerSecond / SampleRate;
 
             const double timePerSample = 1000.0 / SampleRate;
 
-            bool wasEnabled = useTone || useNoise;
             bool noiseWasActive = useNoise;
+            bool wasEnabled = useTone || noiseWasActive;
+
+            var noisePeriodsCopy = new Queue<NoiseInfo>(noisePeriods);
 
             for (int i = 0; i < buffer.Length; i++)
             {
@@ -144,18 +149,18 @@ internal class HippelCosoSongAtari : HippelCosoSong
                     }
                 }
 
-                while (noisePeriods.Count != 0 && noisePeriods.Peek().Time <= time)
+                while (noisePeriodsCopy.Count != 0 && noisePeriodsCopy.Peek().Time <= time)
                 {
-                    var noiseInfo = noisePeriods.Dequeue();
+                    var noiseInfo = noisePeriodsCopy.Dequeue();
 
                     useNoise = noiseInfo.Period != -1;
 
                     if (useNoise)
-                        VoiceHelper.NoisePeriod = noiseInfo.Period;
+                        voiceHelper.NoisePeriod = noiseInfo.Period;
                 }
 
                 if (useNoise != noiseWasActive)
-                    VoiceHelper.NoiseEnabled = useNoise;
+                    voiceHelper.NoiseEnabled = useNoise;
 
                 bool isEnabled = useTone || useNoise;
 
@@ -168,19 +173,28 @@ internal class HippelCosoSongAtari : HippelCosoSong
                 }
                 else
                 {
-                    if (firstChannel)
+                    if (useNoise)
                     {
-                        tickAccumulator += psgTicksPerSample;
+                        /*tickAccumulator += psgTicksPerSample;
 
                         while (tickAccumulator >= 1.0)
                         {
                             VoiceHelper.TickChip();
                             tickAccumulator -= 1.0;
+                        }*/
+
+                        double noiseHz = psgTicksPerSecond / voiceHelper.NoisePeriod;
+                        noiseAccumulator += noiseHz / SampleRate;
+
+                        while (noiseAccumulator >= 1.0)
+                        {
+                            voiceHelper.StepNoiseLfsr();
+                            noiseAccumulator -= 1.0;
                         }
                     }
 
                     double s = GetSampleBlep(SampleRate, voiceHelper.TonePeriod,
-                        voiceHelper.Volume, VoiceHelper.GetNoiseBit());
+                        voiceHelper.Volume, voiceHelper.GetNoiseBit());
 
                     // Low-pass
                     s = voiceHelper.LowPass(s, 0.15);

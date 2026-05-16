@@ -78,7 +78,9 @@ internal abstract class Event(EventData eventData) : IEvent
 			EventType.UseItem => new UseItemEvent(eventData),
 			EventType.DoorExit => new DoorExitEvent(eventData),
 			EventType.TravelExit => new TravelExitEvent(eventData),
-			_ => throw new AmberException(ExceptionScope.Data, $"Unsupported event type: {(int)eventData.Type}")
+            EventType.Altar => new AltarEvent(eventData),
+            EventType.Outro => new OutroEvent(eventData),
+            _ => throw new AmberException(ExceptionScope.Data, $"Unsupported event type: {(int)eventData.Type}")
 		};
 	}
 }
@@ -328,4 +330,14 @@ internal class PlaceEvent(EventData eventData) : Event(eventData), IPlaceEvent
 	public word WaresIndex => eventData.Word8;
 
 	public bool AlwaysOpen => OpeningHour == 0;
+}
+
+internal class AltarEvent(EventData eventData) : Event(eventData), IAltarEvent
+{
+
+}
+
+internal class OutroEvent(EventData eventData) : Event(eventData), IOutroEvent
+{
+
 }

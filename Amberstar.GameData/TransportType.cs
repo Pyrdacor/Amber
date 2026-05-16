@@ -2,7 +2,7 @@
 {
 	public enum TransportType
 	{
-		Horse,
+		Horse = 1,
 		Raft,
 		Ship
 	}

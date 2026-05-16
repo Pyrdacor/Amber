@@ -26,7 +26,7 @@ internal class PlaceLoader(Amber.Assets.Common.IAssetProvider assetProvider) : I
 		if (asset == null)
 			throw new AmberException(ExceptionScope.Data, $"Place name {index} not found.");
 
-		string name = asset.GetReader().ReadString();
+		string name = asset.GetReader().ReadString(30).TrimEnd();
 
 		place = new Place(placeData, name);
 

@@ -45,7 +45,7 @@ internal class HippelCosoSongAmiga : HippelCosoSong
         }
 
         public override void SampleData(short[] buffer, double time,
-            Action<int, bool> enableChannel, bool firstChannel)
+            Action<int, bool> enableChannel)
         {
             // TODO
             throw new NotImplementedException();

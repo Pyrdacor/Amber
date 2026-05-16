@@ -308,7 +308,8 @@ internal abstract class HippelCosoSong : ISong
         private protected record NoiseInfo(double Time, int Period);
 
         private protected readonly Queue<NoteInfo> notePeriods = [];
-        private protected readonly Queue<NoiseInfo> noisePeriods = [];
+        // Shared accross all voice channels!
+        private protected static readonly Queue<NoiseInfo> noisePeriods = [];
 
         public virtual void Reset()
         {
@@ -323,7 +324,7 @@ internal abstract class HippelCosoSong : ISong
 
         public void ChangeNoise(double time, int period)
         {
-            if (period <= 0)
+            if (period < 0)
             {
                 noisePeriods.Enqueue(new(time, -1));
                 return;
@@ -336,7 +337,7 @@ internal abstract class HippelCosoSong : ISong
         }
 
         public abstract void SampleData(short[] buffer, double time,
-            Action<int, bool> enableChannel, bool firstChannel);
+            Action<int, bool> enableChannel);
     }
 
     private static readonly int[] NotePeriods =
@@ -417,7 +418,7 @@ internal abstract class HippelCosoSong : ISong
         private Instrument? currentInstrument;
         private Timbre? currentTimbre;
 
-        public bool HasDivision => currentTimbre != null;
+        public bool HasDivision => currentDivision != null;
 
         public event Action<int>? SongSpeedChanged;
 
@@ -865,7 +866,7 @@ internal abstract class HippelCosoSong : ISong
                 }
 
                 channelPlayers[i].SampleData(channelPcmData[i], lastSampleTime,
-                    EnableChannel, i == 0);
+                    EnableChannel);
 
                 bool enabled = true;
 

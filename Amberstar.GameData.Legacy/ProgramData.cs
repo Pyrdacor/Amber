@@ -286,9 +286,9 @@ namespace Amberstar.GameData.Legacy
             int placeCount = dataReader.ReadWord();
             PlacesData = new(placeCount);
             PlaceNames = new(placeCount);
-            for (int i = 0; i < placeCount; i++)
+            for (int i = 1; i <= placeCount; i++)
                 PlacesData[i] = new DataReader(dataReader.ReadBytes(24));
-            for (int i = 0; i < placeCount; i++)
+            for (int i = 1; i <= placeCount; i++)
                 PlaceNames[i] = new DataReader(dataReader.ReadBytes(30));
             #endregion
             #region Messages

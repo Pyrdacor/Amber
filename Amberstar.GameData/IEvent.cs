@@ -24,6 +24,8 @@ public enum EventType : byte
 	UseItem,
 	DoorExit,
 	TravelExit,
+	Altar, // to assemble the Amberstar
+	Outro, // triggers end sequence
 	Invalid
 }
 

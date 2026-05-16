@@ -193,7 +193,7 @@ internal class DoorScreen : ButtonGridScreen
         if (waitForClick)
         {
             waitForClick = false;
-            game.Cursor.CursorType = CursorType.Sword;
+            game!.Cursor.CursorType = CursorType.Sword;
             HideMessage();
 
             if (closeAfterClick)

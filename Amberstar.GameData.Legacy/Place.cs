@@ -29,7 +29,7 @@ internal abstract class PlaceData(PlaceType placeType, PlaceDataArray placeData)
 
 	public static unsafe PlaceData ReadPlaceData(PlaceType placeType, IDataReader reader)
 	{
-		var data = reader.ReadBytes(sizeof(PlaceDataArray));
+		var data = reader.ReadBytes(24);
 
 		if (BitConverter.IsLittleEndian)
 		{
