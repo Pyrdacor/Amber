@@ -18,13 +18,10 @@ namespace Amberstar.Game.Events
 
         public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
-            if (trigger == EventTrigger.Eye || trigger == EventTrigger.Move)
-            {
+            if (trigger == EventTrigger.Move)
                 game.ShowDoor();
-                return true;
-            }
-
-            return false;
+                
+            return true;
 		}
 	}
 }

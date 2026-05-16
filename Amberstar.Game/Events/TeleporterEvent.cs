@@ -17,6 +17,9 @@ namespace Amberstar.Game.Events
 
 		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
+			if (trigger != EventTrigger.Move)
+				return false;
+
 			void Teleport() => game.Teleport(X, Y, Direction, MapIndex, false);
 
             if (TextIndex != 0)

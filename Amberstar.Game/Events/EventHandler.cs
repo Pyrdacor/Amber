@@ -13,7 +13,7 @@ namespace Amberstar.Game.Events
 			bool result = @event.Handle(trigger, game, eventProvider);
 
 			// TODO: There are some manual exceptions in original code, check them!
-			if (@event.SaveEvent && @event.AutoSave)
+			if (result && @event.SaveEvent && @event.AutoSave)
 			{
 				game.SaveEvent(@event.Index);
             }

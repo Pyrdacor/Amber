@@ -18,6 +18,7 @@ internal class DoorScreen : ButtonGridScreen
     bool pickItem = false;
     bool waitForClick = false;
     bool closeAfterClick = false;
+    bool doorOpened = false;
     int lockpickReduction = 0;
     readonly Action draggingStartedHandler;
     readonly Action draggingEndedHandler;
@@ -161,6 +162,14 @@ internal class DoorScreen : ButtonGridScreen
         {
             image.Visible = false;
             image = null;
+        }
+
+        if (!doorOpened)
+        {
+            // Note: At this point, ActiveScreen is already the previous one!
+            if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
+                map2dScreen.ResetPartyPosition();
+            // TODO: 3D map as well?
         }
 
         base.Close(game);
@@ -352,6 +361,7 @@ internal class DoorScreen : ButtonGridScreen
 
         if (game.Probe(lockpickSkill))
         {
+            doorOpened = true;
             game.SaveEvent(doorEvent!.Index);
             ShowMessage(Message.LockOpened, true, true);
         }

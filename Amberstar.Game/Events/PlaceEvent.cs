@@ -21,7 +21,10 @@ namespace Amberstar.Game.Events
 
 		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
-			game.OpenPlace(this);
+            if (trigger != EventTrigger.Move)
+                return false;
+
+            game.OpenPlace(this);
 
 			return true;
 		}

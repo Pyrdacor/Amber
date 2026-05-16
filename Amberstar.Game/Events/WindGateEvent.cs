@@ -17,7 +17,10 @@ namespace Amberstar.Game.Events
 
 		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{
-			if (!game.State.SpecialItems.HasFlag(SpecialItems.WindChain))
+            if (trigger != EventTrigger.Move)
+                return false;
+
+            if (!game.State.SpecialItems.HasFlag(SpecialItems.WindChain))
 				return false;
 
 			void Teleport() => game.Teleport(X, Y, Direction, MapIndex, false);

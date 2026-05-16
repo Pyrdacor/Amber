@@ -8,7 +8,6 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-// TODO: After door screen exit, the map is full of wrong tiles until you move.
 internal class Map2DScreen : ButtonGridScreen
 {
 	enum ButtonLayout
@@ -270,6 +269,7 @@ internal class Map2DScreen : ButtonGridScreen
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			player!.Visible = screenPushPlayerWasVisible;
             mapNameText!.Visible = true;
+			AfterMove(ignoreEvents: true);
         }
 
 		timeText?.Delete();
@@ -506,7 +506,9 @@ internal class Map2DScreen : ButtonGridScreen
 				if (@event.Type == EventType.MapExit ||
 					@event.Type == EventType.Teleporter ||
 					@event.Type == EventType.TrapDoor ||
-					@event.Type == EventType.TravelExit ||
+                    @event.Type == EventType.Door ||
+                    @event.Type == EventType.Place ||
+                    @event.Type == EventType.TravelExit ||
 					(@event.Type == EventType.WindGate && game.State.HasWindChain))
 					return false;
 			}
@@ -555,7 +557,7 @@ internal class Map2DScreen : ButtonGridScreen
 		return true;
 	}
 
-	private void AfterMove()
+	private void AfterMove(bool ignoreEvents = false)
 	{
 		if (worldMap != null)
 			UpdateWorldMap();
@@ -567,7 +569,8 @@ internal class Map2DScreen : ButtonGridScreen
         FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 
 		// Check for events
-		TryExecuteMapEvent(EventTrigger.Move);
+		if (!ignoreEvents)
+			TryExecuteMapEvent(EventTrigger.Move);
     }
 
 	private bool TryExecuteMapEvent(EventTrigger trigger, int x = 0, int y = 0)
@@ -584,12 +587,10 @@ internal class Map2DScreen : ButtonGridScreen
 			(int eventIndex, IEvent @event) = eventWithIndex.Value;
             var mapEvent = Event.CreateEvent(@event, eventIndex);
 
-            if (mapEvent is IPlaceEvent)
+            if (mapEvent is IPlaceEvent ||
+				mapEvent is IAltarEvent)
             {
-                game!.State.ResetPartyPosition();
-
-                if (worldMap != null)
-                    UpdateWorldMap();
+				ResetPartyPosition();
             }
 
 			game!.EventHandler.HandleEvent(trigger, mapEvent, map!);
@@ -598,6 +599,14 @@ internal class Map2DScreen : ButtonGridScreen
         }
 
 		return false;
+    }
+
+	internal void ResetPartyPosition()
+	{
+        game!.State.ResetPartyPosition();
+
+        if (worldMap != null)
+            UpdateWorldMap();
     }
 
 	private void UpdateMovement()
@@ -887,7 +896,7 @@ internal class Map2DScreen : ButtonGridScreen
 						game.Cursor.CursorType = CursorType.Zzz;
 				}
 
-				if (mouseDown && lastCursor != game.Cursor.CursorType)
+				if (buttons == MouseButtons.Left && lastCursor != game.Cursor.CursorType)
 					UpdateMovement();
 			}
 			else if (game!.Cursor.CursorType.IsArrow())
