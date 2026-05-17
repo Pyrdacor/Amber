@@ -1,4 +1,5 @@
-﻿using Amber.Common;
+﻿using System.Reflection.Metadata.Ecma335;
+using Amber.Common;
 using Amber.Renderer;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
@@ -154,6 +155,7 @@ internal class Map2DScreen : ButtonGridScreen
 	// (e.g. holding the key down).
 	const int CityTicksPerStep = 20;
 	const int WorldMapBaseTicksPerStep = 2;
+	const long OuchDisplayTime = Game.TicksPerSecond / 6;
 	static readonly Dictionary<TravelType, int> TicksPerStep = new()
 	{
 		{ TravelType.Walk, 6 * WorldMapBaseTicksPerStep },
@@ -189,8 +191,10 @@ internal class Map2DScreen : ButtonGridScreen
 	static readonly Rect mapViewArea = new(OffsetX, OffsetY, MapViewWidth, MapViewHeight);
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
 	readonly Dictionary<int, IAnimatedSprite> overlay = [];
-	ISprite? player;	
-	int lastScrollX = -1;
+	ISprite? player;
+    ISprite? ouchBubble;
+	long ouchBubbleDeleteActionIndex = -1;
+    int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
 	ButtonLayout buttonLayout = ButtonLayout.Movement;
@@ -430,6 +434,12 @@ internal class Map2DScreen : ButtonGridScreen
 		player!.Visible = false;
 		player = null;
 
+		if (ouchBubble != null)
+		{
+			ouchBubble.Visible = false;
+			ouchBubble = null;
+        }
+
 		timeText?.Delete();
         mapNameText!.Delete();
 
@@ -514,18 +524,23 @@ internal class Map2DScreen : ButtonGridScreen
 			}
 
 			var targetTile = map!.Tiles[x + y * map.Width];
+			
+			if (targetTile.Overlay != 0)
+			{
+                var flags = GetTileInfo(targetTile.Overlay).Flags;
 
-			// TODO: use priority bit in flags
-			return BlocksMovement(targetTile.Underlay) || BlocksMovement(targetTile.Overlay);
-		}
+				if (!flags.HasFlag(TileFlags.UnderlayHasPriority))
+					return BlocksMovement(flags);
+            }
 
-		bool BlocksMovement(int tileIndex)
-		{
-			if (tileIndex == 0)
+			if (targetTile.Underlay == 0)
 				return false;
 
-			var flags = GetTileInfo(tileIndex).Flags;
+			return BlocksMovement(GetTileInfo(targetTile.Underlay).Flags);
+		}
 
+		bool BlocksMovement(TileFlags flags)
+		{
 			return flags.HasFlag(TileFlags.BlockAllMovement) || !flags.HasFlag((TileFlags)(1 << (8 + (int)game!.State.TravelType)));
 		}
 
@@ -546,8 +561,7 @@ internal class Map2DScreen : ButtonGridScreen
 			else
 			{
 				// stop as we hit an obstacle
-				x = 0;
-				y = 0;
+				ShowOuchBubble();
 				return false;
 			}
 		}
@@ -981,6 +995,8 @@ internal class Map2DScreen : ButtonGridScreen
 				playerBaseLineOffset = RenderOrderOffset; // draw player below overlay
 		}
 
+		// TODO: NPCs and transports
+
 		if (playerVisible)
 		{
 			var renderLayer = game!.GetRenderLayer(Layer.Map2D);
@@ -999,18 +1015,42 @@ internal class Map2DScreen : ButtonGridScreen
 		var renderLayer = game!.GetRenderLayer(Layer.Map2D);
 		var tileset = tilesets![map!.TilesetIndex - 1];
 		var tileInfo = tileset!.Tiles[tileset.PlayerSpriteIndex - 1];
-		var playerPositon = game.State.PartyPosition;
+		var playerPosition = game.State.PartyPosition;
 		player = renderLayer.SpriteFactory!.Create();
 
 		player.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex);
-		player.Position = new(OffsetX + playerPositon.X * TileWidth, OffsetY + playerPositon.Y * TileHeight);
+		player.Position = new(OffsetX + playerPosition.X * TileWidth, OffsetY + playerPosition.Y * TileHeight);
 		player.PaletteIndex = game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 		player.Size = new(TileWidth, TileHeight);
-		player!.Visible = true;
+		player.Visible = true;
 
 		moveX = 0;
 		moveY = 0;
 	}
+
+	private void ShowOuchBubble()
+	{
+        game!.DeleteDelayedActions(ouchBubbleDeleteActionIndex);
+
+        var renderLayer = game.GetRenderLayer(Layer.UI);
+        var playerPosition = game.State.PartyPosition;
+        ouchBubble = renderLayer.SpriteFactory!.Create();
+
+        ouchBubble.TextureOffset = renderLayer.Config.Texture!.GetOffset(game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.SmallOuch));
+        ouchBubble.Position = new(OffsetX + (playerPosition.X - lastScrollX) * TileWidth + 14, OffsetY + (playerPosition.Y - lastScrollY) * TileHeight - 10);
+        ouchBubble.PaletteIndex = game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
+        ouchBubble.Size = UIGraphic.SmallOuch.GetSize();
+        ouchBubble.Visible = true;
+
+        ouchBubbleDeleteActionIndex = game.AddDelayedAction(OuchDisplayTime, () =>
+		{
+			if (ouchBubble != null)
+			{
+				ouchBubble.Visible = false;
+				ouchBubble = null;
+			}
+		});
+    }
 
 	private void ClearMap()
 	{

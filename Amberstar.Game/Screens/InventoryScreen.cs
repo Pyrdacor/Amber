@@ -27,10 +27,12 @@ internal class InventoryScreen : ItemGridScreen
 
     static InventoryScreen()
     {
+        const int slotsPerRow = 3;
+
         foreach (var equipmentSlot in Enum.GetValues<EquipmentSlot>())
         {
-            int column = (int)equipmentSlot % 3;
-            int row = (int)equipmentSlot / 3;
+            int column = (int)equipmentSlot % slotsPerRow;
+            int row = (int)equipmentSlot / slotsPerRow;
             var position = new Position(16 + column * 32, 37 + 44 + row * 32);
 
             EquipmentSlotPositions.Add(equipmentSlot, position);
@@ -38,8 +40,8 @@ internal class InventoryScreen : ItemGridScreen
 
         for (int i = 0; i < InventorySlotPositions.Length; i++)
         {
-            int column = i % 3;
-            int row = i / 3;
+            int column = i % slotsPerRow;
+            int row = i / slotsPerRow;
             var position = new Position(112 + column * 32, 37 + 44 + row * 32);
 
             InventorySlotPositions[i] = position;

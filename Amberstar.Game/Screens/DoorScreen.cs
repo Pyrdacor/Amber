@@ -20,20 +20,28 @@ internal class DoorScreen : ItemGridScreen
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
     readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
     readonly static Rect MessageDisplayArea = new(112, 49, 192, 48);
+    readonly static Rect ItemArea;
     ISprite? image;
     IRenderText? message;
     DoorEvent? doorEvent;
 
     static DoorScreen()
     {
+        const int slotsPerRow = 6;
+
         for (int i = 0; i < InventorySlotPositions.Length; i++)
         {
-            int column = i % 3;
-            int row = i / 3;
-            var position = new Position(112 + column * 32, 37 + 44 + row * 32);
+            int column = i % slotsPerRow;
+            int row = i / slotsPerRow;
+            var position = new Position(16 + column * 32, 37 + 109 + row * 32);
 
             InventorySlotPositions[i] = position;
         }
+
+        var firstSlot = InventorySlotPositions[0];
+        var lastSlot = InventorySlotPositions[^1];
+
+        ItemArea = new(firstSlot.X, firstSlot.Y, lastSlot.X + 16 - firstSlot.X, lastSlot.Y + 16 - firstSlot.Y);
     }
 
     public override ScreenType Type { get; } = ScreenType.Door;
@@ -156,7 +164,7 @@ internal class DoorScreen : ItemGridScreen
                     return;
 
                 var @event = eventProvider.Events[extraEvent.Value - 1];
-                game.EventHandler.HandleEvent(EventTrigger.Move, (@event as Event)!, eventProvider);
+                game.EventHandler.HandleEvent(EventTrigger.Move, Event.CreateEvent(@event, extraEvent.Value), eventProvider);
             }
         }
     }
@@ -465,7 +473,7 @@ internal class DoorScreen : ItemGridScreen
     {
         public override ScreenType Type { get; } = ScreenType.DoorUseItem;
 
-        public override Rect MouseTrapArea { get; } = MessageDisplayArea;
+        public override Rect MouseTrapArea { get; } = ItemArea;
 
         public override Message Message { get; } = Message.UseWhichItem;
     }

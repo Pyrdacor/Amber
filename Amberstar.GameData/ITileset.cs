@@ -25,9 +25,9 @@ public enum TileFlags : uint
 	/// <summary>
 	/// If set for foreground tiles, the AllowMovement bits of the
 	/// underlay tile are used. This also affects the determination
-	/// if the whole tile is a water tile.
+	/// if the whole tile is a water or poisoning tile.
 	/// </summary>
-	Priority =			0x_0000_0020,
+	UnderlayHasPriority =			0x_0000_0020,
 	/// <summary>
 	/// If set this tile should be drawn over the player.
 	/// </summary>
