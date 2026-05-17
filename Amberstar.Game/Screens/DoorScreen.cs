@@ -433,34 +433,48 @@ internal class DoorScreen : ItemGridScreen
 
             if (item.Item.Flags.HasFlag(ItemFlags.DestroyAfterUsage) && doorEvent.SaveEvent)
             {
-                // TODO: Move this weight update logic (and similar logic) to party functions
-                game!.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
-                item.ReduceItemCount(1, true);
+                // We show the previous message again until the destroy animation is done.
+                ShowMessage(Message.UseWhichItem, false);
+                game!.EnableInput(false);
 
-                doorOpened = true;
-                game.SaveEvent(doorEvent!.Index);
-                ShowMessage(Message.LockOpened, true, true);
+                // TODO: Move this weight update logic (and similar logic) to party functions
+                game.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
+                item.ReduceItemCount(1, true, () =>
+                {
+                    doorOpened = true;
+                    game.SaveEvent(doorEvent!.Index);
+                    game.EnableInput(true);
+                    ShowMessage(Message.LockOpened, true, true);
+                });
             }
         }
         else if (item.Item != null && item.Item.SpellSchool == SpellSchool.Special && item.Item.SpellIndex == (byte)SpecialSpell.PickLock)
         {
             // Is it a lockpick?
 
-            // TODO: Move this weight update logic (and similar logic) to party functions
-            game!.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
-            item.ReduceItemCount(1, true, CleanUpItems);
+            // We show the previous message again until the destroy animation is done.
+            ShowMessage(Message.UseWhichItem, false);
+            game!.EnableInput(false);
 
-            if (doorEvent!.LockpickReduction >= 100) // Fully locked?
+            // TODO: Move this weight update logic (and similar logic) to party functions
+            game.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
+            item.ReduceItemCount(1, true, () =>
             {
-                RequestButtonSetup(); // use item button might be disabled now
-                ShowMessage(Message.LockpickBreaks);
-            }
-            else
-            {
-                doorOpened = true;
-                game.SaveEvent(doorEvent!.Index);
-                ShowMessage(Message.LockpickOpensLock, true, true);
-            }
+                game.EnableInput(true);
+
+                if (doorEvent!.LockpickReduction >= 100) // Fully locked?
+                {
+                    CleanUpItems();
+                    RequestButtonSetup(); // "use item" button might be disabled now
+                    ShowMessage(Message.LockpickBreaks);
+                }
+                else
+                {
+                    doorOpened = true;
+                    game.SaveEvent(doorEvent!.Index);
+                    ShowMessage(Message.LockpickOpensLock, true, true);
+                }
+            });
         }
         else
         {

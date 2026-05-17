@@ -59,6 +59,7 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
     {
         if (key == Key.Escape || key == Key.Space)
         {
+            pickedItem = null;
             game?.ScreenHandler.PopScreen();
             return;
         }
@@ -84,6 +85,7 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
         }
         else if (buttons == MouseButtons.Right)
         {
+            pickedItem = null;
             game?.ScreenHandler.PopScreen();
             return;
         }
