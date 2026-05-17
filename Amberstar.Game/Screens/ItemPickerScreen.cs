@@ -57,7 +57,7 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
 
     public override void KeyDown(Key key, KeyModifiers keyModifiers)
     {
-        if (key == Key.Escape)
+        if (key == Key.Escape || key == Key.Space)
         {
             game?.ScreenHandler.PopScreen();
             return;
@@ -81,6 +81,11 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
                     return;
                 }
             }
+        }
+        else if (buttons == MouseButtons.Right)
+        {
+            game?.ScreenHandler.PopScreen();
+            return;
         }
 
         base.MouseDown(position, buttons, keyModifiers);
