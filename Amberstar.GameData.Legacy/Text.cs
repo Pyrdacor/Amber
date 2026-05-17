@@ -25,7 +25,18 @@ internal class Text(List<string> textFragments) : IText
 		return Read(new DataReader(data), [string.Empty, text]);
 	}
 
-	public static byte[] DetermineLengthAndReadAsBytes(IDataReader reader)
+	public static Text FromTextFragmentIndex(word index, List<string> textFragments)
+	{
+        var text = new Text(textFragments);
+
+        text.textIndices.Add(index);
+        text.textBlockOffsets.Add(0);
+
+        return text;
+    }
+
+
+    public static byte[] DetermineLengthAndReadAsBytes(IDataReader reader)
 	{
 		int startPosition = reader.Position;
         int textCount = reader.ReadByte();

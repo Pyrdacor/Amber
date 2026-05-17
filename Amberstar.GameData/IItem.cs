@@ -45,6 +45,11 @@ public interface IItem
 
 public static class ItemExtensions
 {
+    public static IText GetName(this IItem item, ITextLoader textLoader)
+    {
+        return textLoader.FromTextFragmentIndex(item.NameIndex);
+    }
+
     public static bool IsTwoHanded(this IItem item)
     {
         // TODO ...

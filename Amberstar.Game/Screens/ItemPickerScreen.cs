@@ -12,6 +12,7 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
     List<ItemContainer> items = [];
     bool itemsWereHidden = true;
     int? pickedItem = null;
+    Label? itemNameTooltip;
 
     public override bool Transparent => true;
 
@@ -19,11 +20,19 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
 
     public abstract Message Message { get; }
 
+    public abstract Rect ItemTooltipArea { get; }
+
     public override void Init(Game game)
 	{
         base.Init(game);
 
         this.game = game;
+        itemNameTooltip = new(game)
+        {
+            DisplayLayer = 100,
+            Alignment = TextAlignment.Center,
+            Area = ItemTooltipArea,
+        };
 
         // Note: During Init the ActiveScreen is still the last one.
         parentScreen = game.ScreenHandler.ActiveScreen as TParentScreen;
@@ -49,6 +58,8 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
 
         if (itemsWereHidden)
             items.ForEach(item => item.Visible = false);
+
+        itemNameTooltip!.Destroy();
 
         base.Close(game);
 
@@ -91,5 +102,24 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
         }
 
         base.MouseDown(position, buttons, keyModifiers);
+    }
+
+    public override void MouseMove(Position position, MouseButtons buttons)
+    {
+        base.MouseMove(position, buttons);
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+
+            if (!item.Empty && item.Contains(position))
+            {
+                itemNameTooltip!.SetText(item.Item!.GetName(game!.AssetProvider.TextLoader), 320 - itemNameTooltip!.Position.X, 15, 0, parentScreen!.ButtonGridPaletteIndex);
+                itemNameTooltip.Visible = true;
+                return;
+            }
+        }
+
+        itemNameTooltip!.Visible = false;
     }
 }

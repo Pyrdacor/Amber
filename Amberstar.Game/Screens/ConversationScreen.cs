@@ -15,7 +15,7 @@ internal class ConversationScreen : ButtonGridScreen
 
     public override ScreenType Type { get; } = ScreenType.Conversation;
 
-    protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {

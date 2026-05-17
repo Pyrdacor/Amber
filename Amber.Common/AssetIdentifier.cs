@@ -45,7 +45,6 @@
 		Place,
 		PlaceName,
 		Merchant,
-		Item,
 		Palette,
 		Music,
 	}

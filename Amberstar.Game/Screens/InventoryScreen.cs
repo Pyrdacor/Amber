@@ -18,7 +18,8 @@ internal class InventoryScreen : ItemGridScreen
     readonly Dictionary<EquipmentSlot, ItemContainer> equippedItemSlots = [];
     readonly static Dictionary<EquipmentSlot, Position> EquipmentSlotPositions = [];
     readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
-    readonly static Rect MessageDisplayArea = new(16, 50, 176, 14);
+    readonly static Rect messageDisplayArea = new(16, 50, 176, 14);
+    readonly static Rect itemTooltipArea = new(16, 57, 176, 7);
     PersonInfoView? personInfoView;
     IRenderText? message;
     IRenderText? weightLabel;
@@ -64,7 +65,7 @@ internal class InventoryScreen : ItemGridScreen
 
     public override ScreenType Type { get; } = ScreenType.Inventory;
 
-    protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
 
     internal override ItemContainer[] ItemContainers => [.. equippedItemSlots.Values, .. inventoryItemSlots];
 
@@ -547,8 +548,8 @@ internal class InventoryScreen : ItemGridScreen
     {
         message?.Delete();
 
-        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), MessageDisplayArea.Size.Width, 15);
-        message.ShowInArea(MessageDisplayArea, 20, TextAlignment.Left);
+        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), messageDisplayArea.Size.Width, 15);
+        message.ShowInArea(messageDisplayArea, 20, TextAlignment.Left);
 
         // TODO: Scrolling
 
@@ -558,7 +559,7 @@ internal class InventoryScreen : ItemGridScreen
         if (waitForClick)
         {
             game.Cursor.CursorType = CursorType.Zzz;
-            game.TrapMouse(MessageDisplayArea);
+            game.TrapMouse(messageDisplayArea);
         }
     }
 
@@ -579,6 +580,8 @@ internal class InventoryScreen : ItemGridScreen
 
         public override Message Message { get; } = Message.DropWhichItem;
 
-        public override Rect MouseTrapArea { get; } = MessageDisplayArea;
+        public override Rect MouseTrapArea { get; } = messageDisplayArea;
+
+        public override Rect ItemTooltipArea { get; } = itemTooltipArea;
     }
 }

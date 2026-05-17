@@ -43,7 +43,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
 
     public override ScreenType Type { get; } = ScreenType.CharacterStats;
 
-    protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {

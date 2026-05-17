@@ -249,7 +249,7 @@ internal class Map3DScreen : ButtonGridScreen
 	public override ScreenType Type { get; } = ScreenType.Map3D;
     public IMap3D Map => map!;
 
-	protected override byte ButtonGridPaletteIndex => palette;
+    internal override byte ButtonGridPaletteIndex => palette;
 
     internal void MapChanged()
 	{

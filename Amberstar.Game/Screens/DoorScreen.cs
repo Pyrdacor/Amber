@@ -18,9 +18,10 @@ internal class DoorScreen : ItemGridScreen
     bool doorOpened = false;
     int lockpickReduction = 0;
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
-    readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
-    readonly static Rect MessageDisplayArea = new(112, 49, 192, 48);
-    readonly static Rect ItemArea;
+    readonly static Position[] inventorySlotPositions = new Position[ICharacter.InventorySlotCount];
+    readonly static Rect messageDisplayArea = new(112, 49, 192, 48);
+    readonly static Rect itemArea;
+    readonly static Rect itemTooltipArea;
     ISprite? image;
     IRenderText? message;
     DoorEvent? doorEvent;
@@ -29,24 +30,25 @@ internal class DoorScreen : ItemGridScreen
     {
         const int slotsPerRow = 6;
 
-        for (int i = 0; i < InventorySlotPositions.Length; i++)
+        for (int i = 0; i < inventorySlotPositions.Length; i++)
         {
             int column = i % slotsPerRow;
             int row = i / slotsPerRow;
             var position = new Position(16 + column * 32, 37 + 109 + row * 32);
 
-            InventorySlotPositions[i] = position;
+            inventorySlotPositions[i] = position;
         }
 
-        var firstSlot = InventorySlotPositions[0];
-        var lastSlot = InventorySlotPositions[^1];
+        var firstSlot = inventorySlotPositions[0];
+        var lastSlot = inventorySlotPositions[^1];
 
-        ItemArea = new(firstSlot.X, firstSlot.Y, lastSlot.X + 16 - firstSlot.X, lastSlot.Y + 16 - firstSlot.Y);
+        itemArea = new(firstSlot.X, firstSlot.Y, lastSlot.X + 16 - firstSlot.X, lastSlot.Y + 16 - firstSlot.Y);
+        itemTooltipArea = new(messageDisplayArea.Position.X, messageDisplayArea.Position.Y + 7, messageDisplayArea.Size.Width, 7);
     }
 
     public override ScreenType Type { get; } = ScreenType.Door;
 
-    protected override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.LockedDoor) ?? 0;
+    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.LockedDoor) ?? 0;
 
     internal override ItemContainer[] ItemContainers => inventoryItemSlots;
 
@@ -85,7 +87,7 @@ internal class DoorScreen : ItemGridScreen
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
             int index = i; // important to capture this for the click handler
-            inventoryItemSlots[i] = new ItemContainer(game, InventorySlotPositions[i], 0, null, 10) { Draggable = true };
+            inventoryItemSlots[i] = new ItemContainer(game, inventorySlotPositions[i], 0, null, 10) { Draggable = true };
             inventoryItemSlots[i].Clicked += (mouseButtons, keyModifiers) => InventorySlotClicked(index, mouseButtons, keyModifiers);
         }
     }
@@ -300,8 +302,8 @@ internal class DoorScreen : ItemGridScreen
     {
         message?.Delete();
 
-        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), MessageDisplayArea.Size.Width, 15, 0, ButtonGridPaletteIndex);
-        message.ShowInArea(MessageDisplayArea, 20, TextAlignment.Left);
+        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), messageDisplayArea.Size.Width, 15, 0, ButtonGridPaletteIndex);
+        message.ShowInArea(messageDisplayArea, 20, TextAlignment.Left);
 
         // TODO: Scrolling
 
@@ -311,7 +313,7 @@ internal class DoorScreen : ItemGridScreen
         if (waitForClick)
         {
             game.Cursor.CursorType = CursorType.Zzz;
-            game.TrapMouse(MessageDisplayArea);
+            game.TrapMouse(messageDisplayArea);
         }
     }
 
@@ -487,8 +489,10 @@ internal class DoorScreen : ItemGridScreen
     {
         public override ScreenType Type { get; } = ScreenType.DoorUseItem;
 
-        public override Rect MouseTrapArea { get; } = ItemArea;
+        public override Rect MouseTrapArea { get; } = itemArea;
 
         public override Message Message { get; } = Message.UseWhichItem;
+
+        public override Rect ItemTooltipArea { get; } = itemTooltipArea;
     }
 }

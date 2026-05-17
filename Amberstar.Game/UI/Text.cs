@@ -42,7 +42,7 @@ internal class TextManager(Game game, IFont font,
     public const int DefaultPaperColorIndex = 0;
     public const int TransparentPaper = -1;
     const int TicksPerScroll = 4; // TODO
-    const byte DefaultPaletteIndex = 0; // UI
+    public const byte DefaultPaletteIndex = 0; // UI
 
     public int GetTextRenderWidth(string text)
     {
@@ -276,6 +276,9 @@ internal class TextManager(Game game, IFont font,
 
         public void ShowInArea(int x, int y, int width, int height, byte displayLayer, TextAlignment textAlignment = TextAlignment.Left)
         {
+            if (height <= 0)
+                height = textLines.Count * font.LineHeight - Math.Max(0, font.LineHeight - font.GlyphHeight);
+
             int diff = MathUtil.Limit(0, font.LineHeight - font.GlyphHeight, height - 1);
             int numDisplayedRows = (height + diff) / font.LineHeight;
             areaHeight = height;
@@ -287,6 +290,9 @@ internal class TextManager(Game game, IFont font,
             {
                 int GetTextLineLength(TextLine textLine) => textLine.TextBlocks.Sum(textBlock => textBlock.Text.Length) * font.Advance;
                 int maxLineWidth = textLines.Max(GetTextLineLength);
+
+                if (width <= 0)
+                    width = maxLineWidth;
 
                 if (textAlignment == TextAlignment.Right)
                     x = x + width - maxLineWidth;
@@ -595,5 +601,134 @@ internal class TextManager(Game game, IFont font,
         EndLine(true);
 
         return new Text(game, textLines, font, fontInfoProvider, paletteIndex);
+    }
+}
+
+internal class Label(Game game)
+{
+    Rect area = new();
+    IRenderText? renderText;
+    byte displayLayer = 0;
+    TextAlignment alignment = TextAlignment.Left;
+    bool needsShowCall = true;
+
+    public bool Visible
+    {
+        get => renderText?.Visible ?? false;
+        set
+        {
+            if (renderText != null)
+            {
+                if (needsShowCall && value)
+                    Show();
+                else
+                    renderText.Visible = value;
+            }
+        }
+    }
+
+    public IRenderText? Text => renderText;
+
+    public byte DisplayLayer
+    {
+        get => displayLayer;
+        set
+        {
+            if (displayLayer == value)
+                return;
+
+            displayLayer = value;
+
+            Show();
+        }
+    }
+
+    public TextAlignment Alignment
+    {
+        get => alignment;
+        set
+        {
+            if (alignment == value)
+                return;
+
+            alignment = value;
+
+            Show();
+        }
+    }
+
+    public Position Position
+    {
+        get => area.Position;
+        set => Area = new(value, area.Size);
+    }
+
+    public Size Size
+    {
+        get => area.Size;
+        set => Area = new(area.Position, value);
+    }
+
+    public Rect Area
+    {
+        get => area;
+        set
+        {
+            if (area == value)
+                return;
+
+            area = value;
+
+            Show();
+        }
+    }
+
+    private void Show()
+    {
+        if (renderText != null)
+        {
+            needsShowCall = false;
+            renderText.ShowInArea(area, displayLayer, alignment);
+        }
+    }
+
+    public void SetText(string text,
+        int defaultTextColorIndex = TextManager.DefaultInkColorIndex,
+        int defaultPaperColorIndex = TextManager.DefaultPaperColorIndex,
+        byte paletteIndex = TextManager.DefaultPaletteIndex)
+    {
+        bool wasVisible = renderText?.Visible ?? false;
+
+        renderText?.Delete();
+        renderText = game.TextManager.Create(text, defaultTextColorIndex, defaultPaperColorIndex, paletteIndex);
+
+        if (wasVisible)
+            Show();
+        else
+            needsShowCall = true;
+    }
+
+    public void SetText(IText text, int maxWidth,
+        int defaultTextColorIndex = TextManager.DefaultInkColorIndex,
+        int defaultPaperColorIndex = TextManager.DefaultPaperColorIndex,
+        byte paletteIndex = TextManager.DefaultPaletteIndex)
+    {
+        bool wasVisible = renderText?.Visible ?? false;
+
+        renderText?.Delete();
+        renderText = game.TextManager.Create(text, maxWidth, defaultTextColorIndex, defaultPaperColorIndex, paletteIndex);
+
+        if (wasVisible)
+            Show();
+        else
+            needsShowCall = true;
+    }
+
+    public void Destroy()
+    {
+        renderText?.Delete();
+        renderText = null;
+
+        needsShowCall = true;
     }
 }

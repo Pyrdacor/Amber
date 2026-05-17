@@ -214,7 +214,7 @@ internal class Map2DScreen : ButtonGridScreen
     public override ScreenType Type { get; } = ScreenType.Map2D;
 	public IMap2D Map => map!;
 
-	protected override byte ButtonGridPaletteIndex => palette;
+    internal override byte ButtonGridPaletteIndex => palette;
 
     internal void MapChanged()
 	{

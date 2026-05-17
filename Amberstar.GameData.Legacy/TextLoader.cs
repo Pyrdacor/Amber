@@ -14,6 +14,11 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
         return Text.FromString(text);
     }
 
+    public IText FromTextFragmentIndex(word index)
+    {
+        return Text.FromTextFragmentIndex(index, textFragments);
+    }
+
     public IText ReadText(IDataReader dataReader)
 	{
 		return Text.Read(dataReader, textFragments);
@@ -37,7 +42,7 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
 			case AssetType.LanguageName:
 			case AssetType.ConditionName:
 			case AssetType.ItemTypeName:
-				singleString = true;
+                singleString = true;
                 break;
 			case AssetType.MapText:
 			case AssetType.ItemText:

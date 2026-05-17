@@ -10,7 +10,7 @@ internal abstract class ButtonGridScreen : Screen
 
 	protected abstract void SetupButtons(ButtonGrid buttonGrid);
 	protected abstract void ButtonClicked(int index);
-    protected abstract byte ButtonGridPaletteIndex { get; }
+    internal abstract byte ButtonGridPaletteIndex { get; }
     protected void RequestButtonSetup() => SetupButtons(buttonGrid!);
     protected void RequestButtonGridPaletteUpdate() => buttonGrid!.PaletteIndex = ButtonGridPaletteIndex;
 

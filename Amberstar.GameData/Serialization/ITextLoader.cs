@@ -8,6 +8,7 @@ public interface ITextLoader
 	IText LoadText(AssetIdentifier assetIdentifier);
     IText ReadText(IDataReader dataReader);
     IText FromString(string text);
+    IText FromTextFragmentIndex(word index);
 }
 
 public static class TextLoaderExtensions

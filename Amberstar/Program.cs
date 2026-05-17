@@ -69,7 +69,7 @@ namespace Amberstar
 			WriteTexts(AssetType.LanguageName, 7);
 			WriteTexts(AssetType.ConditionName, 16, 1);
 			WriteTexts(AssetType.ItemTypeName, 19);
-			WriteTexts(AssetType.SpellSchoolName, 7, 1);
+            WriteTexts(AssetType.SpellSchoolName, 7, 1);
 			WriteTexts(AssetType.SpellName, 7*30, 1);
 			WriteTexts(AssetType.MapText, 152, 1, true, true);
 			WriteTexts(AssetType.PuzzleText, 1, 1, false, true);

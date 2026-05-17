@@ -1,4 +1,5 @@
-﻿using Amber.Assets.Common;
+﻿using System.ComponentModel;
+using Amber.Assets.Common;
 using Amber.Common;
 using Amber.IO.Common.FileSystem;
 using Amber.IO.FileFormats.Serialization;
@@ -285,7 +286,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.LanguageName => CreateAssets(Data.LanguageNames),
 			AssetType.ConditionName => CreateAssets(Data.ConditionNames),
 			AssetType.ItemTypeName => CreateAssets(Data.ItemTypeNames),
-			AssetType.Layout => CreateAssets(Data.Layouts),
+            AssetType.Layout => CreateAssets(Data.Layouts),
 			AssetType.UIGraphic => CreateAssets(Data.UIGraphics),
 			AssetType.Button => CreateAssets(Data.Buttons),
 			AssetType.StatusIcon => CreateAssets(Data.StatusIcons),
