@@ -92,8 +92,8 @@ internal class Character : ICharacter
     Race ICharacter.Race { get => race; init => race = value; }
     Class ICharacter.Class { get => @class; init => @class = value; }
     public byte Level { get; set; }
-    public ushort Gold { get; set; }
-    public ushort Food { get; set; }
+    public word Gold { get; set; }
+    public word Food { get; set; }
     public Dictionary<EquipmentSlot, ItemSlot> Equipment => equipment;
     public ItemSlot[] Inventory => inventory;
     string ICharacter.Name { get => name; init => name = value; }

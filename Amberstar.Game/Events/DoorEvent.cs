@@ -11,7 +11,7 @@ namespace Amberstar.Game.Events
 
         public byte TrapDamage => @event.TrapDamage;
 
-        public ushort ItemIndex => @event.ItemIndex;
+        public word ItemIndex => @event.ItemIndex;
 
         public byte? OpenedEventIndex => @event is IDoorExitEvent doorExitEvent ? doorExitEvent.OpenedEventIndex : null;
 

@@ -10,6 +10,6 @@ namespace Amberstar.Game.Events
 
 		Direction Direction { get; }
 
-		ushort MapIndex { get; }
+        word MapIndex { get; }
 	}
 }

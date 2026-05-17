@@ -416,7 +416,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
     byte[] CharacterBits { get; } = savegame.CharacterBits;
     byte[] KnownWordsBits { get; } = savegame.KnownWordsBits;
     /// <summary>
-    /// 12000 bits, as there are 12 item slots I think 1000 chest are possible.
+    /// 12000 bits, as there are 12 item slots I think 1000 chests are possible.
     /// </summary>
     byte[] ChestSlotBits { get; } = savegame.ChestSlotBits;
     /// <summary>
@@ -469,7 +469,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public bool IsWordKnown(int index) => IsBitSet(KnownWordsBits, index);
 
-	public int[] GetWareCounts(int merchantIndex)
+    public int[] GetWareCounts(int merchantIndex)
 	{
 		return WareCounts.Skip((merchantIndex - 1) * ISavegame.MaxMerchantSlots).Take(ISavegame.MaxMerchantSlots).ToArray();
 	}

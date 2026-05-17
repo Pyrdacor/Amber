@@ -140,7 +140,7 @@ internal class Map2DScreen : ButtonGridScreen
             if (eventIndex == 0)
                 return null;
 
-            if (onlyActive && !game.State.IsEventActive(map.Index, eventIndex))
+            if (onlyActive && !game.IsEventActive(map, eventIndex, events[eventIndex - 1]))
                 return null;
 
             return (eventIndex, events[eventIndex - 1]);
@@ -1113,7 +1113,7 @@ internal class Map2DScreen : ButtonGridScreen
 		if (eventIndex == 0)
 			return null;
 
-        if (onlyActive && !game!.State.IsEventActive(map.Index, eventIndex))
+        if (onlyActive && !game!.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
             return null;
 
         return map.Events[eventIndex - 1];
@@ -1129,7 +1129,7 @@ internal class Map2DScreen : ButtonGridScreen
         if (eventIndex == 0)
             return null;
 
-        if (onlyActive && !game!.State.IsEventActive(map.Index, eventIndex))
+        if (onlyActive && !game!.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
             return null;
 
         return (eventIndex, map.Events[eventIndex - 1]);

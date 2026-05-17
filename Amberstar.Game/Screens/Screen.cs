@@ -21,8 +21,8 @@ public enum ScreenType
 	Place,
     // Inventory sub screens
     InventoryDropItem,
-	// Door sub screens
-	DoorUseItem,
+	// Door/chest sub screens
+	LockedUseItem,
     // TODO ...
 }
 
@@ -154,6 +154,7 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.Map2D => new Map2DScreen(),
 			ScreenType.Map3D => new Map3DScreen(),
             ScreenType.Door => new DoorScreen(),
+            ScreenType.Chest => new ChestScreen(),
             ScreenType.PictureText => new PictureTextScreen(),
 			ScreenType.TextBox => new TextBoxScreen(),
             ScreenType.Inventory => new InventoryScreen(),
@@ -162,8 +163,8 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.Place => new PlaceScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
-			// Door sub screens
-			ScreenType.DoorUseItem => new DoorScreen.UseItemScreen(),
+			// Door/chest sub screens
+			ScreenType.LockedUseItem => new DoorScreen.UseItemScreen(),
             _ => throw new NotImplementedException()
 		};
 

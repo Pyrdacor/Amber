@@ -11,7 +11,7 @@ namespace Amberstar.Game.Events
 
 		public ShowPictureTextTrigger Trigger => @event.Trigger;
 
-		public ushort SetWordBit => @event.SetWordBit;
+		public word SetWordBit => @event.SetWordBit;
 
 		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
 		{

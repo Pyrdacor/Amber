@@ -4,11 +4,10 @@ using Amberstar.GameData;
 
 namespace Amberstar.Game.Screens;
 
-internal abstract class ItemPickerScreen<TParentScreen> : Screen
-    where TParentScreen : ItemGridScreen
+internal abstract class ItemPickerScreen : Screen
 {
 	Game? game;
-    TParentScreen? parentScreen;
+    ItemGridScreen? parentScreen;
     List<ItemContainer> items = [];
     bool itemsWereHidden = true;
     int? pickedItem = null;
@@ -35,7 +34,7 @@ internal abstract class ItemPickerScreen<TParentScreen> : Screen
         };
 
         // Note: During Init the ActiveScreen is still the last one.
-        parentScreen = game.ScreenHandler.ActiveScreen as TParentScreen;
+        parentScreen = game.ScreenHandler.ActiveScreen as ItemGridScreen;
 
         items = [.. parentScreen?.ItemContainers ?? []];
     }

@@ -574,7 +574,7 @@ internal class InventoryScreen : ItemGridScreen
         // TODO
     }
 
-    internal class DropItemScreen : ItemPickerScreen<InventoryScreen>
+    internal class DropItemScreen : ItemPickerScreen
     {
         public override ScreenType Type { get; } = ScreenType.InventoryDropItem;
 

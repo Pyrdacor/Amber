@@ -11,7 +11,7 @@ namespace Amberstar.Game.Events
 
 		public Direction Direction => @event.Direction;
 
-		public ushort MapIndex => @event.MapIndex;
+		public word MapIndex => @event.MapIndex;
 
 		public byte TextIndex => @event.TextIndex;
 

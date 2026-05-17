@@ -25,6 +25,25 @@ partial class Game
 		State.SaveEvent(State.MapIndex, eventIndex);
 	}
 
+	internal bool IsEventActive(IMap map, int eventIndex, IEvent @event)
+	{
+		// Note: Saved (inactive) chest events just mean "Chest is open now". The event is never removed.
+		// Note: Saved (inactive) door_exit events are still executed to trigger the exit event (mostly map exits).
+		if (@event is ChestEvent || (@event is DoorEvent doorEvent && doorEvent.OpenedEventIndex != 0))
+			return true;
+
+		return State.IsEventActive(map.Index, eventIndex);
+	}
+
+	internal bool IsCurrentEventSaved()
+	{
+        if (EventHandler.CurrentEvent is not Event @event)
+            return false;
+
+        // TODO: world map?
+        return !State.IsEventActive(State.MapIndex, @event.Index);
+    }
+
 	internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
 	{
 		EnableInput(false);

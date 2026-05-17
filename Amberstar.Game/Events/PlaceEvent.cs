@@ -13,9 +13,9 @@ namespace Amberstar.Game.Events
 
 		public byte ClosedTextIndex => @event.ClosedTextIndex;
 
-		public ushort PlaceIndex => @event.PlaceIndex;
+		public word PlaceIndex => @event.PlaceIndex;
 
-		public ushort WaresIndex => @event.WaresIndex;
+		public word WaresIndex => @event.WaresIndex;
 
 		public bool AlwaysOpen => @event.AlwaysOpen;
 
