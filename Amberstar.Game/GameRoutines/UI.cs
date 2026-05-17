@@ -34,10 +34,15 @@ partial class Game
         return null;
     }
 
+    internal void ShowTextMessage(string text, Action? nextAction = null)
+    {
+        ShowTextMessage(AssetProvider.TextLoader.FromString(text), nextAction);
+    }
+
     internal void ShowTextMessage(IText text, Action? nextAction = null)
     {
         CurrentText = text;
-        ScreenHandler.PushScreen(ScreenType.TextBox);
+        ScreenHandler.PushScreen(ScreenType.TextBox, nextAction);
     }
 
     internal void ShowTextMessage(Message message, Action? nextAction = null)

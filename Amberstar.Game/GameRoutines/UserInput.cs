@@ -17,8 +17,23 @@ partial class Game
 	{
 		if (key == Key.F10)
 			PlaySong(1);
+		else if (key == Key.F5)
+		{
+			SaveGame();
+			ShowTextMessage($"Game was saved at '{TempSaveFile}'.");
+			return;
+		}
+        else if (key == Key.F7)
+        {
+            LoadGame();
+			ShowTextMessage($"Game was loaded from '{TempSaveFile}'.", () =>
+			{
+				Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true);
+			});
+            return;
+        }
 
-		if (!InputEnabled)
+        if (!InputEnabled)
 			return;
 
 		ScreenHandler.ActiveScreen?.KeyDown(key, keyModifiers);

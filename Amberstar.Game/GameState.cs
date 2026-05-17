@@ -1,6 +1,7 @@
 ﻿using Amber.Common;
 using Amberstar.Game.Screens;
 using Amberstar.GameData;
+using Amberstar.GameData.Serialization;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Amberstar.Game;
@@ -21,29 +22,134 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 		}
 	}
 
-    int? currentInventoryIndex = null;
 	readonly Dictionary<int, IPartyMember> partyMembers = assetProvider.PersonLoader.GetPartyMemberCopies();
 
-    public void SaveTo(Action<ISavegame> savegameWriter)
-	{
-		int mapIndex = MapIndex;
-		int partyX = PartyX;
-		int partyY = PartyY;
+    public ISavegame ToSavegame(ISavegameLoader savegameLoader)
+    {
+        int mapIndex = MapIndex;
+        int partyX = PartyX;
+        int partyY = PartyY;
 
-		// Adjust map index and party position for world maps.
-		if (WorldMap && partyX > Map2DScreen.WorldMapWidth)
-		{
-			mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 1, 0);
-			partyX -= Map2DScreen.WorldMapWidth;
-		}
-		if (WorldMap && partyY > Map2DScreen.WorldMapHeight)
-		{
-			mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 0, 1);
-			partyY -= Map2DScreen.WorldMapHeight;
-		}
+        // Adjust map index and party position for world maps.
+        if (WorldMap && partyX > Map2DScreen.WorldMapWidth)
+        {
+            mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 1, 0);
+            partyX -= Map2DScreen.WorldMapWidth;
+        }
+        if (WorldMap && partyY > Map2DScreen.WorldMapHeight)
+        {
+            mapIndex = Map2DScreen.GetWorldMapIndex(mapIndex, 0, 1);
+            partyY -= Map2DScreen.WorldMapHeight;
+        }
 
-		// TODO: create savegame and call savegameWriter(savegame);
-	}
+        var savegame = savegameLoader.Create();
+
+        // Basic fields
+        savegame.Year = Year;
+        savegame.Month = Month;
+        savegame.Day = Day;
+        savegame.Hour = Hour;
+        savegame.Minute = Minute;
+        savegame.TravelledDays = TravelledDays;
+        savegame.RelativeYear = RelativeYear;
+
+        savegame.MapIndex = mapIndex;
+        savegame.PartyX = partyX;
+        savegame.PartyY = partyY;
+        savegame.PartyDirection = PartyDirection;
+
+        savegame.SpecialItems = SpecialItems;
+        savegame.TravelType = TravelType;
+        savegame.MusicBlock = MusicBlock;
+
+        savegame.PartySize = PartySize;
+        savegame.ActivePartyMember = ActivePartyMemberIndex;
+
+        // Helper to copy arrays safely
+        static void Copy<T>(T[] source, T[] destination)
+        {
+            if (source == null || destination == null) return;
+
+            int copyLength = source.Length < destination.Length
+                ? source.Length
+                : destination.Length;
+
+            for (int i = 0; i < copyLength; i++)
+                destination[i] = source[i];
+        }
+
+        Copy(ActiveSpells, savegame.ActiveSpells);
+        Copy(Transports, savegame.Transports);
+        Copy(PartyCharacterIndices, savegame.PartyCharacterIndices);
+        Copy(CombatPositions, savegame.CombatPositions);
+        Copy(QuestBits, savegame.QuestBits);
+        Copy(EventBits, savegame.EventBits);
+        Copy(CharacterBits, savegame.CharacterBits);
+        Copy(KnownWordsBits, savegame.KnownWordsBits);
+        Copy(ChestSlotBits, savegame.ChestSlotBits);
+        Copy(ChestGold, savegame.ChestGold);
+        Copy(WareCounts, savegame.WareCounts);
+
+        // Tile changes
+        savegame.TileChanges = [.. TileChanges];
+
+        return savegame;
+    }
+
+    public void LoadFrom(ISavegame savegame)
+    {
+        Year = savegame.Year;
+        Month = savegame.Month;
+        Day = savegame.Day;
+        Hour = savegame.Hour;
+        Minute = savegame.Minute;
+        TravelledDays = savegame.TravelledDays;
+        RelativeYear = savegame.RelativeYear;
+
+        MapIndex = savegame.MapIndex;
+        PartyX = savegame.PartyX;
+        PartyY = savegame.PartyY;
+        PartyDirection = savegame.PartyDirection;
+
+        SpecialItems = savegame.SpecialItems;
+        TravelType = savegame.TravelType;
+        MusicBlock = savegame.MusicBlock;
+
+        static void Copy<T>(T[] source, T[] destination)
+        {
+            if (source == null || destination == null) return;
+
+            int copyLength = source.Length < destination.Length
+				? source.Length
+				: destination.Length;
+
+            for (int i = 0; i < copyLength; i++)
+				destination[i] = source[i];
+        }
+
+        Copy(savegame.ActiveSpells, ActiveSpells);
+        Copy(savegame.Transports, Transports);
+        Copy(savegame.PartyCharacterIndices, PartyCharacterIndices);
+        Copy(savegame.CombatPositions, CombatPositions);
+        Copy(savegame.QuestBits, QuestBits);
+        Copy(savegame.EventBits, EventBits);
+        Copy(savegame.CharacterBits, CharacterBits);
+        Copy(savegame.KnownWordsBits, KnownWordsBits);
+        Copy(savegame.ChestSlotBits, ChestSlotBits);
+        Copy(savegame.ChestGold, ChestGold);
+        Copy(savegame.WareCounts, WareCounts);
+
+        PartySize = savegame.PartySize;
+        ActivePartyMemberIndex = savegame.ActivePartyMember;
+
+        TileChanges.Clear();
+
+        if (savegame.TileChanges != null)
+        {
+            foreach (var tileChange in savegame.TileChanges)
+                TileChanges.Add(tileChange);
+        }
+    }
 
 
     #region Time and Date

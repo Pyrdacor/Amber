@@ -3,4 +3,6 @@
 public interface ISavegameLoader
 {
 	ISavegame LoadSavegame();
+
+	ISavegame Create();
 }

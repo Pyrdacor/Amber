@@ -33,3 +33,30 @@ public interface IDataWriter
     void WriteWithoutLength(string value);
     void WriteWithoutLength(string value, Encoding encoding);
 }
+
+public static class DataWriterExtensions
+{
+    public static void WriteBytes(this IDataWriter writer, int[] bytes)
+    {
+        foreach (var b in bytes)
+        {
+            writer.Write((byte)b);
+        }
+    }
+
+    public static void WriteWords(this IDataWriter writer, int[] words)
+    {
+        foreach (var word in words)
+        {
+            writer.Write((word)word);
+        }
+    }
+
+    public static void WriteWords(this IDataWriter writer, word[] words)
+    {
+        foreach (var word in words)
+        {
+            writer.Write(word);
+        }
+    }
+}

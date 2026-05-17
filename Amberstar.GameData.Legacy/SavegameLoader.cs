@@ -19,5 +19,7 @@ namespace Amberstar.GameData.Legacy
 
 			return savegame = new Savegame(asset.GetReader());
 		}
-	}
+
+		public ISavegame Create() => new Savegame();
+    }
 }

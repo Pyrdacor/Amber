@@ -1,4 +1,6 @@
-﻿namespace Amberstar.GameData;
+﻿using Amber.Serialization;
+
+namespace Amberstar.GameData;
 
 public struct ActiveSpell
 {
@@ -24,17 +26,17 @@ public struct TileChange
 
 public interface ISavegame
 {
-	int Year { get; }
-	int Month { get; }
-	int Day { get; }
-	int Hour { get; }
-	int Minute { get; }
-	int TravelledDays { get; }
-	int RelativeYear { get; }
-	int MapIndex { get; }
-	int PartyX { get; }
-	int PartyY { get; }
-	Direction PartyDirection { get; }
+	int Year { get; set; }
+	int Month { get; set; }
+	int Day { get; set; }
+	int Hour { get; set; }
+	int Minute { get; set; }
+	int TravelledDays { get; set; }
+	int RelativeYear { get; set; }
+	int MapIndex { get; set; }
+	int PartyX { get; set; }
+	int PartyY { get; set; }
+	Direction PartyDirection { get; set; }
 	/// <summary>
 	/// 6
 	/// </summary>
@@ -46,19 +48,19 @@ public interface ISavegame
 	/// <summary>
 	/// 0-6
 	/// </summary>
-	int PartySize { get; }
+	int PartySize { get; set; }
 	/// <summary>
 	/// 0-6
 	/// </summary>
-	int ActivePartyMember { get; }
+	int ActivePartyMember { get; set; }
 	int[] PartyCharacterIndices { get; }
 	int[] CombatPositions { get; }
-	TravelType TravelType { get; }
-	SpecialItems SpecialItems { get; }
+	TravelType TravelType { get; set; }
+	SpecialItems SpecialItems { get; set; }
 	/// <summary>
 	/// ?, docs say (0 / -1)
 	/// </summary>
-	bool MusicBlock { get; }
+	bool MusicBlock { get; set; }
 	/// <summary>
 	/// 32 bytes = 256 bits
 	/// </summary>
@@ -94,9 +96,13 @@ public interface ISavegame
 	/// </summary>
 	int[] WareCounts { get; }
 
-	TileChange[] TileChanges { get; }
+	TileChange[] TileChanges { get; set; }
 
-	public const int MaxTransportCount = 30;
+	void Read(IDataReader dataReader);
+	void Write(IDataWriter dataWriter);
+
+
+    public const int MaxTransportCount = 30;
 	public const int ActiveSpellCount = 6;
 	public const int MaxPartyMembers = 6;
 	public const int MaxQuestBits = 32 * 8;

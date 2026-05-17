@@ -49,11 +49,13 @@ public class DataReader : IDataReader
 
     }
 
-    public DataReader(Stream stream)
+    public DataReader(Stream stream, bool restorePreviousPosition = false)
     {
-        long pos = stream.CanSeek ? stream.Position : -1;
+        long pos = restorePreviousPosition && stream.CanSeek ? stream.Position : -1;
+
         data = new byte[stream.Length];
         stream.ReadExactly(data, 0, data.Length);
+
         if (pos != -1)
             stream.Position = pos;
     }
