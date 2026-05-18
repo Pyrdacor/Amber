@@ -13,9 +13,13 @@ partial class Game
 	DateTime fadingStartTime = DateTime.MinValue;
 	DateTime fadingEndTime = DateTime.MinValue;
 	bool fadingOut = false;
+	bool fadingHold = false;
 	bool fadingIn = false;
+	Action? afterFadeOutAction;
+    Action? afterFadeInAction;
+	long fadeActionIndex;
 
-	internal ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];
+    internal ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];
 
 	internal ISprite? CreateSprite(Layer layer, Position position, Size size, int textureIndex, int paletteIndex, bool opaque = false)
 	{
@@ -68,7 +72,7 @@ partial class Game
     /// Fades from a fully colored screen to the normal screen.
     /// This only works if FadeOut was use before.
     /// </summary>
-    internal void FadeIn(long durationInMs, Action? finishAction = null)
+    private void FadeIn(long durationInMs)
 	{
 		if (durationInMs <= 0)
 			return;
@@ -79,48 +83,87 @@ partial class Game
 		fadingEndTime = fadingStartTime + TimeSpan.FromMilliseconds(durationInMs);
 		fadingIn = true;
 		fadingOut = false;
-
-		if (finishAction != null)
-			AddDelayedAction(TimeSpan.FromMilliseconds(durationInMs), finishAction);
+		fadingHold = false;
 	}
 
 	/// <summary>
 	/// Fades from the normal screen to a fully colored screen.
-	/// This only works if FadeOut was not use before.
 	/// 
 	/// Defaults to black color fading.
 	/// </summary>
-	internal void FadeOut(long durationInMs, Action? finishAction = null, Color? color = null)
+	private void FadeOut(long durationInMs, Color? color = null)
 	{
-		if (fadingIn || durationInMs <= 0 || fadeArea != null)
+		if (fadingIn || durationInMs <= 0)
 			return;
 
 		fadeColor = new(color ?? Color.Black, 0);
-		fadeArea = CreateColoredRect(Layer.TopMost, new(0, 0), new(VirtualScreenWidth, VirtualScreenHeight), fadeColor);
+		fadeArea ??= CreateColoredRect(Layer.TopMost, new(0, 0), new(VirtualScreenWidth, VirtualScreenHeight), fadeColor);
 		fadingStartTime = DateTime.Now;
 		fadingEndTime = fadingStartTime + TimeSpan.FromMilliseconds(durationInMs);
 		fadingOut = true;
-
-		if (finishAction != null)
-			AddDelayedAction(TimeSpan.FromMilliseconds(durationInMs), finishAction);
 	}
 
 	internal void Fade(long durationInMs, Action? finishAction = null, Action? afterFadeOutAction = null, Color? color = null)
 	{
-		if (durationInMs <= 1)
-			return;
+		// TODO: Later add an option to allow showing the loading screen with the dwarf from the original instead of black fading!
 
-		if (fadingIn)
+		if (durationInMs <= 1)
 		{
-			// Wait for completion and then execute the fade
-			AddDelayedAction((fadingEndTime - DateTime.Now + TimeSpan.FromMilliseconds(100)), () => Fade(durationInMs, finishAction, afterFadeOutAction, color));
+			afterFadeOutAction?.Invoke();
+			finishAction?.Invoke();
 			return;
 		}
 
+		if (fadingOut)
+		{
+			// Usually this happens if a Fade call is executed in a afterFadeOutAction action.
+			// So in this case we can immediately execute the given afterFadeOutAction as well.
+			afterFadeOutAction?.Invoke();
+
+			if (finishAction != null)
+			{
+				if (afterFadeInAction != null)
+				{
+					var oldFadeInAction = afterFadeInAction;
+					afterFadeInAction = () =>
+					{
+						oldFadeInAction();
+						finishAction();
+					};
+                }
+				else
+				{
+					afterFadeInAction = finishAction;
+                }
+			}
+
+			return;
+        }
+		else if (fadingIn)
+		{
+            afterFadeInAction?.Invoke();
+
+            fadingIn = false;
+            fadingOut = false;
+            fadingHold = false;
+        }       
+
 		color ??= Color.Black;
 
-		FadeOut(durationInMs / 2, afterFadeOutAction, color);
-		AddDelayedAction(TimeSpan.FromMilliseconds(durationInMs / 2), () => FadeIn(durationInMs / 2, finishAction));
+		long holdTime = durationInMs / 10;
+		long remainingTime = durationInMs - holdTime;
+
+		if (remainingTime % 2 == 1)
+		{
+			remainingTime--;
+			holdTime++;
+		}
+
+		fadingHold = true;
+		this.afterFadeOutAction = afterFadeOutAction;
+		afterFadeInAction = finishAction;
+        FadeOut(remainingTime / 2, color);
+        fadeActionIndex = AddDelayedAction(TimeSpan.FromMilliseconds(remainingTime / 2 + holdTime), () => FadeIn(remainingTime / 2));
 	}
 
 	private void UpdateFading()
@@ -145,10 +188,13 @@ partial class Game
 
 					if (alpha == 0)
 					{
-						fadingIn = false;
+                        fadingIn = false;
 						fadeArea.Visible = false;
 						fadeArea = null;
-					}
+
+                        afterFadeInAction?.Invoke();
+                        afterFadeInAction = null;
+                    }
 				}
 			}
 			else if (fadingOut)
@@ -157,16 +203,23 @@ partial class Game
 
 				if (fadeArea.Color.A != alpha)
 				{
-					fadeArea.Color = new(fadeArea.Color, alpha);
+                    fadeArea.Color = new(fadeArea.Color, alpha);
 
 					if (alpha == 255)
 					{
-						fadingOut = false;
-						fadeArea.Visible = false;
-						fadeArea = null;
+                        afterFadeOutAction?.Invoke();
+                        afterFadeOutAction = null;
+
+                        fadingOut = false;						
+
+						if (!fadingHold)
+						{
+							fadeArea.Visible = false;
+							fadeArea = null;
+						}
 					}
 				}
-			}				
+			}
 		}
 	}
 }

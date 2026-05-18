@@ -10,6 +10,8 @@ internal class DoorScreen : LockedScreen<DoorEvent>
 
     public override ScreenType Type { get; } = ScreenType.Door;
 
+    public override ScreenFadeType FadeType { get; } = ScreenFadeType.Out;
+
     protected override uint? AllowedUnlockItemIndex => LockedEvent.ItemIndex;
 
     protected override void Unlocked(Message message)
@@ -20,18 +22,19 @@ internal class DoorScreen : LockedScreen<DoorEvent>
 
     public override void Open(Game game, Action? closeAction)
     {
-        Image = Image80x80.LockedDoor;
-
-        base.Open(game, closeAction);
-
         // If this is a DoorExit event and the door was already opened, just close the screen.
         // The close handler will trigger the follow up event automatically.
-        if (LockedEvent.OpenedEventIndex != null && LockedEvent.OpenedEventIndex != 0 && game.IsCurrentEventSaved())
+        if (game.EventHandler.CurrentEvent is DoorEvent doorEvent &&
+            doorEvent.OpenedEventIndex != null && doorEvent.OpenedEventIndex != 0 && game.IsCurrentEventSaved())
         {
             LockOpened = true;
             game!.ScreenHandler.PopScreen();
             return;
         }
+
+        Image = Image80x80.LockedDoor;
+
+        base.Open(game, closeAction);
     }
 
     public override void Close(Game game)

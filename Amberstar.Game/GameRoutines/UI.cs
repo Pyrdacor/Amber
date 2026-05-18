@@ -42,6 +42,7 @@ partial class Game
     internal void ShowTextMessage(IText text, Action? nextAction = null)
     {
         CurrentText = text;
+        EventHandler.CurrentEvent = null;
         ScreenHandler.PushScreen(ScreenType.TextBox, nextAction);
     }
 

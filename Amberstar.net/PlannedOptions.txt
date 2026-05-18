@@ -1,0 +1,10 @@
+﻿// Optional
+- Ambermoon style dungeon map
+- WASD, QEWASD, Left/Right arrow turns or strafes
+- Direct item drag&drop
+- Free 3D movement like Ambermoon
+- Show loading screen (with dwarf) instead of fading
+
+// Not optional
+- Shortcut keys for stuff like "use item", "equip item", etc.
+- Multiple save slots

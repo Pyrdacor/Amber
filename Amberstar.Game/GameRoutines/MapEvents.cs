@@ -29,7 +29,7 @@ partial class Game
 	{
 		// Note: Saved (inactive) chest events just mean "Chest is open now". The event is never removed.
 		// Note: Saved (inactive) door_exit events are still executed to trigger the exit event (mostly map exits).
-		if (@event is ChestEvent || (@event is DoorEvent doorEvent && doorEvent.OpenedEventIndex != 0))
+		if (@event is IChestEvent || @event is IDoorExitEvent)
 			return true;
 
 		return State.IsEventActive(map.Index, eventIndex);
@@ -50,7 +50,7 @@ partial class Game
 		Pause();
 
 		// Avoid triggering existing delayed actions from old screen
-		ClearDelayedActions();
+		ClearDelayedActions(fadeActionIndex);
 
 		if (State.GetIndexOfMapWithPlayer() != mapIndex)
 			fade = true; // always fade when switching maps

@@ -27,15 +27,52 @@ partial class Game
 		return AddDelayedAction(MathUtil.Round(delay.TotalSeconds * TicksPerSecond), action);
 	}
 
-	internal void DeleteDelayedActions(params long[] keys)
+    internal long AddDelayedActionAt(DateTime timestamp, Action action)
+    {
+		var delay = timestamp - DateTime.Now;
+
+		if (delay.TotalMilliseconds < 0)
+			delay = TimeSpan.FromMilliseconds(0);
+
+		return AddDelayedAction(delay, action);
+    }
+
+    internal int DeleteDelayedActions(params long[] keys)
 	{
 		var lookup = new HashSet<long>(keys);
-		timedActions.Remove(timedAction => lookup.Contains(timedAction.Key));
+		return timedActions.Remove(timedAction => lookup.Contains(timedAction.Key)).Length;
 	}
 
-	internal void ClearDelayedActions()
+    internal int DeleteDelayedActions(Func<long, bool> filter)
+    {
+        return timedActions.Remove(timedAction => filter(timedAction.Key)).Length;
+    }
+
+    internal int ExecuteAndDeleteDelayedActions(long key)
+    {
+		var removedActions = timedActions.Remove(timedAction => timedAction.Key == key);
+        
+		foreach (var removedAction in removedActions)
+		{
+			removedAction.Action();
+        }
+
+		return removedActions.Length;
+    }
+
+    internal void ClearDelayedActions(params long[] expectKeys)
 	{
-		timedActions.Clear();
+		if (expectKeys == null || expectKeys.Length == 0)
+			timedActions.Clear();
+		else
+		{
+			var lookup = new HashSet<long>(expectKeys.Where(key => key != -1));
+
+			if (lookup.Count == 0)
+				timedActions.Clear();
+			else
+				DeleteDelayedActions(key => !lookup.Contains(key));
+        }
 	}
 
     IText GetMapText(int mapIndex, int index)

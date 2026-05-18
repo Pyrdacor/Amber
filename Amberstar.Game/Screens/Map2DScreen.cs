@@ -212,7 +212,8 @@ internal class Map2DScreen : ButtonGridScreen
     IRenderText? mapNameText;
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
-	public IMap2D Map => map!;
+    public override ScreenFadeType FadeType { get; } = ScreenFadeType.None;
+    public IMap2D Map => map!;
 
     internal override byte ButtonGridPaletteIndex => palette;
 

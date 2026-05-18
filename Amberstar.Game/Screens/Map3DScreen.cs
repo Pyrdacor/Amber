@@ -247,6 +247,7 @@ internal class Map3DScreen : ButtonGridScreen
 	IRenderText? mapNameText;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
+    public override ScreenFadeType FadeType { get; } = ScreenFadeType.None;
     public IMap3D Map => map!;
 
     internal override byte ButtonGridPaletteIndex => palette;
@@ -561,7 +562,7 @@ internal class Map3DScreen : ButtonGridScreen
 		// Check for events
 		var eventIndex = map!.Tiles[playerPosition.X + playerPosition.Y * map.Width].Event;
 
-		if (eventIndex != 0)
+		if (eventIndex != 0 && game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
 		{
 			var mapEvent = Event.CreateEvent(map.Events[eventIndex - 1], eventIndex);
 
@@ -575,7 +576,13 @@ internal class Map3DScreen : ButtonGridScreen
 		}
 	}
 
-	private bool CanMoveTo(int x, int y, bool player, int collisionClass)
+    internal void ResetPartyPosition()
+    {
+		if (game!.State.ResetPartyPosition())
+			UpdateView();
+    }
+
+    private bool CanMoveTo(int x, int y, bool player, int collisionClass)
 	{
 		if (x < 0 || y < 0 || x >= map!.Width || y >= map.Height)
 			return false;

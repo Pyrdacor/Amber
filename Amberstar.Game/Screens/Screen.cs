@@ -26,12 +26,22 @@ public enum ScreenType
     // TODO ...
 }
 
+public enum ScreenFadeType
+{
+	None,
+	In,
+	Out,
+	Both,
+}
+
 internal abstract class Screen
 {
 	Action? closeAction;
 	Game? game;
 
 	public abstract ScreenType Type { get; }
+
+	public virtual ScreenFadeType FadeType { get; } = ScreenFadeType.Both;
 
     public virtual bool Transparent { get; } = false;
 
@@ -187,12 +197,28 @@ internal class ScreenHandler(Game game) : IDisposable
 		if (!createdScreens.TryGetValue(screenType, out var screen))
 			screen = Create(screenType);
 
-		screens.Push(screen);
+		void Push()
+		{
+			screens.Push(screen!);
 
-		currentScreen?.ScreenPushed(game, screen);
-		screen.Open(game, followAction);
+			currentScreen?.ScreenPushed(game, screen!);
+			screen!.Open(game, followAction);
+		}
 
-		return true;
+		bool transparent = currentScreen?.Transparent == true || screen.Transparent;
+		bool fadeOut = currentScreen != null && (currentScreen.FadeType == ScreenFadeType.Out || currentScreen.FadeType == ScreenFadeType.Both);
+        bool fadeIn = screen != null && (screen.FadeType == ScreenFadeType.In || screen.FadeType == ScreenFadeType.Both);
+
+        if (!transparent && (fadeIn || fadeOut))
+        {
+			game.Fade(Game.DefaultFadeTime, null, Push);
+		}
+		else
+		{
+			Push();
+		}
+
+        return true;
 	}
 
 	public Screen? PopScreen()
@@ -200,12 +226,29 @@ internal class ScreenHandler(Game game) : IDisposable
 		if (screens.Count == 0)
 			return null;
 
-		var screen = screens.Pop();
+        var screen = screens.Pop();
+        var prevScreen = ActiveScreen;
 
-		screen.Close(game);
-		ActiveScreen?.ScreenPopped(game, screen);
+        void Pop()
+		{
+			screen.Close(game);
+            prevScreen?.ScreenPopped(game, screen);
+		}
 
-		return screen;
+        bool transparent = prevScreen?.Transparent == true || screen.Transparent;
+        bool fadeIn = prevScreen != null && (prevScreen.FadeType == ScreenFadeType.In || prevScreen.FadeType == ScreenFadeType.Both);
+        bool fadeOut = screen.FadeType == ScreenFadeType.Out || screen.FadeType == ScreenFadeType.Both;
+
+        if (!transparent && (fadeIn || fadeOut))
+        {
+            game.Fade(Game.DefaultFadeTime, null, Pop);
+        }
+        else
+        {
+            Pop();
+        }
+
+        return screen;
 	}
 
 	public void ClearAllScreens()

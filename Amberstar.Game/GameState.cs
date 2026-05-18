@@ -334,10 +334,15 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 		PartyY = y + 1;
 	}
 
-    public void ResetPartyPosition()
+    public bool ResetPartyPosition()
     {
+        int oldX = PartyX;
+        int oldY = PartyY;
+
         PartyX = LastPosition.X + 1;
         PartyY = LastPosition.Y + 1;
+
+        return oldX != PartyX || oldY != PartyY;
     }
 
     public void SetIsWorldMap(bool worldMap)

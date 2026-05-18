@@ -4,7 +4,7 @@ namespace Amberstar.Game.Events
 {
     internal class EventHandler(Game game)
     {
-		internal IEvent? CurrentEvent { get; private set; }
+		internal IEvent? CurrentEvent { get; set; }
 
 		public bool HandleEvent(EventTrigger trigger, Event @event, IEventProvider eventProvider)
         {
@@ -17,8 +17,6 @@ namespace Amberstar.Game.Events
 			{
 				game.SaveEvent(@event.Index);
             }
-
-			CurrentEvent = null;
 
 			return result;
 		}

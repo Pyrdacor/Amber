@@ -12,14 +12,17 @@ namespace Amberstar.Game.Collections
 			_sortedList.Clear();
 		}
 
-		public void Remove(Func<TValue, bool> filter)
+		private IEnumerable<TValue> RemoveInternal(Func<TValue, bool> filter)
 		{
 			foreach (var queue in new SortedList<TKey, List<TValue>>(_sortedList))
 			{
 				foreach (var entry in new List<TValue>(queue.Value))
 				{
 					if (filter(entry))
+					{
 						queue.Value.Remove(entry);
+						yield return entry;
+					}
 				}
 
 				if (queue.Value.Count == 0)
@@ -27,11 +30,13 @@ namespace Amberstar.Game.Collections
 			}
 		}
 
-		public void Push(TKey key, TValue value)
+		public TValue[] Remove(Func<TValue, bool> filter) => [.. RemoveInternal(filter)];
+
+        public void Push(TKey key, TValue value)
 		{
 			if (!_sortedList.TryGetValue(key, out List<TValue>? queue))
 			{
-				queue = new List<TValue>();
+				queue = [];
 				_sortedList[key] = queue;
 			}
 

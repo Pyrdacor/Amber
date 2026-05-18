@@ -1,6 +1,5 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
-using Amber.Renderer.Common;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
@@ -197,6 +196,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             // Note: At this point, ActiveScreen is already the previous one!
             if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
                 map2dScreen.ResetPartyPosition();
+            else if (game!.ScreenHandler.ActiveScreen is Map3DScreen map3dScreen)
+                map3dScreen.ResetPartyPosition();
             else
                 game.State.ResetPartyPosition();
         }

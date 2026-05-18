@@ -19,7 +19,7 @@ public partial class Game : IDisposable
 
 	public const int MaxPartyMembers = 6;
 	public const long TicksPerSecond = 60;
-	const long DefaultFadeTime = 1000;
+	public const long DefaultFadeTime = 1000;
 	double totalTime = 0.0;
 	long lastGameTicks = 0;
 	long gameTicks = 0;
