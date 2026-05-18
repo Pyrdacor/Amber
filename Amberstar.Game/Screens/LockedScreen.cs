@@ -21,8 +21,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
     readonly ItemContainer[] inventoryItemSlots = new ItemContainer[ICharacter.InventorySlotCount];
     readonly static Position[] inventorySlotPositions = new Position[ICharacter.InventorySlotCount];
     readonly static Rect messageDisplayArea = new(112, 49, 192, 48);
-    readonly static Rect itemArea;
-    readonly static Rect itemTooltipArea;
+    protected readonly static Rect itemArea;
+    protected readonly static Rect itemTooltipArea;
     ISprite? image;
     IRenderText? message;
     TEvent? lockedEvent;
@@ -117,10 +117,10 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         buttonGrid.SetButton(7, lowerButton.Type);
         buttonGrid.SetButton(8, lowerRightButton.Type);
 
-        bool hasInventoryItems = partyMember!.Inventory.Any(itemSlot => itemSlot.Count > 0);
-        buttonGrid.EnableButton(1, hasInventoryItems);
-        buttonGrid.EnableButton(3, !trapFound && !partyMember.MentalConditions.HasFlag(MentalCondition.Blind));
-        buttonGrid.EnableButton(6, trapFound && !trapDisarmed && !partyMember.MentalConditions.HasFlag(MentalCondition.Blind));
+        buttonGrid.EnableButton(0, !lockOpened);
+        buttonGrid.EnableButton(1, !lockOpened && partyMember!.Inventory.Any(itemSlot => itemSlot.Count > 0));
+        buttonGrid.EnableButton(3, !lockOpened && !trapFound && !partyMember.MentalConditions.HasFlag(MentalCondition.Blind));
+        buttonGrid.EnableButton(6, !lockOpened && trapFound && !trapDisarmed && !partyMember.MentalConditions.HasFlag(MentalCondition.Blind));
 
         if (centerButton.Type != ButtonType.Empty)
             buttonGrid.EnableButton(4, centerButton.Enabled);
@@ -357,9 +357,16 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     internal sealed override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
+        var text = game!.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
+
+        ShowText(text, waitForClick, closeAfterClick);
+    }
+
+    protected void ShowText(IText text, bool waitForClick = true, bool closeAfterClick = false)
+    {
         message?.Delete();
 
-        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), messageDisplayArea.Size.Width, 15, 0, ButtonGridPaletteIndex);
+        message = game!.TextManager.Create(text, messageDisplayArea.Size.Width, 15, 0, ButtonGridPaletteIndex);
         message.ShowInArea(messageDisplayArea, 20, TextAlignment.Left);
 
         // TODO: Scrolling
@@ -477,7 +484,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         game!.TriggerTrap(lockedEvent!.TrapType, lockedEvent!.TrapDamage);
     }
 
-    internal sealed override void PickItem(int? index)
+    internal override void PickItem(ScreenType sourceScreen, int? index)
     {
         if (index == null)
         {

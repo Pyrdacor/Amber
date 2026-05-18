@@ -10,7 +10,7 @@ internal abstract class ItemGridScreen : ButtonGridScreen
 
 	internal abstract void HideMessage();
 
-	internal abstract void PickItem(int? index);
+	internal abstract void PickItem(ScreenType sourceScreen, int? index);
 
 	internal abstract ItemContainer[] ItemContainers { get; }
 }

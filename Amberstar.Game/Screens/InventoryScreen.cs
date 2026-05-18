@@ -569,7 +569,7 @@ internal class InventoryScreen : ItemGridScreen
         message = null;
     }
 
-    internal override void PickItem(int? index)
+    internal override void PickItem(ScreenType sourceScreen, int? index)
     {
         // TODO
     }

@@ -10,7 +10,8 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
 	IUIGraphicLoader UIGraphicLoader { get; }
 	IMapLoader MapLoader { get; }
 	ILabDataLoader LabDataLoader { get; }
-	IPaletteLoader PaletteLoader { get; }
+    IChestLoader ChestLoader { get; }
+    IPaletteLoader PaletteLoader { get; }
 	IGraphicLoader GraphicLoader { get; }
 	ICursorLoader CursorLoader { get; }
 	ITilesetLoader TilesetLoader { get; }

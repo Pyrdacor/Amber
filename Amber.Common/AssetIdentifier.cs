@@ -47,6 +47,7 @@
 		Merchant,
 		Palette,
 		Music,
+		Chest,
 	}
 
 	public struct AssetIdentifier

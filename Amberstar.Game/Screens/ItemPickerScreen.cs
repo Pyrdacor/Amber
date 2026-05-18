@@ -21,6 +21,8 @@ internal abstract class ItemPickerScreen : Screen
 
     public abstract Rect ItemTooltipArea { get; }
 
+    public virtual CursorType HoverCursorType { get; } = CursorType.Sword;
+
     public override void Init(Game game)
 	{
         base.Init(game);
@@ -48,12 +50,14 @@ internal abstract class ItemPickerScreen : Screen
         items.ForEach(item => item.Visible = true);
 
         game.TrapMouse(MouseTrapArea);
+        game.Cursor.CursorType = HoverCursorType;
     }
 
     public override void Close(Game game)
     {
         parentScreen?.HideMessage();
         game.UntrapMouse();
+        game.Cursor.CursorType = CursorType.Sword;
 
         if (itemsWereHidden)
             items.ForEach(item => item.Visible = false);
@@ -62,7 +66,7 @@ internal abstract class ItemPickerScreen : Screen
 
         base.Close(game);
 
-        parentScreen?.PickItem(pickedItem);
+        parentScreen?.PickItem(Type, pickedItem);
     }
 
     public override void KeyDown(Key key, KeyModifiers keyModifiers)

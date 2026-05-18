@@ -122,7 +122,8 @@ public class AssetProvider : IAssetProvider
 	readonly Lazy<IFontLoader> fontLoader;
 	readonly Lazy<ISavegameLoader> savegameLoader;
 	readonly Lazy<ILabDataLoader> labDataLoader;
-	readonly Lazy<ICursorLoader> cursorLoader;
+	readonly Lazy<IChestLoader> chestLoader;
+    readonly Lazy<ICursorLoader> cursorLoader;
     readonly Lazy<IMonsterLoader> monsterLoader;
     readonly Lazy<IPersonLoader> personLoader;
     readonly Lazy<IItemLoader> itemLoader;
@@ -140,7 +141,8 @@ public class AssetProvider : IAssetProvider
 	public IFontLoader FontLoader => fontLoader.Value;
 	public ISavegameLoader SavegameLoader => savegameLoader.Value;
 	public ILabDataLoader LabDataLoader => labDataLoader.Value;
-	public ICursorLoader CursorLoader => cursorLoader.Value;
+	public IChestLoader ChestLoader => chestLoader.Value;
+    public ICursorLoader CursorLoader => cursorLoader.Value;
     public IMonsterLoader MonsterLoader => monsterLoader.Value;
     public IPersonLoader PersonLoader => personLoader.Value;
     public IItemLoader ItemLoader => itemLoader.Value;
@@ -186,7 +188,8 @@ public class AssetProvider : IAssetProvider
 		fontLoader = new(() => new FontLoader(this));
 		savegameLoader = new(() => new SavegameLoader(this));
 		labDataLoader = new(() => new LabDataLoader(this));
-		cursorLoader = new(() => new CursorLoader(this));
+		chestLoader = new(() => new ChestLoader(this));
+        cursorLoader = new(() => new CursorLoader(this));
         monsterLoader = new(() => new MonsterLoader(this));
         personLoader = new(() => new PersonLoader(this, textLoader, GetAssetKeys(AssetType.Person)));
         itemLoader = new(() => new ItemLoader());
@@ -399,7 +402,8 @@ public class AssetProvider : IAssetProvider
 			AssetType.LabBlock => "LABBLOCK.AMB",
 			AssetType.Background => "BACKGRND.AMB",
             AssetType.Monster => "MON_DATA.AMB",
-            AssetType.Person => "CHARDATA.AMB",            
+            AssetType.Person => "CHARDATA.AMB",
+            AssetType.Chest => "CHESTDAT.AMB",
             _ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
 	}

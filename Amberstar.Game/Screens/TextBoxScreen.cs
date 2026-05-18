@@ -39,6 +39,8 @@ internal class TextBoxScreen : Screen
         }
 
         // Note: Don't use game.State.MapIndex as on world maps this could be another piece of the map!
+		// TODO: Still this could be wrong, if the text event is on another world map than the player (rare case).
+		// TODO: Add a function to get the event location and map index later. Also for chest event, etc.
         int mapIndex = game.State.GetIndexOfMapWithPlayer();
 		var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 		text = text.GetTextBlock(@event.TextIndex);

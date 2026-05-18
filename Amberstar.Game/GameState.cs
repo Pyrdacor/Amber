@@ -505,5 +505,38 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 		return 0;
 	}
 
+    public bool ChestHasItems(int chestIndex) => GetChestSlotBits(chestIndex) != 0;
+
+    public int GetChestSlotBits(int chestIndex)
+    {
+        // Note: While the ChestGold array directly uses the chestIndex as
+        // the index, for the ChestBits, the index is calculated differently.
+        int index = chestIndex - 1;
+        int offset = 3 * (index / 2);
+        int chestBits;
+
+        // Read 12 bits per chest.
+        if ((index & 0x1) == 0x1)
+        {
+            // Read 12 bits even (1.5 bytes)
+            chestBits = ChestSlotBits[offset + 1];
+            chestBits <<= 8;
+            chestBits |= ChestSlotBits[offset];
+            chestBits >>= 1; // TODO: why?
+        }
+        else
+        {
+            chestBits = ChestSlotBits[offset + 2];
+            chestBits <<= 8;
+            chestBits |= ChestSlotBits[offset + 1];
+            chestBits >>= 5;
+
+            if ((ChestSlotBits[offset + 3] & 0x1) == 0x1)
+                chestBits |= 0x800;
+        }
+
+        return chestBits & 0xfff;
+    }
+
 	#endregion
 }
