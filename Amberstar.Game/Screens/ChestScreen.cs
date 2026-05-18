@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amberstar.Game.Events;
+using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 
@@ -7,8 +8,11 @@ namespace Amberstar.Game.Screens;
 
 internal class ChestScreen : LockedScreen<ChestEvent>
 {
+    readonly static Rect goldDisplayArea = new(112, 37 + 76, 64, 16);
     bool chestHasItems = false;
     bool chestHasGold = false;
+    Label? goldLabel;
+    Label? goldDisplay;
 
     protected override Layout Layout { get; } = Layout.Chest;
 
@@ -20,6 +24,24 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
         Game.SaveEvent(LockedEvent.Index);
         ShowMessage(message, true);
+    }
+
+    public override void Init(Game game)
+    {
+        base.Init(game);
+
+        var goldLabelText = game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
+
+        goldLabel = new(game);
+        goldLabel.Area = goldDisplayArea;
+        goldLabel.Alignment = TextAlignment.Center;
+        goldLabel.SetText(goldLabelText, goldDisplayArea.Size.Width, 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+        goldLabel.Visible = false;
+
+        goldDisplay = new(game);
+        goldDisplay.Area = goldDisplayArea + new Position(0, 7);
+        goldDisplay.Alignment = TextAlignment.Center;
+        goldDisplay.Visible = false;
     }
 
     public override void Open(Game game, Action? closeAction)
@@ -41,11 +63,35 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         }
     }
 
+    public override void Close(Game game)
+    {
+        base.Close(game);
+
+        if (goldLabel != null)
+            goldLabel.Visible = false;
+        if (goldDisplay != null)
+            goldDisplay.Visible = false;
+    }
+
+    public override void Destroy(Game game)
+    {
+        base.Destroy(game);
+
+        goldLabel?.Destroy();
+        goldLabel = null;
+
+        goldDisplay?.Destroy();
+        goldDisplay = null;
+    }
+
     private void ShowOpenChest()
     {
         Image = Image80x80.OpenChest;
 
-        if (UpdateChestItems() == 0 && UpdateChestGold() == 0)
+        int itemCount = UpdateChestItems();
+        int goldAmount = UpdateChestGold();
+
+        if (itemCount == 0 && goldAmount == 0)
         {
             // If empty, just close
             Game.ScreenHandler.PopScreen();
@@ -70,6 +116,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     /// </summary>
     private int UpdateChestItems()
     {
+        CleanUpItems();
+
         var chestIndex = LockedEvent.ChestIndex;
         var chestSlotBits = Game.State.GetChestSlotBits(chestIndex);
         chestHasItems = chestSlotBits != 0;
@@ -97,7 +145,10 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 return 0;
             }
 
-            // TODO: Show items, etc
+            for (int i = 0; i < IChest.SlotCount; i++)
+            {
+                SetItem(i, 1, items[i]);
+            }
 
             return itemCount;
         }
@@ -119,7 +170,10 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
         chestHasGold = chestGold != 0;
 
-        // TODO: update display
+        goldDisplay!.SetText($"{chestGold:00000}", 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+
+        goldLabel!.Visible = true;
+        goldDisplay.Visible = true;
 
         return chestGold;
     }

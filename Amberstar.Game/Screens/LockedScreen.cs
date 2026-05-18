@@ -174,10 +174,18 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         lockpickReduction = 0;
     }
 
-    private void CleanUpItems()
+    protected void CleanUpItems()
     {
         for (int i = 0; i < inventoryItemSlots.Length; i++)
             inventoryItemSlots[i].ClearItem();
+    }
+
+    protected void SetItem(int slotIndex, int count, IItem? item)
+    {
+        if (item == null)
+            inventoryItemSlots[slotIndex].ClearItem();
+        else
+            inventoryItemSlots[slotIndex].SetItem(count, item);
     }
 
     public override void Close(Game game)
@@ -218,7 +226,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         }
 
         if (screen is UseItemScreen)
-            UpdateItems();
+            UpdateInventoryItems();
 
         base.ScreenPushed(game, screen);
     }
@@ -276,7 +284,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         return base.MouseDown(position, buttons, keyModifiers);
     }
 
-    public void UpdateItems()
+    private void UpdateInventoryItems()
     {
         CleanUpItems();
 
@@ -292,7 +300,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             if (itemSlot?.Item == null || itemSlot.Count <= 0)
                 continue;
 
-            inventoryItemSlots[i].SetItem(itemSlot.Count, itemSlot.Item);
+            SetItem(i, itemSlot.Count, itemSlot.Item);
         }
 
         RequestButtonSetup();

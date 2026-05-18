@@ -116,4 +116,14 @@ public readonly struct Rect : IEquatable<Rect>
         (x, y) = Position;
 		(width, height) = Size;
     }
+
+	public static Rect operator+(Rect rect, Position offset)
+	{
+		return new(rect.Position + offset, rect.Size);
+	}
+
+    public static Rect operator-(Rect rect, Position offset)
+    {
+        return new(rect.Position - offset, rect.Size);
+    }
 }
