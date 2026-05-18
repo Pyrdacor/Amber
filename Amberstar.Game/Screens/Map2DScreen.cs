@@ -305,9 +305,8 @@ internal class Map2DScreen : ButtonGridScreen
 
     private void ShowMapName()
     {
-        var name = game!.AssetProvider.TextLoader.FromString(map!.Name).GetTextBlock(0);
-
-        mapNameText ??= game!.TextManager.Create(name, Game.VirtualScreenWidth, 15, TextManager.TransparentPaper, palette);
+		mapNameText?.Delete();
+        mapNameText = game!.TextManager.Create(map!.Name, 15, TextManager.TransparentPaper, palette);
         mapNameText.ShowInArea(OffsetX, OffsetY - mapNameText.LineHeight - 3, TilesPerRow * TileWidth, TileRows * TileHeight, 100, TextAlignment.Center);
     }
 
