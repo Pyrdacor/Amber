@@ -141,7 +141,7 @@ internal class ChestEvent(EventData eventData) : Event(eventData), IChestEvent
 
 	public word ChestIndex => eventData.Word6;
 
-	public word TextIndex => eventData.Word6;
+	public word TextIndex => eventData.Word8;
 }
 
 internal class TrapDoorEvent(EventData eventData) : Event(eventData), ITrapDoorEvent
