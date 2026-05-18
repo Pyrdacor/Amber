@@ -11,12 +11,6 @@ namespace Amberstar.Game.Screens;
 
 internal class Map2DScreen : ButtonGridScreen
 {
-	enum ButtonLayout
-	{
-		Movement,
-		Actions
-	}
-
 	class WorldMap : IMap2D
 	{
 		const int WorldMapSong = 2;
@@ -197,7 +191,6 @@ internal class Map2DScreen : ButtonGridScreen
     int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
-	ButtonLayout buttonLayout = ButtonLayout.Movement;
 	int moveX = 0;
 	int moveY = 0;
 	long moveTickCounter = 0;
@@ -288,8 +281,6 @@ internal class Map2DScreen : ButtonGridScreen
 
 	public override void Open(Game game, Action? closeAction)
 	{
-        buttonLayout = ButtonLayout.Movement;
-
         base.Open(game, closeAction);
 
         moveTickCounter = 0;
@@ -320,7 +311,7 @@ internal class Map2DScreen : ButtonGridScreen
 
     protected override void ButtonClicked(int index)
 	{
-		if (buttonLayout == ButtonLayout.Movement)
+		if (game!.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (index == 4)
 			{
@@ -332,13 +323,13 @@ internal class Map2DScreen : ButtonGridScreen
 			int moveY = index / 3 - 1;
 
 			if (moveY < 0)
-				game!.State.PartyDirection = Direction.Up;
+				game.State.PartyDirection = Direction.Up;
 			else if (moveY > 0)
-				game!.State.PartyDirection = Direction.Down;
+				game.State.PartyDirection = Direction.Down;
 			else if (moveX < 0)
-				game!.State.PartyDirection = Direction.Left;
+				game.State.PartyDirection = Direction.Left;
 			else if (moveX > 0)
-				game!.State.PartyDirection = Direction.Right;
+				game.State.PartyDirection = Direction.Right;
 
 			if (currentTicks - lastMoveStartTicks >= GetTicksPerStep())
 			{
@@ -353,7 +344,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 			Rect CreateActionCursorTrapArea(bool mouth)
 			{
-                var playerPosition = game!.State.PartyPosition;
+                var playerPosition = game.State.PartyPosition;
                 var playerRenderPosition = new Position(OffsetX + (playerPosition.X - lastScrollX) * TileWidth, OffsetY + (playerPosition.Y - lastScrollY) * TileHeight);
 
 				int range = mouth ? 2 : 1;
@@ -367,15 +358,15 @@ internal class Map2DScreen : ButtonGridScreen
 			switch (buttonType)
 			{
 				case ButtonType.Eye:
-					game!.Cursor.CursorType = CursorType.Eye;
+					game.Cursor.CursorType = CursorType.Eye;
 					game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
                     break;
                 case ButtonType.Ear:
-                    game!.Cursor.CursorType = CursorType.Ear;
+                    game.Cursor.CursorType = CursorType.Ear;
                     game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
                     break;
                 case ButtonType.Mouth:
-                    game!.Cursor.CursorType = CursorType.Mouth;
+                    game.Cursor.CursorType = CursorType.Mouth;
                     game.TrapMouse(CreateActionCursorTrapArea(mouth: true));
                     break;                
                 // TODO
@@ -385,7 +376,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 	protected override void SetupButtons(ButtonGrid buttonGrid)
 	{
-		if (buttonLayout == ButtonLayout.Movement)
+		if (game!.ButtonLayout == ButtonLayout.Movement)
 		{
 			// Upper row
 			buttonGrid.SetButton(0, ButtonType.ArrowUpLeft);
@@ -400,7 +391,7 @@ internal class Map2DScreen : ButtonGridScreen
 			buttonGrid.SetButton(7, ButtonType.ArrowDown);
 			buttonGrid.SetButton(8, ButtonType.ArrowDownRight);
 
-			bool enableMoveButtons = game!.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
+			bool enableMoveButtons = game.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
 
             for (int i = 0; i< 9; i++)
 			{
@@ -627,9 +618,9 @@ internal class Map2DScreen : ButtonGridScreen
 	private void UpdateMovement()
 	{
 		bool left = game!.IsKeyDown(Key.Left) || game.IsKeyDown('A');
-		bool right = game!.IsKeyDown(Key.Right) || game.IsKeyDown('D');
-		bool up = game!.IsKeyDown(Key.Up) || game.IsKeyDown('W');
-		bool down = game!.IsKeyDown(Key.Down) || game.IsKeyDown('S');
+		bool right = game.IsKeyDown(Key.Right) || game.IsKeyDown('D');
+		bool up = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
+		bool down = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
 		bool upLeft = game.IsKeyDown('Q');
 		bool upRight = game.IsKeyDown('E');
 		bool downLeft = game.IsKeyDown('Y') || game.IsKeyDown('Z');
@@ -672,7 +663,7 @@ internal class Map2DScreen : ButtonGridScreen
 			}
 		}
 
-		if (buttonLayout == ButtonLayout.Movement)
+		if (game.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (!left)
 				left = game.IsKeyDown(Key.Keypad4);
@@ -811,7 +802,7 @@ internal class Map2DScreen : ButtonGridScreen
             }
             else if (ButtonGrid.Area.Contains(position))
 			{
-				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
+				game.ButtonLayout = (ButtonLayout)(1 - (int)game.ButtonLayout); // toggle
 				RequestButtonSetup();
             }
 			else

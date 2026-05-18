@@ -92,12 +92,6 @@ internal class Map3DScreen : ButtonGridScreen
 			}
 		};
 
-	enum ButtonLayout
-	{
-		Movement,
-		Actions
-	}
-
 	class Character
 	{
 		private readonly IMap3D map;
@@ -237,7 +231,6 @@ internal class Map3DScreen : ButtonGridScreen
 	readonly List<IColoredRect> skyGradient = [];
 	readonly List<IAnimatedSprite> images = [];
 	readonly List<Character> characters = [];
-	ButtonLayout buttonLayout = ButtonLayout.Movement;
 	long currentTicks = 0;
 	long lastMoveTicks = 0;
 	long lastTurnTicks = 0;
@@ -313,8 +306,6 @@ internal class Map3DScreen : ButtonGridScreen
 
     public override void Open(Game game, Action? closeAction)
 	{
-        buttonLayout = ButtonLayout.Movement;
-
         base.Open(game, closeAction);
 
 		currentTicks = 0;
@@ -333,11 +324,11 @@ internal class Map3DScreen : ButtonGridScreen
 
 	protected override void ButtonClicked(int index)
 	{
-		if (buttonLayout == ButtonLayout.Movement)
+		if (game!.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (index == 4)
 			{
-				game!.Time.Tick();
+				game.Time.Tick();
 				return;
 			}
 
@@ -373,7 +364,7 @@ internal class Map3DScreen : ButtonGridScreen
 			{
                 // TODO: NPCs
 
-                var playerPosition = game!.State.PartyPosition;
+                var playerPosition = game.State.PartyPosition;
                 var forwardPosition = playerPosition + game.State.PartyDirection.Offset();
 
 				if (forwardPosition.X >= 0 && forwardPosition.X < map!.Width &&
@@ -395,7 +386,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 				if (character != null && character.Type == MapCharacterType.Person)
 				{
-                    game!.State.CurrentConversationCharacterIndex = character.CharacterIndex;
+                    game.State.CurrentConversationCharacterIndex = character.CharacterIndex;
 					game.ScreenHandler.PushScreen(ScreenType.Conversation);
 					return;
                 }
@@ -426,7 +417,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 	protected override void SetupButtons(ButtonGrid buttonGrid)
 	{
-		if (buttonLayout == ButtonLayout.Movement)
+		if (game!.ButtonLayout == ButtonLayout.Movement)
 		{
 			// Upper row
 			buttonGrid.SetButton(0, ButtonType.TurnLeft);
@@ -441,7 +432,7 @@ internal class Map3DScreen : ButtonGridScreen
 			buttonGrid.SetButton(7, ButtonType.MoveBackward);
 			buttonGrid.SetButton(8, ButtonType.RotateRight);
 
-            bool enableMoveButtons = game!.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
+            bool enableMoveButtons = game.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
 
             for (int i = 0; i < 9; i++)
             {
@@ -735,7 +726,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 		if (mouseDown && game.InputEnabled && !game.Paused)
 		{
-			switch (game!.Cursor.CursorType)
+			switch (game.Cursor.CursorType)
 			{
 				case CursorType.ArrowForward3D:
 					forward = true;
@@ -764,7 +755,7 @@ internal class Map3DScreen : ButtonGridScreen
 			}
 		}
 
-		if (buttonLayout == ButtonLayout.Movement)
+		if (game.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (!left)
 				left = game.IsKeyDown(Key.Keypad4);
@@ -809,7 +800,7 @@ internal class Map3DScreen : ButtonGridScreen
 		{
 			if (ButtonGrid.Area.Contains(position))
 			{
-				buttonLayout = (ButtonLayout)(1 - (int)buttonLayout); // toggle
+				game!.ButtonLayout = (ButtonLayout)(1 - (int)game.ButtonLayout); // toggle
 				RequestButtonSetup();
 			}
             else

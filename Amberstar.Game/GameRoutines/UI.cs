@@ -7,9 +7,16 @@ using System.Text.RegularExpressions;
 
 namespace Amberstar.Game;
 
+internal enum ButtonLayout
+{
+    Movement,
+    Actions
+}
+
 partial class Game
 {
-	internal Cursor Cursor { get; }
+    internal ButtonLayout ButtonLayout { get; set; } = ButtonLayout.Movement;
+    internal Cursor Cursor { get; }
 
 	internal void SetLayout(Layout layout, byte? paletteIndex = null)
 	{
