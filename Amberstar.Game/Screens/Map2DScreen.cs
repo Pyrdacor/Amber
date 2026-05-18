@@ -349,8 +349,16 @@ internal class Map2DScreen : ButtonGridScreen
 
 				int range = mouth ? 2 : 1;
 
-				var startPosition = new Position(playerRenderPosition.X - (range - 1) * TileWidth - TileWidth / 2, playerRenderPosition.Y - (range - 1) * TileHeight - TileHeight / 2);
-				var size = new Size((range * 2) * TileWidth, (range * 2) * TileHeight);
+				var startPosition = new Position
+				(
+					MathUtil.Limit(OffsetX + 7, playerRenderPosition.X - (range - 1) * TileWidth - TileWidth / 2, OffsetX + MapViewWidth - 1),
+					MathUtil.Limit(OffsetY + 7, playerRenderPosition.Y - (range - 1) * TileHeight - TileHeight / 2, OffsetY + MapViewHeight - 1)
+				);
+				var size = new Size
+				(
+					Math.Min((range * 2) * TileWidth, OffsetX + MapViewWidth - startPosition.X - 8),
+					Math.Min((range * 2) * TileHeight, OffsetY + MapViewHeight - startPosition.Y - 8)
+				);
 
 				return new Rect(startPosition, size);
             }
