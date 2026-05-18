@@ -140,7 +140,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
-            inventoryItemSlots[i] = new ItemContainer(game, inventorySlotPositions[i], 0, null, 10) { Draggable = true };
+            inventoryItemSlots[i] = new ItemContainer(game, inventorySlotPositions[i], 0, null, 10);
         }
     }
 
@@ -252,31 +252,28 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             game!.ScreenHandler.PopScreen();
     }
 
-    public override void KeyDown(Key key, KeyModifiers keyModifiers)
+    public override bool KeyDown(Key key, KeyModifiers keyModifiers)
     {
         if (waitForClick)
         {
             if (key == Key.Space || key == Key.Escape)
                 EndClickWait();
 
-            return;
+            return true;
         }
 
-        if (key == Key.Escape)
-            game!.ScreenHandler.PopScreen();
-
-        base.KeyDown(key, keyModifiers);
+        return base.KeyDown(key, keyModifiers);
     }
 
-    public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+    public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
     {
         if (waitForClick)
         {
             EndClickWait();
-            return;
+            return true;
         }
 
-        base.MouseDown(position, buttons, keyModifiers);
+        return base.MouseDown(position, buttons, keyModifiers);
     }
 
     public void UpdateItems()

@@ -69,19 +69,19 @@ internal abstract class ItemPickerScreen : Screen
         parentScreen?.PickItem(Type, pickedItem);
     }
 
-    public override void KeyDown(Key key, KeyModifiers keyModifiers)
+    public override bool KeyDown(Key key, KeyModifiers keyModifiers)
     {
         if (key == Key.Escape || key == Key.Space)
         {
             pickedItem = null;
             game?.ScreenHandler.PopScreen();
-            return;
+            return true;
         }
 
-        base.KeyDown(key, keyModifiers);
+        return base.KeyDown(key, keyModifiers);
     }
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
         if (buttons == MouseButtons.Left)
         {
@@ -93,7 +93,7 @@ internal abstract class ItemPickerScreen : Screen
                 {
                     pickedItem = i;
                     game!.ScreenHandler.PopScreen();
-                    return;
+                    return true;
                 }
             }
         }
@@ -101,10 +101,10 @@ internal abstract class ItemPickerScreen : Screen
         {
             pickedItem = null;
             game?.ScreenHandler.PopScreen();
-            return;
+            return true;
         }
 
-        base.MouseDown(position, buttons, keyModifiers);
+        return base.MouseDown(position, buttons, keyModifiers);
     }
 
     public override void MouseMove(Position position, MouseButtons buttons)

@@ -130,14 +130,6 @@ internal class CharacterStatsScreen : ButtonGridScreen
         }
     }
 
-    public override void KeyDown(Key key, KeyModifiers keyModifiers)
-	{
-        if (key == Key.Escape)
-            game!.ScreenHandler.PopScreen();
-
-        base.KeyDown(key, keyModifiers);
-	}
-
     public void SwitchToPartyMember(int index, bool force)
     {
         if (!force && game!.State.CurrentInventoryIndex == index)

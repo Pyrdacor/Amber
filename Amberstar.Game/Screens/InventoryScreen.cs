@@ -246,49 +246,46 @@ internal class InventoryScreen : ItemGridScreen
         }
     }
 
-    public override void KeyDown(Key key, KeyModifiers keyModifiers)
+    public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
         if (waitForClick)
         {
             if (key == Key.Space || key == Key.Escape)
                 EndClickWait();
 
-            return;
+            return true;
         }
 
-        if (key == Key.Escape)
-            game!.ScreenHandler.PopScreen();
-
-        base.KeyDown(key, keyModifiers);
+        return base.KeyDown(key, keyModifiers);
 	}
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
         if (waitForClick)
         {
             EndClickWait();
-            return;
+            return true;
         }
 
         if (itemDragged && buttons == MouseButtons.Right)
         {
             ItemContainer.AbortDrag();
-            return;
+            return true;
         }
 
         foreach (var inventorySlot in inventoryItemSlots)
         {
             if (inventorySlot.MouseClick(position, buttons, keyModifiers))
-                return;
+                return true;
         }
 
         foreach (var equippedItemSlot in equippedItemSlots)
         {
             if (equippedItemSlot.Value.MouseClick(position, buttons, keyModifiers))
-                return;
+                return true;
         }
 
-        base.MouseDown(position, buttons, keyModifiers);
+        return base.MouseDown(position, buttons, keyModifiers);
     }
 
     public override void MouseMove(Position position, MouseButtons buttons)

@@ -47,7 +47,17 @@ internal abstract class Screen
 
     public virtual bool Transparent { get; } = false;
 
-	protected void SetCloseAction(Action? closeAction) => this.closeAction = closeAction;
+    public virtual bool AllowCharacterSelection { get; } = true;
+
+    public virtual bool AllowInventoryAccess { get; } = true;
+
+    public virtual bool CloseOnEscape { get; } = true;
+
+    public virtual bool CloseOnRightClick { get; } = false;
+
+    public virtual bool CloseOnSpace => CloseOnRightClick;
+
+    protected void SetCloseAction(Action? closeAction) => this.closeAction = closeAction;
 
 	public virtual void Init(Game game)
 	{
@@ -84,42 +94,76 @@ internal abstract class Screen
 		// default: empty
 	}
 
-	public virtual void KeyDown(Key key, KeyModifiers keyModifiers)
+	public virtual bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		// default: empty
+		if (AllowInventoryAccess && key >= Key.F1 && key <= Key.F6)
+        {
+            int characterSlotIndex = 1 + (key - Key.F1);
+
+            if (game!.State.HasPartyMemberInSlot(characterSlotIndex))
+                game!.OpenInventory(1 + (key - Key.F1));
+
+            return true;
+        }
+
+		if (CloseOnEscape && key == Key.Escape && keyModifiers == KeyModifiers.None)
+		{
+			game!.ScreenHandler.PopScreen();
+			return true;
+		}
+
+        if (CloseOnSpace && key == Key.Space && keyModifiers == KeyModifiers.None)
+        {
+            game!.ScreenHandler.PopScreen();
+            return true;
+        }
+
+        return false;
 	}
 
-	public virtual void KeyUp(Key key, KeyModifiers keyModifiers)
+	public virtual bool KeyUp(Key key, KeyModifiers keyModifiers)
 	{
 		// default: empty
+		return false;
 	}
 
-	public virtual void KeyChar(char ch, KeyModifiers keyModifiers)
+	public virtual bool KeyChar(char ch, KeyModifiers keyModifiers)
 	{
-		if (keyModifiers == KeyModifiers.None && ch >= '1' && ch <= '6')
+		if (AllowCharacterSelection && keyModifiers == KeyModifiers.None && ch >= '1' && ch <= '6')
 		{
 			game!.State.SetActivePartyMember(ch - '0');
+			return true;
         }
+
+		return false;
 	}
 
-	public virtual void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public virtual bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
-		// default: empty
+		if (CloseOnRightClick && buttons == MouseButtons.Right)
+		{
+            game?.ScreenHandler.PopScreen();
+            return true;
+        }
+
+		return false;
 	}
 
-	public virtual void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public virtual bool MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
-		// default: empty
-	}
+        // default: empty
+        return false;
+    }
 
 	public virtual void MouseMove(Position position, MouseButtons buttons)
 	{
-		// default: empty
-	}
+        // default: empty
+    }
 
-	public virtual void MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
+	public virtual bool MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
 	{
 		// default: empty
+		return false;
 	}
 
 	#region Helper functions

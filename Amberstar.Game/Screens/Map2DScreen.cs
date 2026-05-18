@@ -362,8 +362,10 @@ internal class Map2DScreen : ButtonGridScreen
 					game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
                     break;
                 case ButtonType.Ear:
-                    game.Cursor.CursorType = CursorType.Ear;
-                    game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
+                    // TODO: check for something to hear
+                    //game.Cursor.CursorType = CursorType.Ear;
+                    //game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
+                    game.ShowTextMessage(Message.ListenNothingHeard);
                     break;
                 case ButtonType.Mouth:
                     game.Cursor.CursorType = CursorType.Mouth;
@@ -574,8 +576,11 @@ internal class Map2DScreen : ButtonGridScreen
 
         FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 
-		// Check for events
-		if (!ignoreEvents)
+		if (game.Cursor.CursorType != CursorType.Disk)
+			game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
+
+        // Check for events
+        if (!ignoreEvents)
 			TryExecuteMapEvent(EventTrigger.Move);
     }
 
@@ -760,25 +765,26 @@ internal class Map2DScreen : ButtonGridScreen
 		}
 	}
 
-	public override void KeyDown(Key key, KeyModifiers keyModifiers)
+	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		if (key >= Key.F1 && key <= Key.F6)
-		{
-			int characterSlotIndex = 1 + (key - Key.F1);
+		if (base.KeyDown(key, keyModifiers))
+			return true;
 
-            if (game!.State.HasPartyMemberInSlot(characterSlotIndex))
-				game!.OpenInventory(1 + (key - Key.F1));
+		if (game!.Cursor.CursorType < CursorType.Eye || game.Cursor.CursorType > CursorType.Ear)
+			UpdateMovement();
 
-            return;
-        }
-
-		UpdateMovement();
+		return true;
 	}
 
-	public override void KeyUp(Key key, KeyModifiers keyModifiers)
+	public override bool KeyUp(Key key, KeyModifiers keyModifiers)
 	{
-		UpdateMovement();
-	}
+        if (base.KeyUp(key, keyModifiers))
+            return true;
+
+        UpdateMovement();
+
+        return true;
+    }
 
 	private Position MousePositionToMapTilePosition(Position mousePosition)
 	{
@@ -791,27 +797,32 @@ internal class Map2DScreen : ButtonGridScreen
 		return new(x, y);
     }
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		if (buttons == MouseButtons.Right)
 		{
 			if (game!.Cursor.CursorType.ForcesMouseTrap())
 			{
                 game.Cursor.CursorType = CursorType.Sword;
-                game.UntrapMouse();                
+                game.UntrapMouse();
+				return true;
             }
             else if (ButtonGrid.Area.Contains(position))
 			{
 				game.ButtonLayout = (ButtonLayout)(1 - (int)game.ButtonLayout); // toggle
 				RequestButtonSetup();
+                return true;
             }
 			else
 			{
 				int? characterSlotIndex = game.TestPartyPortraitHit(position);
 
 				if (characterSlotIndex != null)
+				{
 					game.OpenInventory(characterSlotIndex.Value);
-			}
+					return true;
+				}
+            }
 		}
 		else
 		{
@@ -821,38 +832,39 @@ internal class Map2DScreen : ButtonGridScreen
 			if (mapArea.Contains(position))
 			{
 				if (game!.Cursor.CursorType == CursorType.Zzz)
+				{
 					game.Time.Tick();
+					return true;
+				}
 				else if (game.Cursor.CursorType >= CursorType.Eye && game.Cursor.CursorType <= CursorType.Ear)
 				{
-					var oldCursorType = game.Cursor.CursorType;
 					var eventTrigger = game.Cursor.CursorType.ToEventTrigger();
-                    var (x, y) = MousePositionToMapTilePosition(position);
+					var (x, y) = MousePositionToMapTilePosition(position);
 
 					game.Cursor.CursorType = CursorType.Sword;
 
-					if (!TryExecuteMapEvent(eventTrigger, x, y))
-						game.Cursor.CursorType = oldCursorType;
-					else
-						game.UntrapMouse();
+					TryExecuteMapEvent(eventTrigger, x, y);
+					game.UntrapMouse();
 
-					return;
+					return true;
 				}
 				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
-					UpdateMovement();				
-
-				return;
+				{
+					UpdateMovement();
+					return true;
+				}
 			}
-
-			base.MouseDown(position, buttons, keyModifiers);
         }
-	}
 
-	public override void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+        return base.MouseDown(position, buttons, keyModifiers);
+    }
+
+	public override bool MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		mouseDown = false;
 		UpdateMovement();
 
-		base.MouseUp(position, buttons, keyModifiers);		
+		return base.MouseUp(position, buttons, keyModifiers);
 	}
 
 	public override void MouseMove(Position position, MouseButtons buttons)

@@ -67,7 +67,7 @@ internal abstract class ButtonGridScreen : Screen
         }
     }
 
-	public override void KeyUp(Key key, KeyModifiers keyModifiers)
+	public override bool KeyUp(Key key, KeyModifiers keyModifiers)
 	{
 		if (keyModifiers == KeyModifiers.None && key >= Key.Keypad1 && key <= Key.Keypad9)
 		{
@@ -75,16 +75,18 @@ internal abstract class ButtonGridScreen : Screen
 
             if (buttonGrid?.IsButtonEnabled(buttonIndex) == true)
                 ButtonClicked(buttonIndex);
+
+            return true;
 		}
 
-        base.KeyUp(key, keyModifiers);
+        return base.KeyUp(key, keyModifiers);
     }
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		if (buttonGrid?.MouseClick(position) == true)
-            return;
+            return true;
 
-        base.MouseDown(position, buttons, keyModifiers);
+        return base.MouseDown(position, buttons, keyModifiers);
     }
 }

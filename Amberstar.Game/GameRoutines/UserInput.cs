@@ -36,7 +36,8 @@ partial class Game
         if (!InputEnabled)
 			return;
 
-		ScreenHandler.ActiveScreen?.KeyDown(key, keyModifiers);
+		if (ScreenHandler.ActiveScreen?.KeyDown(key, keyModifiers) == true)
+			return;
 	}
 
 	public void KeyUp(Key key, KeyModifiers keyModifiers)
@@ -44,7 +45,8 @@ partial class Game
 		if (!InputEnabled)
 			return;
 
-		ScreenHandler.ActiveScreen?.KeyUp(key, keyModifiers);
+		if (ScreenHandler.ActiveScreen?.KeyUp(key, keyModifiers) == true)
+			return;
 	}
 
 	public void KeyChar(char ch, KeyModifiers keyModifiers)
@@ -52,7 +54,8 @@ partial class Game
 		if (!InputEnabled)
 			return;
 
-		ScreenHandler.ActiveScreen?.KeyChar(ch, keyModifiers);
+		if (ScreenHandler.ActiveScreen?.KeyChar(ch, keyModifiers) == true)
+			return;
 	}
 
 	public void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
@@ -60,7 +63,8 @@ partial class Game
 		if (!InputEnabled)
 			return;
 
-		ScreenHandler.ActiveScreen?.MouseDown(position, buttons, keyModifiers);
+		if (ScreenHandler.ActiveScreen?.MouseDown(position, buttons, keyModifiers) == true)
+			return;
 	}
 
 	public void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
@@ -68,7 +72,8 @@ partial class Game
 		if (!InputEnabled)
 			return;
 
-		ScreenHandler.ActiveScreen?.MouseUp(position, buttons, keyModifiers);
+		if (ScreenHandler.ActiveScreen?.MouseUp(position, buttons, keyModifiers) == true)
+			return;
 	}
 
 	public void MouseMove(Position position, MouseButtons buttons)
@@ -102,8 +107,9 @@ partial class Game
 		if (!InputEnabled)
 			return;
 
-		ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons);
-	}
+		if (ScreenHandler.ActiveScreen?.MouseWheel(position, scrollX, scrollY, buttons) == true)
+			return;
+    }
 
     public void TrapMouse(Rect rect)
     {
@@ -124,6 +130,8 @@ partial class Game
 		mouseTrapArea = null;
 		ScreenHandler.ActiveScreen?.MouseMove(lastMousePosition, MouseButtons.None);
     }
+
+	public void SimulateMouseMoveWithoutButton() => MouseMove(lastMousePosition, MouseButtons.None);
 
     internal bool IsKeyDown(Key key) => InputEnabled && (pressedKeys ??= pressedKeyProvider()).Contains(key);
 

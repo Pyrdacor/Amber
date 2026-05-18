@@ -90,19 +90,6 @@ internal class ConversationScreen : ButtonGridScreen
         }
     }
 
-    public override void KeyDown(Key key, KeyModifiers keyModifiers)
-    {
-        base.KeyDown(key, keyModifiers);
-
-        if (key == Key.Escape)
-            game!.ScreenHandler.PopScreen();
-    }
-
-    public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
-    {
-        base.MouseDown(position, buttons, keyModifiers);
-    }
-
     protected override void ButtonClicked(int index)
     {
         switch (index)

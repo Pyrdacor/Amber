@@ -779,22 +779,17 @@ internal class Map3DScreen : ButtonGridScreen
 		CheckMove(forward, backward, left, right, turnLeft, turnRight);
 	}
 
-	public override void KeyDown(Key key, KeyModifiers keyModifiers)
+	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-        if (key >= Key.F1 && key <= Key.F6)
-        {
-            int characterSlotIndex = 1 + (key - Key.F1);
-
-            if (game!.State.HasPartyMemberInSlot(characterSlotIndex))
-                game!.OpenInventory(1 + (key - Key.F1));
-
-            return;
-        }
+		if (base.KeyDown(key, keyModifiers))
+			return true;
 
         CheckMove();
+
+		return true;
 	}
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		if (buttons == MouseButtons.Right)
 		{
@@ -802,13 +797,17 @@ internal class Map3DScreen : ButtonGridScreen
 			{
 				game!.ButtonLayout = (ButtonLayout)(1 - (int)game.ButtonLayout); // toggle
 				RequestButtonSetup();
+				return true;
 			}
             else
             {
                 int? characterSlotIndex = game!.TestPartyPortraitHit(position);
 
-                if (characterSlotIndex != null)
-                    game.OpenInventory(characterSlotIndex.Value);
+				if (characterSlotIndex != null)
+				{
+					game.OpenInventory(characterSlotIndex.Value);
+					return true;
+				}
             }
         }
 		else
@@ -819,22 +818,26 @@ internal class Map3DScreen : ButtonGridScreen
 			if (mapArea.Contains(position))
 			{
 				if (game!.Cursor.CursorType == CursorType.Zzz)
+				{
 					game.Time.Tick();
+					return true;
+				}
 				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
+				{
 					CheckMove();
-
-				return;
-			}
-
-			base.MouseDown(position, buttons, keyModifiers);
+					return true;
+				}
+            }
         }
-	}
 
-	public override void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+		return base.MouseDown(position, buttons, keyModifiers);
+    }
+
+	public override bool MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		mouseDown = false;
 
-		base.MouseUp(position, buttons, keyModifiers);
+		return base.MouseUp(position, buttons, keyModifiers);
 	}
 
 	public override void MouseMove(Position position, MouseButtons buttons)

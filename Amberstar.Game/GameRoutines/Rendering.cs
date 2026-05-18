@@ -81,6 +81,13 @@ partial class Game
 		fadeArea ??= CreateColoredRect(Layer.TopMost, new(0, 0), new(VirtualScreenWidth, VirtualScreenHeight), fadeColor);
 		fadingStartTime = DateTime.Now;
 		fadingEndTime = fadingStartTime + TimeSpan.FromMilliseconds(durationInMs);
+
+		if (fadingOut && afterFadeOutAction != null)
+		{
+			afterFadeOutAction();
+			afterFadeOutAction = null;
+        }
+
 		fadingIn = true;
 		fadingOut = false;
 		fadingHold = false;

@@ -49,6 +49,12 @@ partial class Game
     public void OpenInventory(int characterSlotIndex)
     {
         State.SetCurrentInventory(characterSlotIndex);
-        ScreenHandler.PushScreen(ScreenType.Inventory);
+
+        if (ScreenHandler.ActiveScreen is InventoryScreen inventoryScreen)
+            inventoryScreen.SwitchToPartyMember(characterSlotIndex, false);
+        else if (ScreenHandler.ActiveScreen is CharacterStatsScreen characterStatsScreen)
+            characterStatsScreen.SwitchToPartyMember(characterSlotIndex, false);
+        else
+            ScreenHandler.PushScreen(ScreenType.Inventory);
     }
 }

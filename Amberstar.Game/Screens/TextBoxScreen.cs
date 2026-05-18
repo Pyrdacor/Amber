@@ -105,35 +105,39 @@ internal class TextBoxScreen : Screen
 		base.Close(game);
 	}
 
-	public override void KeyDown(Key key, KeyModifiers keyModifiers)
+	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		ScrollOrClose();
-	}
+        return ScrollOrClose() || base.KeyDown(key, keyModifiers);
+    }
 
-	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
-		ScrollOrClose();
-	}
+        return ScrollOrClose() || base.MouseDown(position, buttons, keyModifiers);
+    }
 
-	private void ScrollOrClose()
-	{
-		if (closeOnNextInput)
-		{
-			game!.ScreenHandler.PopScreen();
-			return;
-		}
+    private bool ScrollOrClose()
+    {
+        if (closeOnNextInput)
+        {
+            game!.ScreenHandler.PopScreen();
+            return true;
+        }
 
-		if (!scrolling && displayText?.SupportsScrolling == true)
-		{
-			if (!displayText.ScrollFullHeight())
-			{
-				closeOnNextInput = true;
-			}
-			else
-			{
-				scrolling = true;
-				displayText.ScrollEnded += () => scrolling = false;
-			}
-		}
-	}
+        if (!scrolling && displayText?.SupportsScrolling == true)
+        {
+            if (!displayText.ScrollFullHeight())
+            {
+                closeOnNextInput = true;
+            }
+            else
+            {
+                scrolling = true;
+                displayText.ScrollEnded += () => scrolling = false;
+            }
+
+            return true;
+        }
+
+        return scrolling;
+    }
 }
