@@ -40,5 +40,11 @@ public interface IEvent
 
 public interface IEventProvider
 {
+	/// <summary>
+	/// For persons, this is the map they are currently located.
+	/// For maps it is the map itself.
+	/// </summary>
+	IMap Map { get; }
+
 	List<IEvent> Events { get; }
 }

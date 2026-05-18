@@ -19,6 +19,8 @@ internal class Map2DScreen : ButtonGridScreen
 		List<IEvent> events = [];
 		Tile2D[] tiles = [];
 
+		IMap IEventProvider.Map => this;
+
 		public int Index => maps[0].Index;
 
         public int Width => WorldMapWidth * 2;

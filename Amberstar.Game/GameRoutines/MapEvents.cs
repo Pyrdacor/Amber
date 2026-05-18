@@ -21,8 +21,10 @@ partial class Game
 
     internal void SaveEvent(int eventIndex)
 	{
-		// TODO: Is the map index always correct on world maps?
-		State.SaveEvent(State.MapIndex, eventIndex);
+		// Note: This assumes the event with index eventIndex is on the
+		// map of the current event provider or as a fallback on the same
+		// map as the player. Important for world maps and map transitions.
+		State.SaveEvent(EventHandler.CurrentEventMapIndex, eventIndex);
 	}
 
 	internal bool IsEventActive(IMap map, int eventIndex, IEvent @event)
@@ -40,8 +42,7 @@ partial class Game
         if (EventHandler.CurrentEvent is not Event @event)
             return false;
 
-        // TODO: world map?
-        return !State.IsEventActive(State.MapIndex, @event.Index);
+        return !State.IsEventActive(EventHandler.CurrentEventMapIndex, @event.Index);
     }
 
 	internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)

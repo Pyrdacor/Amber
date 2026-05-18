@@ -56,10 +56,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
         if (LockedEvent.TextIndex < 26) // TODO: Maybe check for != 255 instead?
         {
-            // Note: Don't use game.State.MapIndex as on world maps this could be another piece of the map!
-            // TODO: Still this could be wrong, if the text event is on another world map than the player (rare case).
-            // TODO: See TextBoxScreen.
-            int mapIndex = Game.State.GetIndexOfMapWithPlayer();
+            int mapIndex = Game.EventHandler.CurrentEventMapIndex;
             var text = Game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
             text = text.GetTextBlock(LockedEvent.TextIndex);
             ShowText(text, true);

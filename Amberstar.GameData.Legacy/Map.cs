@@ -103,6 +103,8 @@ internal abstract class Map : IMap
 			return Map3D.Load(asset.Identifier.Index, header, reader);
 	}
 
+    IMap IEventProvider.Map => this;
+
 	public int Index { get; internal set; }
 
     public int Width => header.Width;

@@ -43,7 +43,8 @@ internal class PictureTextScreen : Screen
 
 		game.SetLayout(Layout.PictureText, palette);
 
-		var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, game.State.GetIndexOfMapWithPlayer()));
+        int mapIndex = game.EventHandler.CurrentEventMapIndex;
+        var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 
 		text = text.GetTextBlock(@event.TextIndex);
 

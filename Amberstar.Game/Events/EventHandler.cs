@@ -4,15 +4,18 @@ namespace Amberstar.Game.Events
 {
     internal class EventHandler(Game game)
     {
-		internal IEvent? CurrentEvent { get; set; }
+        internal IEventProvider? CurrentEventProvider { get; set; }
+        internal IEvent? CurrentEvent { get; set; }
+        internal IMap? CurrentEventMap => CurrentEventProvider?.Map;
+        internal int CurrentEventMapIndex => CurrentEventMap?.Index ?? game.State.GetIndexOfMapWithPlayer();
 
-		public bool HandleEvent(EventTrigger trigger, Event @event, IEventProvider eventProvider)
+        public bool HandleEvent(EventTrigger trigger, Event @event, IEventProvider eventProvider)
         {
-			CurrentEvent = @event;
+            CurrentEventProvider = eventProvider;
+            CurrentEvent = @event;
 
 			bool result = @event.Handle(trigger, game, eventProvider);
 
-			// TODO: There are some manual exceptions in original code, check them!
 			if (result && @event.SaveEvent && @event.AutoSave)
 			{
 				game.SaveEvent(@event.Index);
