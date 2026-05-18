@@ -45,6 +45,8 @@ internal abstract class Screen
 
     public virtual bool Transparent { get; } = false;
 
+	protected void SetCloseAction(Action? closeAction) => this.closeAction = closeAction;
+
 	public virtual void Init(Game game)
 	{
 		this.game = game;
@@ -55,9 +57,9 @@ internal abstract class Screen
 		// default: empty
 	}
 
-	public virtual void Open(Game game, Action? closeAction)
+    public virtual void Open(Game game, Action? closeAction)
 	{
-		this.closeAction = closeAction;
+        SetCloseAction(closeAction);
 	}
 
 	public virtual void Close(Game game)
@@ -157,6 +159,8 @@ internal class ScreenHandler(Game game) : IDisposable
 	public Screen? ActiveScreen => screens.Count == 0 ? null : screens.Peek();
 	public Screen? LastScreen => screens.Skip(1).FirstOrDefault();
 
+	public event Action<Screen>? ScreenChanged;
+
 	public Screen Create(ScreenType screenType)
 	{
 		Screen screen = screenType switch
@@ -203,9 +207,11 @@ internal class ScreenHandler(Game game) : IDisposable
 
 			currentScreen?.ScreenPushed(game, screen!);
 			screen!.Open(game, followAction);
-		}
 
-		bool transparent = currentScreen?.Transparent == true || screen.Transparent;
+			ScreenChanged?.Invoke(screen);
+        }
+
+        bool transparent = currentScreen?.Transparent == true || screen.Transparent;
 		bool fadeOut = currentScreen != null && (currentScreen.FadeType == ScreenFadeType.Out || currentScreen.FadeType == ScreenFadeType.Both);
         bool fadeIn = screen != null && (screen.FadeType == ScreenFadeType.In || screen.FadeType == ScreenFadeType.Both);
 
@@ -233,7 +239,9 @@ internal class ScreenHandler(Game game) : IDisposable
 		{
 			screen.Close(game);
             prevScreen?.ScreenPopped(game, screen);
-		}
+
+            ScreenChanged?.Invoke(screen);
+        }
 
         bool transparent = prevScreen?.Transparent == true || screen.Transparent;
         bool fadeIn = prevScreen != null && (prevScreen.FadeType == ScreenFadeType.In || prevScreen.FadeType == ScreenFadeType.Both);

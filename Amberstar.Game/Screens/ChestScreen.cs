@@ -27,7 +27,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         var chestEvent = (game.EventHandler.CurrentEvent as ChestEvent)!;
         LockOpened = chestEvent.LockpickReduction == 0 || game.IsCurrentEventSaved();
 
-        Image = LockOpened ? Image80x80.LockedChest : Image80x80.OpenChest;
+        Image = LockOpened ? Image80x80.OpenChest : Image80x80.LockedChest;
 
         base.Open(game, closeAction);
 

@@ -564,9 +564,14 @@ internal class Map3DScreen : ButtonGridScreen
 
 		if (eventIndex != 0 && game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
 		{
-			var mapEvent = Event.CreateEvent(map.Events[eventIndex - 1], eventIndex);
+			var @event = map.Events[eventIndex - 1];
+            var mapEvent = Event.CreateEvent(@event, eventIndex);
 
-			if (mapEvent is IPlaceEvent)
+			if (@event is IPlaceEvent ||
+                @event is IDoorEvent ||
+                @event is IDoorExitEvent ||
+                @event is IChestEvent ||
+                @event is ITeleportEvent)
 			{
 				game.State.ResetPartyPosition();
                 UpdateView();

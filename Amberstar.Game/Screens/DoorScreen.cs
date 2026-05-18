@@ -10,9 +10,14 @@ internal class DoorScreen : LockedScreen<DoorEvent>
 
     public override ScreenType Type { get; } = ScreenType.Door;
 
-    public override ScreenFadeType FadeType { get; } = ScreenFadeType.Out;
-
     protected override uint? AllowedUnlockItemIndex => LockedEvent.ItemIndex;
+
+    private static bool IsOpenDoorWithExit(Game game)
+    {
+        return game.EventHandler.CurrentEvent is DoorEvent doorEvent &&
+            doorEvent.OpenedEventIndex != null && doorEvent.OpenedEventIndex != 0 &&
+            game.IsCurrentEventSaved();
+    }
 
     protected override void Unlocked(Message message)
     {
@@ -24,9 +29,11 @@ internal class DoorScreen : LockedScreen<DoorEvent>
     {
         // If this is a DoorExit event and the door was already opened, just close the screen.
         // The close handler will trigger the follow up event automatically.
-        if (game.EventHandler.CurrentEvent is DoorEvent doorEvent &&
-            doorEvent.OpenedEventIndex != null && doorEvent.OpenedEventIndex != 0 && game.IsCurrentEventSaved())
+        if (IsOpenDoorWithExit(game))
         {
+            // Important!
+            SetCloseAction(closeAction);
+
             LockOpened = true;
             game!.ScreenHandler.PopScreen();
             return;
@@ -41,23 +48,33 @@ internal class DoorScreen : LockedScreen<DoorEvent>
     {
         base.Close(game);
 
-        if (LockOpened)
+        if (LockOpened && game.EventHandler.CurrentEvent is DoorEvent doorEvent)
         {
-            var extraEvent = LockedEvent.OpenedEventIndex;
+            var extraEvent = doorEvent.OpenedEventIndex;
 
             if (extraEvent != null && extraEvent != 0)
             {
                 IEventProvider eventProvider;
 
-                if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
-                    eventProvider = map2dScreen.Map;
-                else if (game!.ScreenHandler.ActiveScreen is Map3DScreen map3dScreen)
-                    eventProvider = map3dScreen.Map;
-                else
-                    return;
+                void ExecuteFollowUpEvent(Screen _)
+                {
+                    game.ScreenHandler.ScreenChanged -= ExecuteFollowUpEvent;
 
-                var @event = eventProvider.Events[extraEvent.Value - 1];
-                game.EventHandler.HandleEvent(EventTrigger.Move, Event.CreateEvent(@event, extraEvent.Value), eventProvider);
+                    var @event = eventProvider.Events[extraEvent.Value - 1];
+
+                    game.EventHandler.HandleEvent(EventTrigger.Move, Event.CreateEvent(@event, extraEvent.Value), eventProvider);
+                }
+
+                if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
+                {
+                    eventProvider = map2dScreen.Map;
+                    game.ScreenHandler.ScreenChanged += ExecuteFollowUpEvent;
+                }
+                else if (game!.ScreenHandler.ActiveScreen is Map3DScreen map3dScreen)
+                {
+                    eventProvider = map3dScreen.Map;
+                    game.ScreenHandler.ScreenChanged += ExecuteFollowUpEvent;
+                }
             }
         }
     }

@@ -16,6 +16,11 @@ partial class Game
 
 	internal bool Probe(int chance) => State.TravelType == TravelType.SuperChicken || chance == 100 || chance >= Random(1, 100);
 
+    internal void ExecuteNextUpdateCycle(Action action)
+    {
+		AddDelayedAction(0, action);
+    }
+
     internal long AddDelayedAction(long delayInTicks, Action action)
 	{
 		timedActions.Push(gameTicks + delayInTicks, new(++lastTimedActionKey, action));
