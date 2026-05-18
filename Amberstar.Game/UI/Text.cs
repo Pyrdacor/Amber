@@ -186,6 +186,7 @@ internal class TextManager(Game game, IFont font,
             return (char)UnicodeToAtariST.GetValueOrDefault(ch, ch);
         }
 
+        // TODO: use paperIndex!
         private ISprite CreateTextSprite(int x, int y, int glyphIndex, int colorIndex, int paperIndex, int displayLayerOffset, bool shadow)
         {
             var textureAtlas = layer.Config.Texture!;
@@ -708,15 +709,16 @@ internal class Label(Game game)
             needsShowCall = true;
     }
 
-    public void SetText(IText text, int maxWidth,
+    public void SetText(IText text, int? maxWidth = null,
         int defaultTextColorIndex = TextManager.DefaultInkColorIndex,
         int defaultPaperColorIndex = TextManager.DefaultPaperColorIndex,
         byte paletteIndex = TextManager.DefaultPaletteIndex)
     {
         bool wasVisible = renderText?.Visible ?? false;
+        maxWidth ??= Size.Width;
 
         renderText?.Delete();
-        renderText = game.TextManager.Create(text, maxWidth, defaultTextColorIndex, defaultPaperColorIndex, paletteIndex);
+        renderText = game.TextManager.Create(text, maxWidth.Value, defaultTextColorIndex, defaultPaperColorIndex, paletteIndex);
 
         if (wasVisible)
             Show();

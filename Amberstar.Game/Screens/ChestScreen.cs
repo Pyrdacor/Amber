@@ -232,13 +232,20 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     internal override void PickItem(ScreenType sourceScreen, int? index)
     {
+        if (index == null)
+        {
+            CleanUpItems();
+            return;
+        }
+
         switch (sourceScreen)
         {
             case ScreenType.LockedUseItem:
                 base.PickItem(sourceScreen, index);
                 break;
             case ScreenType.ChestExamineItem:
-                // TODO
+                Game.CurrentItem = ItemContainers[index.Value].Item;
+                Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
             case ScreenType.ChestGiveItem:
                 // TODO

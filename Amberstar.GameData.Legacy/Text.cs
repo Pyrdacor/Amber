@@ -170,16 +170,23 @@ internal class Text(List<string> textFragments) : IText
 				default:
 					if (IsEndPunctuation(textIndex) && currentLine.Length > 0 && currentLine[^1] == ' ')
 						currentLine = currentLine[..^1];
-					AddText(textFragments[textIndex] + " ");
+					AddText(textFragments[textIndex] + " ", i == textIndices.Count - 1);
 					break;
 			}
 
-			void AddText(string text)
+			void AddText(string text, bool last)
 			{
 				currentLine += text;
 
 				while (currentLine.Count(c => c >= ' ') > maxWidthInCharacters)
 				{
+					if (last && currentLine.Count(c => c >= ' ') - 1 == maxWidthInCharacters)
+					{
+                        lines.Add(currentLine[..^1]);
+						currentLine = "";
+						return;
+					}
+
 					int lastSpaceIndexWhichFits = FindLastSpaceIndexWhichFits();
 
 					if (lastSpaceIndexWhichFits == -1)

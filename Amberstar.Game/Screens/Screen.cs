@@ -19,6 +19,7 @@ public enum ScreenType
 	TextBox,
 	Conversation,
 	Place,
+    ItemView,
     // Inventory sub screens
     InventoryDropItem,
 	// Door/chest sub screens
@@ -221,6 +222,7 @@ internal class ScreenHandler(Game game) : IDisposable
             ScreenType.CharacterStats => new CharacterStatsScreen(),
             ScreenType.Conversation => new ConversationScreen(),
 			ScreenType.Place => new PlaceScreen(),
+			ScreenType.ItemView => new ItemScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
 			// Door/chest sub screens

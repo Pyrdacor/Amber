@@ -154,7 +154,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
                 if (maxWidth <= 0)
                     maxWidth = int.MaxValue;
 
-                var headerText = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)HeaderInfos[i].Text));
+                var headerText = game.LoadUIText(HeaderInfos[i].Text);
                 var header = headers[i] = game.TextManager.Create(headerText, maxWidth);
                 var position = HeaderInfos[i].Position;
 
