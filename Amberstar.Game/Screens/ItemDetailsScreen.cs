@@ -119,6 +119,8 @@ internal class ItemDetailsScreen : Screen
         window?.Destroy();
         window = new(game!, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
 
+        createdLabels.ForEach(label => label.Visible = true);
+
         bool cursed = item.Flags.HasFlag(ItemFlags.Cursed);
 
         void SetText(Label? label, string text, int colorIndex = 15)
