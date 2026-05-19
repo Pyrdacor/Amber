@@ -38,8 +38,8 @@ internal static class RenderTextExtensions
 internal class TextManager(Game game, IFont font,
     IFontInfoProvider fontInfoProvider)
 {
-    public const int DefaultInkColorIndex = 8;
-    public const int DefaultPaperColorIndex = 0;
+    public const int DefaultInkColorIndex = 15;
+    public const int DefaultPaperColorIndex = 2;
     public const int TransparentPaper = -1;
     const int TicksPerScroll = 4; // TODO
     public const byte DefaultPaletteIndex = 0; // UI
@@ -605,13 +605,15 @@ internal class TextManager(Game game, IFont font,
     }
 }
 
-internal class Label(Game game)
+internal class Label(Game game) : ILayeredDrawable
 {
     Rect area = new();
     IRenderText? renderText;
     byte displayLayer = 0;
     TextAlignment alignment = TextAlignment.Left;
     bool needsShowCall = true;
+
+    public ILayer Layer => game.GetRenderLayer(Amberstar.Game.Layer.Text);
 
     public bool Visible
     {

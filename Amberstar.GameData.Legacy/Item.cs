@@ -22,11 +22,11 @@ internal class Item : IItem
 
     public required byte SpellPoints { get; init; }
 
-    public required Attribute? Attribute { get; init; }
+    public required Attribute Attribute { get; init; }
 
     public required byte AttributeValue { get; init; }
 
-    public required Skill? Skill { get; init; }
+    public required Skill Skill { get; init; }
 
     public required byte SkillValue { get; init; }
 

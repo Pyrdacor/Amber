@@ -23,9 +23,9 @@ namespace Amberstar.GameData.Legacy
             var numFingers = reader.ReadByte();
             var hitPoints = reader.ReadByte();
             var spellPoints = reader.ReadByte();
-            var attribute = reader.ReadByte();
+            var attribute = (Attribute)reader.ReadByte();
             var attributeValue = reader.ReadByte();
-            var skill = reader.ReadByte();
+            var skill = (Skill)reader.ReadByte();
             var skillValue = reader.ReadByte();
             var spellSchool = (SpellSchool)reader.ReadByte();
             var spellIndex = reader.ReadByte();
@@ -62,9 +62,9 @@ namespace Amberstar.GameData.Legacy
                 Fingers = numFingers,
                 HitPoints = hitPoints,
                 SpellPoints = spellPoints,
-                Attribute = attribute == 0 ? null : (Attribute?)(attribute - 1),
+                Attribute = attribute,
                 AttributeValue = attributeValue,
-                Skill = skill == 0 ? null : (Skill?)(skill - 1),
+                Skill = skill,
                 SkillValue = skillValue,
                 SpellSchool = spellSchool,
                 SpellIndex = spellIndex,
@@ -72,7 +72,7 @@ namespace Amberstar.GameData.Legacy
                 AmmoType = ammoType,
                 Defense = defense,
                 Damage = damage,
-                EquipmentSlot = equipmentSlot == 0 ? null : (EquipmentSlot?)(equipmentSlot - 1),
+                EquipmentSlot = equipmentSlot == 0 ? null : (equipmentSlot - 1),
                 MagicWeaponBonus = magicWeaponBonus,
                 MagicArmorBonus = magicArmorBonus,
                 SpecialIndex = specialIndex,

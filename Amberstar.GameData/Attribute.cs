@@ -2,6 +2,7 @@
 
 public enum Attribute : byte
 {
+	None,
 	Strength,
 	Intelligence,
 	Dexterity,

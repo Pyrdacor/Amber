@@ -13,9 +13,9 @@ public interface IItem
     byte Fingers { get; }
     byte HitPoints { get; }
     byte SpellPoints { get; }
-    Attribute? Attribute { get; }
+    Attribute Attribute { get; }
     byte AttributeValue { get; }
-    Skill? Skill { get; }
+    Skill Skill { get; }
     byte SkillValue { get; }
     SpellSchool SpellSchool { get; }
     byte SpellIndex { get; }

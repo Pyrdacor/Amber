@@ -15,7 +15,9 @@ internal class Button
 	readonly ISprite highlightOverlay;
 	readonly ISprite disabledOverlay;
 	bool pressed = false;
-	ButtonType buttonType = ButtonType.Empty;
+	bool disabled = false;
+    bool highlighted = false;
+    ButtonType buttonType = ButtonType.Empty;
 
     public event Action? ClickAction;
 
@@ -31,10 +33,27 @@ internal class Button
 
 	public bool Disabled
 	{
-		get => disabledOverlay.Visible || buttonType == ButtonType.Empty;
-		set => disabledOverlay.Visible = value;
+		get => disabled || buttonType == ButtonType.Empty;
+		set
+		{
+			disabled = value;
+			disabledOverlay.Visible = value && Visible;
+		}
 	}
+
 	public ButtonType ButtonType => buttonType;
+
+	public bool Visible
+	{
+		get => sprite?.Visible ?? false;
+		set
+		{
+            sprite.Visible = value;
+            background.Visible = value;
+            highlightOverlay.Visible = value && highlighted;
+            disabledOverlay.Visible = value && disabled;
+        }
+	}
 
     public Button(Game game, int x, int y, ButtonType buttonType, byte displayLayer, byte? paletteIndex = null)
 	{
@@ -120,10 +139,12 @@ internal class Button
 		if (pressed || Disabled)
 			return;
 
-		highlightOverlay.Visible = true;
+		highlighted = true;
+        highlightOverlay.Visible = true;
 		pressed = true;
 		game.AddDelayedAction(TimeSpan.FromMilliseconds(HighlightDelay), () => {
-			highlightOverlay.Visible = false;
+			highlighted = false;
+            highlightOverlay.Visible = false;
 			pressed = false;
 			ClickAction?.Invoke();
 		});

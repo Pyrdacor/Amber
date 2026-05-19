@@ -2,6 +2,7 @@
 
 public enum Skill : byte
 {
+	None,
 	Attack,
 	Parry,
 	Swim,

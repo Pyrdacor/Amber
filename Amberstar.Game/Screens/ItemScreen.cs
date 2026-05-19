@@ -12,28 +12,25 @@ internal class ItemScreen : Screen
 	const int WindowY = 112;
 	const int WindowWidthInTiles = 18;
 	const int WindowHeightInTiles = 6;
-	Game? game;
+    const byte WindowDisplayLayer = 100;
+    const byte TextDisplayLayer = 125;
+    Game? game;
 	Window? window;
     byte uiPalette = 0;
     ISprite? itemBackground;
     ISprite? itemSprite;
     Label? itemNameLabel;
     Label? itemTypeLabel;
-    Label? weightLabel;
     Label? weightValue;
-    Label? handsLabel;
     Label? handsValue;
-    Label? fingersLabel;
     Label? fingersValue;
-    Label? damageLabel;
     Label? damageValue;
-    Label? shieldLabel;
     Label? shieldValue;
-    Label? classesLabel;
-    Label?[] classLabels = new Label?[8];
-	Label? genderLabel;
+    readonly Label?[] classLabels = new Label?[8];
     Label? genderValue;
-    List<Label> createdLabels = []; // holds all of the above to easily show/hide/destroy them
+    // Holds all created labels (including the above) to easily show/hide/destroy all of them at once
+    readonly List<Label> createdLabels = [];
+    Button? showDetailsButton;
 
     public override ScreenType Type { get; } = ScreenType.ItemView;
 
@@ -49,7 +46,7 @@ internal class ItemScreen : Screen
         {
             Label label = new(game)
             {
-                DisplayLayer = 110,
+                DisplayLayer = TextDisplayLayer,
                 Alignment = TextAlignment.Left,
                 Area = new(WindowX + x, WindowY + y, width, 7),
             };
@@ -70,22 +67,25 @@ internal class ItemScreen : Screen
         var classesText = game.LoadUIText(UIText.Classes);      // "---- Classes ----"
         var genderText = game.LoadUIText(UIText.Gender);        // "Gender:"
 
-        // Left side
-        itemNameLabel   = CreateLabel(32 + 3, 16 + 1, 126);
-        itemTypeLabel   = CreateLabel(32 + 3, 24 + 1, 126);
-        weightLabel     = CreateLabel(16,     34 + 1, game.GetMaxLineWidth(weightText), weightText);
-        weightValue     = CreateLabel(76,     34 + 1, 54 + 91 - weightLabel.Size.Width);
-        handsLabel      = CreateLabel(16,     45 + 1, game.GetMaxLineWidth(handsText), handsText);
-        handsValue      = CreateLabel(76,     45 + 1, 54 + 91 - handsLabel.Size.Width);
-        fingersLabel    = CreateLabel(16,     53 + 1, game.GetMaxLineWidth(fingersText), fingersText);
-        fingersValue    = CreateLabel(76,     53 + 1, 54 + 91 - fingersLabel.Size.Width);
-        damageLabel     = CreateLabel(16,     61 + 1, game.GetMaxLineWidth(damageText), damageText);
-        damageValue     = CreateLabel(76,     61 + 1, 54 + 91 - damageLabel.Size.Width);
-        shieldLabel     = CreateLabel(16,     69 + 1, game.GetMaxLineWidth(shieldText), shieldText);
-        shieldValue     = CreateLabel(76,     69 + 1, 54 + 91 - shieldLabel.Size.Width);
+        // === Left side ===
 
-        // Right side
-        classesLabel    = CreateLabel(32 + 3 + 126, 16 + 1, 112, classesText);
+        itemNameLabel = CreateLabel(32 + 3, 16 + 1, 126);
+        itemTypeLabel       = CreateLabel(32 + 3, 24 + 1, 126);
+        var weightLabel     = CreateLabel(16,     34 + 1, game.GetMaxLineWidth(weightText), weightText);
+        weightValue         = CreateLabel(76,     34 + 1, 54 + 91 - weightLabel.Size.Width);
+        var handsLabel      = CreateLabel(16,     45 + 1, game.GetMaxLineWidth(handsText), handsText);
+        handsValue          = CreateLabel(76,     45 + 1, 54 + 91 - handsLabel.Size.Width);
+        var fingersLabel    = CreateLabel(16,     53 + 1, game.GetMaxLineWidth(fingersText), fingersText);
+        fingersValue        = CreateLabel(76,     53 + 1, 54 + 91 - fingersLabel.Size.Width);
+        var damageLabel     = CreateLabel(16,     61 + 1, game.GetMaxLineWidth(damageText), damageText);
+        damageValue         = CreateLabel(76,     61 + 1, 54 + 91 - damageLabel.Size.Width);
+        var shieldLabel     = CreateLabel(16,     69 + 1, game.GetMaxLineWidth(shieldText), shieldText);
+        shieldValue         = CreateLabel(76,     69 + 1, 54 + 91 - shieldLabel.Size.Width);
+
+        // === Right side ===
+
+        // Classes label
+        CreateLabel(32 + 3 + 126, 16 + 1, 112, classesText);
 
         int x = 32 + 3 + 126;
         int y = 24;
@@ -106,11 +106,20 @@ internal class ItemScreen : Screen
 
         y += 3;
 
-        genderLabel = CreateLabel(x, y, game.GetMaxLineWidth(genderText), genderText);
-        genderValue = CreateLabel(x + genderLabel.Size.Width, y, 114 - genderLabel.Size.Width);
+        var genderLabel = CreateLabel(x, y, game.GetMaxLineWidth(genderText), genderText);
+        genderValue     = CreateLabel(x + genderLabel.Size.Width, y, 114 - genderLabel.Size.Width);
+
+
+        // === Button ===
+
+        showDetailsButton = new(game, WindowX + 240, WindowY + 64, ButtonType.Eye, TextDisplayLayer, uiPalette)
+        {
+            Disabled = true
+        };
+        showDetailsButton.ClickAction += ShowItemDetails;
     }
 
-	public override void Open(Game game, Action? closeAction)
+    public override void Open(Game game, Action? closeAction)
 	{
 		if (game.CurrentItem == null)
 			throw new InvalidOperationException($"{nameof(ItemScreen)} needs {nameof(Game.CurrentItem)} to be set beforehand.");
@@ -135,13 +144,21 @@ internal class ItemScreen : Screen
             game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item]);
         itemSprite!.DisplayLayer = 110;
         itemSprite.Visible = true;
+
+        if (showDetailsButton != null)
+        {
+            showDetailsButton.Disabled = !game.CurrentItem.Flags.HasFlag(ItemFlags.Identified) && game.State.TravelType != TravelType.SuperChicken;
+            showDetailsButton.Visible = true;
+        }
+
+        game.TrapMouse(window!.ClientArea);
     }
 
 	private void InitText(IItem item)
 	{
         // Create the window
         window?.Destroy();
-        window = new(game!, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, 100, uiPalette);
+        window = new(game!, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
 
         IText itemName = item.GetName(game!.AssetProvider.TextLoader);
         IText itemType = game.AssetProvider.TextLoader.LoadText(new(AssetType.ItemTypeName, (int)item.Type));
@@ -195,8 +212,27 @@ internal class ItemScreen : Screen
         itemSprite!.Visible = false;
         itemBackground!.Visible = false;
 
+        if (showDetailsButton != null)
+            showDetailsButton.Visible = false;
+
+        game.UntrapMouse();
+
         base.Close(game);
 	}
+
+    public override void ScreenPushed(Game game, Screen screen)
+    {
+        game.UntrapMouse();
+
+        base.ScreenPushed(game, screen);        
+    }
+
+    public override void ScreenPopped(Game game, Screen screen)
+    {
+        base.ScreenPopped(game, screen);
+
+        game.TrapMouse(window!.ClientArea);
+    }
 
     public override void Destroy(Game game)
     {
@@ -217,6 +253,9 @@ internal class ItemScreen : Screen
             itemSprite = null;
         }
 
+        showDetailsButton?.Destroy();
+        showDetailsButton = null;
+
         base.Destroy(game);
     }
 
@@ -228,7 +267,15 @@ internal class ItemScreen : Screen
 
 	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
+        if (showDetailsButton?.MouseClick(position) == true)
+            return true;
+
         game!.ScreenHandler.PopScreen();
         return true;
+    }
+
+    private void ShowItemDetails()
+    {
+        game!.ScreenHandler.PushScreen(ScreenType.ItemDetails);
     }
 }
