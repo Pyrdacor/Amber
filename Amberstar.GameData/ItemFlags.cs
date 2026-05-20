@@ -1,6 +1,16 @@
 ﻿namespace Amberstar.GameData;
 
 [Flags]
+public enum ItemSlotFlags : byte
+{
+    /// <summary>
+    /// If set, allows more information through
+    /// the item detail view (eye button).
+    /// </summary>
+    Identified = 0x80,
+}
+
+[Flags]
 public enum ItemFlags : byte
 {
 	None = 0,
@@ -28,9 +38,4 @@ public enum ItemFlags : byte
     /// equipped nor unequipped during a fight.
     /// </summary>
     NotEquipDuringFight = 0x10,
-    /// <summary>
-    /// If set, allows more information through
-    /// the item detail view (eye button).
-    /// </summary>
-    Identified = 0x80,
 }

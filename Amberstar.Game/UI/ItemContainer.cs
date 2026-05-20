@@ -438,7 +438,7 @@ internal class ItemContainer
 			// Drag the item
 			DraggedItem = Clone(draggable: false);
 
-            if (!game.IsOptionSet(GameOption.UnmaskedDraggedItem))
+            if (!game.IsOptionSet(GameOptions.UnmaskedDraggedItem))
             {
                 DraggedItem.sprite!.MaskColorIndex = 0xf;
             }

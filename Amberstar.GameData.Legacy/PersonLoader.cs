@@ -3,7 +3,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy
 {
-	public class PersonLoader(Amber.Assets.Common.IAssetProvider assetProvider, Lazy<ITextLoader> textLoader, ICollection<int> personKeys) : IPersonLoader
+	public class PersonLoader(AssetProvider assetProvider, Lazy<ITextLoader> textLoader) : IPersonLoader
     {
 		readonly Dictionary<int, IPerson> persons = [];
 
@@ -25,11 +25,37 @@ namespace Amberstar.GameData.Legacy
 			return person;
 		}
 
+        public IReadOnlyDictionary<int, IPerson> LoadAllPersons()
+        {
+            var keys = assetProvider.GetAssetKeys(AssetType.Person);
+
+            if (persons.Count == keys.Count)
+                return persons.AsReadOnly();
+
+            foreach (var key in keys)
+            {
+                if (persons.ContainsKey(key))
+                    continue;
+
+                var asset = assetProvider.GetAsset(new(AssetType.Person, key));
+
+                if (asset == null)
+                    throw new AmberException(ExceptionScope.Data, $"Person {key} not found.");
+
+                var person = key == 1 ? PartyMember.Load(asset, textLoader.Value) : Person.Load(asset, textLoader.Value);
+                persons.Add(key, person);
+            }
+
+            return persons.AsReadOnly();
+        }
+
         public Dictionary<int, IPartyMember> GetPartyMemberCopies()
         {
+            var keys = assetProvider.GetAssetKeys(AssetType.Person);
+
             IEnumerable<(int Index, IPartyMember PartyMember)> GetCopies()
             {
-                foreach (var key in personKeys)
+                foreach (var key in keys)
                 {
                     var person = LoadPerson(key);
 

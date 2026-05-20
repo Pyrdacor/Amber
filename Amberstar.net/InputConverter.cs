@@ -3,7 +3,7 @@ using Amberstar.Game;
 using Silk.NET.Input;
 using MousePosition = System.Numerics.Vector2;
 
-namespace Amberstar.net
+namespace Amberstar
 {
 	using Key = Game.Key;
 

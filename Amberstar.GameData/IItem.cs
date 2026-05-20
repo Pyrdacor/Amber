@@ -1,8 +1,9 @@
-﻿using Amberstar.GameData.Serialization;
+﻿using Amber.Serialization;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData;
 
-public interface IItem
+public interface IStaticItemData
 {
     uint Index { get; }
     ItemType Type { get; }
@@ -19,7 +20,6 @@ public interface IItem
     byte SkillValue { get; }
     SpellSchool SpellSchool { get; }
     byte SpellIndex { get; }
-    byte SpellCharges { get; }
     AmmoType AmmoType { get; }
     byte Defense { get; }
     byte Damage { get; }
@@ -29,7 +29,6 @@ public interface IItem
     byte SpecialIndex { get; }
     byte InitialCharges { get; }
     byte MaxCharges { get; }
-    ItemFlags Flags { get; }
     Skill? MalusSkill1 { get; }
     Skill? MalusSkill2 { get; }
     byte Malus1 { get; }
@@ -39,8 +38,25 @@ public interface IItem
     word BuyPrice { get; }
     word Weight { get; }
     word NameIndex { get; }
+    ItemFlags Flags { get; }
 
+    void Write(IDataWriter dataWriter);
+}
+
+public interface IItemSlot
+{
+    byte SpellCharges { get; }
+    ItemSlotFlags SlotFlags { get; }
+}
+
+public interface IItem : IStaticItemData, IItemSlot
+{   
     IItem Clone();
+}
+
+public interface IItemFactory
+{
+    IItem Create(IStaticItemData itemData, IItemSlot itemSlotData);
 }
 
 public static class ItemExtensions

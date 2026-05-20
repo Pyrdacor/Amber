@@ -1,17 +1,53 @@
-﻿using Amber.Assets.Common;
-using Amber.Serialization;
+﻿using Amber.Serialization;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy
 {
-	public class ItemLoader : IItemLoader
+	internal class ItemLoader : IItemLoader
 	{
-		public IItem LoadItem(IAsset asset)
-        {
-            var reader = asset.GetReader();
+        readonly Dictionary<uint, IStaticItemData> items = [];
 
-            return ReadItem( reader);
-		}
+        public ItemLoader()
+        {
+
+        }
+
+        public ItemLoader(Lazy<IMonsterLoader> monsterLoader, Lazy<IPersonLoader> personLoader, Lazy<IChestLoader> chestLoader)
+        {
+            IEnumerable<ICharacter> monsters = monsterLoader.Value.LoadAllMonsters().Values;
+            IEnumerable<ICharacter> persons = personLoader.Value.LoadAllPersons().Values;
+            var chests = chestLoader.Value.LoadAllChests();
+
+            foreach (ICharacter character in monsters.Concat(persons))
+            {
+                foreach (var itemSlot in character.Inventory)
+                {
+                    if (itemSlot?.Item == null || itemSlot.Count == 0)
+                        continue;
+
+                    if (!items.ContainsKey(itemSlot.Item.Index))
+                    {
+                        items.Add(itemSlot.Item.Index, itemSlot.Item);
+                    }
+                }
+            }
+
+            foreach (var chest in chests.Values)
+            {
+                foreach (var item in chest.Items)
+                {
+                    if (item == null)
+                        continue;
+
+                    if (!items.ContainsKey(item.Index))
+                    {
+                        items.Add(item.Index, item);
+                    }
+                }
+            }
+        }
+
+        public IStaticItemData LoadItem(uint index) => items[index];
 
         public IItem ReadItem(IDataReader reader)
         {
@@ -39,7 +75,7 @@ namespace Amberstar.GameData.Legacy
             var specialIndex = reader.ReadByte();
             var initialCharges = reader.ReadByte();
             var maxCharges = reader.ReadByte();
-            var itemFlags = (ItemFlags)reader.ReadByte();
+            var itemFlags = reader.ReadByte();
             var malusSkill1 = reader.ReadByte();
             var malusSkill2 = reader.ReadByte();
             var malus1 = reader.ReadByte();
@@ -78,7 +114,8 @@ namespace Amberstar.GameData.Legacy
                 SpecialIndex = specialIndex,
                 InitialCharges = initialCharges,
                 MaxCharges = maxCharges,
-                Flags = itemFlags,
+                Flags = (ItemFlags)(itemFlags & 0x7f),
+                SlotFlags = (ItemSlotFlags)(itemFlags & 0x80),
                 MalusSkill1 = malusSkill1 == 0 ? null : (Skill?)(malusSkill1 - 1),
                 MalusSkill2 = malusSkill2 == 0 ? null : (Skill?)(malusSkill2 - 1),
                 Malus1 = malus1,

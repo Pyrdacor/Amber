@@ -5,7 +5,7 @@ namespace Amberstar.GameData.Legacy;
 
 internal class LabData : ILabData
 {
-	public static LabData Load(IAsset asset, Dictionary<int, ILabBlock> labBlocks)
+	public static LabData Load(IAsset asset, IReadOnlyDictionary<int, ILabBlock> labBlocks)
 	{
 		var reader = asset.GetReader();
 

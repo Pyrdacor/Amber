@@ -127,6 +127,7 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<IMonsterLoader> monsterLoader;
     readonly Lazy<IPersonLoader> personLoader;
     readonly Lazy<IItemLoader> itemLoader;
+    readonly Lazy<IItemFactory> itemFactory;
     readonly Lazy<ISongLoader> songLoader;
 
     private ProgramData Data => programData.Value;
@@ -146,6 +147,7 @@ public class AssetProvider : IAssetProvider
     public IMonsterLoader MonsterLoader => monsterLoader.Value;
     public IPersonLoader PersonLoader => personLoader.Value;
     public IItemLoader ItemLoader => itemLoader.Value;
+    public IItemFactory ItemFactory => itemFactory.Value;
     public ISongLoader SongLoader => songLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -191,8 +193,9 @@ public class AssetProvider : IAssetProvider
 		chestLoader = new(() => new ChestLoader(this));
         cursorLoader = new(() => new CursorLoader(this));
         monsterLoader = new(() => new MonsterLoader(this));
-        personLoader = new(() => new PersonLoader(this, textLoader, GetAssetKeys(AssetType.Person)));
-        itemLoader = new(() => new ItemLoader());
+        personLoader = new(() => new PersonLoader(this, textLoader));
+        itemLoader = new(() => new ItemLoader(monsterLoader, personLoader, chestLoader));
+        itemFactory = new(() => new ItemFactory());
         songLoader = new(() => new SongLoader(this, Platform));
     }
 

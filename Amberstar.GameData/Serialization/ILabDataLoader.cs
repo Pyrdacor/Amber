@@ -4,5 +4,5 @@ public interface ILabDataLoader
 {
 	ILabData LoadLabData(int index);
 
-	Dictionary<int, ILabBlock> LoadAllLabBlocks();
+    IReadOnlyDictionary<int, ILabBlock> LoadAllLabBlocks();
 }

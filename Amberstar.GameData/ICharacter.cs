@@ -1,6 +1,4 @@
-﻿using System.Collections.ObjectModel;
-
-namespace Amberstar.GameData;
+﻿namespace Amberstar.GameData;
 
 public interface ICharacter
 {

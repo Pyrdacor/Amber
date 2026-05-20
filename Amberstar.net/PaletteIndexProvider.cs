@@ -2,7 +2,7 @@
 using Amberstar.GameData.Serialization;
 using System.Collections.ObjectModel;
 
-namespace Amberstar.net
+namespace Amberstar
 {
 	internal class PaletteIndexProvider
 	(

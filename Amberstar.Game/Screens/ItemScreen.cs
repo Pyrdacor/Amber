@@ -147,7 +147,7 @@ internal class ItemScreen : Screen
 
         if (showDetailsButton != null)
         {
-            showDetailsButton.Disabled = !game.CurrentItem.Flags.HasFlag(ItemFlags.Identified) && game.State.TravelType != TravelType.SuperChicken;
+            showDetailsButton.Disabled = !game.CurrentItem.SlotFlags.HasFlag(ItemSlotFlags.Identified) && game.State.TravelType != TravelType.SuperChicken;
             showDetailsButton.Visible = true;
         }
 

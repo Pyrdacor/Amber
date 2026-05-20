@@ -159,7 +159,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		}
 	}
 
-	public Dictionary<int, IGraphic> LoadAllBackgroundGraphics()
+	public IReadOnlyDictionary<int, IGraphic> LoadAllBackgroundGraphics()
 	{
 		if (backgroundGraphics.Count != 0)
 			return backgroundGraphics;
@@ -169,7 +169,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		return backgroundGraphics;
 	}
 
-	public Dictionary<int, IGraphic> LoadAllCloudGraphics()
+	public IReadOnlyDictionary<int, IGraphic> LoadAllCloudGraphics()
 	{
 		if (cloudGraphics.Count != 0)
 			return cloudGraphics;
@@ -199,7 +199,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		return graphic;
 	}
 
-	public Dictionary<DayTime, Color[]> LoadSkyGradients()
+	public IReadOnlyDictionary<DayTime, Color[]> LoadSkyGradients()
 	{
 		if (skyGradients.Count != 0)
 			return skyGradients;
@@ -243,7 +243,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		return skyGradients;
 	}
 
-    public Dictionary<int, IGraphic> LoadPersonPortraits()
+    public IReadOnlyDictionary<int, IGraphic> LoadPersonPortraits()
 	{
 		if (personPortraits.Count != 0)
             return personPortraits;

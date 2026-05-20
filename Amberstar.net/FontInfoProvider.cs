@@ -1,6 +1,6 @@
-﻿using Amberstar.GameData.Serialization;
+﻿using Amberstar.Game;
 
-namespace Amberstar.Game
+namespace Amberstar
 {
 	internal class FontInfoProvider
 	(

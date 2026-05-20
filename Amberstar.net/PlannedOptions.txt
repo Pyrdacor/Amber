@@ -4,7 +4,15 @@
 - Direct item drag&drop
 - Free 3D movement like Ambermoon
 - Show loading screen (with dwarf) instead of fading
+- Increased light duration
+- Replace "give item" buttons with "distribute items"
+- Store items in chests (will break original savegames)
+- Multiple save slots (not sure if we want to force it)
+
+In general a new savegame format might be good as an option.
+And I would say it should be the default. If the legacy
+savegame format is chosen, some other options are automatically
+deactivated and disabled.
 
 // Not optional
-- Shortcut keys for stuff like "use item", "equip item", etc.
-- Multiple save slots
+- Shortcut keys for stuff like "use item", "equip item", etc. Maybe also double clicks, or Shift/Ctrl + Click.

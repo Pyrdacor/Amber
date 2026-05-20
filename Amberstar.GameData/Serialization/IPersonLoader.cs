@@ -4,5 +4,7 @@ public interface IPersonLoader
 {
 	IPerson LoadPerson(int index);
 
-	Dictionary<int, IPartyMember> GetPartyMemberCopies();
+    IReadOnlyDictionary<int, IPerson> LoadAllPersons();
+
+    Dictionary<int, IPartyMember> GetPartyMemberCopies();
 }

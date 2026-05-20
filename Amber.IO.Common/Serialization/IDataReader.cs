@@ -41,4 +41,14 @@ public static class DataReaderExtensions
 
         return words;
     }
+
+    public static byte[] PeekBytes(this IDataReader reader, int count)
+    {
+        int position = reader.Position;
+        byte[] bytes = reader.ReadBytes(count);
+        reader.Position = position;
+
+        return bytes;
+
+    }
 }

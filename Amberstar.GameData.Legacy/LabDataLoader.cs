@@ -25,7 +25,7 @@ internal class LabDataLoader(AssetProvider assetProvider) : ILabDataLoader
 		return labData;
 	}
 
-	public Dictionary<int, ILabBlock> LoadAllLabBlocks()
+	public IReadOnlyDictionary<int, ILabBlock> LoadAllLabBlocks()
 	{
 		if (labBlocks.Count != 0)
 			return labBlocks;
@@ -44,6 +44,6 @@ internal class LabDataLoader(AssetProvider assetProvider) : ILabDataLoader
 			labBlocks.Add(key, labBlock);
 		}
 
-		return labBlocks;
+		return labBlocks.AsReadOnly();
 	}
 }

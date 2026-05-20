@@ -222,9 +222,9 @@ internal class Map3DScreen : ButtonGridScreen
 	const int OffsetX = 32;
 	const int OffsetY = 49;
 	const int SkyTransparentColorIndex = 11;
-	Dictionary<int, IGraphic> backgrounds = [];
-	Dictionary<int, IGraphic> clouds = [];	
-	Dictionary<DayTime, Color[]> skyGradients = [];
+	IReadOnlyDictionary<int, IGraphic> backgrounds = new Dictionary<int, IGraphic>();
+    IReadOnlyDictionary<int, IGraphic> clouds = new Dictionary<int, IGraphic>();
+    IReadOnlyDictionary<DayTime, Color[]> skyGradients = new Dictionary<DayTime, Color[]>();
 	Game? game;
 	IMap3D? map;
 	ILabData? labData;

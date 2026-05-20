@@ -1,12 +1,11 @@
 ﻿using Amber.Assets.Common;
 using Amber.Renderer;
 using Ambermoon.Renderer.OpenGL;
-using Amberstar.Game;
 using Amberstar.GameData;
 using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.net
+namespace Amberstar
 {
 	internal static class LayerSetup
 	{

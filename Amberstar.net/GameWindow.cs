@@ -12,7 +12,6 @@ using Amber.Common;
 using Amber.Serialization;
 using Amberstar.GameData.Legacy;
 using Amber.IO.FileSystem;
-using Amberstar.net;
 using Silk.NET.OpenGL;
 using Amber.Audio.OpenAL;
 

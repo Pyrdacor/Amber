@@ -2,7 +2,7 @@
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.net
+namespace Amberstar
 {
 	internal class GraphicIndexProvider
 	(

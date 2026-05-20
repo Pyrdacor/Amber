@@ -2,7 +2,7 @@
 
 namespace Amberstar.GameData.Legacy;
 
-internal class Chest : IChest
+internal record Chest : IChest
 {
 	readonly IItem?[] items = new IItem?[IChest.SlotCount];
 

@@ -5,6 +5,6 @@ namespace Amberstar.GameData.Serialization;
 
 public interface IItemLoader
 {
-	IItem LoadItem(IAsset asset);
+	IStaticItemData LoadItem(uint index);
     IItem ReadItem(IDataReader reader);
 }
