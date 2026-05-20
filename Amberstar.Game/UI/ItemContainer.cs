@@ -35,6 +35,26 @@ internal class ItemContainer
     public static event Action? DraggingStarted;
     public static event Action? DraggingEnded;
 
+	public static bool IsDragging => DraggedItem != null;
+
+	private byte DisplayLayer
+	{
+		get => displayLayer;
+		set
+		{
+			if (displayLayer == value)
+				return;
+
+			displayLayer = value;
+
+			if (sprite != null)
+				sprite.DisplayLayer = displayLayer;
+
+            if (brokenOverlay != null)
+                brokenOverlay.DisplayLayer = (byte)(displayLayer + 4);
+        }
+	}
+
     public byte PaletteIndex
 	{
 		get => paletteIndex;
@@ -365,7 +385,7 @@ internal class ItemContainer
 		DraggedItem.UpdateRenderPosition(position);
     }
 
-    public static void AbortDrag()
+    public static void AbortDrag(Game game)
     {
         if (DraggedItem == null)
             return;
@@ -380,9 +400,11 @@ internal class ItemContainer
 
         draggedSourceSlot!.DropItem(count, item); // TODO: if exchanged, this is not possible
         draggedSourceSlot = null;
+
+        game.Cursor.Visible = true;
     }
 
-    public static void ConsumeDragged()
+    public static void ConsumeDragged(Game game)
     {
         if (DraggedItem == null)
             return;
@@ -390,6 +412,8 @@ internal class ItemContainer
 		DraggedItem.ClearItem();
         DraggedItem = null;
         draggedSourceSlot = null;
+
+		game.Cursor.Visible = true;
 
         DraggingEnded?.Invoke();
     }
@@ -409,6 +433,30 @@ internal class ItemContainer
 			destroyAnimation.Position = position;
 
         // TODO: item count display
+    }
+
+	public void StartDragging(bool all = false)
+	{
+        // TODO: if all == true, take all, else only one or show amount box
+
+        // Drag the item
+        DraggedItem = Clone(draggable: false);
+		DraggedItem.DisplayLayer = 240;
+
+        if (!game.IsOptionSet(GameOptions.UnmaskedDraggedItem))
+        {
+            DraggedItem.sprite!.MaskColorIndex = 0xf;
+        }
+
+        draggedSourceSlot = this;
+        Dragged?.Invoke(Item!, 1); // TODO: count
+        ClearItem(); // TODO: Some items may remain
+
+        UpdateDragPosition(game, position);
+
+		game.Cursor.Visible = false;
+
+        DraggingStarted?.Invoke();
     }
 
     public bool MouseClick(Position position, MouseButtons mouseButtons, KeyModifiers keyModifiers)
@@ -433,23 +481,7 @@ internal class ItemContainer
 			if (!Draggable)
 				return false; // Can't pick up
 
-			// TODO: if right mouse button, take all, else only one or show amount box
-
-			// Drag the item
-			DraggedItem = Clone(draggable: false);
-
-            if (!game.IsOptionSet(GameOptions.UnmaskedDraggedItem))
-            {
-                DraggedItem.sprite!.MaskColorIndex = 0xf;
-            }
-
-            draggedSourceSlot = this;
-            Dragged?.Invoke(Item!, 1); // TODO: count
-			ClearItem(); // TODO: Some items may remain
-
-            UpdateDragPosition(game, position);
-
-			DraggingStarted?.Invoke();
+			StartDragging(all: mouseButtons == MouseButtons.Right);
 
             return true;
 		}
@@ -462,7 +494,7 @@ internal class ItemContainer
 			if (DraggedItem.ItemCount == 0)
 			{
 				// Fully dropped
-				ConsumeDragged();
+				ConsumeDragged(game);
 				return true;
             }
 
@@ -493,5 +525,13 @@ internal class ItemContainer
 	public bool Contains(Position position)
 	{
 		return new Rect(this.position, new Size(Width, Height)).Contains(position);
+	}
+
+	public static void UpdateDragPosition(Position position)
+	{
+		if (DraggedItem == null || DraggedItem.Position == position)
+			return;
+
+		DraggedItem.Position = position;
 	}
 }

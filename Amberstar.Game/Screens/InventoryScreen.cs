@@ -269,7 +269,7 @@ internal class InventoryScreen : ItemGridScreen
 
         if (itemDragged && buttons == MouseButtons.Right)
         {
-            ItemContainer.AbortDrag();
+            ItemContainer.AbortDrag(game);
             return true;
         }
 

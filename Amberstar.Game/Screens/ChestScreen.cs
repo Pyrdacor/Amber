@@ -193,6 +193,35 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         return chestGold;
     }
 
+    public override void MouseMove(Position position, MouseButtons buttons)
+    {
+        ItemContainer.UpdateDragPosition(position);
+
+        base.MouseMove(position, buttons);
+    }
+
+    public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+    {
+        if (buttons == MouseButtons.Right && ItemContainer.IsDragging)
+        {
+            ItemContainer.AbortDrag(Game);
+            return true;
+        }
+
+        return base.MouseDown(position, buttons, keyModifiers);
+    }
+
+    public override bool KeyDown(Key key, KeyModifiers keyModifiers)
+    {
+        if (key == Key.Escape && ItemContainer.IsDragging)
+        {
+            ItemContainer.AbortDrag(Game);
+            return true;
+        }
+
+        return base.KeyDown(key, keyModifiers);
+    }
+
     protected override void CenterButtonClicked()
     {
         if (!LockOpened || !chestHasItems)
@@ -270,7 +299,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
             case ScreenType.ChestGiveItem:
-                // TODO
+                ItemContainers[index.Value].StartDragging();
                 break;
         }
     }
