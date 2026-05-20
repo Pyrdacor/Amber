@@ -84,4 +84,51 @@ partial class Game
         else
             ScreenHandler.PushScreen(ScreenType.Inventory);
     }
+
+    public bool TryAddItem(int partyMemberSlotIndex, IItem item, int count = 1)
+    {
+        var partyMember = State.GetPartyMember(partyMemberSlotIndex);
+
+        if (partyMember == null)
+            return false;
+
+        if (item.Flags.HasFlag(ItemFlags.Stackable))
+        {
+            var itemSlotsWithSameItem = partyMember.Inventory.Where(slot => slot.Item?.Index == item.Index);
+            int remaining = count;
+
+            foreach (var itemSlotWithSameItem in itemSlotsWithSameItem)
+            {
+                int spaceInSlot = Math.Max(0, 99 - itemSlotWithSameItem.Count);
+                remaining -= spaceInSlot;
+
+                if (remaining <= 0)
+                    break;
+            }
+
+            if (remaining <= 0 && !partyMember.Inventory.Any(slot => slot.Item == null || slot.Count == 0))
+                return false;
+
+            foreach (var itemSlotWithSameItem in itemSlotsWithSameItem)
+            {
+                int spaceInSlot = Math.Max(0, 99 - itemSlotWithSameItem.Count);
+                int addCount = Math.Min(count, spaceInSlot);
+                count -= addCount;
+
+                itemSlotWithSameItem.Count += (byte)addCount;
+
+                if (count == 0)
+                    return true;
+            }
+        }
+
+        var emptySlot = partyMember.Inventory.FirstOrDefault(slot => slot.Item == null || slot.Count == 0);
+
+        if (emptySlot == null)
+            return false;
+
+        emptySlot.SetItem(item, (byte)count);
+
+        return true;
+    }
 }

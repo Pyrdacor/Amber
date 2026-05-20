@@ -14,6 +14,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     bool allowDragAndDrop = false;
     Label? goldLabel;
     Label? goldDisplay;
+    int? currentChestSlot = null; // where the item was dragged from
 
     protected override Layout Layout { get; } = Layout.Chest;
 
@@ -202,17 +203,49 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
     {
-        if (buttons == MouseButtons.Right && ItemContainer.IsDragging)
+        if (buttons == MouseButtons.Right)
         {
-            AbortItemDrag();
-            return true;
+            if (ItemContainer.IsDragging)
+            {
+                AbortItemDrag();
+                return true;
+            }
+
+            int? characterSlotIndex = Game.TestPartyPortraitHit(position);
+
+            if (characterSlotIndex != null)
+            {
+                Game.OpenInventory(characterSlotIndex.Value);
+                return true;
+            }
         }
 
-        if (buttons == MouseButtons.Left && ItemContainer.IsDragging)
+        if (buttons == MouseButtons.Left)
         {
-            if ( )
-            AbortItemDrag();
-            return true;
+            if (ItemContainer.IsDragging)
+            {
+                int? characterSlotIndex = Game.TestPartyPortraitHit(position);
+
+                if (characterSlotIndex != null)
+                {
+                    // TODO: allow many stacked items? use count param
+                    if (Game.TryAddItem(characterSlotIndex.Value, Game.CurrentItem!))
+                    {
+                        Game.State.SetChestSlotBit(LockedEvent.ChestIndex, currentChestSlot!.Value, false);
+                        ItemContainer.ConsumeDragged(Game);
+
+                        RequestButtonSetup();
+
+                        // TODO: If chest is empty, close screen
+                    }
+                    else
+                    {
+                        AbortItemDrag();
+                    }
+
+                    return true;
+                }
+            }
         }
 
         return base.MouseDown(position, buttons, keyModifiers);
@@ -312,6 +345,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
             case ScreenType.ChestGiveItem:
+                currentChestSlot = index;
                 Game.CurrentItem = ItemContainers[index.Value].Item;
                 Game.SetHandIconsByItem(Game.CurrentItem!); // TODO: count
                 ItemContainers[index.Value].StartDragging();

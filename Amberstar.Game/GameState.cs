@@ -515,14 +515,17 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
         int offset = 3 * (index / 2);
         int chestBits;
 
+        // The chest slot bits are stored as 12 bits per chest.
+        // Binary: AAAAAAA0 BBBAAAAA BBBBBBBB CCCCCCCB DDDCCCCC ...
+
         // Read 12 bits per chest.
-        if ((index & 0x1) == 0x1)
+        if ((index & 0x1) == 0)
         {
             // Read 12 bits even (1.5 bytes)
             chestBits = ChestSlotBits[offset + 1];
             chestBits <<= 8;
             chestBits |= ChestSlotBits[offset];
-            chestBits >>= 1; // TODO: why?
+            chestBits >>= 1;
         }
         else
         {
@@ -538,5 +541,39 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
         return chestBits & 0xfff;
     }
 
-	#endregion
+    public void SetChestSlotBit(int chestIndex, int bit, bool set)
+    {
+        int index = chestIndex - 1;
+        int offset = 3 * (index / 2);
+
+        void ChangeBit(int byteIndex, int bitIndex)
+        {
+            if (set)
+                ChestSlotBits[byteIndex] |= (byte)(1 << bitIndex);
+            else
+                ChestSlotBits[byteIndex] &= (byte)~(1 << bitIndex);
+        }
+
+        // The chest slot bits are stored as 12 bits per chest.
+        // Binary: AAAAAAA0 BBBAAAAA BBBBBBBB CCCCCCCB DDDCCCCC ...
+
+        if ((index & 0x1) == 0)
+        {
+            if (bit < 7)
+                ChangeBit(offset, bit + 1);
+            else
+                ChangeBit(offset + 1, bit - 7);
+        }
+        else
+        {
+            if (bit < 3)
+                ChangeBit(offset + 1, bit + 5);
+            else if (bit == 11)
+                ChangeBit(offset + 3, 0);
+            else
+                ChangeBit(offset + 2, bit - 3);
+        }
+    }
+
+    #endregion
 }

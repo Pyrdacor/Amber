@@ -3,7 +3,6 @@ using Amber.Common;
 using Amber.Renderer;
 using Amberstar.Game.Screens;
 using Amberstar.Game.UI;
-using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 using EventHandler = Amberstar.Game.Events.EventHandler;
 using IAssetProvider = Amberstar.GameData.IAssetProvider;
@@ -59,7 +58,7 @@ public partial class Game : IDisposable
 			var position = new Position(16 + i * 48, 1);
 			var size = new Size(32, 34);
 
-			if (partyMember != null)
+            if (partyMember != null)
 			{
 				var sprite = portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetPersonPortraitIndex(1), uiPaletteIndex);
 				sprite!.DisplayLayer = 0;
