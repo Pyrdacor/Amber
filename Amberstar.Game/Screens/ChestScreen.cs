@@ -313,6 +313,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         public override Message Message { get; } = message;
 
         public override Rect ItemTooltipArea { get; } = itemTooltipArea;
+
+        public override bool HideItemsAfterPicking { get; } = false;
     }
 
     internal class GiveItemScreen() : ChestItemScreen(ScreenType.ChestGiveItem, Message.TransferWhichItem);

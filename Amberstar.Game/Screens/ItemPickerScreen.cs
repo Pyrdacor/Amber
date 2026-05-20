@@ -9,7 +9,6 @@ internal abstract class ItemPickerScreen : Screen
 	Game? game;
     ItemGridScreen? parentScreen;
     List<ItemContainer> items = [];
-    bool itemsWereHidden = true;
     int? pickedItem = null;
     Label? itemNameTooltip;
 
@@ -22,6 +21,8 @@ internal abstract class ItemPickerScreen : Screen
     public abstract Rect ItemTooltipArea { get; }
 
     public virtual CursorType HoverCursorType { get; } = CursorType.Sword;
+
+    public virtual bool HideItemsAfterPicking { get; } = true;
 
     public override void Init(Game game)
 	{
@@ -46,7 +47,6 @@ internal abstract class ItemPickerScreen : Screen
         base.Open(game, closeAction);
 
         parentScreen?.ShowMessage(Message, false, false);
-        itemsWereHidden = items.FirstOrDefault()?.Visible == false;
         items.ForEach(item => item.Visible = true);
 
         game.TrapMouse(MouseTrapArea);
@@ -59,7 +59,7 @@ internal abstract class ItemPickerScreen : Screen
         game.UntrapMouse();
         game.Cursor.CursorType = CursorType.Sword;
 
-        if (itemsWereHidden)
+        if (HideItemsAfterPicking)
             items.ForEach(item => item.Visible = false);
 
         itemNameTooltip!.Destroy();
