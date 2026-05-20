@@ -36,7 +36,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         {
             int column = i % slotsPerRow;
             int row = i / slotsPerRow;
-            var position = new Position(16 + column * 32, 37 + 109 + row * 32);
+            var position = new Position(16 + column * 32, 37 + 108 + row * 32);
 
             inventorySlotPositions[i] = position;
         }

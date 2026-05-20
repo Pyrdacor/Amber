@@ -23,11 +23,6 @@ public partial class Game : IDisposable
 	double totalTime = 0.0;
 	long lastGameTicks = 0;
 	long gameTicks = 0;
-    readonly ISprite portraitBackgroundSprite;
-    readonly ISprite?[] portraitSprites = new ISprite?[MaxPartyMembers];
-    readonly ISprite layoutSprite;
-	readonly IColoredRect?[] partyMemberNameBackgrounds = new IColoredRect?[MaxPartyMembers];
-	readonly IRenderText?[] partyMemberNames = new IRenderText?[MaxPartyMembers];
     readonly IAudioOutput audioOutput;
 
     public Game(IRenderer renderer, IAssetProvider assetProvider, IAudioOutput audioOutput,
@@ -65,40 +60,48 @@ public partial class Game : IDisposable
 		{
 			(int i, IPartyMember? partyMember) = partyMemberSlot;
 
-            var position = new Position(16 + i * 48, 1);
-            var size = new Size(32, 34);
+			var position = new Position(16 + i * 48, 1);
+			var size = new Size(32, 34);
 
-            if (partyMember != null)
-            {
-                var sprite = portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetPersonPortraitIndex(1), uiPaletteIndex);
-                sprite!.DisplayLayer = 0;
+			if (partyMember != null)
+			{
+				var sprite = portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetPersonPortraitIndex(1), uiPaletteIndex);
+				sprite!.DisplayLayer = 0;
 
-                string name = partyMember.Name;
+				string name = partyMember.Name;
 
-                if (name.Length > 5)
-                    name = name[..5];
+				if (name.Length > 5)
+					name = name[..5];
 
-                var namePosition = position + new Position(2, size.Height - 4);
-                var nameSize = new Size(TextManager.GetTextRenderWidth(name), 6);
+				var namePosition = position + new Position(2, size.Height - 4);
+				var nameSize = new Size(TextManager.GetTextRenderWidth(name), 6);
 
-                var nameBackground = partyMemberNameBackgrounds[i] = CreateColoredRect(Layer.UI, namePosition, nameSize, Color.Black);
-                nameBackground!.DisplayLayer = 5;
+				var nameBackground = partyMemberNameBackgrounds[i] = CreateColoredRect(Layer.UI, namePosition, nameSize, Color.Black);
+				nameBackground!.DisplayLayer = 5;
 
-                var nameText = partyMemberNames[i] = TextManager.Create(name, 8);
-                nameText.ShowInArea(new Rect(namePosition, nameSize), 10);
-            }
-            else
-            {
-                portraitSprites[i] = CreateSprite(Layer.UI, position, size, (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
+				var nameText = partyMemberNames[i] = TextManager.Create(name, 8);
+				nameText.ShowInArea(new Rect(namePosition, nameSize), 10);
+			}
+			else
+			{
+				portraitSprites[i] = CreateSprite(Layer.UI, position, size, (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
 
-                Destroy(partyMemberNameBackgrounds[i]);
-                partyMemberNameBackgrounds[i] = null;
+				Destroy(partyMemberNameBackgrounds[i]);
+				partyMemberNameBackgrounds[i] = null;
 
-                Destroy(partyMemberNames[i]);
-                partyMemberNames[i] = null;
+				Destroy(partyMemberNames[i]);
+				partyMemberNames[i] = null;
 
-            }
+			}
+
+			playerStatusIconIndices[i] = 0;
+			playerStatusIconTypes[i] = [];
+            var statusIcon = playerStatusIcons[i] = CreateSprite(Layer.UI, position + new Position(32, 0), new(16, 16), 0, uiPaletteIndex)!;
+            statusIcon.DisplayLayer = 0;
+			statusIcon.Visible = false;
         }
+
+		ResetStatusIcons();
 
         ScreenHandler.PushScreen(ScreenType.Map2D);
 
@@ -150,7 +153,9 @@ public partial class Game : IDisposable
 
 		Time.Update(elapsed);
 		ScreenHandler.ActiveScreen?.Update(this, elapsed);
-		pressedKeys = null; // reset
+        UpdateStatusIcons();
+
+        pressedKeys = null; // reset
 	}
 
 	public void Render(double delta)

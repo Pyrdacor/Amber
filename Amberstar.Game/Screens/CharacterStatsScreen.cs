@@ -242,7 +242,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
         }
         else
         {
-            var conditions = (int)partyMember.PhysicalConditions;
+            /*var conditions = (int)partyMember.PhysicalConditions;
 
             for (int i = 0; i < 5; i++)
             {
@@ -261,7 +261,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
                         physicalConditions[0] = null;
                     }
                 }
-            }
+            }*/
         }
 
         // Mental conditions
@@ -280,7 +280,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
         }
         else
         {
-            var conditions = (int)partyMember.MentalConditions;
+            /*var conditions = (int)partyMember.MentalConditions;
 
             for (int i = 0; i < 5; i++)
             {
@@ -299,7 +299,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
                         mentalConditions[0] = null;
                     }
                 }
-            }
+            }*/
         }
 
         RequestButtonSetup();

@@ -77,6 +77,11 @@ public static class BattleCharacterExtensions
         battleCharacter.MentalConditions &= ~condition.ToMental();
     }
 
+    public static Condition GetConditions(this IBattleCharacter battleCharacter)
+    {
+        return battleCharacter.PhysicalConditions.MergeWith(battleCharacter.MentalConditions);
+    }
+
     public static bool HasAnyConditionOf(this IBattleCharacter battleCharacter, Condition conditions)
     {
         return (battleCharacter.PhysicalConditions & conditions.ToPhysical()) != 0 ||

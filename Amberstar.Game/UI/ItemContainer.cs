@@ -131,8 +131,8 @@ internal class ItemContainer
 		this.position = position;
 		this.paletteIndex = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item];
 
-        if (displayLayer > byte.MaxValue - 2)
-            displayLayer = byte.MaxValue - 2;
+        if (displayLayer > byte.MaxValue - 5)
+            displayLayer = byte.MaxValue - 5;
 
 		this.displayLayer = displayLayer;
 

@@ -1,9 +1,12 @@
-﻿using Amber.Common;
+﻿using System.Reflection.Emit;
+using System.Text;
+using System.Text.RegularExpressions;
+using Amber.Common;
+using Amber.Renderer;
 using Amberstar.Game.Screens;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
-using System.Text;
-using System.Text.RegularExpressions;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game;
 
@@ -15,6 +18,17 @@ internal enum ButtonLayout
 
 partial class Game
 {
+    const long TicksPerStatusIconChange = TicksPerSecond; // TODO
+
+    readonly ISprite portraitBackgroundSprite;
+    readonly ISprite?[] portraitSprites = new ISprite?[MaxPartyMembers];
+    readonly ISprite[] playerStatusIcons = new ISprite[MaxPartyMembers];
+    readonly int[] playerStatusIconIndices = new int[MaxPartyMembers];
+    readonly List<StatusIcon>[] playerStatusIconTypes = new List<StatusIcon>[MaxPartyMembers];
+    readonly ISprite layoutSprite;
+    readonly IColoredRect?[] partyMemberNameBackgrounds = new IColoredRect?[MaxPartyMembers];
+    readonly IRenderText?[] partyMemberNames = new IRenderText?[MaxPartyMembers];
+
     internal ButtonLayout ButtonLayout { get; set; } = ButtonLayout.Movement;
     internal Cursor Cursor { get; }
 
@@ -27,6 +41,93 @@ partial class Game
 		if (paletteIndex != null)
 			layoutSprite.PaletteIndex = paletteIndex.Value;
 	}
+
+    internal void SetHandIconsByItem(IItem item, int count = 1)
+    {
+        int weight = item.Weight * count;
+
+        foreach (var p in State.PartyMembersWithSlot)
+        {
+            var (index, partyMember) = p;
+
+            if (partyMember == null)
+                HideStatusIcon(index);
+            else if (partyMember.TotalWeight + weight < partyMember.MaxWeight())
+                SetStatusIcon(index, StatusIcon.HandOpen);
+            else
+                SetStatusIcon(index, StatusIcon.HandStop);
+        }
+    }
+
+    internal void ResetStatusIcons()
+    {
+        foreach (var p in State.PartyMembersWithSlot)
+        {
+            var (index, partyMember) = p;
+
+            if (partyMember == null)
+                HideStatusIcon(index);
+            else
+            {
+                // TODO: REMOVE
+                partyMember.AddCondition(Condition.Irritated);
+                partyMember.AddCondition(Condition.Mad);
+                partyMember.AddCondition(Condition.Stunned);
+
+                var conditions = partyMember.GetConditions();
+
+                if (conditions == Condition.None)
+                    HideStatusIcon(index);
+                else
+                {
+                    var statusIconTypes = playerStatusIconTypes[index];
+
+                    statusIconTypes.Clear();
+                    statusIconTypes.AddRange(conditions.ToStatusIcons());
+
+                    SetStatusIcon(index, statusIconTypes[0], true);
+                }
+            }
+        }
+    }
+
+    internal void SetStatusIcon(int partyMemberSlot, StatusIcon statusIcon, bool resetAnimationIndex = true)
+    {
+        var renderLayer = GetRenderLayer(Layer.UI);
+        var textureAtlas = renderLayer.Config.Texture!;
+
+        if (resetAnimationIndex)
+            playerStatusIconIndices[partyMemberSlot] = 0;
+
+        playerStatusIcons[partyMemberSlot].TextureOffset = textureAtlas.GetOffset(GraphicIndexProvider.GetStatusIconIndex(statusIcon));
+        playerStatusIcons[partyMemberSlot].Visible = true;
+    }
+
+    internal void HideStatusIcon(int partyMemberSlot)
+    {
+        playerStatusIconIndices[partyMemberSlot] = 0;
+        playerStatusIcons[partyMemberSlot].Visible = false;
+    }
+
+    private void UpdateStatusIcons()
+    {
+        var layer = GetRenderLayer(Layer.UI);
+        var textureAtlas = layer.Config.Texture!;
+
+        foreach (var slot in State.PartyMembersWithSlot.Where(p => p.PartyMember != null).Select(p => p.SlotIndex))
+        {
+            var statusIconTypes = playerStatusIconTypes[slot];
+
+            if (statusIconTypes.Count <= 1)
+                continue;
+
+            long cycleTime = statusIconTypes.Count * TicksPerStatusIconChange;
+            int frameIndex = (int)((gameTicks % cycleTime) / TicksPerStatusIconChange);
+            var statusIconType = statusIconTypes[frameIndex];
+
+            playerStatusIcons[slot].TextureOffset = textureAtlas.GetOffset(GraphicIndexProvider.GetStatusIconIndex(statusIconType));
+        }
+    }
 
     internal int? TestPartyPortraitHit(Position position)
     {

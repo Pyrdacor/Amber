@@ -19,6 +19,7 @@ public enum PhysicalCondition : byte
 [Flags]
 public enum MentalCondition : byte
 {
+    None = 0,
     MentalCondition = 0,
     Irritated = 0x01,
 	Mad = 0x02,
@@ -55,27 +56,39 @@ public static class ConditionExtensions
 	public static Condition ToCondition(this PhysicalCondition condition) => (Condition)((int)condition << 8);
 	public static Condition ToCondition(this MentalCondition condition) => (Condition)((int)condition);
 
-	public static StatusIcon ToStatusIcon(this PhysicalCondition condition) => condition switch
-    {
-        PhysicalCondition.Stunned => StatusIcon.Stunned,
-        PhysicalCondition.Poisoned => StatusIcon.Poisoned,
-        PhysicalCondition.Petrified => StatusIcon.Petrified,
-        PhysicalCondition.Diseased => StatusIcon.Diseased,
-        PhysicalCondition.Aging => StatusIcon.Aging,
-        PhysicalCondition.Dead => StatusIcon.Dead,
-        PhysicalCondition.Ashes => StatusIcon.Dead,
-        PhysicalCondition.Dust => StatusIcon.Dead,
-        _ => throw new ArgumentOutOfRangeException(nameof(condition)),
-    };
+    public static Condition MergeWith(this PhysicalCondition physicalCondition, MentalCondition mentalCondition) => (Condition)(((int)physicalCondition << 8) | (int)mentalCondition);
+    public static Condition MergeWith(this MentalCondition mentalCondition, PhysicalCondition physicalCondition) => physicalCondition.MergeWith(mentalCondition);
 
-    public static StatusIcon ToStatusIcon(this MentalCondition condition) => condition switch
+    public static StatusIcon[] ToStatusIcons(this Condition conditions)
+	{
+		IEnumerable<StatusIcon> BuildStatusIcons()
+		{
+			foreach (var condition in Enum.GetValues<Condition>().Skip(1).Distinct())
+			{
+				if (conditions.HasFlag(condition))
+					yield return GetStatusIcon(condition);
+			}
+        }
+
+		return BuildStatusIcons().ToArray();
+	}
+
+    private static StatusIcon GetStatusIcon(Condition condition) => condition switch
     {
-        MentalCondition.Irritated => StatusIcon.Irritated,
-        MentalCondition.Mad => StatusIcon.Mad,
-        MentalCondition.Sleeping => StatusIcon.Sleeping,
-        MentalCondition.Panicked => StatusIcon.Panicked,
-        MentalCondition.Blind => StatusIcon.Blind,
-        MentalCondition.Overloaded => StatusIcon.Overloaded,
+        Condition.Stunned => StatusIcon.Stunned,
+        Condition.Poisoned => StatusIcon.Poisoned,
+        Condition.Petrified => StatusIcon.Petrified,
+        Condition.Diseased => StatusIcon.Diseased,
+        Condition.Aging => StatusIcon.Aging,
+        Condition.Dead => StatusIcon.Dead,
+        Condition.Ashes => StatusIcon.Dead,
+        Condition.Dust => StatusIcon.Dead,
+        Condition.Irritated => StatusIcon.Irritated,
+        Condition.Mad => StatusIcon.Mad,
+        Condition.Sleeping => StatusIcon.Sleeping,
+        Condition.Panicked => StatusIcon.Panicked,
+        Condition.Blind => StatusIcon.Blind,
+        Condition.Overloaded => StatusIcon.Overloaded,
         _ => throw new ArgumentOutOfRangeException(nameof(condition)),
     };
 }

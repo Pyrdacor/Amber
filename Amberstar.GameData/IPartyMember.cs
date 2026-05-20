@@ -31,3 +31,9 @@ public interface IPartyMember : IBattleCharacter, IPerson
 
     IPartyMember Clone();
 }
+
+public static class PartyMemberExtensions
+{
+    public static uint MaxWeight(this IPartyMember partyMember) =>
+        partyMember.Attributes[Attribute.Strength].TotalCurrent * 1000u;
+}

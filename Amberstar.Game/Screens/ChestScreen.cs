@@ -299,6 +299,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
             case ScreenType.ChestGiveItem:
+                Game.CurrentItem = ItemContainers[index.Value].Item;
+                Game.SetHandIconsByItem(Game.CurrentItem!); // TODO: count
                 ItemContainers[index.Value].StartDragging();
                 break;
         }
