@@ -204,7 +204,14 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     {
         if (buttons == MouseButtons.Right && ItemContainer.IsDragging)
         {
-            ItemContainer.AbortDrag(Game);
+            AbortItemDrag();
+            return true;
+        }
+
+        if (buttons == MouseButtons.Left && ItemContainer.IsDragging)
+        {
+            if ( )
+            AbortItemDrag();
             return true;
         }
 
@@ -215,11 +222,17 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     {
         if (key == Key.Escape && ItemContainer.IsDragging)
         {
-            ItemContainer.AbortDrag(Game);
+            AbortItemDrag();
             return true;
         }
 
         return base.KeyDown(key, keyModifiers);
+    }
+
+    private void AbortItemDrag()
+    {
+        ItemContainer.AbortDrag(Game);
+        Game.ResetStatusIcons();
     }
 
     protected override void CenterButtonClicked()

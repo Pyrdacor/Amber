@@ -27,6 +27,8 @@ internal class PictureTextScreen : Screen
 
 		this.game = game;
 
+		game.Cursor.CursorType = CursorType.Sword;
+
 		var @event = (game.EventHandler.CurrentEvent as IShowPictureTextEvent)!;
 
 		var layer = game.GetRenderLayer(Layer.UI);

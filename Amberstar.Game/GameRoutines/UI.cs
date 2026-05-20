@@ -46,34 +46,25 @@ partial class Game
     {
         int weight = item.Weight * count;
 
-        foreach (var p in State.PartyMembersWithSlot)
+        ForeachPartyMemberSlot((index, partyMember) =>
         {
-            var (index, partyMember) = p;
-
             if (partyMember == null)
                 HideStatusIcon(index);
             else if (partyMember.TotalWeight + weight < partyMember.MaxWeight())
-                SetStatusIcon(index, StatusIcon.HandOpen);
+                SetStatusIcon(index, StatusIcon.HandOpen, true, true);
             else
-                SetStatusIcon(index, StatusIcon.HandStop);
-        }
+                SetStatusIcon(index, StatusIcon.HandStop, true, true);
+        });
     }
 
     internal void ResetStatusIcons()
     {
-        foreach (var p in State.PartyMembersWithSlot)
+        ForeachPartyMemberSlot((index, partyMember) =>
         {
-            var (index, partyMember) = p;
-
             if (partyMember == null)
                 HideStatusIcon(index);
             else
             {
-                // TODO: REMOVE
-                partyMember.AddCondition(Condition.Irritated);
-                partyMember.AddCondition(Condition.Mad);
-                partyMember.AddCondition(Condition.Stunned);
-
                 var conditions = partyMember.GetConditions();
 
                 if (conditions == Condition.None)
@@ -88,16 +79,23 @@ partial class Game
                     SetStatusIcon(index, statusIconTypes[0], true);
                 }
             }
-        }
+        });
     }
 
-    internal void SetStatusIcon(int partyMemberSlot, StatusIcon statusIcon, bool resetAnimationIndex = true)
+    internal void SetStatusIcon(int partyMemberSlot, StatusIcon statusIcon,
+        bool resetAnimationIndex = true, bool resetAnimationFrames = false)
     {
         var renderLayer = GetRenderLayer(Layer.UI);
         var textureAtlas = renderLayer.Config.Texture!;
 
-        if (resetAnimationIndex)
+        if (resetAnimationIndex || resetAnimationFrames)
             playerStatusIconIndices[partyMemberSlot] = 0;
+
+        if (resetAnimationFrames)
+        {
+            playerStatusIconTypes[partyMemberSlot].Clear();
+            playerStatusIconTypes[partyMemberSlot].Add(statusIcon);
+        }
 
         playerStatusIcons[partyMemberSlot].TextureOffset = textureAtlas.GetOffset(GraphicIndexProvider.GetStatusIconIndex(statusIcon));
         playerStatusIcons[partyMemberSlot].Visible = true;
@@ -114,7 +112,7 @@ partial class Game
         var layer = GetRenderLayer(Layer.UI);
         var textureAtlas = layer.Config.Texture!;
 
-        foreach (var slot in State.PartyMembersWithSlot.Where(p => p.PartyMember != null).Select(p => p.SlotIndex))
+        foreach (var slot in GetValidPartyMemberSlots())
         {
             var statusIconTypes = playerStatusIconTypes[slot];
 

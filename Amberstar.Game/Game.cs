@@ -54,12 +54,8 @@ public partial class Game : IDisposable
 		layoutSprite = CreateSprite(Layer.Layout, new Position(0, 37), new Size(320, 163), 0, 14)!;
 
 		// Show party member (and empty) slots
-		var partyMemberSlots = State.PartyMembersWithSlot;
-
-		foreach (var partyMemberSlot in partyMemberSlots)
+		ForeachPartyMemberSlot((i, partyMember) =>
 		{
-			(int i, IPartyMember? partyMember) = partyMemberSlot;
-
 			var position = new Position(16 + i * 48, 1);
 			var size = new Size(32, 34);
 
@@ -96,10 +92,10 @@ public partial class Game : IDisposable
 
 			playerStatusIconIndices[i] = 0;
 			playerStatusIconTypes[i] = [];
-            var statusIcon = playerStatusIcons[i] = CreateSprite(Layer.UI, position + new Position(32, 0), new(16, 16), 0, uiPaletteIndex)!;
-            statusIcon.DisplayLayer = 0;
+			var statusIcon = playerStatusIcons[i] = CreateSprite(Layer.UI, position + new Position(32, 0), new(16, 16), 0, uiPaletteIndex)!;
+			statusIcon.DisplayLayer = 0;
 			statusIcon.Visible = false;
-        }
+		});
 
 		ResetStatusIcons();
 
