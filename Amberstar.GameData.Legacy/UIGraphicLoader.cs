@@ -31,6 +31,15 @@ internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider,
 	{
 		if (!buttons.TryGetValue(buttonType, out var gfx))
 		{
+			if (buttonType > ButtonType.LastOriginalButton)
+			{
+                gfx = CreateCustomButton(buttonType);
+
+                buttons.Add(buttonType, gfx);
+
+                return gfx;
+            }
+
 			var asset = assetProvider.GetAsset(new(AssetType.Button, (int)buttonType));
 
 			if (asset == null)
@@ -44,7 +53,29 @@ internal class UIGraphicLoader(Amber.Assets.Common.IAssetProvider assetProvider,
 		return gfx;
 	}
 
-	public IGraphic LoadGraphic(UIGraphic graphic)
+	private Graphic CreateCustomButton(ButtonType buttonType)
+	{
+		switch (buttonType)
+		{
+			case ButtonType.DistributeItems:
+			{
+				var distributeFoodButton = (LoadButtonGraphic(ButtonType.DistributeFood) as Graphic)!;
+				var giveItemButton = (LoadButtonGraphic(ButtonType.GiveItem) as Graphic)!;
+
+				// Prepare the base button
+				var button = distributeFoodButton.FillRectsWithColor([new(12, 2, 8, 5), new(15, 7, 8, 7)], distributeFoodButton.GetColorIndexAt(2, 1));
+				var itemImage = giveItemButton.GetPart(3, 4, 7, 7);
+                button.AddOverlay(13, 3, itemImage, false);
+                button.AddOverlay(11, 6, itemImage, false);
+
+				return button;
+			}
+			default:
+				throw new InvalidOperationException($"Button type '{buttonType}' is no valid custom button type.");
+		}
+	}
+
+    public IGraphic LoadGraphic(UIGraphic graphic)
 	{
 		if (graphic == UIGraphic.EmptyItemSlot)
 			return emptyItemSlotGraphic;

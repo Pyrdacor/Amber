@@ -17,7 +17,7 @@ using Amber.Audio.OpenAL;
 
 namespace Amberstar
 {
-	class GameWindow : IContextProvider
+	class GameWindow(string id = "MainWindow") : IContextProvider
     {
         string gameVersion = "Amberstar.net";
         Renderer? renderer;
@@ -27,15 +27,10 @@ namespace Amberstar
         ICursor? cursor = null;
         Game.Game? game = null;
 
-        public string Identifier { get; }
+        public string Identifier { get; } = id;
         public IGLContext? GLContext => window?.GLContext;
         public int Width { get; private set; }
         public int Height { get; private set; }
-
-        public GameWindow(string id = "MainWindow")
-        {
-            Identifier = id;
-        }
 
         void SetupInput(IInputContext inputContext)
         {
@@ -278,10 +273,11 @@ namespace Amberstar
                 out var paletteIndexProvider, out var paletteColorProvider, out var fontInfoProvider);
 
             var audioOuput = new AudioOutput();
+            var configuration = new Configuration(); // TODO: load it later!
 
-			game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
-                paletteIndexProvider, paletteColorProvider, fontInfoProvider, QueryPressedKeys,
-                SetMousePosition);
+            game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
+                paletteIndexProvider, paletteColorProvider, fontInfoProvider, configuration,
+                QueryPressedKeys, SetMousePosition);
         }
 
         void Window_Render(double delta)

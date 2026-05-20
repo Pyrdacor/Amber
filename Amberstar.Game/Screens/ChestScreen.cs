@@ -11,6 +11,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     readonly static Rect goldDisplayArea = new(112, 37 + 76, 64, 16);
     bool chestHasItems = false;
     bool chestHasGold = false;
+    bool allowDragAndDrop = false;
     Label? goldLabel;
     Label? goldDisplay;
 
@@ -46,15 +47,27 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     public override void Open(Game game, Action? closeAction)
     {
-        // TODO: If hidden, add search skill check
-
         var chestEvent = (game.EventHandler.CurrentEvent as ChestEvent)!;
+
+        if (chestEvent.Hidden)
+        {
+            int searchSkill = game.State.ActivePartyMember!.Skills[Skill.Search].TotalCurrent;
+
+            if (!game.Probe(searchSkill))
+            {
+                game.ScreenHandler.PopScreen();
+                return;
+            }
+        }
+        
         // TODO: If you have the Amberstar, every chest will be open (there is a bit in the savegame [Special_item_flags bit 1])
         bool lockOpened = chestEvent.LockpickReduction == 0 || game.IsCurrentEventSaved();
 
         Image = lockOpened ? Image80x80.OpenChest : Image80x80.LockedChest;
 
         base.Open(game, closeAction);
+
+        allowDragAndDrop = false;
 
         if (lockOpened)
         {
@@ -97,6 +110,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
             Game.ScreenHandler.PopScreen();
             return;
         }
+
+        allowDragAndDrop = Game.IsOptionSet(GameOptions.AdvancedItemPickup);
 
         RequestButtonSetup();
 
@@ -191,7 +206,14 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         if (!LockOpened || !chestHasItems)
             return;
 
-        Game.ScreenHandler.PushScreen(ScreenType.ChestGiveItem);
+        if (allowDragAndDrop)
+        {
+            // TODO: distribute items
+        }
+        else
+        {
+            Game.ScreenHandler.PushScreen(ScreenType.ChestGiveItem);
+        }
     }
 
     protected override void LowerButtonClicked()
@@ -217,7 +239,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     protected override (ButtonType Type, bool Enabled) ProvideRightButton()
     {
-        return (ButtonType.GiveItem, LockOpened && chestHasItems);
+        return (allowDragAndDrop ? ButtonType.DistributeItems : ButtonType.GiveItem, LockOpened && chestHasItems);
     }
 
     protected override (ButtonType Type, bool Enabled) ProvideLowerButton()

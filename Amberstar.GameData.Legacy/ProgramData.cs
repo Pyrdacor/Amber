@@ -165,7 +165,7 @@ namespace Amberstar.GameData.Legacy
             {
                 Buttons.Add(button, new DataReader(dataReader.ReadBytes(32 * 16 / 2)));
             }
-            for (int i = 0; i <= (int)ButtonType.LastButton; i++)
+            for (int i = 0; i <= (int)ButtonType.LastOriginalButton; i++)
                 AddButton(i);
             #endregion
             #region Read status icons

@@ -362,6 +362,61 @@ public class Graphic : IGraphic
 			}
 		}
 	}
+
+	public Graphic FillRectWithColor(Rect area, byte colorIndex)
+	{
+        if (!UsesPalette)
+            throw new AmberException(ExceptionScope.Application, "Filling rects with color can only be performed on palette graphics.");
+
+		area = area.Clip(new(0, 0, Width, Height));
+		int offsetX = area.Left;
+		int offsetY = area.Top;
+		int areaWidth = area.Size.Width;
+        int areaHeight = area.Size.Height;
+        var graphicData = new byte[Width * Height];
+
+        for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+				graphicData[x + y * Width] = (x >= offsetX && x < offsetX + areaWidth && y >= offsetY && y < offsetY + areaHeight)
+					? colorIndex
+					: data[x + y * Width];
+            }
+        }
+
+		return new Graphic(Width, Height, graphicData, Format);
+    }
+
+    public Graphic FillRectsWithColor(Rect[] areas, byte colorIndex)
+    {
+        if (!UsesPalette)
+            throw new AmberException(ExceptionScope.Application, "Filling rects with color can only be performed on palette graphics.");
+
+        var currentArea = new Rect(0, 0, Width, Height);
+		var clippedAreas = areas.Select(area => area.Clip(currentArea)).ToList();
+        var graphicData = new byte[Width * Height];
+
+        for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                graphicData[x + y * Width] = clippedAreas.Any(area => area.Contains(new(x, y)))
+                    ? colorIndex
+                    : data[x + y * Width];
+            }
+        }
+
+        return new Graphic(Width, Height, graphicData, Format);
+    }
+
+	public byte GetColorIndexAt(int x, int y)
+	{
+        if (!UsesPalette)
+            throw new AmberException(ExceptionScope.Application, "Getting color index is only possible on palette graphics.");
+
+		return data[x + y * Width];
+    }
 }
 
 public class PaletteGraphic : Graphic, IPaletteGraphic

@@ -114,7 +114,10 @@ public enum ButtonType
 	AskToJoin,
 	Play,
 	Forward,
-	LastButton = Forward
+	LastOriginalButton = Forward,
+    // Custom buttons
+    DistributeItems,
+	LastButton = DistributeItems
 }
 
 public enum StatusIcon

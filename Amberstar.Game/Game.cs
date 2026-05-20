@@ -33,9 +33,10 @@ public partial class Game : IDisposable
     public Game(IRenderer renderer, IAssetProvider assetProvider, IAudioOutput audioOutput,
 		IGraphicIndexProvider uiGraphicIndexProvider, IPaletteIndexProvider paletteIndexProvider,
 		IPaletteColorProvider paletteColorProvider, IFontInfoProvider fontInfoProvider,
-		Func<List<Key>> pressedKeyProvider, Action<Position> setMousePosition)
+		IConfiguration configuration, Func<List<Key>> pressedKeyProvider, Action<Position> setMousePosition)
 	{
 		Renderer = renderer;
+		Configuration = configuration;
 		AssetProvider = assetProvider;
 		GraphicIndexProvider = uiGraphicIndexProvider;
 		PaletteIndexProvider = paletteIndexProvider;
@@ -114,7 +115,7 @@ public partial class Game : IDisposable
 		//ScreenHandler.PushScreen(ScreenType.Map2D);
 	}
 
-	internal IRenderer Renderer { get; }
+    internal IRenderer Renderer { get; }
 	internal IAssetProvider AssetProvider { get; }
 	internal IGraphicIndexProvider GraphicIndexProvider { get; }
 	internal IPaletteIndexProvider PaletteIndexProvider { get; }
