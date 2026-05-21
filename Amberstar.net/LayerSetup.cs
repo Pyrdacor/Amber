@@ -1,5 +1,5 @@
 ﻿using Amber.Assets.Common;
-using Amber.Renderer;
+using Amber.Renderer.Common;
 using Ambermoon.Renderer.OpenGL;
 using Amberstar.GameData;
 using Amberstar.GameData.Legacy;
@@ -180,7 +180,7 @@ namespace Amberstar
 			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
 				BaseZ = 0.7f,
-				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers | LayerFeatures.Alpha,
 				Palette = paletteTexture,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 				Texture = renderer.TextureFactory.CreateAtlas(graphics),
@@ -246,7 +246,7 @@ namespace Amberstar
 			layer = renderer.LayerFactory.Create(LayerType.Color2D, new()
 			{
 				BaseZ = 0.9f,
-				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers | LayerFeatures.Alpha,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
 			});
 			layer.Visible = true;

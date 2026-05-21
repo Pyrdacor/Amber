@@ -37,11 +37,13 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         uniform sampler2D {TextureName};
         uniform sampler2D {PaletteName};
         uniform float {AllowTransparencyName};
+        uniform float {AllowAlphaName};
         in vec2 varTexCoord;
         flat in float palIndex;
         flat in float maskColIndex;
         flat in float transparentColIndex;
         flat in float noTransparency;
+        flat in float a;
         
         void main()
         {{
@@ -76,7 +78,10 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             if (maskColIndex < {PaletteSizeName} - 0.5f)
                 pixelColor = texture({PaletteName}, vec2((maskColIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
 
-            pixelColor.a = 1.0f;
+            if ({AllowAlphaName} >= 0.5f)
+                pixelColor.a = a;
+            else
+                pixelColor.a = 1.0f;
                 
             {FragmentOutColorName} = pixelColor;
         }}
@@ -90,6 +95,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         in uint {MaskColorIndexName};
         in uint {TransparentColorIndexName};
         in uint {OpaqueName};
+        in uint {AlphaName};
         uniform uvec2 {AtlasSizeName};
         uniform float {ZName};
         uniform mat4 {ProjectionMatrixName};
@@ -99,6 +105,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         flat out float maskColIndex;
         flat out float transparentColIndex;
         flat out float noTransparency;
+        flat out float a;
         
         void main()
         {{
@@ -109,6 +116,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             maskColIndex = float({MaskColorIndexName});
             transparentColIndex = float({TransparentColorIndexName});
             noTransparency = float({OpaqueName});
+            a = float({AlphaName}) / 255.0f;
             float z = clamp(1.0f - {ZName} - float({LayerName}) * 0.00001f, 0.0f, 1.0f);
             gl_Position = {ProjectionMatrixName} * {ModelViewMatrixName} * vec4(pos, z, 1.0f);
         }}
@@ -143,8 +151,9 @@ internal class Texture2DShader : BaseShader, IPaletteShader
 		Add(BufferPurpose.MaskColorIndex, MaskColorIndexName, new ByteBuffer(State, true));
 		Add(BufferPurpose.TransparentColorIndex, TransparentColorIndexName, new ByteBuffer(State, true));
 		Add(BufferPurpose.Opaque, OpaqueName, new ByteBuffer(State, true));
+        Add(BufferPurpose.Alpha, AlphaName, new ByteBuffer(State, false));
 
-		return buffers;
+        return buffers;
 	}
 
 	public void UsePalette(bool use)
@@ -181,4 +190,9 @@ internal class Texture2DShader : BaseShader, IPaletteShader
 	{
 		shaderProgram.SetInput(AllowTransparencyName, allow ? 1.0f : 0.0f);
 	}
+
+    public void AllowAlpha(bool allow)
+    {
+        shaderProgram.SetInput(AllowAlphaName, allow ? 1.0f : 0.0f);
+    }
 }

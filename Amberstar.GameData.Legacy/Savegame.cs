@@ -36,7 +36,7 @@ internal class Savegame : ISavegame
         {
             ActiveSpells[i] = new()
             {
-                Duration = activeSpellDurations[i] & 0xff,
+                Duration = activeSpellDurations[i],
                 Value = dataReader.ReadByte(),
             };
         }

@@ -1,5 +1,5 @@
 ﻿using Amber.Common;
-using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 
@@ -21,7 +21,7 @@ internal class ItemContainer
     ISprite? sprite;
 	ISprite? brokenOverlay; // TODO
 	IAnimatedSprite? destroyAnimation;
-	// TODO: Item count display
+	Label? itemCountLabel;
 	byte paletteIndex;
 	byte displayLayer;
 	static ItemContainer? draggedSourceSlot;
@@ -49,9 +49,10 @@ internal class ItemContainer
 
 			if (sprite != null)
 				sprite.DisplayLayer = displayLayer;
-
+			if (itemCountLabel != null)
+				itemCountLabel.DisplayLayer = (byte)(displayLayer + 4);
             if (brokenOverlay != null)
-                brokenOverlay.DisplayLayer = (byte)(displayLayer + 4);
+                brokenOverlay.DisplayLayer = (byte)(displayLayer + 2);
         }
 	}
 
@@ -64,11 +65,13 @@ internal class ItemContainer
 
 			if (sprite != null)
 				sprite.PaletteIndex = value;
-			if (brokenOverlay != null)
+            if (brokenOverlay != null)
                 brokenOverlay.PaletteIndex = value;
 			if (destroyAnimation != null)
 				destroyAnimation.PaletteIndex = value;
-		}
+
+            itemCountLabel?.SetText(ItemCount.ToString(), 15, TextManager.TransparentPaper, value);
+        }
 	}
 
 	public bool Empty => ItemCount == 0 || Item == null;
@@ -113,7 +116,9 @@ internal class ItemContainer
 		{
 			if (sprite != null)
 				sprite.Visible = value;
-			if (brokenOverlay != null)
+			if (itemCountLabel != null)
+                itemCountLabel.Visible = value;
+            if (brokenOverlay != null)
 				brokenOverlay.Visible = value;
 			if (destroyAnimation != null)
                 destroyAnimation.Visible = value;
@@ -250,7 +255,21 @@ internal class ItemContainer
             sprite.TextureOffset = textureAtlas.GetOffset(itemGraphicIndex);            
             sprite.Visible = true;
 
-            // TODO: item count display, broken overlay
+			if (count > 1)
+			{
+				itemCountLabel = new Label(game);
+				itemCountLabel.SetText($"{count,2}", 15, TextManager.TransparentPaper, sprite.PaletteIndex);
+                itemCountLabel.Area = new(sprite.Position + new Position(2, 9), new(12, 7));
+				itemCountLabel.DisplayLayer = (byte)(displayLayer + 4);
+                itemCountLabel.Visible = true;
+            }
+			else
+			{
+				itemCountLabel?.Destroy();
+                itemCountLabel = null;
+            }
+
+            // TODO: broken overlay
 
             SlotChanged?.Invoke();
         }
@@ -270,7 +289,9 @@ internal class ItemContainer
 		{
 			ItemCount += amount;
 
-            // TODO: update item count display
+            itemCountLabel ??= new Label(game);
+            itemCountLabel.SetText(ItemCount.ToString(), 15, TextManager.TransparentPaper, sprite!.PaletteIndex);
+            itemCountLabel.Visible = true;
 
             SlotChanged?.Invoke();
         }
@@ -290,7 +311,11 @@ internal class ItemContainer
 
 			ItemCount -= amount;
 
-			// TODO: update item count display
+			if (ItemCount <= 1)
+			{
+				itemCountLabel?.Destroy();
+				itemCountLabel = null;
+			}
 
 			SlotChanged?.Invoke();
 		}
@@ -360,7 +385,13 @@ internal class ItemContainer
             sprite = null;
         }
 
-		if (brokenOverlay != null)
+		if (itemCountLabel != null)
+		{
+			itemCountLabel.Visible = false;
+			itemCountLabel = null;
+		}
+
+        if (brokenOverlay != null)
 		{
             brokenOverlay.Visible = false;
             brokenOverlay = null;
@@ -371,8 +402,6 @@ internal class ItemContainer
             destroyAnimation.Visible = false;
 			destroyAnimation = null;
         }
-
-        // TODO: item count display
 
         SlotChanged?.Invoke();
     }
@@ -426,13 +455,14 @@ internal class ItemContainer
         if (sprite != null)
 			sprite.Position = position;
 
+        if (itemCountLabel != null)
+            itemCountLabel.Position = position;
+
         if (brokenOverlay != null)
             brokenOverlay.Position = position;
 
 		if (destroyAnimation != null)
 			destroyAnimation.Position = position;
-
-        // TODO: item count display
     }
 
 	public void StartDragging(bool all = false)
@@ -449,7 +479,7 @@ internal class ItemContainer
         }
 
         draggedSourceSlot = this;
-        Dragged?.Invoke(Item!, 1); // TODO: count
+        Dragged?.Invoke(Item!, all ? ItemCount : 1);
         ClearItem(); // TODO: Some items may remain
 
         UpdateDragPosition(game, position);
@@ -533,5 +563,11 @@ internal class ItemContainer
 			return;
 
 		DraggedItem.Position = position;
+	}
+
+	public void Update()
+	{
+		if (itemCountLabel != null)
+			itemCountLabel.Alpha = Label.BlinkAnimationAlpha;
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
 using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.UI

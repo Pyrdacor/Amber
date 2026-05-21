@@ -149,6 +149,7 @@ public partial class Game : IDisposable
 		Time.Update(elapsed);
 		ScreenHandler.ActiveScreen?.Update(this, elapsed);
         UpdateStatusIcons();
+		Label.UpdateBlinkAnimations(gameTicks);
 
         pressedKeys = null; // reset
 	}

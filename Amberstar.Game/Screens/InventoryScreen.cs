@@ -269,7 +269,7 @@ internal class InventoryScreen : ItemGridScreen
 
         if (itemDragged && buttons == MouseButtons.Right)
         {
-            ItemContainer.AbortDrag(game);
+            ItemContainer.AbortDrag(game!);
             return true;
         }
 
@@ -304,7 +304,6 @@ internal class InventoryScreen : ItemGridScreen
 
         game!.State.SetCurrentInventory(index);
         partyMember = game.State.CurrentInventory!;
-        var graphicLoader = game!.AssetProvider.GraphicLoader;
         var uiPaletteIndex = game!.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
         foreach (var equipmentSlot in Enum.GetValues<EquipmentSlot>())

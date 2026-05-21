@@ -458,12 +458,14 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public void SetQuestBit(int bit, bool set = true) => SetBit(QuestBits, bit, set);
 
-	static int BitFromMapEventIndex(int mapIndex, int eventIndex) => (mapIndex - 1) * 65 + eventIndex;
+    // NOTE: This assumes that eventIndex is 1-based!
+    static int BitFromMapEventIndex(int mapIndex, int eventIndex) => (mapIndex - 1) * 65 + eventIndex;
 
 	public bool IsEventActive(int mapIndex, int eventIndex) => !IsBitSet(EventBits, BitFromMapEventIndex(mapIndex, eventIndex));
 
 	public void SaveEvent(int mapIndex, int eventIndex) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, eventIndex), true);
 
+    // NOTE: This assumes that mapCharIndex is 1-based!
     static int BitFromMapCharIndex(int mapIndex, int mapCharIndex) => (mapIndex - 1) * 24 + mapCharIndex;
 
 	public bool IsMapCharacterActive(int mapIndex, int mapCharIndex) => !IsBitSet(CharacterBits, BitFromMapCharIndex(mapIndex, mapCharIndex));
@@ -472,7 +474,8 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public void LearnWord(int index) => SetBit(KnownWordsBits, index, true);
 
-	public bool IsWordKnown(int index) => IsBitSet(KnownWordsBits, index);
+    // NOTE: This assumes that index is 1-based!
+    public bool IsWordKnown(int index) => IsBitSet(KnownWordsBits, index);
 
     public int[] GetWareCounts(int merchantIndex)
 	{

@@ -1,14 +1,12 @@
-﻿using Amber.Renderer.Common;
+﻿namespace Amber.Renderer.Common;
 
-namespace Amber.Renderer;
-
-// TODO: use them
 [Flags]
 public enum LayerFeatures
 {
 	None = 0,
 	Transparency = 0x1,
-	DisplayLayers = 0x2
+	DisplayLayers = 0x2,
+	Alpha = 0x4,
 }
 
 public enum LayerType

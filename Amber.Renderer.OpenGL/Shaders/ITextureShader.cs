@@ -30,4 +30,6 @@ internal interface ITextureShader : IShader
 	void UsePalette(bool use);
 
 	void AllowTransparency(bool allow);
+
+	void AllowAlpha(bool allow);
 }

@@ -1,6 +1,6 @@
 ﻿using System.Reflection.Metadata.Ecma335;
 using Amber.Common;
-using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;

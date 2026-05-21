@@ -20,6 +20,7 @@
  */
 
 using Amber.Common;
+using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL.Buffers;
 using Amber.Renderer.OpenGL.Shaders;
 using ColorBuffer = Amber.Renderer.OpenGL.Buffers.ColorBuffer;
@@ -50,7 +51,7 @@ internal class RenderBuffer : IDisposable
 		indexBuffer = new IndexBuffer(state);
 		vertexArrayObject.AddBuffer("index", indexBuffer);
 
-        NeedsBlending = shader.NeedsBlending;
+        NeedsBlending = shader.NeedsBlending || features.HasFlag(LayerFeatures.Alpha);
 	}
 
     private TBuffer? GetBuffer<TBuffer, T>(BufferPurpose purpose)
@@ -191,7 +192,29 @@ internal class RenderBuffer : IDisposable
 			opaqueBuffer.Add(opaque, opaqueBufferIndex + 3);
 		}
 
-		var textureOffsetBuffer = GetBuffer<PositionBuffer, short>(BufferPurpose.TextureCoordinates);
+        var alphaBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.Alpha);
+
+        if (alphaBuffer != null)
+        {
+            if (sprite is IAlphaSprite alphaSprite)
+            {
+                byte alpha = alphaSprite.Alpha;
+
+                int alphaBufferIndex = alphaBuffer.Add(alpha, index);
+                alphaBuffer.Add(alpha, alphaBufferIndex + 1);
+                alphaBuffer.Add(alpha, alphaBufferIndex + 2);
+                alphaBuffer.Add(alpha, alphaBufferIndex + 3);
+            }
+            else
+            {
+                int alphaBufferIndex = alphaBuffer.Add(255, index);
+                alphaBuffer.Add(255, alphaBufferIndex + 1);
+                alphaBuffer.Add(255, alphaBufferIndex + 2);
+                alphaBuffer.Add(255, alphaBufferIndex + 3);
+            }
+        }
+
+        var textureOffsetBuffer = GetBuffer<PositionBuffer, short>(BufferPurpose.TextureCoordinates);
 
 		if (textureOffsetBuffer != null)
         {

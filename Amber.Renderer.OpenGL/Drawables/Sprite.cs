@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amber.Renderer.Common;
 
 namespace Amber.Renderer.OpenGL.Drawables
 {
@@ -193,10 +194,32 @@ namespace Amber.Renderer.OpenGL.Drawables
 		}
 	}
 
-	internal class SpriteFactory(Layer layer) : ISpriteFactory
+    internal class AlphaSprite(Layer layer) : Sprite(layer), IAlphaSprite
+    {
+		byte alpha = 255;
+
+        public byte Alpha
+        {
+            get => alpha;
+            set
+            {
+                if (alpha != value)
+                {
+                    alpha = value;
+
+                    if (Visible && DrawIndex != -1)
+                        renderBuffer.UpdateAlpha(DrawIndex, alpha);
+                }
+            }
+        }
+    }
+
+    internal class SpriteFactory(Layer layer) : ISpriteFactory
 	{
 		public ISprite Create() => new Sprite(layer);
 
 		public IAnimatedSprite CreateAnimated() => new AnimatedSprite(layer);
-	}
+
+		public IAlphaSprite CreateWithAlpha() => new AlphaSprite(layer);
+    }
 }

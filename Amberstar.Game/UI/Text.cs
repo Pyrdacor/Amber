@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amberstar.GameData;
 
 namespace Amberstar.Game.UI;
@@ -17,6 +18,7 @@ internal interface IRenderText
     int TextLineCount { get; }
 	int LineHeight { get; }
     bool Visible { get; set; }
+    byte Alpha { get; set; }
 
     event Action? ScrollEnded;
 
@@ -76,8 +78,8 @@ internal class TextManager(Game game, IFont font,
     {
         readonly ILayer layer = game.GetRenderLayer(Layer.Text);
         readonly List<TextLine> textLines = textLines;
-		readonly List<List<ISprite>> glyphShadows = [];
-		readonly List<List<ISprite>> glyphs = [];
+		readonly List<List<IAlphaSprite>> glyphShadows = [];
+		readonly List<List<IAlphaSprite>> glyphs = [];
         readonly List<long> startedScrollAction = [];
         int maxScroll = 0;
         int areaX = 0;
@@ -86,6 +88,7 @@ internal class TextManager(Game game, IFont font,
         int scrollOffsetInPixels = 0;
         int scrollOffsetInLines = 0;
         byte displayLayer = 0;
+        byte alpha = 255;
         bool visible = false;
 
         public event Action? ScrollEnded;
@@ -116,7 +119,24 @@ internal class TextManager(Game game, IFont font,
             }
         }
 
-		private static readonly Dictionary<char, int> UnicodeToAtariST = new()
+        public byte Alpha
+        {
+            get => alpha;
+            set
+            {
+                if (alpha == value)
+                    return;
+
+                alpha = value;
+
+                foreach (var glyph in glyphs.SelectMany(g => g))
+                    glyph.Alpha = alpha;
+                foreach (var shadow in glyphShadows.SelectMany(g => g))
+                    shadow.Alpha = alpha;
+            }
+        }
+
+        private static readonly Dictionary<char, int> UnicodeToAtariST = new()
         {
             { 'Ç', 0x80 },
             { 'ü', 0x81 },
@@ -187,10 +207,10 @@ internal class TextManager(Game game, IFont font,
         }
 
         // TODO: use paperIndex!
-        private ISprite CreateTextSprite(int x, int y, int glyphIndex, int colorIndex, int paperIndex, int displayLayerOffset, bool shadow)
+        private IAlphaSprite CreateTextSprite(int x, int y, int glyphIndex, int colorIndex, int paperIndex, int displayLayerOffset, bool shadow)
         {
             var textureAtlas = layer.Config.Texture!;
-            var glyph = layer.SpriteFactory!.Create();
+            var glyph = layer.SpriteFactory!.CreateWithAlpha();
             glyph.DisplayLayer = (byte)MathUtil.Limit(byte.MinValue, displayLayer + displayLayerOffset, byte.MaxValue);
             glyph.Position = new(x, y);
             glyph.Size = new(font.GlyphWidth, font.GlyphHeight);
@@ -199,6 +219,7 @@ internal class TextManager(Game game, IFont font,
             glyph.ClipRect = new(areaX, areaY, int.MaxValue, clipHeight);
             glyph.MaskColorIndex = (byte)colorIndex;
             glyph.PaletteIndex = (byte)(shadow ? 0 : paletteIndex);
+            glyph.Alpha = Alpha;
             glyph.Visible = true;
 
             return glyph;
@@ -206,8 +227,8 @@ internal class TextManager(Game game, IFont font,
 
         private void SetupTextLine(int x, int y, int line, TextLine textLine)
         {
-            List<ISprite> glyphLine;
-			List<ISprite> shadowLine;
+            List<IAlphaSprite> glyphLine;
+			List<IAlphaSprite> shadowLine;
 
 			if (line == glyphs.Count)
             {
@@ -607,11 +628,17 @@ internal class TextManager(Game game, IFont font,
 
 internal class Label(Game game) : ILayeredDrawable
 {
+    const long TicksPerHalfBlinkAnimation = Game.TicksPerSecond;
+    const long TicksPerBlinkAnimation = TicksPerHalfBlinkAnimation * 2;
+
     Rect area = new();
     IRenderText? renderText;
     byte displayLayer = 0;
+    byte alpha = 255;
     TextAlignment alignment = TextAlignment.Left;
     bool needsShowCall = true;
+
+    public static byte BlinkAnimationAlpha { get; private set; }
 
     public ILayer Layer => game.GetRenderLayer(Amberstar.Game.Layer.Text);
 
@@ -627,6 +654,21 @@ internal class Label(Game game) : ILayeredDrawable
                 else
                     renderText.Visible = value;
             }
+        }
+    }
+
+    public byte Alpha
+    {
+        get => alpha;
+        set
+        {
+            if (alpha == value)
+                return;
+
+            alpha = value;
+
+            if (renderText != null)
+                renderText.Alpha = value;
         }
     }
 
@@ -734,5 +776,20 @@ internal class Label(Game game) : ILayeredDrawable
         renderText = null;
 
         needsShowCall = true;
+    }
+
+    public static void UpdateBlinkAnimations(long ticks)
+    {
+        long timeInAnimation = ticks % TicksPerBlinkAnimation;
+        bool fadeOut = timeInAnimation < TicksPerHalfBlinkAnimation;
+
+        if (fadeOut)
+        {
+            BlinkAnimationAlpha = (byte)(255 - MathUtil.Round(255.0f * timeInAnimation / TicksPerHalfBlinkAnimation));
+        }
+        else
+        {
+            BlinkAnimationAlpha = (byte)(MathUtil.Round(255.0f * (timeInAnimation - TicksPerHalfBlinkAnimation) / TicksPerHalfBlinkAnimation));
+        }
     }
 }

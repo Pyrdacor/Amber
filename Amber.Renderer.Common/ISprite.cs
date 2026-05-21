@@ -1,6 +1,6 @@
 ﻿using Amber.Common;
 
-namespace Amber.Renderer;
+namespace Amber.Renderer.Common;
 
 public interface ISprite : ILayeredDrawable, ISizedDrawable
 {
@@ -13,6 +13,11 @@ public interface ISprite : ILayeredDrawable, ISizedDrawable
 	bool Opaque { get; set; }
 }
 
+public interface IAlphaSprite : ISprite
+{
+    byte Alpha { get; set; }
+}
+
 public interface IAnimatedSprite : ISprite
 {
 	int CurrentFrameIndex { get; set; }
@@ -23,4 +28,5 @@ public interface ISpriteFactory
 {
 	ISprite Create();
 	IAnimatedSprite CreateAnimated();
+	IAlphaSprite CreateWithAlpha();
 }

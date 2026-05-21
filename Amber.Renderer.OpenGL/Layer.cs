@@ -20,6 +20,7 @@
  */
 
 using Amber.Common;
+using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL.Drawables;
 using Amber.Renderer.OpenGL.Shaders;
 
@@ -139,7 +140,8 @@ internal class Layer : ILayer, IDisposable
 			textureShader.UsePalette(usePalette);
 			textureShader.SetAtlasSize((uint)Config.Texture.Size.Width, (uint)Config.Texture.Size.Height);
 			textureShader.AllowTransparency(Config.LayerFeatures.HasFlag(LayerFeatures.Transparency));
-		}
+            textureShader.AllowAlpha(Config.LayerFeatures.HasFlag(LayerFeatures.Alpha));
+        }
 
 		foreach (var shader in shaders)
 		{
