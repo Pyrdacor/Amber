@@ -628,8 +628,8 @@ internal class TextManager(Game game, IFont font,
 
 internal class Label(Game game) : ILayeredDrawable
 {
-    const long TicksPerHalfBlinkAnimation = Game.TicksPerSecond;
-    const long TicksPerBlinkAnimation = TicksPerHalfBlinkAnimation * 2;
+    const long TicksPerBlinkAnimationHold = 35;
+    const long TicksPerBlinkAnimationFade = 8;
 
     Rect area = new();
     IRenderText? renderText;
@@ -780,16 +780,31 @@ internal class Label(Game game) : ILayeredDrawable
 
     public static void UpdateBlinkAnimations(long ticks)
     {
-        long timeInAnimation = ticks % TicksPerBlinkAnimation;
-        bool fadeOut = timeInAnimation < TicksPerHalfBlinkAnimation;
+        long holdHigh = TicksPerBlinkAnimationHold;
+        long fadeOut = TicksPerBlinkAnimationFade;
+        long holdLow = TicksPerBlinkAnimationHold;
+        long fadeIn = TicksPerBlinkAnimationFade;
+        long ticksPerBlinkAnimation = holdHigh + fadeOut + holdLow + fadeIn;
 
-        if (fadeOut)
+        long timeInAnimation = ticks % ticksPerBlinkAnimation;
+
+        if (timeInAnimation < holdHigh)
         {
-            BlinkAnimationAlpha = (byte)(255 - MathUtil.Round(255.0f * timeInAnimation / TicksPerHalfBlinkAnimation));
+            BlinkAnimationAlpha = 255;
+        }
+        else if (timeInAnimation < holdHigh + fadeOut)
+        {
+            long t = timeInAnimation - holdHigh;
+            BlinkAnimationAlpha = (byte)(255 - MathUtil.Round(255.0f * t / fadeOut));
+        }
+        else if (timeInAnimation < holdHigh + fadeOut + holdLow)
+        {
+            BlinkAnimationAlpha = 0;
         }
         else
         {
-            BlinkAnimationAlpha = (byte)(MathUtil.Round(255.0f * (timeInAnimation - TicksPerHalfBlinkAnimation) / TicksPerHalfBlinkAnimation));
+            long t = timeInAnimation - holdHigh - fadeOut - holdLow;
+            BlinkAnimationAlpha = (byte)(MathUtil.Round(255.0f * t / fadeIn));
         }
     }
 }

@@ -259,7 +259,7 @@ internal class ItemContainer
 			{
 				itemCountLabel = new Label(game);
 				itemCountLabel.SetText($"{count,2}", 15, TextManager.TransparentPaper, sprite.PaletteIndex);
-                itemCountLabel.Area = new(sprite.Position + new Position(2, 9), new(12, 7));
+                itemCountLabel.Area = new(sprite.Position + new Position(2, 10), new(12, 7));
 				itemCountLabel.DisplayLayer = (byte)(displayLayer + 4);
                 itemCountLabel.Visible = true;
             }
