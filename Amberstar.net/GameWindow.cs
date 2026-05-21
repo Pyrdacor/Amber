@@ -26,6 +26,7 @@ namespace Amberstar
         IMouse? mouse = null;
         ICursor? cursor = null;
         Game.Game? game = null;
+        bool closed = false;
 
         public string Identifier { get; } = id;
         public IGLContext? GLContext => window?.GLContext;
@@ -278,6 +279,21 @@ namespace Amberstar
             game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
                 paletteIndexProvider, paletteColorProvider, fontInfoProvider, configuration,
                 QueryPressedKeys, SetMousePosition);
+
+            StartCheatInputTask();
+        }
+
+        void StartCheatInputTask()
+        {
+            Cheats.Init();
+
+            Task.Run(() =>
+            {
+                while (!closed)
+                {
+                    Cheats.EnqueueCommand(Console.ReadLine() ?? "");
+                }
+            });
         }
 
         void Window_Render(double delta)
@@ -296,7 +312,11 @@ namespace Amberstar
 
         void Window_Update(double delta)
         {
-            game?.Update(delta);
+            if (game != null)
+            {
+                Cheats.HandleQueuedCommands(game);
+                game.Update(delta);
+            }
         }
 
         void Window_Resize(WindowDimension size)
@@ -368,38 +388,45 @@ namespace Amberstar
 
         public void Run()
         {
-            Width = 6 * 320;
-            Height = 6 * 200;
+            try
+            {
+                Width = 6 * 320;
+                Height = 6 * 200;
 
 #if GLES
-            var api = new GraphicsAPI
-                (ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Default, new APIVersion(2, 0));
+                var api = new GraphicsAPI
+                    (ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Default, new APIVersion(2, 0));
 #else
-            var api = GraphicsAPI.Default;
+                var api = GraphicsAPI.Default;
 #endif
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            gameVersion = $"Amberstar.net v{version.Major}.{version.Minor}.{version.Build}";
-            var videoMode = new VideoMode(60);
-            var options = new WindowOptions(true, new WindowDimension(100, 100),
-                new WindowDimension(Width, Height), 60.0, 120.0, api, gameVersion,
-                WindowState.Normal, WindowBorder.Fixed, true, false, videoMode, 24);
-            options.WindowClass = "Amberstar.net";
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                gameVersion = $"Amberstar.net v{version.Major}.{version.Minor}.{version.Build}";
+                var videoMode = new VideoMode(60);
+                var options = new WindowOptions(true, new WindowDimension(100, 100),
+                    new WindowDimension(Width, Height), 60.0, 120.0, api, gameVersion,
+                    WindowState.Normal, WindowBorder.Fixed, true, false, videoMode, 24);
+                options.WindowClass = "Amberstar.net";
 
-            GlfwWindowing.RegisterPlatform();
-            GlfwInput.RegisterPlatform();
-            GlfwWindowing.Use();
-            window = (IWindow)Silk.NET.Windowing.Window.GetView(new ViewOptions(options));
-            window.Title = options.Title;
-            window.Size = options.Size;
-            window.WindowBorder = options.WindowBorder;
-            window.Load += Window_Load;
-            window.Render += Window_Render;
-            window.Update += Window_Update;
-            window.Resize += Window_Resize;
-            window.FramebufferResize += Window_FramebufferResize;
-            window.Move += Window_Move;
-            window.StateChanged += Window_StateChanged;
-            window.Run();
+                GlfwWindowing.RegisterPlatform();
+                GlfwInput.RegisterPlatform();
+                GlfwWindowing.Use();
+                window = (IWindow)Silk.NET.Windowing.Window.GetView(new ViewOptions(options));
+                window.Title = options.Title;
+                window.Size = options.Size;
+                window.WindowBorder = options.WindowBorder;
+                window.Load += Window_Load;
+                window.Render += Window_Render;
+                window.Update += Window_Update;
+                window.Resize += Window_Resize;
+                window.FramebufferResize += Window_FramebufferResize;
+                window.Move += Window_Move;
+                window.StateChanged += Window_StateChanged;
+                window.Run();
+            }
+            finally
+            {
+                closed = true;
+            }
         }
     }
 }
