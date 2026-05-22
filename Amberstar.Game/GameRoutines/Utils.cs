@@ -10,9 +10,9 @@ partial class Game
 	long lastTimedActionKey = -1;
 	static readonly Random random = new();
 
-	internal static int Random(int min, int max) => random.Next(min, max);
-	internal static int Random(int max) => Random(0, max);
-	internal static bool Random() => Random(0, 1) == 1;
+	public static int Random(int min, int max) => random.Next(min, max);
+    public static int Random(int max) => Random(0, max);
+    public static bool Random() => Random(0, 1) == 1;
 
 	internal bool Probe(int chance) => State.TravelType == TravelType.SuperChicken || chance == 100 || chance >= Random(1, 100);
 

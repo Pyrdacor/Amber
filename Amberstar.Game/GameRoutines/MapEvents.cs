@@ -45,7 +45,24 @@ partial class Game
         return !State.IsEventActive(EventHandler.CurrentEventMapIndex, @event.Index);
     }
 
-	internal void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
+	public Size? GetMapSize(int mapIndex)
+	{
+        var map = AssetProvider.MapLoader.LoadMap(mapIndex);
+
+		if (map == null)
+			return null;
+
+		return new(map.Width, map.Height);
+    }
+
+    public (int Index, string Name)[] GetMaps()
+    {
+        var maps = AssetProvider.MapLoader.LoadAllMaps();
+
+		return maps.Select(map => (map.Key, map.Value.Name)).ToArray();
+    }
+
+    public void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
 	{
 		EnableInput(false);
 		Pause();
@@ -70,7 +87,8 @@ partial class Game
 			var map = AssetProvider.MapLoader.LoadMap(mapIndex);
 
 			State.SetPartyPosition(x - 1, y - 1);
-			State.PartyDirection = direction;
+			if (direction != Direction.Keep)
+				State.PartyDirection = direction;
 			State.MapIndex = mapIndex;
 
 			EnableInput(true);

@@ -3,7 +3,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy
 {
-	public class MapLoader(Amber.Assets.Common.IAssetProvider assetProvider) : IMapLoader
+	public class MapLoader(AssetProvider assetProvider) : IMapLoader
 	{
 		readonly Dictionary<int, IMap> maps = [];
 
@@ -26,7 +26,32 @@ namespace Amberstar.GameData.Legacy
 			return map;
 		}
 
-		public bool TryLoadMap2D(int index, out IMap2D? map2D)
+        public IReadOnlyDictionary<int, IMap> LoadAllMaps()
+		{
+            var keys = assetProvider.GetAssetKeys(AssetType.Map);
+
+            if (maps.Count == keys.Count)
+                return maps.AsReadOnly();
+
+            foreach (var key in keys)
+            {
+                if (maps.ContainsKey(key))
+                    continue;
+
+                var asset = assetProvider.GetAsset(new(AssetType.Map, key));
+
+                if (asset == null)
+                    throw new AmberException(ExceptionScope.Data, $"Map {key} not found.");
+
+                var map = Map.Load(asset);
+                maps.Add(key, map);
+            }
+
+            return maps.AsReadOnly();
+        }
+
+
+        public bool TryLoadMap2D(int index, out IMap2D? map2D)
 		{
 			var map = LoadMap(index);
 

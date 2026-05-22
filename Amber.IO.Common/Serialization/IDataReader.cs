@@ -1,6 +1,4 @@
-﻿using System.Reflection.PortableExecutable;
-
-namespace Amber.Serialization;
+﻿namespace Amber.Serialization;
 
 public interface IDataReader
 {
