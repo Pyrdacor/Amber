@@ -1,4 +1,5 @@
-﻿using Amber.Assets.Common;
+﻿using Amber;
+using Amber.Assets.Common;
 using Amber.Serialization;
 using System.Runtime.InteropServices;
 
@@ -56,7 +57,7 @@ internal abstract class Map : IMap
 		Characters = characters;
 		CharacterPositions = characterPositions;
 
-        Name = new string((sbyte*)header.Name).TrimEnd(' ', '\0');
+        Name = new AmberEncoding().GetString(header.Name, 31).TrimEnd(' ', '\0');
 
 		var eventReader = new FixedDataReader(header.EventData, IMap.EventCount * IEvent.DataSize);
 
