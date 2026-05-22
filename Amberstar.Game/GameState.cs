@@ -493,6 +493,8 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 	}
 
 	public int GetChestGold(int chestIndex) => ChestGold[chestIndex];
+
+    public void SetChestGold(int chestIndex, int amount) => ChestGold[chestIndex] = amount;
 	
 	public int PutGoldToChest(int chestIndex, int amount)
 	{

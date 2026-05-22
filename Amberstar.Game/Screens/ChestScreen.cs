@@ -10,7 +10,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 {
     readonly static Rect goldDisplayArea = new(112, 37 + 76, 64, 16);
     bool chestHasItems = false;
-    bool chestHasGold = false;
+    int chestGold = 0;
     bool allowDragAndDrop = false;
     Label? goldLabel;
     Label? goldDisplay;
@@ -85,6 +85,32 @@ internal class ChestScreen : LockedScreen<ChestEvent>
             goldLabel.Visible = false;
         if (goldDisplay != null)
             goldDisplay.Visible = false;
+    }
+
+    public override void ScreenPushed(Game game, Screen screen)
+    {
+        if (!screen.Transparent)
+        {
+            if (goldLabel != null)
+                goldLabel.Visible = false;
+            if (goldDisplay != null)
+                goldDisplay.Visible = false;
+        }
+
+        base.ScreenPushed(game, screen);
+    }
+
+    public override void ScreenPopped(Game game, Screen screen)
+    {
+        base.ScreenPopped(game, screen);
+
+        if (!screen.Transparent)
+        {
+            if (goldLabel != null)
+                goldLabel.Visible = true;
+            if (goldDisplay != null)
+                goldDisplay.Visible = true;
+        }
     }
 
     public override void Destroy(Game game)
@@ -182,9 +208,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     private int UpdateChestGold()
     {
         var chestIndex = LockedEvent.ChestIndex;
-        var chestGold = Game.State.GetChestGold(chestIndex);
-
-        chestHasGold = chestGold != 0;
+        chestGold = Game.State.GetChestGold(chestIndex);
 
         goldDisplay!.SetText($"{chestGold:00000}", 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
 
@@ -293,7 +317,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     protected override void LowerButtonClicked()
     {
-        if (!LockOpened || !chestHasGold)
+        if (!LockOpened || chestGold == 0)
             return;
 
         // TODO: give gold
@@ -301,10 +325,16 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     protected override void LowerRightButtonClicked()
     {
-        if (!LockOpened || !chestHasGold)
+        if (!LockOpened || chestGold == 0)
             return;
 
-        // TODO: distribute gold
+        chestGold = Game.DistributeGold(chestGold);
+
+        Game.State.SetChestGold(LockedEvent.ChestIndex, chestGold);
+        goldDisplay!.SetText($"{chestGold:00000}", 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+
+        if (chestGold == 0)
+            RequestButtonSetup();
     }
 
     protected override (ButtonType Type, bool Enabled) ProvideCenterButton()
@@ -319,12 +349,12 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     protected override (ButtonType Type, bool Enabled) ProvideLowerButton()
     {
-        return (ButtonType.GiveGold, LockOpened && chestHasGold);
+        return (ButtonType.GiveGold, LockOpened && chestGold != 0);
     }
 
     protected override (ButtonType Type, bool Enabled) ProvideLowerRightButton()
     {
-        return (ButtonType.DistributeGold, LockOpened && chestHasGold);
+        return (ButtonType.DistributeGold, LockOpened && chestGold != 0);
     }
 
     internal override void PickItem(ScreenType sourceScreen, int? index)

@@ -10,14 +10,14 @@ public delegate void AsyncForeachPartyMemberAction(IPartyMember partyMember, Act
 
 partial class Game
 {
-    public void ForeachPartyMember(ForeachPartyMemberAction action, bool alive, Gender? allowedGenders = null)
+    public void ForeachPartyMember(ForeachPartyMemberAction action, bool onlyAlive, Gender? allowedGenders = null)
     {
-        ForeachPartyMember(action, alive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None, allowedGenders);
+        ForeachPartyMember(action, onlyAlive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None, allowedGenders);
     }
 
-    public void ForeachPartyMember(AsyncForeachPartyMemberAction action, Action? finishedHandler, bool alive, Gender? allowedGenders = null)
+    public void ForeachPartyMember(AsyncForeachPartyMemberAction action, Action? finishedHandler, bool onlyAlive, Gender? allowedGenders = null)
     {
-        ForeachPartyMember(action, finishedHandler, alive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None, allowedGenders);
+        ForeachPartyMember(action, finishedHandler, onlyAlive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None, allowedGenders);
     }
 
     public void ForeachPartyMember(ForeachPartyMemberAction action, Condition disallowedConditions = Condition.None, Gender? allowedGenders = null)
@@ -54,9 +54,9 @@ partial class Game
             action(p.SlotIndex, p.PartyMember!);
     }
 
-    public void ForeachPartyMember(ForeachPartyMemberWithIndexAction action, bool alive)
+    public void ForeachPartyMember(ForeachPartyMemberWithIndexAction action, bool onlyAlive)
     {
-        ForeachPartyMember(action, alive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None);
+        ForeachPartyMember(action, onlyAlive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None);
     }
 
     public void ForeachPartyMemberSlot(ForeachPartyMemberSlotAction action, Condition disallowedConditions = Condition.None)
@@ -65,9 +65,9 @@ partial class Game
             action(p.SlotIndex, p.PartyMember!);
     }
 
-    public void ForeachPartyMemberSlot(ForeachPartyMemberSlotAction action, bool alive)
+    public void ForeachPartyMemberSlot(ForeachPartyMemberSlotAction action, bool onlyAlive)
     {
-        ForeachPartyMemberSlot(action, alive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None);
+        ForeachPartyMemberSlot(action, onlyAlive ? Condition.Dead | Condition.Ashes | Condition.Dust : Condition.None);
     }
 
     public IEnumerable<int> GetValidPartyMemberSlots() =>
@@ -130,5 +130,69 @@ partial class Game
         emptySlot.SetItem(item, (byte)count);
 
         return true;
+    }
+
+    // TODO: Needs testing with bigger party and different constellations
+    public int DistributeGold(int amount)
+    {
+        List<(IPartyMember Taker, int MaxAmount)> takers = [];
+
+        ForeachPartyMember(partyMember =>
+        {
+            if (partyMember.Race > Race.HalfOrc)
+                return;
+
+            int maxGoldToTake = Math.Min((int)((partyMember.MaxWeight() - partyMember.TotalWeight) / GoldWeight), short.MaxValue - partyMember.Gold);
+
+            if (maxGoldToTake > 0)
+            {
+                takers.Add((partyMember, maxGoldToTake));
+            }
+        }, Condition.Mad | Condition.Petrified | Condition.Dead | Condition.Ashes | Condition.Dust);
+
+        if (takers.Count == 0)
+            return amount;
+
+        if (takers.Count == 1)
+        {
+            var taker = takers[0];
+            int takenGold = Math.Min(amount, taker.MaxAmount);
+            taker.Taker.Gold += (ushort)takenGold;
+            taker.Taker.TotalWeight += (uint)takenGold * GoldWeight;
+            amount -= takenGold;
+
+            return amount;
+        }
+
+        while (amount > 0)
+        {
+            int takerCount = takers.Count;
+
+            for (int i = 0; i < takers.Count; i++)
+            {
+                var taker = takers[0];
+                int goldToTake = amount / takerCount;
+
+                if (goldToTake == 0)
+                    goldToTake = amount;
+
+                int takenGold = Math.Min(goldToTake, taker.MaxAmount);
+                taker.Taker.Gold += (ushort)takenGold;
+                taker.Taker.TotalWeight += (uint)takenGold * GoldWeight;
+                taker.MaxAmount -= takenGold;
+                amount -= takenGold;
+
+                if (taker.MaxAmount == 0)
+                    takerCount--;
+            }
+
+            // Remove takers who can't take any more gold
+            takers = takers.Where(taker => taker.MaxAmount > 0).ToList();
+
+            if (takers.Count == 0)
+                break;
+        }
+
+        return amount;
     }
 }

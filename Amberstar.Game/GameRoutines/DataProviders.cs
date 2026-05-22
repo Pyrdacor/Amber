@@ -5,6 +5,8 @@ namespace Amberstar.Game;
 
 partial class Game
 {
+    public const uint GoldWeight = 10;
+
 	internal IText? CurrentText { get; private set; }
     internal IItem? CurrentItem { get; set; }
     internal IText LoadUIText(UIText uiText) => AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)uiText));
