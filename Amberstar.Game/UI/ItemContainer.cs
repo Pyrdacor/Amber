@@ -11,7 +11,7 @@ public enum ItemContainerClickMode
 	DragAndDrop
 }
 
-internal class ItemContainer
+internal class ItemContainer : Control
 {
 	public const int Width = 16;
 	public const int Height = 16;
@@ -109,7 +109,7 @@ internal class ItemContainer
         }
     }
 
-	public bool Visible
+	public override bool Visible
 	{
 		get => sprite?.Visible ?? false;
 		set
@@ -547,7 +547,7 @@ internal class ItemContainer
 		}
 	}
 
-	public void Destroy()
+	public override void Destroy()
 	{
 		ClearItem();
 	}

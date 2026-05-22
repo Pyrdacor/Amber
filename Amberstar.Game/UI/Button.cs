@@ -5,7 +5,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.UI;
 
-internal class Button
+internal class Button : Control
 {
 	public const int Width = 32;
 	public const int Height = 16;
@@ -21,8 +21,9 @@ internal class Button
     ButtonType buttonType = ButtonType.Empty;
 
     public event Action? ClickAction;
+    public event Action? RightClickAction;
 
-	public byte PaletteIndex
+    public byte PaletteIndex
 	{
 		get => sprite.PaletteIndex;
 		set
@@ -44,7 +45,7 @@ internal class Button
 
 	public ButtonType ButtonType => buttonType;
 
-	public bool Visible
+	public override bool Visible
 	{
 		get => sprite?.Visible ?? false;
 		set
@@ -109,7 +110,7 @@ internal class Button
         this.buttonType = buttonType;
     }
 
-	public bool MouseClick(Position position)
+	public bool MouseClick(Position position, MouseButtons mouseButtons = MouseButtons.Left)
 	{
 		if (Disabled)
 			return false;
@@ -120,22 +121,22 @@ internal class Button
 		if (position.X < upperLeft.X || position.Y < upperLeft.Y || position.X >= lowerRight.X || position.Y >= lowerRight.Y)
 			return false;
 
-		Press();
+		Press(mouseButtons == MouseButtons.Right);
 
 		return true;
 	}
 
-	public bool TryPress()
+	public bool TryPress(bool rightClick = false)
 	{
         if (Disabled)
             return false;
 
-        Press();
+        Press(rightClick);
 
         return true;
     }
 
-	public void Press()
+	public void Press(bool rightClick = false)
 	{
 		if (pressed || Disabled)
 			return;
@@ -147,11 +148,15 @@ internal class Button
 			highlighted = false;
             highlightOverlay.Visible = false;
 			pressed = false;
-			ClickAction?.Invoke();
+
+			if (rightClick)
+                RightClickAction?.Invoke();
+			else
+				ClickAction?.Invoke();
 		});
 	}
 
-	public void Destroy()
+	public override void Destroy()
 	{
 		sprite.Visible = false;
 		background.Visible = false;

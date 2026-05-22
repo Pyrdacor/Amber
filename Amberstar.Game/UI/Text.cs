@@ -626,7 +626,7 @@ internal class TextManager(Game game, IFont font,
     }
 }
 
-internal class Label(Game game) : ILayeredDrawable
+internal class Label(Game game) : Control, ILayeredDrawable
 {
     const long TicksPerBlinkAnimationHold = 35;
     const long TicksPerBlinkAnimationFade = 8;
@@ -642,7 +642,7 @@ internal class Label(Game game) : ILayeredDrawable
 
     public ILayer Layer => game.GetRenderLayer(Amberstar.Game.Layer.Text);
 
-    public bool Visible
+    public override bool Visible
     {
         get => renderText?.Visible ?? false;
         set
@@ -770,7 +770,7 @@ internal class Label(Game game) : ILayeredDrawable
             needsShowCall = true;
     }
 
-    public void Destroy()
+    public override void Destroy()
     {
         renderText?.Delete();
         renderText = null;

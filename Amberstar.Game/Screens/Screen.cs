@@ -27,6 +27,7 @@ public enum ScreenType
 	LockedUseItem,
 	ChestGiveItem,
     ChestExamineItem,
+    ChestGiveGold,
     // TODO ...
 }
 
@@ -231,6 +232,7 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.LockedUseItem => new DoorScreen.UseItemScreen(), // Note: Doesn't matter if DoorScreen.UseItemScreen or ChestScreen.UseItemScreen
             ScreenType.ChestGiveItem => new ChestScreen.GiveItemScreen(),
 			ScreenType.ChestExamineItem => new ChestScreen.ExamineItemScreen(),
+			ScreenType.ChestGiveGold => new ChestScreen.GiveGoldScreen(),
             _ => throw new NotImplementedException()
 		};
 

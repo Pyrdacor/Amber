@@ -33,6 +33,8 @@ public enum Key
     F10,
     F11,
     F12,
+	PageUp,
+	PageDown,
     Number0 = 100,
 	LetterA = 110,
 }

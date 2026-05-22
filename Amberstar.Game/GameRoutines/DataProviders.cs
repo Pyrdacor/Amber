@@ -9,6 +9,8 @@ partial class Game
 
 	internal IText? CurrentText { get; private set; }
     internal IItem? CurrentItem { get; set; }
+    internal int CurrentAmount { get; set; } // Result from amount input screen etc (e.g. gold amount to give)
+    internal int CurrentMaxAmount { get; set; } // For amount input screen etc (e.g. gold amount to give)
     internal IText LoadUIText(UIText uiText) => AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)uiText));
     internal int GetMaxLineLength(IText text)
     {

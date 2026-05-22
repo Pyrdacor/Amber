@@ -320,7 +320,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         if (!LockOpened || chestGold == 0)
             return;
 
-        // TODO: give gold
+        Game.CurrentMaxAmount = chestGold;
+        Game.ScreenHandler.PushScreen(ScreenType.ChestGiveGold);
     }
 
     protected override void LowerRightButtonClicked()
@@ -403,6 +404,20 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         public override CursorType HoverCursorType { get; } = CursorType.Eye;
     }
 
-    // TODO
-    //internal class GiveGoldScreen : InputNumberScreen
+    internal class GiveGoldScreen : InputAmountScreen
+    {
+        IText? inputLabelText;
+
+        public override ScreenType Type { get; } = ScreenType.ChestGiveGold;
+        protected override ItemGraphic Graphic { get; } = ItemGraphic.WishingCoins;
+        protected override IText InputLabelText => inputLabelText!;
+        protected override Message Message { get; } = Message.GiveHowMuch;
+
+        public override void Init(Game game)
+        {
+            inputLabelText = game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
+
+            base.Init(game);
+        }
+    }
 }

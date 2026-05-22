@@ -135,7 +135,7 @@ internal class ItemScreen : Screen
 
         itemBackground = game.CreateSprite(Layer.UI, itemPosition, itemSize,
             game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot),
-            uiPalette);
+            uiPalette, true);
         itemBackground!.DisplayLayer = 105;
         itemBackground.Visible = true;
 

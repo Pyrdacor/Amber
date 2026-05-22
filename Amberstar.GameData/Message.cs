@@ -16,7 +16,7 @@ public enum Message
     NotEnoughFreeHands,               // 011: ZU WENIG HÄNDE FREI, UM DEN GEGENSTAND ZU GEBRAUCHEN!
     NotEnoughFreeFingers,             // 012: ZU WENIG RINGFINGER FREI, UM DEN GEGENSTAND ZU GEBRAUCHEN!
     NoRoomForItem,                    // 013: KEIN PLATZ IM RUCKSACK FREI!
-    HowManyItemsToTransfer,           // 014: WIEVIEL ABGEBEN?
+    GiveHowMuch,                      // 014: WIEVIEL ABGEBEN?
     HowManyItemsToDrop,               // 015: WIEVIEL WEGWERFEN?
     FlyingDiscNotUsableHere,          // 016: DIE FLUGSCHEIBE KANN HIER NICHT GEBRAUCHT WERDEN!
     ItemIsCursed,                     // 017: DIESER GEGENSTAND IST VERFLUCHT!

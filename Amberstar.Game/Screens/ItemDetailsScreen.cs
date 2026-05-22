@@ -5,7 +5,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-// TODO: This needs proper testing!
+// TODO: Test cursed items
 internal class ItemDetailsScreen : Screen
 {
 	const int WindowX = 32;
