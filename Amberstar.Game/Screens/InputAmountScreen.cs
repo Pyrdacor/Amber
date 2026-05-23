@@ -82,8 +82,6 @@ internal abstract class InputAmountScreen : Screen
 
         inputValue = CreateLabel(x, y, 52);
         inputValue.Alignment = TextAlignment.Right;
-        inputValue.SetText("0", 15, TextManager.TransparentPaper, uiPalette);
-        inputValue.Visible = true;
 
         x = WindowX + 16 + 1;
         y += 9;
@@ -98,10 +96,7 @@ internal abstract class InputAmountScreen : Screen
         upButton = new Button(game, x, y, ButtonType.ArrowUp, TextDisplayLayer, uiPalette);
         upButton.ClickAction += () => ChangeAmount(1);
         upButton.RightClickAction += () => ChangeAmount(short.MaxValue);
-        downButton = new Button(game, x, y + 16, ButtonType.ArrowDown, TextDisplayLayer, uiPalette)
-        {
-            Disabled = true
-        };
+        downButton = new Button(game, x, y + 16, ButtonType.ArrowDown, TextDisplayLayer, uiPalette);
         downButton.ClickAction += () => ChangeAmount(-1);
         downButton.RightClickAction += () => ChangeAmount(short.MinValue);
 
@@ -142,6 +137,12 @@ internal abstract class InputAmountScreen : Screen
         // Create the window
         window?.Destroy();
         window = new(game!, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
+
+        inputValue!.SetText(game!.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
+        inputValue.Visible = true;
+
+        upButton!.Disabled = game.CurrentAmount == game.CurrentMaxAmount;
+        downButton!.Disabled = game.CurrentAmount == 0;
 
         createdControls.ForEach(control => control.Visible = true);
 
@@ -229,8 +230,11 @@ internal abstract class InputAmountScreen : Screen
 
 	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
-        if (upButton!.MouseClick(position) ||
-            downButton!.MouseClick(position) ||
+        if (keyModifiers != KeyModifiers.None)
+            buttons = MouseButtons.Right;
+
+        if (upButton!.MouseClick(position, buttons) ||
+            downButton!.MouseClick(position, buttons) ||
             exitButton!.MouseClick(position))
             return true;
 

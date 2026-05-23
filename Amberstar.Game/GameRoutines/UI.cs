@@ -32,8 +32,9 @@ partial class Game
 
     internal ButtonLayout ButtonLayout { get; set; } = ButtonLayout.Movement;
     internal Cursor Cursor { get; }
+    internal Rect PortraitArea { get; } = new(16, 1, 6 * 48, 34);
 
-	internal void SetLayout(Layout layout, byte? paletteIndex = null)
+    internal void SetLayout(Layout layout, byte? paletteIndex = null)
 	{
 		var renderLayer = GetRenderLayer(Layer.Layout);
 		var textureAtlas = renderLayer.Config.Texture!;
@@ -43,19 +44,46 @@ partial class Game
 			layoutSprite.PaletteIndex = paletteIndex.Value;
 	}
 
-    internal void SetHandIconsByItem(IItem item, int count = 1)
+    internal int SetHandIconsByItem(IItem item, int count = 1)
     {
+        int takerCount = 0;
         int weight = item.Weight * count;
 
         ForeachPartyMemberSlot((index, partyMember) =>
         {
             if (partyMember == null)
                 HideStatusIcon(index);
-            else if (partyMember.TotalWeight + weight < partyMember.MaxWeight())
+            else if (partyMember.TotalWeight + weight <= partyMember.MaxWeight())
+            {
                 SetStatusIcon(index, StatusIcon.HandOpen, true, true);
+                takerCount++;
+            }
             else
                 SetStatusIcon(index, StatusIcon.HandStop, true, true);
         });
+
+        return takerCount;
+    }
+
+    internal int SetHandIconsByGold(int amount)
+    {
+        int takerCount = 0;
+        long weight = amount * GoldWeight;
+
+        ForeachPartyMemberSlot((index, partyMember) =>
+        {
+            if (partyMember == null)
+                HideStatusIcon(index);
+            else if (partyMember.Gold + amount <= short.MaxValue && partyMember.TotalWeight + weight <= partyMember.MaxWeight())
+            {
+                SetStatusIcon(index, StatusIcon.HandOpen, true, true);
+                takerCount++;
+            }
+            else
+                SetStatusIcon(index, StatusIcon.HandStop, true, true);
+        });
+
+        return takerCount;
     }
 
     internal void ResetStatusIcons()

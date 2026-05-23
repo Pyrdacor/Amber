@@ -15,6 +15,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     Label? goldLabel;
     Label? goldDisplay;
     int? currentChestSlot = null; // where the item was dragged from
+    bool goldDragging = false;
 
     protected override Layout Layout { get; } = Layout.Chest;
 
@@ -110,6 +111,21 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 goldLabel.Visible = true;
             if (goldDisplay != null)
                 goldDisplay.Visible = true;
+        }
+
+        if (screen is GiveGoldScreen && Game.CurrentAmount > 0)
+        {
+            if (Game.SetHandIconsByGold(Game.CurrentAmount) > 0)
+            {
+                goldDragging = true;
+                Game.TrapMouseInPortraitArea();
+                Game.Cursor.CursorType = CursorType.Gold;
+            }
+            else
+            {
+                Game.ResetStatusIcons();
+                ShowMessage(Message.NoMemberCanCarryThatMuchGold);
+            }
         }
     }
 
@@ -235,6 +251,12 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 return true;
             }
 
+            if (goldDragging)
+            {
+                AbortGoldDrag();
+                return true;
+            }
+
             int? characterSlotIndex = Game.TestPartyPortraitHit(position);
 
             if (characterSlotIndex != null)
@@ -243,8 +265,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 return true;
             }
         }
-
-        if (buttons == MouseButtons.Left)
+        else if (buttons == MouseButtons.Left)
         {
             if (ItemContainer.IsDragging)
             {
@@ -270,6 +291,32 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                     return true;
                 }
             }
+            else if (goldDragging)
+            {
+                var gold = Game.CurrentAmount;
+
+                AbortGoldDrag();
+
+                int? characterSlotIndex = Game.TestPartyPortraitHit(position);
+
+                if (characterSlotIndex != null)
+                {
+                    if (Game.TryAddGold(characterSlotIndex.Value, gold))
+                    {
+                        chestGold -= gold;
+
+                        Game.State.SetChestGold(LockedEvent.ChestIndex, chestGold);
+                        goldDisplay!.SetText($"{chestGold:00000}", 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+
+                        if (chestGold == 0)
+                            RequestButtonSetup();
+
+                        // TODO: If chest is empty, close screen
+                    }
+                }
+
+                return true;
+            }
         }
 
         return base.MouseDown(position, buttons, keyModifiers);
@@ -277,10 +324,18 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     public override bool KeyDown(Key key, KeyModifiers keyModifiers)
     {
-        if (key == Key.Escape && ItemContainer.IsDragging)
+        if (key == Key.Escape)
         {
-            AbortItemDrag();
-            return true;
+            if (ItemContainer.IsDragging)
+            {
+                AbortItemDrag();
+                return true;
+            }
+            else if (goldDragging)
+            {
+                AbortGoldDrag();
+                return true;
+            }
         }
 
         return base.KeyDown(key, keyModifiers);
@@ -288,7 +343,17 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     private void AbortItemDrag()
     {
+        Game.UntrapMouse();
         ItemContainer.AbortDrag(Game);
+        Game.ResetStatusIcons();
+    }
+
+    private void AbortGoldDrag()
+    {
+        goldDragging = false;
+        Game.CurrentAmount = 0;
+        Game.Cursor.CursorType = CursorType.Sword;
+        Game.UntrapMouse();
         Game.ResetStatusIcons();
     }
 
@@ -376,10 +441,18 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
             case ScreenType.ChestGiveItem:
-                currentChestSlot = index;
-                Game.CurrentItem = ItemContainers[index.Value].Item;
-                Game.SetHandIconsByItem(Game.CurrentItem!); // TODO: count
-                ItemContainers[index.Value].StartDragging();
+                if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
+                {
+                    currentChestSlot = index;
+                    Game.CurrentItem = ItemContainers[index.Value].Item;
+                    ItemContainers[index.Value].StartDragging();
+                    Game.TrapMouseInPortraitArea();
+                }
+                else
+                {
+                    Game.ResetStatusIcons();
+                    ShowMessage(Message.NoMemberHasRoomForItem);
+                }
                 break;
         }
     }

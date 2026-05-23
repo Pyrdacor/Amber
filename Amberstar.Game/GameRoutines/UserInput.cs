@@ -125,6 +125,8 @@ partial class Game
         }
     }
 
+	internal void TrapMouseInPortraitArea() => TrapMouse(PortraitArea);
+
 	public void UntrapMouse()
 	{
 		mouseTrapArea = null;

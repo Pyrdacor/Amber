@@ -132,6 +132,27 @@ partial class Game
         return true;
     }
 
+    public bool TryAddGold(int partyMemberSlotIndex, int gold)
+    {
+        if (gold < 0)
+            return false;
+
+        var partyMember = State.GetPartyMember(partyMemberSlotIndex);
+
+        if (partyMember == null)
+            return false;
+
+        var weight = gold * GoldWeight;
+
+        if (partyMember.Gold + gold <= short.MaxValue && partyMember.TotalWeight + weight <= partyMember.MaxWeight())
+        {
+            partyMember.Gold += (ushort)gold;
+            return true;
+        }
+
+        return false;
+    }
+
     // TODO: Needs testing with bigger party and different constellations
     public int DistributeGold(int amount)
     {
