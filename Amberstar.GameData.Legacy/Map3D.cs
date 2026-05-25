@@ -86,22 +86,39 @@ internal class Map3D : Map, IMap3D
 
 			characters[i] = character;
 
-			positionCountPerCharacters[i] = character.Index == 0 ? 0 : character.WalkType == MapCharacterWalkType.Path ? 288 : 1;
+			positionCountPerCharacters[i] = character.Index == 0
+				? 0
+				: character.WalkType == MapCharacterWalkType.Path
+					? 288
+					: 1;
 		}
 
 		int totalCharacterPositions = positionCountPerCharacters.Sum();
-		var x = reader.ReadBytes(totalCharacterPositions);
-		var y = reader.ReadBytes(totalCharacterPositions);
+		var coords = reader.ReadBytes(totalCharacterPositions * 2);
 		var characterPositions = new PositionList[IMap.CharacterCount];
 		int offset = 0;
 
 		for (int i = 0; i < characters.Length; i++)
 		{
-			var positions = new Position[positionCountPerCharacters[i]];
+			int positionCount = positionCountPerCharacters[i];
+            var positions = new Position[positionCount];
 
-			for (int p = 0; p < positions.Length; offset++, p++)
+			if (positionCount == 1)
 			{
-				positions[p] = new Position(x[offset], y[offset]);
+				positions[0] = new(coords[offset], coords[offset + 1]);
+				offset += 2;
+			}
+			else if (positionCount == 288)
+			{
+				var x = coords[offset..(offset + 288)];
+				offset += 288;
+                var y = coords[offset..(offset + 288)];
+                offset += 288;
+
+                for (int p = 0; p < positions.Length; p++)
+				{
+					positions[p] = new Position(x[p], y[p]);
+				}
 			}
 
 			characterPositions[i] = positions;

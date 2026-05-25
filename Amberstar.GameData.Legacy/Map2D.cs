@@ -67,23 +67,36 @@ internal class Map2D : Map, IMap2D
 		}
 
 		int totalCharacterPositions = positionCountPerCharacters.Sum();
-		var x = reader.ReadBytes(totalCharacterPositions);
-		var y = reader.ReadBytes(totalCharacterPositions);
-		var characterPositions = new PositionList[IMap.CharacterCount];
-		int offset = 0;
+        var coords = reader.ReadBytes(totalCharacterPositions * 2);
+        var characterPositions = new PositionList[IMap.CharacterCount];
+        int offset = 0;
 
-		for (int i = 0; i < characters.Length; i++)
-		{
-			var positions = new Position[positionCountPerCharacters[i]];
+        for (int i = 0; i < characters.Length; i++)
+        {
+            int positionCount = positionCountPerCharacters[i];
+            var positions = new Position[positionCount];
 
-			for (int p = 0; p < positions.Length; offset++, p++)
-			{
-				positions[p] = new Position(x[offset], y[offset]);
-			}
+            if (positionCount == 1)
+            {
+                positions[0] = new(coords[offset], coords[offset + 1]);
+                offset += 2;
+            }
+            else if (positionCount == 288)
+            {
+                var x = coords[offset..(offset + 288)];
+                offset += 288;
+                var y = coords[offset..(offset + 288)];
+                offset += 288;
 
-			characterPositions[i] = positions;
-		}
+                for (int p = 0; p < positions.Length; p++)
+                {
+                    positions[p] = new Position(x[p], y[p]);
+                }
+            }
 
-		return new Map2D(header, characters, characterPositions, tiles);
+            characterPositions[i] = positions;
+        }
+
+        return new Map2D(header, characters, characterPositions, tiles);
 	}
 }

@@ -1153,7 +1153,7 @@ internal class Map3DScreen : ButtonGridScreen
 			if (characterData.Index != 0 && characterData.Icon != 0)
 			{
 				characters.Add(new Character(map, i, map.CharacterPositions[i], game.State,
-					(int x, int y, int collisionClass) => CanMoveTo(x, y, false, collisionClass)));
+					(x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass)));
 			}
 		}
 
