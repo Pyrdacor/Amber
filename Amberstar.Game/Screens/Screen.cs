@@ -23,6 +23,7 @@ public enum ScreenType
 	Place,
     ItemView,
     ItemDetails,
+    InputWord,
     // Inventory sub screens
     InventoryDropItem,
 	// Door/chest sub screens
@@ -51,6 +52,8 @@ internal abstract class Screen
     readonly List<bool> createdControlsInInitVisibility = [];
     readonly List<bool> createdControlsInOpenVisibility = [];
     bool initialized = false;
+
+    private IEnumerable<Control> CreatedControls => createdControlsInOpen.Concat(createdControlsInInit);
 
     public abstract ScreenType Type { get; }
 
@@ -196,7 +199,13 @@ internal abstract class Screen
             return true;
         }
 
-		return false;
+        foreach (var button in CreatedControls.OfType<Button>().Where(button => button.Visible && !button.Disabled))
+        {
+            if (button.MouseClick(position, buttons))
+                return true;
+        }
+
+        return false;
 	}
 
 	public virtual bool MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
@@ -532,6 +541,42 @@ internal abstract class Screen
         return label;
     }
 
+    public List AddList(int x, int y, int width, int height, byte displayLayer = 0, int? backgroundColorIndex = null, byte? paletteIndex = null)
+    {
+        int baseX = 0;
+        int baseY = 0;
+
+        if (anchors.Count != 0)
+            (baseX, baseY) = anchors.Peek();
+
+        var list = new List(game!, baseX + x, baseY + y, width, height, displayLayer, backgroundColorIndex, paletteIndex)
+        {
+            Visible = true
+        };
+
+        var controls = initialized ? createdControlsInOpen : createdControlsInInit;
+
+        controls.Add(list);
+
+        return list;
+    }
+
+    public Window AddWindow(int x, int y, int widthInTiles, int heightInTiles, bool dark = false, byte displayLayer = 0, byte? paletteIndex = null)
+    {
+        int baseX = 0;
+        int baseY = 0;
+
+        if (anchors.Count != 0)
+            (baseX, baseY) = anchors.Peek();
+
+        var window = new Window(game!, baseX + x, baseY + y, widthInTiles, heightInTiles, dark, displayLayer, paletteIndex);
+        var controls = initialized ? createdControlsInOpen : createdControlsInInit;
+
+        controls.Add(window);
+
+        return window;
+    }
+
     #endregion
 }
 
@@ -561,6 +606,7 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.Place => new PlaceScreen(),
 			ScreenType.ItemView => new ItemScreen(),
 			ScreenType.ItemDetails => new ItemDetailsScreen(),
+            ScreenType.InputWord => new InputWordScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
 			// Door/chest sub screens

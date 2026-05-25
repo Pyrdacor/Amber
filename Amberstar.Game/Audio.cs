@@ -53,6 +53,8 @@ partial class Game
 
     internal void PlaySong(int songIndex)
     {
+        return; // TODO: REMOVE
+
         if (musicPlaying && songIndex == currentSongIndex)
             return;
 

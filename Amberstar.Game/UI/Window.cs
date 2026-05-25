@@ -5,17 +5,60 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.UI
 {
-	internal class Window
+	internal class Window : Control
 	{
 		public const int TileWidth = 16;
 		public const int TileHeight = 16;
+		readonly Game game;
 		readonly ISprite[] borders;
 		readonly IColoredRect fill;
-		readonly Game game;
+		readonly int windowColorIndex;
 
         public Rect ClientArea { get; }
+        public override bool Visible
+		{
+			get => fill.Visible;
+			set
+			{
+				if (fill.Visible != value)
+				{
+					fill.Visible = value;
 
-		public Window(Game game, int x, int y, int widthInTiles, int heightInTiles, bool dark, byte displayLayer, byte? paletteIndex = null)
+					foreach (var border in borders)
+						border.Visible = value;
+				}
+			}
+		}
+        public override byte DisplayLayer
+		{
+            get => fill.DisplayLayer;
+            set
+            {
+                if (fill.DisplayLayer != value)
+                {
+                    fill.DisplayLayer = value;
+
+                    foreach (var border in borders)
+                        border.DisplayLayer = value;
+                }
+            }
+        }
+        public override byte PaletteIndex
+        {
+            get => borders[0].PaletteIndex;
+            set
+            {
+                if (borders[0].PaletteIndex != value)
+                {
+                    fill.Color = game.PaletteColorProvider.GetPaletteColor(value, windowColorIndex);
+
+                    foreach (var border in borders)
+                        border.PaletteIndex = value;
+                }
+            }
+        }
+
+        public Window(Game game, int x, int y, int widthInTiles, int heightInTiles, bool dark, byte displayLayer, byte? paletteIndex = null)
 		{
 			this.game = game;
 
@@ -28,7 +71,7 @@ namespace Amberstar.Game.UI
 			borders = new ISprite[2 * widthInTiles + 2 * heightInTiles - 4];
 
 			paletteIndex ??= game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
-			int windowColorIndex = dark ? 3 : 2;
+			windowColorIndex = dark ? 3 : 2;
 			var windowColor = game.PaletteColorProvider.GetPaletteColor(paletteIndex.Value, windowColorIndex);
 			int baseImageIndex = game.GraphicIndexProvider.GetWindowGraphicIndex(dark);
 			var layer = game.GetRenderLayer(Layer.UI);
@@ -102,7 +145,7 @@ namespace Amberstar.Game.UI
 			}
 		}
 
-		public void Destroy()
+		public override void Destroy()
 		{
 			foreach (var border in borders)
 				border.Visible = false;

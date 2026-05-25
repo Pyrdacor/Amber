@@ -674,6 +674,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
     byte alpha = 255;
     TextAlignment alignment = TextAlignment.Left;
     bool needsShowCall = true;
+    bool visibleRequest = false;
 
     public static byte BlinkAnimationAlpha { get; private set; }
 
@@ -686,10 +687,16 @@ internal class Label(Game game) : Control, ILayeredDrawable
         {
             if (renderText != null)
             {
+                visibleRequest = false;
+
                 if (needsShowCall && value)
                     Show();
                 else
                     renderText.Visible = value;
+            }
+            else
+            {
+                visibleRequest = value;
             }
         }
     }
@@ -785,8 +792,11 @@ internal class Label(Game game) : Control, ILayeredDrawable
     {
         if (renderText != null)
         {
+            bool wasVisible = renderText.Visible || visibleRequest;
             needsShowCall = false;
+            visibleRequest = false;
             renderText.ShowInArea(area, displayLayer, alignment);
+            renderText.Visible = wasVisible;
         }
     }
 
@@ -795,7 +805,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
         int defaultPaperColorIndex = TextManager.DefaultPaperColorIndex,
         byte paletteIndex = TextManager.DefaultPaletteIndex)
     {
-        bool wasVisible = renderText?.Visible ?? false;
+        bool wasVisible = visibleRequest || (renderText?.Visible ?? false);
 
         renderText?.Delete();
         renderText = game.TextManager.Create(text, defaultTextColorIndex, defaultPaperColorIndex, paletteIndex);
@@ -811,7 +821,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
         int defaultPaperColorIndex = TextManager.DefaultPaperColorIndex,
         byte paletteIndex = TextManager.DefaultPaletteIndex)
     {
-        bool wasVisible = renderText?.Visible ?? false;
+        bool wasVisible = visibleRequest || (renderText?.Visible ?? false);
         maxWidth ??= Size.Width;
 
         renderText?.Delete();

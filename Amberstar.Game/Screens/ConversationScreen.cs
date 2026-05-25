@@ -7,6 +7,8 @@ namespace Amberstar.Game.Screens;
 
 internal class ConversationScreen : ButtonGridScreen
 {
+    const int ThatKeywordIndex = 193; // "THAT" is used if the entered word is no valid keyword
+
 	Game? game;
     IPerson? person;
     PersonInfoView? personInfoView;
@@ -106,7 +108,7 @@ internal class ConversationScreen : ButtonGridScreen
                 // TODO
                 break;
             case 4: // Speak
-                // TODO
+                game?.ScreenHandler.PushScreen(ScreenType.InputWord);
                 break;
             case 5: // Ask to join
                 // TODO
