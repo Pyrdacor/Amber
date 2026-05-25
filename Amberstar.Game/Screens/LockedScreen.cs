@@ -1,5 +1,4 @@
 ﻿using Amber.Common;
-using Amber.Renderer.Common;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
@@ -24,7 +23,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
     protected readonly static Rect itemArea;
     protected readonly static Rect itemTooltipArea;
     Image? image;
-    IRenderText? message;
+    Label? message;
     TEvent? lockedEvent;
     Image80x80 image80x80 = Image80x80.LockedDoor;
 
@@ -144,6 +143,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         var image = AddImage(16, 49, 80, 80, game.GraphicIndexProvider.Get80x80ImageIndex(Image), Layer.UI, 0, true);
         image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
         this.image = image;
+
+        var (x, y, width, height) = messageDisplayArea;
+        message = AddLabel(x, y, width, height, 20);
     }
 
     public override void Open(Game game, Action? closeAction)
@@ -364,10 +366,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     protected void ShowText(IText text, bool waitForClick = true, bool closeAfterClick = false)
     {
-        message?.Delete();
-
-        message = game!.TextManager.Create(text, messageDisplayArea.Size.Width, 15, 0, ButtonGridPaletteIndex);
-        message.ShowInArea(messageDisplayArea, 20, TextAlignment.Left);
+        message!.SetText(text, messageDisplayArea.Size.Width, 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+        message.Visible = true;
 
         // TODO: Scrolling
 
@@ -376,15 +376,14 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
         if (waitForClick)
         {
-            game.Cursor.CursorType = CursorType.Zzz;
+            game!.Cursor.CursorType = CursorType.Zzz;
             game.TrapMouse(messageDisplayArea);
         }
     }
 
     internal sealed override void HideMessage()
     {
-        message?.Delete();
-        message = null;
+        message!.Visible = false;
     }
 
     protected abstract void Unlocked(Message message);

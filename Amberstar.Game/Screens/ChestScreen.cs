@@ -278,6 +278,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                     {
                         Game.State.SetChestSlotBit(LockedEvent.ChestIndex, currentChestSlot!.Value, false);
                         ItemContainer.ConsumeDragged(Game);
+                        Game.UntrapMouse();
+                        Game.ResetStatusIcons();
 
                         RequestButtonSetup();
 
@@ -441,6 +443,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
             case ScreenType.ChestGiveItem:
+                Game.CurrentItem = ItemContainers[index.Value].Item;
                 if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
                 {
                     currentChestSlot = index;
