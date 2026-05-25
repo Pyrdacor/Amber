@@ -7,7 +7,6 @@ namespace Amberstar.Game.Screens;
 
 internal class InventoryScreen : ItemGridScreen
 {
-	Game? game;
     IPartyMember? partyMember;
     bool itemDragged = false;
     bool waitForClick = false;
@@ -53,18 +52,18 @@ internal class InventoryScreen : ItemGridScreen
         draggingStartedHandler = () =>
         {
             itemDragged = true;
-            game!.Cursor.Visible = false;
+            Game.Cursor.Visible = false;
         };
         draggingEndedHandler = () =>
         {
             itemDragged = false;
-            game!.Cursor.Visible = true;
+            Game.Cursor.Visible = true;
         };
     }
 
     public override ScreenType Type { get; } = ScreenType.Inventory;
 
-    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    internal override byte ButtonGridPaletteIndex => Game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
 
     internal override ItemContainer[] ItemContainers => [.. equippedItemSlots.Values, .. inventoryItemSlots];
 
@@ -110,11 +109,9 @@ internal class InventoryScreen : ItemGridScreen
         ItemContainer.DraggingEnded -= draggingEndedHandler;
     }
 
-    public override void Init(Game game)
+    public override void Init()
     {
-        base.Init(game);
-
-        this.game = game;
+        base.Init();
 
         void UpdateInventoryItem(int index)
         {
@@ -161,7 +158,7 @@ internal class InventoryScreen : ItemGridScreen
             equippedItemSlots.Add(equipmentSlot, slot);
         }
 
-        var weightLabelName = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.Weight));
+        var weightLabelName = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.Weight));
         var weightLabel = AddLabel(16, 178, weightLabelName, width: 80, height: 10, displayLayer: 2);
         weightLabel.Alignment = TextAlignment.Center;
 
@@ -173,18 +170,18 @@ internal class InventoryScreen : ItemGridScreen
         message = AddLabel(x, y, "", width, height, displayLayer: 20);
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
 	{
-		base.Open(game, closeAction);
+		base.Open(closeAction);
 
-        var palette = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        var palette = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
-        game.SetLayout(Layout.Inventory, palette);
-        game.Cursor.CursorType = CursorType.Sword;
+        Game.SetLayout(Layout.Inventory, palette);
+        Game.Cursor.CursorType = CursorType.Sword;
 
         HideMessage();
 
-        SwitchToPartyMember(game.State.CurrentInventoryIndex!.Value, true);
+        SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
         SetupEventHandlers();
     }
 
@@ -201,7 +198,7 @@ internal class InventoryScreen : ItemGridScreen
         ignoreItemChangeEvents = false;
     }
 
-    public override void Close(Game game)
+    public override void Close()
     {
         HideMessage();
 
@@ -212,10 +209,10 @@ internal class InventoryScreen : ItemGridScreen
         personInfoView?.Destroy();
         personInfoView = null;
 
-        base.Close(game);
+        base.Close();
     }
 
-    public override void ScreenPushed(Game game, Screen screen)
+    public override void ScreenPushed(Screen screen)
     {
         CleanUpEventHandlers();
 
@@ -227,12 +224,12 @@ internal class InventoryScreen : ItemGridScreen
                 message.Visible = false;
         }
 
-        base.ScreenPushed(game, screen);
+        base.ScreenPushed(screen);
     }
 
-    public override void ScreenPopped(Game game, Screen screen)
+    public override void ScreenPopped(Screen screen)
     {
-        base.ScreenPopped(game, screen);
+        base.ScreenPopped(screen);
 
         SetupEventHandlers();
 
@@ -268,7 +265,7 @@ internal class InventoryScreen : ItemGridScreen
 
         if (itemDragged && buttons == MouseButtons.Right)
         {
-            ItemContainer.AbortDrag(game!);
+            ItemContainer.AbortDrag(Game);
             return true;
         }
 
@@ -291,19 +288,19 @@ internal class InventoryScreen : ItemGridScreen
     {
         base.MouseMove(position, buttons);
 
-        ItemContainer.UpdateDragPosition(game!, position);
+        ItemContainer.UpdateDragPosition(Game, position);
     }
 
     public void SwitchToPartyMember(int index, bool force)
     {
-        if (!force && game!.State.CurrentInventoryIndex == index)
+        if (!force && Game.State.CurrentInventoryIndex == index)
             return;
 
         CleanUpItems();
 
-        game!.State.SetCurrentInventory(index);
-        partyMember = game.State.CurrentInventory!;
-        var uiPaletteIndex = game!.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        Game.State.SetCurrentInventory(index);
+        partyMember = Game.State.CurrentInventory!;
+        var uiPaletteIndex = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
         foreach (var equipmentSlot in Enum.GetValues<EquipmentSlot>())
         {
@@ -335,9 +332,9 @@ internal class InventoryScreen : ItemGridScreen
         }
 
         personInfoView?.Destroy();
-        personInfoView = new(game, partyMember, index, uiPaletteIndex);
+        personInfoView = new(Game, partyMember, index, uiPaletteIndex);
 
-        var weightString = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.WeightTwoValues)).GetString();
+        var weightString = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.WeightTwoValues)).GetString();
         weightString = Game.InsertNumberIntoString(weightString, " KG", false, partyMember.TotalWeight / 1000, 3, '0');
         var maxWeight = partyMember.Attributes[GameData.Attribute.Strength].CurrentValue; // TODO: bonus value?
         weightString = Game.InsertNumberIntoString(weightString, "/", true, maxWeight, 3, '0');
@@ -390,14 +387,14 @@ internal class InventoryScreen : ItemGridScreen
         switch (index)
         {
             case 0: // Stats
-                game?.ScreenHandler.PopScreen();
-                game?.ScreenHandler.PushScreen(ScreenType.CharacterStats);
+                Game?.ScreenHandler.PopScreen();
+                Game?.ScreenHandler.PushScreen(ScreenType.CharacterStats);
                 break;
             case 1: // Drop item
-                game?.ScreenHandler.PushScreen(ScreenType.InventoryDropItem);
+                Game?.ScreenHandler.PushScreen(ScreenType.InventoryDropItem);
                 break;
             case 2:
-                game?.ScreenHandler.PopScreen();
+                Game?.ScreenHandler.PopScreen();
                 break;
             case 3: // Use item
                 // TODO
@@ -529,17 +526,17 @@ internal class InventoryScreen : ItemGridScreen
     private void EndClickWait()
     {
         waitForClick = false;
-        game!.Cursor.CursorType = CursorType.Sword;
+        Game.Cursor.CursorType = CursorType.Sword;
         HideMessage();
-        game.UntrapMouse();
+        Game.UntrapMouse();
 
         if (closeAfterClick)
-            game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
     }
 
     internal override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
-        var messageText = game!.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
+        var messageText = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
         message!.SetText(messageText);
         message.Visible = true;
 
@@ -550,8 +547,8 @@ internal class InventoryScreen : ItemGridScreen
 
         if (waitForClick)
         {
-            game.Cursor.CursorType = CursorType.Zzz;
-            game.TrapMouse(messageDisplayArea);
+            Game.Cursor.CursorType = CursorType.Zzz;
+            Game.TrapMouse(messageDisplayArea);
         }
     }
 

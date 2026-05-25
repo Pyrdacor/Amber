@@ -147,7 +147,7 @@ public partial class Game : IDisposable
 		lastGameTicks = gameTicks;
 
 		Time.Update(elapsed);
-		ScreenHandler.ActiveScreen?.Update(this, elapsed);
+		ScreenHandler.ActiveScreen?.Update(elapsed);
         UpdateStatusIcons();
 		Label.UpdateBlinkAnimations(gameTicks);
 

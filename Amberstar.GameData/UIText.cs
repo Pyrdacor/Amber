@@ -46,4 +46,5 @@ public enum UIText
     OpenBracket,
     ThreeStars,
     CloseBracket,
+    EnterWord,
 }

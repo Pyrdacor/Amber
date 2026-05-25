@@ -74,7 +74,15 @@ namespace Amberstar.GameData.Legacy
             }
 
             foreach (var uiText in Enum.GetValues<UIText>())
+            {
+                if (uiText == UIText.EnterWord)
+                {
+                    if (!dataSeeker(EmbeddedDataOffset.EnterWordLabel, dataReader))
+                        throw new AmberException(ExceptionScope.Application, "Could not find the label for 'Enter Word' in the program file.");
+                }
+
                 UITexts.Add((int)uiText, new DataReader(ReadNullTerminatedText()));
+            }
 
             #endregion
             #region Windows

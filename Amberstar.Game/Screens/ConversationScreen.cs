@@ -5,17 +5,17 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal class ConversationScreen : ButtonGridScreen
+// TODO: Rework and implement fully
+internal sealed class ConversationScreen : ButtonGridScreen
 {
     const int ThatKeywordIndex = 193; // "THAT" is used if the entered word is no valid keyword
 
-	Game? game;
     IPerson? person;
     PersonInfoView? personInfoView;
 
-    public override ScreenType Type { get; } = ScreenType.Conversation;
+    public sealed override ScreenType Type { get; } = ScreenType.Conversation;
 
-    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    internal sealed override byte ButtonGridPaletteIndex => Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
@@ -36,40 +36,38 @@ internal class ConversationScreen : ButtonGridScreen
         buttonGrid.EnableButton(5, person is IPartyMember);
     }
 
-    public override void Init(Game game)
+    public override void Init()
     {
-        base.Init(game);
+        base.Init();
 
-        var dialogLabel = AddLabel(16, 39, game.LoadUIText(UIText.Dialog), 176, 7);
+        var dialogLabel = AddLabel(16, 39, Game.LoadUIText(UIText.Dialog), 176, 7);
         dialogLabel.Alignment = TextAlignment.Center;
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
 	{
-		base.Open(game, closeAction);
+		base.Open(closeAction);
 
-		this.game = game;
+        var palette = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
-        var palette = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        Game.SetLayout(Layout.Conversation, palette);
+        Game.Cursor.CursorType = CursorType.Sword;
 
-        game.SetLayout(Layout.Conversation, palette);
-        game.Cursor.CursorType = CursorType.Sword;
-
-        if (game.State.CurrentConversationCharacterIndex is not int personIndex)
+        if (Game.State.CurrentConversationCharacterIndex is not int personIndex)
             throw new AmberException(ExceptionScope.Application, "No conversation character specified.");
 
-        person = game!.AssetProvider.PersonLoader.LoadPerson(personIndex);
-        personInfoView = new(game, person, personIndex, palette);
+        person = Game.AssetProvider.PersonLoader.LoadPerson(personIndex);
+        personInfoView = new(Game, person, personIndex, palette);
     }
 
-    public override void Close(Game game)
+    public override void Close()
     {
         personInfoView?.Destroy();
 
-        base.Close(game);
+        base.Close();
     }
 
-    public override void ScreenPushed(Game game, Screen screen)
+    public override void ScreenPushed(Screen screen)
     {
         if (!screen.Transparent)
         {
@@ -77,12 +75,12 @@ internal class ConversationScreen : ButtonGridScreen
                 personInfoView.Visible = false;
         }
 
-        base.ScreenPushed(game, screen);        
+        base.ScreenPushed(screen);        
     }
 
-    public override void ScreenPopped(Game game, Screen screen)
+    public override void ScreenPopped(Screen screen)
     {
-        base.ScreenPopped(game, screen);
+        base.ScreenPopped(screen);
 
         if (!screen.Transparent)
         {
@@ -102,13 +100,13 @@ internal class ConversationScreen : ButtonGridScreen
                 // TODO
                 break;
             case 2:
-                game?.ScreenHandler.PopScreen();
+                Game.ScreenHandler.PopScreen();
                 break;
             case 3: // Show item
                 // TODO
                 break;
             case 4: // Speak
-                game?.ScreenHandler.PushScreen(ScreenType.InputWord);
+                Game.ScreenHandler.PushScreen(ScreenType.SelectWord);
                 break;
             case 5: // Ask to join
                 // TODO

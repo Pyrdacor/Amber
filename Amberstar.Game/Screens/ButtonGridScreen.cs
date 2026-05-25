@@ -16,13 +16,13 @@ internal abstract class ButtonGridScreen : Screen
 
     public ButtonType GetButtonType(int index) => buttonGrid?.GetButtonType(index) ?? ButtonType.Empty;
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
 	{
-		base.Open(game, closeAction);
+		base.Open(closeAction);
 
         if (buttonGrid == null)
         {
-            buttonGrid = new(game)
+            buttonGrid = new(Game)
             {
                 PaletteIndex = ButtonGridPaletteIndex
             };
@@ -32,7 +32,7 @@ internal abstract class ButtonGridScreen : Screen
         SetupButtons(buttonGrid);
     }
 
-	public override void Close(Game game)
+	public override void Close()
 	{
         if (buttonGrid != null)
         {
@@ -41,10 +41,10 @@ internal abstract class ButtonGridScreen : Screen
             buttonGrid = null;
         }
 
-        base.Close(game);
+        base.Close();
     }
 
-	public override void ScreenPushed(Game game, Screen screen)
+	public override void ScreenPushed(Screen screen)
 	{
 		if (!screen.Transparent && buttonGrid != null)
         {
@@ -53,16 +53,16 @@ internal abstract class ButtonGridScreen : Screen
 			buttonGrid = null;
         }
 
-        base.ScreenPushed(game, screen);
+        base.ScreenPushed(screen);
     }
 
-	public override void ScreenPopped(Game game, Screen screen)
+	public override void ScreenPopped(Screen screen)
 	{
         if (!screen.Transparent)
         {
 			if (buttonGrid == null)
 			{
-                buttonGrid = new(game)
+                buttonGrid = new(Game)
                 {
                     PaletteIndex = ButtonGridPaletteIndex
                 };
@@ -72,7 +72,7 @@ internal abstract class ButtonGridScreen : Screen
             SetupButtons(buttonGrid);
         }
 
-        base.ScreenPopped(game, screen);
+        base.ScreenPopped(screen);
     }
 
 	public override bool KeyUp(Key key, KeyModifiers keyModifiers)

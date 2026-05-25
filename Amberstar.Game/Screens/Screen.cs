@@ -23,6 +23,7 @@ public enum ScreenType
 	Place,
     ItemView,
     ItemDetails,
+    SelectWord,
     InputWord,
     // Inventory sub screens
     InventoryDropItem,
@@ -61,6 +62,8 @@ internal abstract class Screen
 
     public virtual bool Transparent { get; } = false;
 
+    public Game Game => game!;
+
     public virtual bool AllowCharacterSelection { get; } = true;
 
     public virtual bool AllowInventoryAccess { get; } = true;
@@ -73,10 +76,15 @@ internal abstract class Screen
 
     protected void SetCloseAction(Action? closeAction) => this.closeAction = closeAction;
 
-	public virtual void Init(Game game)
+	public virtual void Init()
 	{
-		this.game = game;
-	}
+        // Default: empty
+    }
+
+    public void PreInit(Game game)
+    {
+        this.game = game;
+    }
 
     public void AfterInit()
     {
@@ -90,7 +98,7 @@ internal abstract class Screen
         createdControlsInInit.ForEach(control => control.Visible = false);
     }
 
-    public virtual void Destroy(Game game)
+    public virtual void Destroy()
 	{
         createdControlsInInit.ForEach(control => control.Destroy());
         createdControlsInInit.Clear();
@@ -103,12 +111,12 @@ internal abstract class Screen
         createdControlsInInit.ForEach(control => control.Visible = createdControlsInInitVisibility[index++]);
     }
 
-    public virtual void Open(Game game, Action? closeAction)
+    public virtual void Open(Action? closeAction)
 	{
         SetCloseAction(closeAction);
 	}
 
-	public virtual void Close(Game game)
+	public virtual void Close()
 	{
         createdControlsInInit.ForEach(control => control.Visible = false);
         createdControlsInOpen.ForEach(control => control.Destroy());
@@ -118,7 +126,7 @@ internal abstract class Screen
         closeAction?.Invoke();
 	}
 
-	public virtual void ScreenPushed(Game game, Screen screen)
+	public virtual void ScreenPushed(Screen screen)
 	{
         if (!screen.Transparent)
         {
@@ -131,7 +139,7 @@ internal abstract class Screen
         }
     }
 
-	public virtual void ScreenPopped(Game game, Screen screen)
+	public virtual void ScreenPopped(Screen screen)
 	{
         if (!screen.Transparent)
         {
@@ -142,7 +150,7 @@ internal abstract class Screen
         }
     }
 
-	public virtual void Update(Game game, long elapsedTicks)
+	public virtual void Update(long elapsedTicks)
 	{
 		// default: empty
 	}
@@ -153,21 +161,21 @@ internal abstract class Screen
         {
             int characterSlotIndex = 1 + (key - Key.F1);
 
-            if (game!.State.HasPartyMemberInSlot(characterSlotIndex))
-                game!.OpenInventory(1 + (key - Key.F1));
+            if (Game.State.HasPartyMemberInSlot(characterSlotIndex))
+                Game.OpenInventory(1 + (key - Key.F1));
 
             return true;
         }
 
 		if (CloseOnEscape && key == Key.Escape && keyModifiers == KeyModifiers.None)
 		{
-			game!.ScreenHandler.PopScreen();
+			Game.ScreenHandler.PopScreen();
 			return true;
 		}
 
         if (CloseOnSpace && key == Key.Space && keyModifiers == KeyModifiers.None)
         {
-            game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
             return true;
         }
 
@@ -184,7 +192,7 @@ internal abstract class Screen
 	{
 		if (AllowCharacterSelection && keyModifiers == KeyModifiers.None && ch >= '1' && ch <= '6')
 		{
-			game!.State.SetActivePartyMember(ch - '0');
+			Game.State.SetActivePartyMember(ch - '0');
 			return true;
         }
 
@@ -195,7 +203,7 @@ internal abstract class Screen
 	{
 		if (CloseOnRightClick && buttons == MouseButtons.Right)
 		{
-            game?.ScreenHandler.PopScreen();
+            Game?.ScreenHandler.PopScreen();
             return true;
         }
 
@@ -287,7 +295,7 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        var button = new Button(game!, baseX + x, baseY + y, buttonType, displayLayer);
+        var button = new Button(Game, baseX + x, baseY + y, buttonType, displayLayer);
         var controls = initialized ? createdControlsInOpen : createdControlsInInit;
 
         controls.Add(button);
@@ -326,7 +334,7 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        var image = new Image(game!, baseX + x, baseY + y, width, height, textureIndex, displayLayer, layer, null, opaque);
+        var image = new Image(Game, baseX + x, baseY + y, width, height, textureIndex, displayLayer, layer, null, opaque);
         var controls = initialized ? createdControlsInOpen : createdControlsInInit;
 
         controls.Add(image);
@@ -364,7 +372,7 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        var itemContainer = new ItemContainer(game!, new(baseX + x, baseY + y), item == null ? 0 : count, item, displayLayer)
+        var itemContainer = new ItemContainer(Game, new(baseX + x, baseY + y), item == null ? 0 : count, item, displayLayer)
         {
             DisplayLayer = displayLayer,
             Visible = true
@@ -406,7 +414,7 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        var label = new Label(game!)
+        var label = new Label(Game)
         {
             Area = new(baseX + x, baseY + y, width, height),
             DisplayLayer = displayLayer,
@@ -449,15 +457,15 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        width ??= game!.GetMaxLineWidth(text);
+        width ??= Game.GetMaxLineWidth(text);
         height ??= 7;
-        var label = new Label(game!)
+        var label = new Label(Game)
         {
             Area = new(baseX + x, baseY + y, width.Value, height.Value),
             DisplayLayer = displayLayer,
             Visible = true
         };
-        label.SetText(text, width, 15, TextManager.TransparentPaper, game!.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI]);
+        label.SetText(text, width, 15, TextManager.TransparentPaper, Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI]);
         var controls = initialized ? createdControlsInOpen : createdControlsInInit;
 
         controls.Add(label);
@@ -504,13 +512,13 @@ internal abstract class Screen
 
         width ??= GetMaxLineWidth();
         height ??= 7;
-        var label = new Label(game!)
+        var label = new Label(Game)
         {
             Area = new(baseX + x, baseY + y, width.Value, height.Value),
             DisplayLayer = displayLayer,
             Visible = true
         };
-        label.SetText(text, 15, TextManager.TransparentPaper, game!.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI]);
+        label.SetText(text, 15, TextManager.TransparentPaper, Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI]);
         var controls = initialized ? createdControlsInOpen : createdControlsInInit;
 
         controls.Add(label);
@@ -549,7 +557,27 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        var list = new List(game!, baseX + x, baseY + y, width, height, displayLayer, backgroundColorIndex, paletteIndex)
+        var list = new List(Game, baseX + x, baseY + y, width, height, displayLayer, backgroundColorIndex, paletteIndex)
+        {
+            Visible = true
+        };
+
+        var controls = initialized ? createdControlsInOpen : createdControlsInInit;
+
+        controls.Add(list);
+
+        return list;
+    }
+
+    public Input AddInput(int x, int y, int width, byte displayLayer = 0, int? maxLength = null)
+    {
+        int baseX = 0;
+        int baseY = 0;
+
+        if (anchors.Count != 0)
+            (baseX, baseY) = anchors.Peek();
+
+        var list = new Input(Game, baseX + x, baseY + y, width, displayLayer, maxLength)
         {
             Visible = true
         };
@@ -569,7 +597,7 @@ internal abstract class Screen
         if (anchors.Count != 0)
             (baseX, baseY) = anchors.Peek();
 
-        var window = new Window(game!, baseX + x, baseY + y, widthInTiles, heightInTiles, dark, displayLayer, paletteIndex);
+        var window = new Window(Game, baseX + x, baseY + y, widthInTiles, heightInTiles, dark, displayLayer, paletteIndex);
         var controls = initialized ? createdControlsInOpen : createdControlsInInit;
 
         controls.Add(window);
@@ -580,7 +608,7 @@ internal abstract class Screen
     #endregion
 }
 
-internal class ScreenHandler(Game game) : IDisposable
+internal class ScreenHandler(Game Game) : IDisposable
 {
 	readonly Stack<Screen> screens = [];
 	readonly Dictionary<ScreenType, Screen> createdScreens = [];
@@ -606,6 +634,7 @@ internal class ScreenHandler(Game game) : IDisposable
 			ScreenType.Place => new PlaceScreen(),
 			ScreenType.ItemView => new ItemScreen(),
 			ScreenType.ItemDetails => new ItemDetailsScreen(),
+            ScreenType.SelectWord => new SelectWordScreen(),
             ScreenType.InputWord => new InputWordScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
@@ -617,7 +646,8 @@ internal class ScreenHandler(Game game) : IDisposable
             _ => throw new NotImplementedException()
 		};
 
-		screen.Init(game);
+        screen.PreInit(Game);
+		screen.Init();
         screen.AfterInit();
 		createdScreens.Add(screenType, screen);
 
@@ -641,9 +671,9 @@ internal class ScreenHandler(Game game) : IDisposable
 		{
 			screens.Push(screen!);
 
-			currentScreen?.ScreenPushed(game, screen!);
+			currentScreen?.ScreenPushed(screen!);
             screen!.PreOpen();
-            screen.Open(game, followAction);
+            screen.Open(followAction);
 
 			ScreenChanged?.Invoke(screen);
         }
@@ -654,7 +684,7 @@ internal class ScreenHandler(Game game) : IDisposable
 
         if (!transparent && (fadeIn || fadeOut))
         {
-			game.Fade(Game.DefaultFadeTime, null, Push);
+			Game.Fade(Game.DefaultFadeTime, null, Push);
 		}
 		else
 		{
@@ -674,8 +704,8 @@ internal class ScreenHandler(Game game) : IDisposable
 
         void Pop()
 		{
-			screen.Close(game);
-            prevScreen?.ScreenPopped(game, screen);
+			screen.Close();
+            prevScreen?.ScreenPopped(screen);
 
             ScreenChanged?.Invoke(screen);
         }
@@ -686,7 +716,7 @@ internal class ScreenHandler(Game game) : IDisposable
 
         if (!transparent && (fadeIn || fadeOut))
         {
-            game.Fade(Game.DefaultFadeTime, null, Pop);
+            Game.Fade(Game.DefaultFadeTime, null, Pop);
         }
         else
         {
@@ -700,7 +730,7 @@ internal class ScreenHandler(Game game) : IDisposable
 	{
 		while (screens.Count != 0)
 		{
-			screens.Pop().Close(game);
+			screens.Pop().Close();
 		}
 	}
 
@@ -723,7 +753,7 @@ internal class ScreenHandler(Game game) : IDisposable
 
 	public void Dispose()
 	{
-		createdScreens.Values.ToList().ForEach(screen => screen.Destroy(game));
+		createdScreens.Values.ToList().ForEach(screen => screen.Destroy());
 		createdScreens.Clear();
 	}
 }

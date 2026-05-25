@@ -14,7 +14,6 @@ internal abstract class InputAmountScreen : Screen
 	const int WindowHeightInTiles = 6;
     const byte WindowDisplayLayer = 150;
     const byte TextDisplayLayer = 175;
-    Game? game;
 	Window? window;
     byte uiPalette = 0;
     ISprite? imageBackground;
@@ -36,15 +35,15 @@ internal abstract class InputAmountScreen : Screen
 
     protected abstract Message Message { get; }
 
-    public override void Init(Game game)
+    public override void Init()
     {
-        base.Init(game);
+        base.Init();
 
-        uiPalette = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        uiPalette = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
         Label CreateLabel(int x, int y, int width, IText? text = null)
         {
-            Label label = new(game)
+            Label label = new(Game)
             {
                 DisplayLayer = TextDisplayLayer,
                 Alignment = TextAlignment.Left,
@@ -59,16 +58,16 @@ internal abstract class InputAmountScreen : Screen
             return label;
         }
 
-        Label CreateFixedLabel(int x, int y, IText text) => CreateLabel(x, y, game.GetMaxLineWidth(text), text);
+        Label CreateFixedLabel(int x, int y, IText text) => CreateLabel(x, y, Game.GetMaxLineWidth(text), text);
 
         int x = WindowX + 16;
         int y = WindowY + 16;
 
-        imageBackground = game.CreateSprite(Layer.UI, new(x, y), new(16, 16), game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), uiPalette, true);
+        imageBackground = Game.CreateSprite(Layer.UI, new(x, y), new(16, 16), Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), uiPalette, true);
         imageBackground!.DisplayLayer = TextDisplayLayer;
         imageBackground.Visible = true;
 
-        image = game.CreateSprite(Layer.UI, new(x, y), new(16, 16), game.GraphicIndexProvider.GetItemGraphicIndex(Graphic), game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item]);
+        image = Game.CreateSprite(Layer.UI, new(x, y), new(16, 16), Game.GraphicIndexProvider.GetItemGraphicIndex(Graphic), Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item]);
         image!.DisplayLayer = TextDisplayLayer + 2;
         image.Visible = true;
 
@@ -86,22 +85,22 @@ internal abstract class InputAmountScreen : Screen
         x = WindowX + 16 + 1;
         y += 9;
 
-        var text = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)Message));
+        var text = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)Message));
         message = CreateFixedLabel(x, y, text);
         message.Visible = true;
 
         x = WindowX + 16;
         y = WindowY + 48;
 
-        upButton = new Button(game, x, y, ButtonType.ArrowUp, TextDisplayLayer, uiPalette);
+        upButton = new Button(Game, x, y, ButtonType.ArrowUp, TextDisplayLayer, uiPalette);
         upButton.ClickAction += () => ChangeAmount(1);
         upButton.RightClickAction += () => ChangeAmount(short.MaxValue);
-        downButton = new Button(game, x, y + 16, ButtonType.ArrowDown, TextDisplayLayer, uiPalette);
+        downButton = new Button(Game, x, y + 16, ButtonType.ArrowDown, TextDisplayLayer, uiPalette);
         downButton.ClickAction += () => ChangeAmount(-1);
         downButton.RightClickAction += () => ChangeAmount(short.MinValue);
 
-        exitButton = new Button(game, x + 48, y + 16, ButtonType.Exit, TextDisplayLayer, uiPalette);
-        exitButton.ClickAction += () => game.ScreenHandler.PopScreen();
+        exitButton = new Button(Game, x + 48, y + 16, ButtonType.Exit, TextDisplayLayer, uiPalette);
+        exitButton.ClickAction += () => Game.ScreenHandler.PopScreen();
 
         createdControls.Add(upButton);
         createdControls.Add(downButton);
@@ -113,43 +112,41 @@ internal abstract class InputAmountScreen : Screen
         if (change == 0)
             return;
 
-        game!.CurrentAmount = MathUtil.Limit(0, game.CurrentAmount + change, game.CurrentMaxAmount);
-        inputValue!.SetText(game.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
+        Game.CurrentAmount = MathUtil.Limit(0, Game.CurrentAmount + change, Game.CurrentMaxAmount);
+        inputValue!.SetText(Game.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
 
-        upButton!.Disabled = game.CurrentAmount == game.CurrentMaxAmount;
-        downButton!.Disabled = game.CurrentAmount == 0;
+        upButton!.Disabled = Game.CurrentAmount == Game.CurrentMaxAmount;
+        downButton!.Disabled = Game.CurrentAmount == 0;
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
 	{
-		if (game.CurrentMaxAmount <= 0)
+		if (Game.CurrentMaxAmount <= 0)
 			throw new InvalidOperationException($"{nameof(InputAmountScreen)} needs {nameof(Game.CurrentMaxAmount)} to be set beforehand.");
 
-		base.Open(game, closeAction);
+		base.Open(closeAction);
 
-		this.game = game;
-
-		Init();
+		InitControls();
     }
 
-	private void Init()
+	private void InitControls()
 	{
         // Create the window
         window?.Destroy();
-        window = new(game!, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
+        window = new(Game, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
 
-        inputValue!.SetText(game!.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
+        inputValue!.SetText(Game.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
         inputValue.Visible = true;
 
-        upButton!.Disabled = game.CurrentAmount == game.CurrentMaxAmount;
-        downButton!.Disabled = game.CurrentAmount == 0;
+        upButton!.Disabled = Game.CurrentAmount == Game.CurrentMaxAmount;
+        downButton!.Disabled = Game.CurrentAmount == 0;
 
         createdControls.ForEach(control => control.Visible = true);
 
-        game!.TrapMouse(window.ClientArea);
+        Game.TrapMouse(window.ClientArea);
     }
 
-	public override void Close(Game game)
+	public override void Close()
 	{
         window?.Destroy();
         createdControls.ForEach(label => label.Visible = false);
@@ -160,12 +157,12 @@ internal abstract class InputAmountScreen : Screen
         if (imageBackground != null)
             imageBackground.Visible = false;
 
-        game.UntrapMouse();
+        Game.UntrapMouse();
 
-        base.Close(game);
+        base.Close();
 	}
 
-    public override void Destroy(Game game)
+    public override void Destroy()
     {
         window?.Destroy();
 
@@ -184,7 +181,7 @@ internal abstract class InputAmountScreen : Screen
         createdControls.ForEach(label => label.Destroy());
         createdControls.Clear();
 
-        base.Destroy(game);
+        base.Destroy();
     }
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -195,33 +192,33 @@ internal abstract class InputAmountScreen : Screen
                 if (keyModifiers == KeyModifiers.None)
                     ChangeAmount(1);
                 else
-                    ChangeAmount(game!.CurrentMaxAmount - game.CurrentAmount);
+                    ChangeAmount(Game.CurrentMaxAmount - Game.CurrentAmount);
                 return true;
             case Key.Down:
                 if (keyModifiers == KeyModifiers.None)
                     ChangeAmount(-1);
                 else
-                    ChangeAmount(-game!.CurrentAmount);
+                    ChangeAmount(-Game.CurrentAmount);
                 return true;
             case Key.PageUp:
                 if (keyModifiers == KeyModifiers.None)
                     ChangeAmount(10);
                 else
-                    ChangeAmount(game!.CurrentMaxAmount - game.CurrentAmount);
+                    ChangeAmount(Game.CurrentMaxAmount - Game.CurrentAmount);
                 return true;
             case Key.PageDown:
                 if (keyModifiers == KeyModifiers.None)
                     ChangeAmount(-10);
                 else
-                    ChangeAmount(-game!.CurrentAmount);
+                    ChangeAmount(-Game.CurrentAmount);
                 return true;
             case Key.Escape:
-                game!.CurrentAmount = 0;
-                game.ScreenHandler.PopScreen();
+                Game.CurrentAmount = 0;
+                Game.ScreenHandler.PopScreen();
                 return true;
             case Key.Space:
             case Key.Enter:
-                game!.ScreenHandler.PopScreen();
+                Game.ScreenHandler.PopScreen();
                 return true;
         }
 

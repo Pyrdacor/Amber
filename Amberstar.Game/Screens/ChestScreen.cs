@@ -29,11 +29,11 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         ShowMessage(message, true);
     }
 
-    public override void Init(Game game)
+    public override void Init()
     {
-        base.Init(game);
+        base.Init();
 
-        var goldLabelText = game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
+        var goldLabelText = Game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
 
         var (x, y, width, height) = goldDisplayArea;
         var goldLabel = AddLabel(x, y, goldLabelText, width, height);
@@ -49,29 +49,29 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         this.goldDisplay = goldDisplay;
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
     {
-        var chestEvent = (game.EventHandler.CurrentEvent as ChestEvent)!;
+        var chestEvent = (Game.EventHandler.CurrentEvent as ChestEvent)!;
 
         if (chestEvent.Hidden)
         {
-            int searchSkill = game.State.ActivePartyMember!.Skills[Skill.Search].TotalCurrent;
+            int searchSkill = Game.State.ActivePartyMember!.Skills[Skill.Search].TotalCurrent;
 
-            if (!game.Probe(searchSkill))
+            if (!Game.Probe(searchSkill))
             {
-                game.ScreenHandler.PopScreen();
+                Game.ScreenHandler.PopScreen();
                 return;
             }
         }
         
         // TODO: If you have the Amberstar, every chest will be open (there is a bit in the savegame [Special_item_flags bit 1])
-        bool lockOpened = chestEvent.LockpickReduction == 0 || game.IsCurrentEventSaved();
+        bool lockOpened = chestEvent.LockpickReduction == 0 || Game.IsCurrentEventSaved();
 
         Image = lockOpened ? Image80x80.OpenChest : Image80x80.LockedChest;
         goldLabel!.Visible = lockOpened;
         goldDisplay!.Visible = lockOpened;
 
-        base.Open(game, closeAction);
+        base.Open(closeAction);
 
         allowDragAndDrop = false;
 
@@ -82,9 +82,9 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         }
     }
 
-    public override void ScreenPopped(Game game, Screen screen)
+    public override void ScreenPopped(Screen screen)
     {
-        base.ScreenPopped(game, screen);
+        base.ScreenPopped(screen);
 
         if (screen is GiveGoldScreen && Game.CurrentAmount > 0)
         {
@@ -451,11 +451,11 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         protected override IText InputLabelText => inputLabelText!;
         protected override Message Message { get; } = Message.GiveHowMuch;
 
-        public override void Init(Game game)
+        public override void Init()
         {
-            inputLabelText = game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
+            inputLabelText = Game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
 
-            base.Init(game);
+            base.Init();
         }
     }
 }

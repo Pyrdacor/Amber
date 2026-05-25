@@ -6,7 +6,6 @@ namespace Amberstar.Game.Screens;
 
 internal abstract class ItemPickerScreen : Screen
 {
-	Game? game;
     ItemGridScreen? parentScreen;
     List<ItemContainer> items = [];
     int? pickedItem = null;
@@ -24,12 +23,11 @@ internal abstract class ItemPickerScreen : Screen
 
     public virtual bool HideItemsAfterPicking { get; } = true;
 
-    public override void Init(Game game)
+    public override void Init()
 	{
-        base.Init(game);
+        base.Init();
 
-        this.game = game;
-        itemNameTooltip = new(game)
+        itemNameTooltip = new(Game)
         {
             DisplayLayer = 100,
             Alignment = TextAlignment.Center,
@@ -37,34 +35,34 @@ internal abstract class ItemPickerScreen : Screen
         };
 
         // Note: During Init the ActiveScreen is still the last one.
-        parentScreen = game.ScreenHandler.ActiveScreen as ItemGridScreen;
+        parentScreen = Game.ScreenHandler.ActiveScreen as ItemGridScreen;
 
         items = [.. parentScreen?.ItemContainers ?? []];
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
     {
-        base.Open(game, closeAction);
+        base.Open(closeAction);
 
         parentScreen?.ShowMessage(Message, false, false);
         items.ForEach(item => item.Visible = true);
 
-        game.TrapMouse(MouseTrapArea);
-        game.Cursor.CursorType = HoverCursorType;
+        Game.TrapMouse(MouseTrapArea);
+        Game.Cursor.CursorType = HoverCursorType;
     }
 
-    public override void Close(Game game)
+    public override void Close()
     {
         parentScreen?.HideMessage();
-        game.UntrapMouse();
-        game.Cursor.CursorType = CursorType.Sword;
+        Game.UntrapMouse();
+        Game.Cursor.CursorType = CursorType.Sword;
 
         if (HideItemsAfterPicking)
             items.ForEach(item => item.Visible = false);
 
         itemNameTooltip!.Destroy();
 
-        base.Close(game);
+        base.Close();
 
         parentScreen?.PickItem(Type, pickedItem);
     }
@@ -74,7 +72,7 @@ internal abstract class ItemPickerScreen : Screen
         if (key == Key.Escape || key == Key.Space)
         {
             pickedItem = null;
-            game?.ScreenHandler.PopScreen();
+            Game?.ScreenHandler.PopScreen();
             return true;
         }
 
@@ -92,7 +90,7 @@ internal abstract class ItemPickerScreen : Screen
                 if (!item.Empty && item.Contains(position))
                 {
                     pickedItem = i;
-                    game!.ScreenHandler.PopScreen();
+                    Game.ScreenHandler.PopScreen();
                     return true;
                 }
             }
@@ -100,7 +98,7 @@ internal abstract class ItemPickerScreen : Screen
         else if (buttons == MouseButtons.Right)
         {
             pickedItem = null;
-            game?.ScreenHandler.PopScreen();
+            Game?.ScreenHandler.PopScreen();
             return true;
         }
 
@@ -117,7 +115,7 @@ internal abstract class ItemPickerScreen : Screen
 
             if (!item.Empty && item.Contains(position))
             {
-                itemNameTooltip!.SetText(item.Item!.GetName(game!.AssetProvider.TextLoader), 320 - itemNameTooltip!.Position.X, 15, 0, parentScreen!.ButtonGridPaletteIndex);
+                itemNameTooltip!.SetText(item.Item!.GetName(Game.AssetProvider.TextLoader), 320 - itemNameTooltip!.Position.X, 15, 0, parentScreen!.ButtonGridPaletteIndex);
                 itemNameTooltip.Visible = true;
                 return;
             }

@@ -10,7 +10,6 @@ namespace Amberstar.Game.Screens;
 internal abstract class LockedScreen<TEvent> : ItemGridScreen
     where TEvent : Event, ILockedEvent
 {
-    Game? game;
     bool trapFound = false;
     bool trapDisarmed = false;
     bool waitForClick = false;
@@ -47,8 +46,6 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         itemTooltipArea = new(messageDisplayArea.Position.X, messageDisplayArea.Position.Y + 7, messageDisplayArea.Size.Width, 7);
     }
 
-    protected Game Game => game!;
-
     protected TEvent LockedEvent => lockedEvent!;
 
     protected bool LockOpened
@@ -66,8 +63,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
             if (image != null)
             {
-                image.SetTextureIndex(game!.GraphicIndexProvider.Get80x80ImageIndex(image80x80));
-                image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
+                image.SetTextureIndex(Game.GraphicIndexProvider.Get80x80ImageIndex(image80x80));
+                image.PaletteIndex = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
             }
         }
     }
@@ -78,7 +75,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     public sealed override bool Transparent { get; } = false;
 
-    internal sealed override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image) ?? 0;
+    internal sealed override byte ButtonGridPaletteIndex => Game?.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image) ?? 0;
 
     internal sealed override ItemContainer[] ItemContainers => inventoryItemSlots;
 
@@ -91,7 +88,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     protected sealed override void SetupButtons(ButtonGrid buttonGrid)
     {
-        var partyMember = game?.State.ActivePartyMember;
+        var partyMember = Game?.State.ActivePartyMember;
 
         if (partyMember == null)
             return;
@@ -129,11 +126,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             buttonGrid.EnableButton(8, lowerRightButton.Enabled);
     }
 
-    public override void Init(Game game)
+    public override void Init()
     {
-        base.Init(game);
-
-        this.game = game;
+        base.Init();
 
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
@@ -141,24 +136,24 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             inventoryItemSlots[i] = AddItem(slotX, slotY, item: null, count: 0, displayLayer: 10);
         }
 
-        var image = AddImage(16, 49, 80, 80, game.GraphicIndexProvider.Get80x80ImageIndex(Image), Layer.UI, 0, true);
-        image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
+        var image = AddImage(16, 49, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(Image), Layer.UI, 0, true);
+        image.PaletteIndex = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
         this.image = image;
 
         var (x, y, width, height) = messageDisplayArea;
         message = AddLabel(x, y, width, height, 20);
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
     {
-        base.Open(game, closeAction);
+        base.Open(closeAction);
 
-        lockedEvent = (game.EventHandler.CurrentEvent as TEvent)!;
+        lockedEvent = (Game.EventHandler.CurrentEvent as TEvent)!;
         lockpickReduction = lockedEvent.LockpickReduction;
 
-        var palette = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
-        game.SetLayout(Layout, palette);
-        game.Cursor.CursorType = CursorType.Sword;
+        var palette = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
+        Game.SetLayout(Layout, palette);
+        Game.Cursor.CursorType = CursorType.Sword;
 
         trapFound = false;
         trapDisarmed = false;
@@ -182,7 +177,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             inventoryItemSlots[slotIndex].SetItem(count, item);
     }
 
-    public override void Close(Game game)
+    public override void Close()
     {
         HideMessage();
         CleanUpItems();
@@ -196,49 +191,49 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         if (!lockOpened)
         {
             // Note: At this point, ActiveScreen is already the previous one!
-            if (game!.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
+            if (Game.ScreenHandler.ActiveScreen is Map2DScreen map2dScreen)
                 map2dScreen.ResetPartyPosition();
-            else if (game!.ScreenHandler.ActiveScreen is Map3DScreen map3dScreen)
+            else if (Game.ScreenHandler.ActiveScreen is Map3DScreen map3dScreen)
                 map3dScreen.ResetPartyPosition();
             else
-                game.State.ResetPartyPosition();
+                Game.State.ResetPartyPosition();
         }
 
-        base.Close(game);
+        base.Close();
     }
 
-    public override void ScreenPushed(Game game, Screen screen)
+    public override void ScreenPushed(Screen screen)
     {
         if (screen is UseItemScreen)
             UpdateInventoryItems();
 
-        base.ScreenPushed(game, screen);
+        base.ScreenPushed(screen);
     }
 
-    public override void ScreenPopped(Game game, Screen screen)
+    public override void ScreenPopped(Screen screen)
     {
-        base.ScreenPopped(game, screen);
+        base.ScreenPopped(screen);
 
         if (!screen.Transparent)
         {
-            var palette = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
-            game.SetLayout(Layout, palette);
-            game.Cursor.CursorType = CursorType.Sword;
+            var palette = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
+            Game.SetLayout(Layout, palette);
+            Game.Cursor.CursorType = CursorType.Sword;
         }
     }
 
     private void EndClickWait()
     {
         waitForClick = false;
-        game!.Cursor.CursorType = CursorType.Sword;
+        Game.Cursor.CursorType = CursorType.Sword;
         HideMessage();
-        game.UntrapMouse();
+        Game.UntrapMouse();
 
         AfterWaitClickAction?.Invoke();
         AfterWaitClickAction = null;
 
         if (closeAfterClick)
-            game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
     }
 
     public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -269,7 +264,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
     {
         CleanUpItems();
 
-        var partyMember = game!.State.ActivePartyMember;
+        var partyMember = Game.State.ActivePartyMember;
 
         if (partyMember == null)
             return;
@@ -315,10 +310,10 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
                 TryPickLock();
                 break;
             case 1: // Use item
-                game?.ScreenHandler.PushScreen(ScreenType.LockedUseItem);
+                Game?.ScreenHandler.PushScreen(ScreenType.LockedUseItem);
                 break;
             case 2: // Exit
-                game?.ScreenHandler.PopScreen();
+                Game?.ScreenHandler.PopScreen();
                 break;
             case 3: // Find trap
                 TryFindTrap();
@@ -343,7 +338,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     internal sealed override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
-        var text = game!.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
+        var text = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
 
         ShowText(text, waitForClick, closeAfterClick);
     }
@@ -360,8 +355,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
         if (waitForClick)
         {
-            game!.Cursor.CursorType = CursorType.Zzz;
-            game.TrapMouse(messageDisplayArea);
+            Game.Cursor.CursorType = CursorType.Zzz;
+            Game.TrapMouse(messageDisplayArea);
         }
     }
 
@@ -380,10 +375,10 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             return;
         }
 
-        int lockpickSkill = game!.State.ActivePartyMember!.Skills[Skill.PickLocks].TotalCurrent;
+        int lockpickSkill = Game.State.ActivePartyMember!.Skills[Skill.PickLocks].TotalCurrent;
         lockpickSkill -= lockpickReduction;
 
-        if (game.Probe(lockpickSkill))
+        if (Game.Probe(lockpickSkill))
         {
             lockOpened = true;
             Unlocked(Message.LockOpened);
@@ -399,9 +394,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             }
             else
             {
-                int dexterity = game.State.ActivePartyMember!.Attributes[GameData.Attribute.Dexterity].TotalCurrent;
+                int dexterity = Game.State.ActivePartyMember!.Attributes[GameData.Attribute.Dexterity].TotalCurrent;
 
-                if (game.Probe(dexterity))
+                if (Game.Probe(dexterity))
                 {
                     ShowMessage(Message.HeardStrangeNoise);
                 }
@@ -421,9 +416,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             return;
         }
 
-        int findTrapSkill = game!.State.ActivePartyMember!.Skills[Skill.FindTraps].TotalCurrent;
+        int findTrapSkill = Game.State.ActivePartyMember!.Skills[Skill.FindTraps].TotalCurrent;
 
-        if (game.Probe(findTrapSkill))
+        if (Game.Probe(findTrapSkill))
         {
             ShowMessage(Message.TrapDiscovered);
             trapFound = true;
@@ -437,9 +432,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     private void TryDisarmTrap()
     {
-        int disarmTrapSkill = game!.State.ActivePartyMember!.Skills[Skill.DisarmTraps].TotalCurrent;
+        int disarmTrapSkill = Game.State.ActivePartyMember!.Skills[Skill.DisarmTraps].TotalCurrent;
 
-        if (game.Probe(disarmTrapSkill))
+        if (Game.Probe(disarmTrapSkill))
         {
             ShowMessage(Message.TrapDisarmed);
             trapDisarmed = true;
@@ -447,9 +442,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         }
         else
         {
-            int dexterity = game.State.ActivePartyMember!.Attributes[GameData.Attribute.Dexterity].TotalCurrent;
+            int dexterity = Game.State.ActivePartyMember!.Attributes[GameData.Attribute.Dexterity].TotalCurrent;
 
-            if (game.Probe(dexterity))
+            if (Game.Probe(dexterity))
             {
                 ShowMessage(Message.HeardStrangeNoise);
             }
@@ -464,7 +459,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     private void TriggerTrap()
     {
-        game!.TriggerTrap(lockedEvent!.TrapType, lockedEvent!.TrapDamage);
+        Game.TriggerTrap(lockedEvent!.TrapType, lockedEvent!.TrapDamage);
     }
 
     internal override void PickItem(ScreenType sourceScreen, int? index)
@@ -485,14 +480,14 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             {
                 // We show the previous message again until the destroy animation is done.
                 ShowMessage(Message.UseWhichItem, false);
-                game!.EnableInput(false);
+                Game.EnableInput(false);
 
                 // TODO: Move this weight update logic (and similar logic) to party functions
-                game.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
+                Game.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)Game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
                 item.ReduceItemCount(1, true, () =>
                 {
                     lockOpened = true;
-                    game.EnableInput(true);
+                    Game.EnableInput(true);
                     Unlocked(Message.ItemOpensDoor);
                 });
             }
@@ -503,13 +498,13 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
             // We show the previous message again until the destroy animation is done.
             ShowMessage(Message.UseWhichItem, false);
-            game!.EnableInput(false);
+            Game.EnableInput(false);
 
             // TODO: Move this weight update logic (and similar logic) to party functions
-            game.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
+            Game.State.ActivePartyMember!.TotalWeight = (uint)Math.Max(0, (long)Game.State.ActivePartyMember.TotalWeight - item.Item.Weight);
             item.ReduceItemCount(1, true, () =>
             {
-                game.EnableInput(true);
+                Game.EnableInput(true);
 
                 if (lockedEvent!.LockpickReduction >= 100) // Fully locked?
                 {
@@ -527,7 +522,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         else
         {
             // Reopen item selection
-            game?.ScreenHandler.PushScreen(ScreenType.LockedUseItem);
+            Game?.ScreenHandler.PushScreen(ScreenType.LockedUseItem);
         }
     }
 

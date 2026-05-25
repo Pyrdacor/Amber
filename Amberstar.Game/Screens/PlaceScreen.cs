@@ -8,13 +8,13 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal class PlaceScreen : Screen
+// TODO: Rework and implement fully
+internal sealed class PlaceScreen : Screen
 {
 	const int TextX = 112;
 	const int TextY = 50;
 	const int TextWidth = 192;
 	const int TextHeight = 140;
-	Game? game;
 	ISprite? image;
 	IRenderText? displayText;
 	bool scrolling = false;
@@ -22,15 +22,13 @@ internal class PlaceScreen : Screen
 
 	public override ScreenType Type { get; } = ScreenType.Place;
 
-	public override void Open(Game game, Action? closeAction)
+	public override void Open(Action? closeAction)
 	{
-		base.Open(game, closeAction);
+		base.Open(closeAction);
 
-		this.game = game;
+		var placeEvent = (Game.EventHandler.CurrentEvent as PlaceEvent)!;
 
-		var placeEvent = (game.EventHandler.CurrentEvent as PlaceEvent)!;
-
-		var layer = game.GetRenderLayer(Layer.UI);
+		var layer = Game.GetRenderLayer(Layer.UI);
 		image = layer.SpriteFactory!.Create();
 		var textureAtlas = layer.Config.Texture!;
 
@@ -95,11 +93,11 @@ internal class PlaceScreen : Screen
 		image.Position = new(16, 49);
 		image.Size = new(80, 80);
 		image.Opaque = true;
-		image.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.Get80x80ImageIndex(imageType));
-		var palette = image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(imageType);
+		image.TextureOffset = textureAtlas.GetOffset(Game.GraphicIndexProvider.Get80x80ImageIndex(imageType));
+		var palette = image.PaletteIndex = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(imageType);
 		image.Visible = true;
 
-		game.SetLayout(Layout.Place, palette);
+		Game.SetLayout(Layout.Place, palette);
 
 		// TODO: text depends on place
 		/*var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, game.State.GetIndexOfMapWithPlayer()));
@@ -125,12 +123,12 @@ internal class PlaceScreen : Screen
 		// TODO
 	}
 
-	public override void Close(Game game)
+	public override void Close()
 	{
 		image!.Visible = false;
 		displayText?.Delete();
 
-		base.Close(game);
+		base.Close();
 	}
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -147,7 +145,7 @@ internal class PlaceScreen : Screen
 	{
 		if (closeOnNextInput)
 		{
-			game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
 			return true;
 		}
 

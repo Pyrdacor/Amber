@@ -788,15 +788,15 @@ internal class Label(Game game) : Control, ILayeredDrawable
         }
     }
 
-    private void Show()
+    private void Show(bool? wasVisible = null)
     {
         if (renderText != null)
         {
-            bool wasVisible = renderText.Visible || visibleRequest;
+            wasVisible ??= renderText.Visible || visibleRequest;
             needsShowCall = false;
             visibleRequest = false;
             renderText.ShowInArea(area, displayLayer, alignment);
-            renderText.Visible = wasVisible;
+            renderText.Visible = wasVisible.Value;
         }
     }
 
@@ -811,7 +811,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
         renderText = game.TextManager.Create(text, defaultTextColorIndex, defaultPaperColorIndex, paletteIndex);
 
         if (wasVisible)
-            Show();
+            Show(wasVisible);
         else
             needsShowCall = true;
     }

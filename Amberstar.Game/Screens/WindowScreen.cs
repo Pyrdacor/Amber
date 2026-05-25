@@ -5,7 +5,6 @@ namespace Amberstar.Game.Screens;
 
 internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightInTiles, byte windowDisplayLayer = 0) : Screen
 {
-	Game? game;
 	Window? window;
 
     public virtual int HeightInTiles { get; } = heightInTiles;
@@ -14,32 +13,45 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 
     public virtual bool CreateWindowInOpenHandler { get; } = false;
 
+    public virtual bool TrapMouse { get; } = true;
+
+    public virtual bool Dark { get; } = false;
+
     public sealed override bool Transparent { get; } = true;
 
     public Rect ClientArea => window?.ClientArea ?? new Rect(x, y, widthInTiles * 16, HeightInTiles * 16);
 
-    public override void Init(Game game)
+    public override void Init()
     {
-        this.game = game;
-
-        base.Init(game);
+        base.Init();
 
 		if (!CreateWindowInOpenHandler)
 			CreateWindow();
     }
 
-	public override void Open(Game game, Action? closeAction)
+	public override void Open(Action? closeAction)
 	{
         if (CreateWindowInOpenHandler)
             CreateWindow();
 
-        base.Open(game, closeAction);
-	}
+        base.Open(closeAction);
+
+        if (TrapMouse)
+            Game.TrapMouse(ClientArea);
+    }
+
+    public override void Close()
+    {
+        if (TrapMouse)
+            Game.UntrapMouse();
+
+        base.Close();
+    }
 
 	private void CreateWindow()
 	{
 		window?.Destroy();
-		window = AddWindow(x, y, widthInTiles, HeightInTiles, dark: true, windowDisplayLayer);
+		window = AddWindow(x, y, widthInTiles, HeightInTiles, Dark, windowDisplayLayer);
         SetAnchorToWindow(window);
     }
 
@@ -47,7 +59,7 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 	{
         if (CloseOnNextInput)
         {
-            game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
             return true;
         }
 
@@ -58,7 +70,7 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 	{
         if (CloseOnNextInput)
         {
-            game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
             return true;
         }
 

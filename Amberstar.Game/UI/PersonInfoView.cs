@@ -1,11 +1,10 @@
 ﻿using Amber.Common;
 using Amber.Renderer;
 using Amber.Renderer.Common;
-using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar.Game.Screens;
+namespace Amberstar.Game.UI;
 
 internal class PersonInfoView
 {

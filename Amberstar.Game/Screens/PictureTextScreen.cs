@@ -7,13 +7,13 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+// TODO: Rework with WindowScreen and controls
 internal class PictureTextScreen : Screen
 {
 	const int TextX = 112;
 	const int TextY = 50;
 	const int TextWidth = 192;
 	const int TextHeight = 140;
-	Game? game;
 	ISprite? image;
 	IRenderText? displayText;
 	bool scrolling = false;
@@ -21,17 +21,15 @@ internal class PictureTextScreen : Screen
 
 	public override ScreenType Type { get; } = ScreenType.PictureText;
 
-	public override void Open(Game game, Action? closeAction)
+	public override void Open(Action? closeAction)
 	{
-		base.Open(game, closeAction);
+		base.Open(closeAction);
 
-		this.game = game;
+		Game.Cursor.CursorType = CursorType.Sword;
 
-		game.Cursor.CursorType = CursorType.Sword;
+		var @event = (Game.EventHandler.CurrentEvent as IShowPictureTextEvent)!;
 
-		var @event = (game.EventHandler.CurrentEvent as IShowPictureTextEvent)!;
-
-		var layer = game.GetRenderLayer(Layer.UI);
+		var layer = Game.GetRenderLayer(Layer.UI);
 		image = layer.SpriteFactory!.Create();
 		var textureAtlas = layer.Config.Texture!;
 
@@ -39,28 +37,28 @@ internal class PictureTextScreen : Screen
 		image.Position = new(16, 81);
 		image.Size = new(80, 80);
 		image.Opaque = true;
-		image.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.Get80x80ImageIndex(imageType));
-		var palette = image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(imageType);
+		image.TextureOffset = textureAtlas.GetOffset(Game.GraphicIndexProvider.Get80x80ImageIndex(imageType));
+		var palette = image.PaletteIndex = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(imageType);
 		image.Visible = true;
 
-		game.SetLayout(Layout.PictureText, palette);
+        Game.SetLayout(Layout.PictureText, palette);
 
-        int mapIndex = game.EventHandler.CurrentEventMapIndex;
-        var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
+        int mapIndex = Game.EventHandler.CurrentEventMapIndex;
+        var text = Game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 
 		text = text.GetTextBlock(@event.TextIndex);
 
-		displayText = game.TextManager.Create(text, TextWidth, 15, TextManager.TransparentPaper, palette);
+		displayText = Game.TextManager.Create(text, TextWidth, 15, TextManager.TransparentPaper, palette);
 		displayText.ShowInArea(TextX, TextY, TextWidth, TextHeight, 100);
 		closeOnNextInput = !displayText.SupportsScrolling;
 	}
 
-	public override void Close(Game game)
+	public override void Close()
 	{
 		image!.Visible = false;
 		displayText?.Delete();
 
-		base.Close(game);
+		base.Close();
 	}
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -77,7 +75,7 @@ internal class PictureTextScreen : Screen
 	{
 		if (closeOnNextInput)
 		{
-			game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
 			return true;
 		}
 

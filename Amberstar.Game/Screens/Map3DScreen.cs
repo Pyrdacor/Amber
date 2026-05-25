@@ -113,7 +113,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 		public int Icon => data.Icon;
 
-		public Character(IMap3D map, int index, Position[] positions, GameState gameState,
+		public Character(IMap3D map, int index, Position[] positions, GameState GameState,
 			Func<int, int, int, bool> canMoveChecker)
 		{
 			this.map = map;
@@ -122,10 +122,10 @@ internal class Map3DScreen : ButtonGridScreen
 			this.positions = positions;
 			this.canMoveChecker = canMoveChecker;
 
-			UpdatePosition(gameState);
+			UpdatePosition(GameState);
 		}
 
-		private void UpdatePosition(GameState gameState)
+		private void UpdatePosition(GameState GameState)
 		{
 			void TryWalkTo(Position position)
 			{
@@ -140,7 +140,7 @@ internal class Map3DScreen : ButtonGridScreen
 					break;
 				case MapCharacterWalkType.Path:
 				{
-					int totalSteps = gameState.Hour * 12 + gameState.Minute / 5;
+					int totalSteps = GameState.Hour * 12 + GameState.Minute / 5;
 					TryWalkTo(positions[totalSteps]);
 					break;
 				}
@@ -208,9 +208,9 @@ internal class Map3DScreen : ButtonGridScreen
 			currentPathLength = 0;
 		}
 		
-		public void Update(Game game)
+		public void Update(Game Game)
 		{
-			UpdatePosition(game.State);
+			UpdatePosition(Game.State);
 		}
 	}
 
@@ -226,7 +226,6 @@ internal class Map3DScreen : ButtonGridScreen
 	IReadOnlyDictionary<int, IGraphic> backgrounds = new Dictionary<int, IGraphic>();
     IReadOnlyDictionary<int, IGraphic> clouds = new Dictionary<int, IGraphic>();
     IReadOnlyDictionary<DayTime, Color[]> skyGradients = new Dictionary<DayTime, Color[]>();
-	Game? game;
 	IMap3D? map;
 	ILabData? labData;
 	readonly List<IColoredRect> skyGradient = [];
@@ -248,22 +247,23 @@ internal class Map3DScreen : ButtonGridScreen
 
     internal void MapChanged()
 	{
-		LoadMap(game!.State.MapIndex);
+		LoadMap(Game.State.MapIndex);
         ShowMapName();
 		AfterMove();
 	}
 
-	public override void Init(Game game)
+	public override void Init()
 	{
-		this.game = game;
-		backgrounds = game.AssetProvider.GraphicLoader.LoadAllBackgroundGraphics();
-		clouds = game.AssetProvider.GraphicLoader.LoadAllCloudGraphics();
-		skyGradients = game.AssetProvider.GraphicLoader.LoadSkyGradients();
+        base.Init();
+
+        backgrounds = Game.AssetProvider.GraphicLoader.LoadAllBackgroundGraphics();
+		clouds = Game.AssetProvider.GraphicLoader.LoadAllCloudGraphics();
+		skyGradients = Game.AssetProvider.GraphicLoader.LoadSkyGradients();
     }
 
-	public override void ScreenPushed(Game game, Screen screen)
+	public override void ScreenPushed(Screen screen)
 	{
-		base.ScreenPushed(game, screen);
+		base.ScreenPushed(screen);
 
 		if (!screen.Transparent)
 		{
@@ -273,10 +273,10 @@ internal class Map3DScreen : ButtonGridScreen
 		}
 
 		mouseDown = false;
-		game.Pause();
+        Game.Pause();
 	}
 
-	public override void ScreenPopped(Game game, Screen screen)
+	public override void ScreenPopped(Screen screen)
 	{
 		if (!screen.Transparent)
 		{
@@ -286,27 +286,27 @@ internal class Map3DScreen : ButtonGridScreen
             mapNameText!.Visible = true;
         }
 
-		base.ScreenPopped(game, screen);
+		base.ScreenPopped(screen);
 
-		game.Resume();
+        Game.Resume();
 	}
 
     private void SetLayout()
     {
-		// TODO: For some reason the palette is not exactly the same as on the Atari ST. It is brighter there.
-        game!.SetLayout(Layout.Map3D, palette);
+        // TODO: For some reason the palette is not exactly the same as on the Atari ST. It is brighter there.
+        Game.SetLayout(Layout.Map3D, palette);
     }
 
 	private void ShowMapName()
 	{
 		mapNameText?.Delete();
-        mapNameText = game!.TextManager.Create(map!.Name, 15, TextManager.TransparentPaper, palette);
+        mapNameText = Game.TextManager.Create(map!.Name, 15, TextManager.TransparentPaper, palette);
         mapNameText.ShowInArea(OffsetX, OffsetY - mapNameText.LineHeight - 3, ViewWidth, ViewHeight, 100, TextAlignment.Center);
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
 	{
-        base.Open(game, closeAction);
+        base.Open(closeAction);
 
 		currentTicks = 0;
 		lastMoveTicks = 0;
@@ -314,21 +314,21 @@ internal class Map3DScreen : ButtonGridScreen
 		mouseDown = false;
 
 		SetLayout();
-		LoadMap(game.State.MapIndex);
+		LoadMap(Game.State.MapIndex);
         ShowMapName();
         AfterMove();
 
-		game.Time.MinuteChanged += MinuteChanged;
-		game.CanSeeChanged += CanSeeChanged;
+        Game.Time.MinuteChanged += MinuteChanged;
+        Game.CanSeeChanged += CanSeeChanged;
 	}
 
 	protected override void ButtonClicked(int index)
 	{
-		if (game!.ButtonLayout == ButtonLayout.Movement)
+		if (Game.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (index == 4)
 			{
-				game.Time.Tick();
+                Game.Time.Tick();
 				return;
 			}
 
@@ -364,8 +364,8 @@ internal class Map3DScreen : ButtonGridScreen
 			{
                 // TODO: NPCs
 
-                var playerPosition = game.State.PartyPosition;
-                var forwardPosition = playerPosition + game.State.PartyDirection.Offset();
+                var playerPosition = Game.State.PartyPosition;
+                var forwardPosition = playerPosition + Game.State.PartyDirection.Offset();
 
 				if (forwardPosition.X >= 0 && forwardPosition.X < map!.Width &&
 					forwardPosition.Y >= 0 && forwardPosition.Y < map.Height &&
@@ -373,7 +373,7 @@ internal class Map3DScreen : ButtonGridScreen
 				{
 					var tile = map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width];
 					int eventIndex = tile.Event;
-                    game.EventHandler.HandleEvent(EventTrigger.Eye, Event.CreateEvent(map.Events[eventIndex - 1], eventIndex), map);
+                    Game.EventHandler.HandleEvent(EventTrigger.Eye, Event.CreateEvent(map.Events[eventIndex - 1], eventIndex), map);
                 }
             }
 			else if (index == 1) // ear
@@ -382,12 +382,12 @@ internal class Map3DScreen : ButtonGridScreen
             }
             else if (index == 2) // mouth
             {
-                var character = characters.FirstOrDefault(character => character.Position == game!.State.PartyPosition);
+                var character = characters.FirstOrDefault(character => character.Position == Game.State.PartyPosition);
 
 				if (character != null && character.Type == MapCharacterType.Person)
 				{
-                    game.State.CurrentConversationCharacterIndex = character.CharacterIndex;
-					game.ScreenHandler.PushScreen(ScreenType.Conversation);
+                    Game.State.CurrentConversationCharacterIndex = character.CharacterIndex;
+					Game.ScreenHandler.PushScreen(ScreenType.Conversation);
 					return;
                 }
             }
@@ -402,7 +402,7 @@ internal class Map3DScreen : ButtonGridScreen
             else if (index == 6) // map
             {
 				// TODO
-                // game!.ScreenHandler.PushScreen(ScreenType.Map);
+                // Game.ScreenHandler.PushScreen(ScreenType.Map);
             }
             else if (index == 7) // party positions
             {
@@ -417,7 +417,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 	protected override void SetupButtons(ButtonGrid buttonGrid)
 	{
-		if (game!.ButtonLayout == ButtonLayout.Movement)
+		if (Game.ButtonLayout == ButtonLayout.Movement)
 		{
 			// Upper row
 			buttonGrid.SetButton(0, ButtonType.TurnLeft);
@@ -432,7 +432,7 @@ internal class Map3DScreen : ButtonGridScreen
 			buttonGrid.SetButton(7, ButtonType.MoveBackward);
 			buttonGrid.SetButton(8, ButtonType.RotateRight);
 
-            bool enableMoveButtons = game.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
+            bool enableMoveButtons = Game.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
 
             for (int i = 0; i < 9; i++)
             {
@@ -458,23 +458,23 @@ internal class Map3DScreen : ButtonGridScreen
 		}
 	}
 
-	public override void Close(Game game)
+	public override void Close()
 	{
 		mouseDown = false;
-		game.Time.MinuteChanged -= MinuteChanged;
-		game.CanSeeChanged -= CanSeeChanged;
+		Game.Time.MinuteChanged -= MinuteChanged;
+		Game.CanSeeChanged -= CanSeeChanged;
 		ClearView();
 		skyGradient.ForEach(g => g.Visible = false);
 		skyGradient.Clear();
 		characters.Clear();
 		mapNameText!.Delete();
 
-		base.Close(game);
+		base.Close();
 	}
 
 	private void CanSeeChanged(bool canSee)
 	{
-		if (game!.Paused)
+		if (Game.Paused)
 			return;
 
 		UpdateLight();
@@ -485,7 +485,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 	private void MinuteChanged()
 	{
-		if (game!.Paused)
+		if (Game.Paused)
 			return;
 
 		var lightMode = map!.Flags.GetLightMode();
@@ -493,18 +493,18 @@ internal class Map3DScreen : ButtonGridScreen
 		if (lightMode != LightMode.Static)
 			UpdateLight();
 
-		if (map.Flags.HasFlag(MapFlags.City) && game!.CanSee())
+		if (map.Flags.HasFlag(MapFlags.City) && Game.CanSee())
 			UpdateSky(true);
 
 		if (characters.Count != 0) // TODO: check for active ones only (or maybe remove inactive ones)
 		{
 			foreach (var character in characters)
 			{
-				character.Update(game!);
+				character.Update(Game);
 			}
 
-			var offsets = PerspectiveMappings[game!.State.PartyDirection];
-			var playerPosition = game!.State.PartyPosition;
+			var offsets = PerspectiveMappings[Game.State.PartyDirection];
+			var playerPosition = Game.State.PartyPosition;
 
 			for (int i = 0; i < 10; i++)
 			{
@@ -521,7 +521,7 @@ internal class Map3DScreen : ButtonGridScreen
 		}
 	}
 
-	public override void Update(Game game, long elapsedTicks)
+	public override void Update(long elapsedTicks)
 	{
 		if (elapsedTicks == 0)
 			return;
@@ -537,7 +537,7 @@ internal class Map3DScreen : ButtonGridScreen
 				image.CurrentFrameIndex++;
 		}
 
-		if (game.InputEnabled && !game.Paused && currentTicks >= lastMoveTicks + TicksPerStep)
+		if (Game.InputEnabled && !Game.Paused && currentTicks >= lastMoveTicks + TicksPerStep)
 			CheckMove();
 	}
 
@@ -545,15 +545,15 @@ internal class Map3DScreen : ButtonGridScreen
 	{
 		// TODO
 
-		var playerPosition = game!.State.PartyPosition;
+		var playerPosition = Game.State.PartyPosition;
 		UpdateView();
 
-		game.Time.Moved3D();
+		Game.Time.Moved3D();
 
 		// Check for events
 		var eventIndex = map!.Tiles[playerPosition.X + playerPosition.Y * map.Width].Event;
 
-		if (eventIndex != 0 && game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
+		if (eventIndex != 0 && Game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
 		{
 			var @event = map.Events[eventIndex - 1];
             var mapEvent = Event.CreateEvent(@event, eventIndex);
@@ -564,17 +564,17 @@ internal class Map3DScreen : ButtonGridScreen
                 @event is IChestEvent ||
                 @event is ITeleportEvent)
 			{
-				game.State.ResetPartyPosition();
+				Game.State.ResetPartyPosition();
                 UpdateView();
             }
 
-			game.EventHandler.HandleEvent(EventTrigger.Move, mapEvent, map);
+			Game.EventHandler.HandleEvent(EventTrigger.Move, mapEvent, map);
 		}
 	}
 
     internal void ResetPartyPosition()
     {
-		if (game!.State.ResetPartyPosition())
+		if (Game.State.ResetPartyPosition())
 			UpdateView();
     }
 
@@ -616,15 +616,15 @@ internal class Map3DScreen : ButtonGridScreen
 			return;
 		}
 
-		var dayTime = game!.State.Hour.HourToDayTime();
+		var dayTime = Game.State.Hour.HourToDayTime();
 		var gradient = skyGradients[dayTime];
-		var skyColor = game.AssetProvider.PaletteLoader.LoadPalette(palette).GetColorAt(SkyTransparentColorIndex, 0);
+		var skyColor = Game.AssetProvider.PaletteLoader.LoadPalette(palette).GetColorAt(SkyTransparentColorIndex, 0);
 
 		if (skyGradient.Count == 0)
 		{
 			void CreateSkyLine(int y, Color color)
 			{
-				var skyLine = game!.GetRenderLayer(Layer.Map3D).ColoredRectFactory!.Create();
+				var skyLine = Game.GetRenderLayer(Layer.Map3D).ColoredRectFactory!.Create();
 				skyLine.Color = color;
 				skyLine.Position = new(OffsetX, OffsetY + y);
 				skyLine.Size = new(ViewWidth, 1);
@@ -654,7 +654,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 	private void CheckMove(bool forward, bool backward, bool left, bool right, bool turnLeft, bool turnRight)
 	{
-		switch (game!.State.PartyDirection)
+		switch (Game.State.PartyDirection)
 		{
 			case Direction.North:
 				if (forward && !backward)
@@ -717,16 +717,16 @@ internal class Map3DScreen : ButtonGridScreen
 
 	private void CheckMove()
 	{
-		bool left = game!.IsKeyDown('A');
-		bool right = game.IsKeyDown('D');
-		bool forward = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
-		bool backward = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
-		bool turnLeft = game.IsKeyDown(Key.Left) || game.IsKeyDown('Q');
-		bool turnRight = game.IsKeyDown(Key.Right) || game.IsKeyDown('E');
+		bool left = Game.IsKeyDown('A');
+		bool right = Game.IsKeyDown('D');
+		bool forward = Game.IsKeyDown(Key.Up) || Game.IsKeyDown('W');
+		bool backward = Game.IsKeyDown(Key.Down) || Game.IsKeyDown('S');
+		bool turnLeft = Game.IsKeyDown(Key.Left) || Game.IsKeyDown('Q');
+		bool turnRight = Game.IsKeyDown(Key.Right) || Game.IsKeyDown('E');
 
-		if (mouseDown && game.InputEnabled && !game.Paused)
+		if (mouseDown && Game.InputEnabled && !Game.Paused)
 		{
-			switch (game.Cursor.CursorType)
+			switch (Game.Cursor.CursorType)
 			{
 				case CursorType.ArrowForward3D:
 					forward = true;
@@ -755,25 +755,25 @@ internal class Map3DScreen : ButtonGridScreen
 			}
 		}
 
-		if (game.ButtonLayout == ButtonLayout.Movement)
+		if (Game.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (!left)
-				left = game.IsKeyDown(Key.Keypad4);
+				left = Game.IsKeyDown(Key.Keypad4);
 			if (!right)
-				right = game.IsKeyDown(Key.Keypad6);
+				right = Game.IsKeyDown(Key.Keypad6);
 			if (!forward)
-				forward = game.IsKeyDown(Key.Keypad8);
+				forward = Game.IsKeyDown(Key.Keypad8);
 			if (!backward)
-				backward = game.IsKeyDown(Key.Keypad2);
+				backward = Game.IsKeyDown(Key.Keypad2);
 			if (!turnLeft)
-				turnLeft = game.IsKeyDown(Key.Keypad7);
+				turnLeft = Game.IsKeyDown(Key.Keypad7);
 			if (!turnRight)
-				turnRight = game.IsKeyDown(Key.Keypad9);
+				turnRight = Game.IsKeyDown(Key.Keypad9);
 			// TODO
 			/*if (!fullTurnLeft)
-				fullTurnLeft = game.IsKeyDown(Key.Keypad1);
+				fullTurnLeft = Game.IsKeyDown(Key.Keypad1);
 			if (!fullTurnRight)
-				fullTurnRight = game.IsKeyDown(Key.Keypad3);*/
+				fullTurnRight = Game.IsKeyDown(Key.Keypad3);*/
 		}
 
 		CheckMove(forward, backward, left, right, turnLeft, turnRight);
@@ -795,17 +795,17 @@ internal class Map3DScreen : ButtonGridScreen
 		{
 			if (ButtonGrid.Area.Contains(position))
 			{
-				game!.ButtonLayout = (ButtonLayout)(1 - (int)game.ButtonLayout); // toggle
+				Game.ButtonLayout = (ButtonLayout)(1 - (int)Game.ButtonLayout); // toggle
 				RequestButtonSetup();
 				return true;
 			}
             else
             {
-                int? characterSlotIndex = game!.TestPartyPortraitHit(position);
+                int? characterSlotIndex = Game.TestPartyPortraitHit(position);
 
 				if (characterSlotIndex != null)
 				{
-					game.OpenInventory(characterSlotIndex.Value);
+					Game.OpenInventory(characterSlotIndex.Value);
 					return true;
 				}
             }
@@ -817,12 +817,12 @@ internal class Map3DScreen : ButtonGridScreen
 
 			if (mapArea.Contains(position))
 			{
-				if (game!.Cursor.CursorType == CursorType.Zzz)
+				if (Game.Cursor.CursorType == CursorType.Zzz)
 				{
-					game.Time.Tick();
+					Game.Time.Tick();
 					return true;
 				}
-				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
+				else if (Game.Cursor.CursorType >= CursorType.ArrowUp2D && Game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
 				{
 					CheckMove();
 					return true;
@@ -855,42 +855,42 @@ internal class Map3DScreen : ButtonGridScreen
 			bool up = relativeY < mapArea.Size.Height / 4;
 			bool down = relativeY >= mapArea.Size.Height * 3 / 4;
 
-			var lastCursor = game!.Cursor.CursorType;
+			var lastCursor = Game.Cursor.CursorType;
 
 			if (up)
 			{
 				if (left)
-					game.Cursor.CursorType = CursorType.ArrowTurnLeft3D;
+					Game.Cursor.CursorType = CursorType.ArrowTurnLeft3D;
 				else if (right)
-					game.Cursor.CursorType = CursorType.ArrowTurnRight3D;
+					Game.Cursor.CursorType = CursorType.ArrowTurnRight3D;
 				else
-					game.Cursor.CursorType = CursorType.ArrowForward3D;
+					Game.Cursor.CursorType = CursorType.ArrowForward3D;
 			}
 			else if (down)
 			{
 				if (left)
-					game.Cursor.CursorType = CursorType.FullTurnLeft;
+					Game.Cursor.CursorType = CursorType.FullTurnLeft;
 				else if (right)
-					game.Cursor.CursorType = CursorType.FullTurnRight;
+					Game.Cursor.CursorType = CursorType.FullTurnRight;
 				else
-					game.Cursor.CursorType = CursorType.ArrowBackward3D;
+					Game.Cursor.CursorType = CursorType.ArrowBackward3D;
 			}
 			else
 			{
 				if (left)
-					game.Cursor.CursorType = CursorType.ArrowLeft3D;
+					Game.Cursor.CursorType = CursorType.ArrowLeft3D;
 				else if (right)
-					game.Cursor.CursorType = CursorType.ArrowRight3D;
+					Game.Cursor.CursorType = CursorType.ArrowRight3D;
 				else
-					game.Cursor.CursorType = CursorType.Zzz;
+					Game.Cursor.CursorType = CursorType.Zzz;
 			}
 
-			if (mouseDown && lastCursor != game.Cursor.CursorType)
+			if (mouseDown && lastCursor != Game.Cursor.CursorType)
 				CheckMove();
 		}
-		else if (game!.Cursor.CursorType != CursorType.Sword)
+		else if (Game.Cursor.CursorType != CursorType.Sword)
 		{
-			game!.Cursor.CursorType = CursorType.Sword;
+			Game.Cursor.CursorType = CursorType.Sword;
 		}
 	}
 
@@ -900,12 +900,12 @@ internal class Map3DScreen : ButtonGridScreen
 			return;
 
 		lastMoveTicks = currentTicks;
-		int targetX = game!.State.PartyPosition.X + x;
-		int targetY = game.State.PartyPosition.Y + y;
+		int targetX = Game.State.PartyPosition.X + x;
+		int targetY = Game.State.PartyPosition.Y + y;
 
 		if (CanMoveTo(targetX, targetY, true, 0))
 		{
-			game!.State.SetPartyPosition(targetX, targetY);
+			Game.State.SetPartyPosition(targetX, targetY);
 			AfterMove();
 		}
 		else
@@ -920,7 +920,7 @@ internal class Map3DScreen : ButtonGridScreen
 			return;
 
 		lastTurnTicks = currentTicks;
-		game!.State.PartyDirection = newDirection;
+		Game.State.PartyDirection = newDirection;
 		UpdateView();
 	}
 
@@ -931,7 +931,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 	private BlockFacing FacingByRelativeOffset(Position offset)
 	{
-		switch (game!.State.PartyDirection)
+		switch (Game.State.PartyDirection)
 		{
 			case Direction.North:
 				if (offset.X < 0)
@@ -964,12 +964,12 @@ internal class Map3DScreen : ButtonGridScreen
 
 	private void UpdateView()
 	{
-		var playerPosition = game!.State.PartyPosition;
+		var playerPosition = Game.State.PartyPosition;
 
 		ClearView();
 
-		var offsets = PerspectiveMappings[game.State.PartyDirection];
-		var layer = game.GetRenderLayer(Layer.Map3D);
+		var offsets = PerspectiveMappings[Game.State.PartyDirection];
+		var layer = Game.GetRenderLayer(Layer.Map3D);
 		var textureAtlas = layer.Config.Texture!;
 		byte displayLayer = 40;
 
@@ -977,7 +977,7 @@ internal class Map3DScreen : ButtonGridScreen
 		var floorSprite = layer.SpriteFactory!.CreateAnimated();
 		floorSprite.Size = new(floor.Width, floor.Height);
 		floorSprite.Position = new(OffsetX, OffsetY + ViewHeight - floor.Height);
-		floorSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.FloorIndex));
+		floorSprite.TextureOffset = textureAtlas.GetOffset(Game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.FloorIndex));
 		floorSprite.Opaque = true;
 		floorSprite.DisplayLayer = 5;
 		floorSprite.PaletteIndex = palette;
@@ -985,7 +985,7 @@ internal class Map3DScreen : ButtonGridScreen
 		images.Add(floorSprite);
 
 		var hasSky = map!.Flags.HasFlag(MapFlags.City);
-		var dayTime = game.State.Hour.HourToDayTime();
+		var dayTime = Game.State.Hour.HourToDayTime();
 
 		if (hasSky && (dayTime == DayTime.Day || dayTime == DayTime.Dusk))
 		{
@@ -994,7 +994,7 @@ internal class Map3DScreen : ButtonGridScreen
 			var cloudSprite = layer.SpriteFactory!.CreateAnimated();
 			cloudSprite.Size = new(cloud.Width, cloud.Height);
 			cloudSprite.Position = new(OffsetX, OffsetY);
-			cloudSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetCloudGraphicIndex(labData.CeilingIndex));
+			cloudSprite.TextureOffset = textureAtlas.GetOffset(Game.GraphicIndexProvider.GetCloudGraphicIndex(labData.CeilingIndex));
 			cloudSprite.TransparentColorIndex = SkyTransparentColorIndex;
 			cloudSprite.DisplayLayer = 12;
 			cloudSprite.PaletteIndex = palette;
@@ -1008,7 +1008,7 @@ internal class Map3DScreen : ButtonGridScreen
 			var ceilingSprite = layer.SpriteFactory!.CreateAnimated();
 			ceilingSprite.Size = new(ceiling.Width, ceiling.Height);
 			ceilingSprite.Position = new(OffsetX, OffsetY);
-			ceilingSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.CeilingIndex));
+			ceilingSprite.TextureOffset = textureAtlas.GetOffset(Game.GraphicIndexProvider.GetBackgroundGraphicIndex(labData.CeilingIndex));
 			ceilingSprite.Opaque = !hasSky;
 			ceilingSprite.TransparentColorIndex = (byte)(hasSky ? SkyTransparentColorIndex : 0);
 			ceilingSprite.DisplayLayer = 10;
@@ -1061,7 +1061,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 					if (perspective.SpecialRenderPosition != null)
 					{
-						int graphicIndex = game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing);
+						int graphicIndex = Game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing);
 						var textureOffset = textureAtlas.GetOffset(graphicIndex);
 						var blockSprite = layer.SpriteFactory!.CreateAnimated();
 						blockSprite.FrameCount = 1;
@@ -1094,7 +1094,7 @@ internal class Map3DScreen : ButtonGridScreen
 						blockSprite.Size = new Size(perspective.Frames[0].Width, perspective.Frames[0].Height);
 						blockSprite.DisplayLayer = displayLayer;
 						blockSprite.PaletteIndex = palette;
-						blockSprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing));
+						blockSprite.TextureOffset = textureAtlas.GetOffset(Game.GraphicIndexProvider.GetLabBlockGraphicIndex(labBlock.Index, perspectiveLocation, facing));
 						blockSprite.Position = new(customRenderX ?? (OffsetX + perspective.RenderPosition.X), OffsetY + perspective.RenderPosition.Y);
 						blockSprite.Visible = true;
 
@@ -1142,9 +1142,9 @@ internal class Map3DScreen : ButtonGridScreen
 
 	private void LoadMap(int index)
 	{
-		map = game!.AssetProvider.MapLoader.LoadMap(index) as IMap3D; // TODO: catch exceptions
-		labData = game!.AssetProvider.LabDataLoader.LoadLabData(map!.LabDataIndex);
-		palette = game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
+		map = Game.AssetProvider.MapLoader.LoadMap(index) as IMap3D; // TODO: catch exceptions
+		labData = Game.AssetProvider.LabDataLoader.LoadLabData(map!.LabDataIndex);
+		palette = Game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
 
 		for (int i = 0; i < map.Characters.Length; i++)
 		{
@@ -1152,7 +1152,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 			if (characterData.Index != 0 && characterData.Icon != 0)
 			{
-				characters.Add(new Character(map, i, map.CharacterPositions[i], game.State,
+				characters.Add(new Character(map, i, map.CharacterPositions[i], Game.State,
 					(x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass)));
 			}
 		}
@@ -1162,16 +1162,16 @@ internal class Map3DScreen : ButtonGridScreen
 		if (lightMode != LightMode.Static)
 			UpdateLight();
 
-		if (map.Flags.HasFlag(MapFlags.City) && game!.CanSee())
+		if (map.Flags.HasFlag(MapFlags.City) && Game.CanSee())
 			UpdateSky(true);
 
 		if (Map.SongIndex != 0)
-            game.PlaySong(1 + Map.SongIndex);
+            Game.PlaySong(1 + Map.SongIndex);
 
-        game.State.MapIndex = index;
-		game.State.SetIsWorldMap(false);
-		game.State.TravelType = TravelType.Walk;
-		game.Cursor.PaletteIndex = palette;
+        Game.State.MapIndex = index;
+		Game.State.SetIsWorldMap(false);
+		Game.State.TravelType = TravelType.Walk;
+		Game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
 
     }

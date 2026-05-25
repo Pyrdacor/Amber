@@ -31,7 +31,6 @@ internal class CharacterStatsScreen : ButtonGridScreen
         new(0, 48),
     ];
 
-    Game? game;
     IPartyMember? partyMember;
     PersonInfoView? personInfoView;
     readonly IRenderText?[] headers = new IRenderText?[5];
@@ -43,7 +42,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
 
     public override ScreenType Type { get; } = ScreenType.CharacterStats;
 
-    internal override byte ButtonGridPaletteIndex => game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
+    internal override byte ButtonGridPaletteIndex => Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
@@ -55,21 +54,19 @@ internal class CharacterStatsScreen : ButtonGridScreen
         buttonGrid.SetButton(2, ButtonType.Exit);
     }
 
-    public override void Open(Game game, Action? closeAction)
+    public override void Open(Action? closeAction)
 	{
-        this.game = game;
+		base.Open(closeAction);
 
-		base.Open(game, closeAction);
+        var palette = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
-        var palette = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        Game.SetLayout(Layout.Stats, palette);
+        Game.Cursor.CursorType = CursorType.Sword;
 
-        game.SetLayout(Layout.Stats, palette);
-        game.Cursor.CursorType = CursorType.Sword;
-
-        SwitchToPartyMember(game.State.CurrentInventoryIndex!.Value, true);
+        SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
     }
 
-    public override void Close(Game game)
+    public override void Close()
     {
         personInfoView?.Destroy();
 
@@ -89,10 +86,10 @@ internal class CharacterStatsScreen : ButtonGridScreen
         physicalConditions.SetAllNull();
         mentalConditions.SetAllNull();
 
-        base.Close(game);
+        base.Close();
     }
 
-    public override void ScreenPushed(Game game, Screen screen)
+    public override void ScreenPushed(Screen screen)
     {
         if (!screen.Transparent)
         {
@@ -108,12 +105,12 @@ internal class CharacterStatsScreen : ButtonGridScreen
             ShowSprites(mentalConditions, false);
         }
 
-        base.ScreenPushed(game, screen);
+        base.ScreenPushed(screen);
     }
 
-    public override void ScreenPopped(Game game, Screen screen)
+    public override void ScreenPopped(Screen screen)
     {
-        base.ScreenPopped(game, screen);
+        base.ScreenPopped(screen);
 
         if (!screen.Transparent)
         {
@@ -132,17 +129,17 @@ internal class CharacterStatsScreen : ButtonGridScreen
 
     public void SwitchToPartyMember(int index, bool force)
     {
-        if (!force && game!.State.CurrentInventoryIndex == index)
+        if (!force && Game.State.CurrentInventoryIndex == index)
             return;
 
-        game!.State.CurrentInventoryIndex = index;
+        Game.State.CurrentInventoryIndex = index;
         int partyMemberIndex = 1; // TODO: get from savegame, slot is index
-        partyMember = (game!.AssetProvider.PersonLoader.LoadPerson(partyMemberIndex) as IPartyMember)!;
-        var graphicLoader = game!.AssetProvider.GraphicLoader;
-        var uiPaletteIndex = game!.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+        partyMember = (Game.AssetProvider.PersonLoader.LoadPerson(partyMemberIndex) as IPartyMember)!;
+        var graphicLoader = Game.AssetProvider.GraphicLoader;
+        var uiPaletteIndex = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 
         personInfoView?.Destroy();
-        personInfoView = new(game, partyMember, partyMemberIndex, uiPaletteIndex);
+        personInfoView = new(Game, partyMember, partyMemberIndex, uiPaletteIndex);
 
         // Headers
         for (int i = 0; i < headers.Length; i++)
@@ -154,8 +151,8 @@ internal class CharacterStatsScreen : ButtonGridScreen
                 if (maxWidth <= 0)
                     maxWidth = int.MaxValue;
 
-                var headerText = game.LoadUIText(HeaderInfos[i].Text);
-                var header = headers[i] = game.TextManager.Create(headerText, maxWidth);
+                var headerText = Game.LoadUIText(HeaderInfos[i].Text);
+                var header = headers[i] = Game.TextManager.Create(headerText, maxWidth);
                 var position = HeaderInfos[i].Position;
 
                 if (maxWidth == int.MaxValue)
@@ -170,32 +167,32 @@ internal class CharacterStatsScreen : ButtonGridScreen
         }
 
         // Attributes
-        var valueDivider = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.NormalTwoValues)).GetString();
+        var valueDivider = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.NormalTwoValues)).GetString();
         for (int i = 0; i < 8; i++)
         {
             attributes[i]?.Delete();
 
             var attributeValue = partyMember.Attributes[(Attribute)i];
-            var attributeName = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.AttributeName, i)).GetString()[..3];
+            var attributeName = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.AttributeName, i)).GetString()[..3];
             var attributeString = Game.InsertNumberIntoString(valueDivider, "/", false, attributeValue.TotalCurrent, 3, '0');
             attributeString = Game.InsertNumberIntoString(attributeString, "/", true, attributeValue.MaxValue, 3, '0');
-            var attribute = attributes[i] = game.TextManager.Create(attributeName + "  " + attributeString, 15);
+            var attribute = attributes[i] = Game.TextManager.Create(attributeName + "  " + attributeString, 15);
 
             var position = AttributeOffset + new Position(0, i * 7);
             attribute.Show(position.X, position.Y, 2);
         }
 
         // Skills
-        var percentageValueDivider = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.PercentTwoValues)).GetString();
+        var percentageValueDivider = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.PercentTwoValues)).GetString();
         for (int i = 0; i < 10; i++)
         {
             skills[i]?.Delete();
 
             var skillValue = partyMember.Skills[(Skill)i];
-            var skillName = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.SkillName, i)).GetString()[..3];
+            var skillName = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.SkillName, i)).GetString()[..3];
             var skillString = Game.InsertNumberIntoString(percentageValueDivider, "%", false, skillValue.TotalCurrent, 2, '0');
             skillString = Game.InsertNumberIntoString(skillString, "/", true, skillValue.MaxValue, 2, '0');
-            var skill = skills[i] = game.TextManager.Create(skillName + "  " + skillString, 15);
+            var skill = skills[i] = Game.TextManager.Create(skillName + "  " + skillString, 15);
 
             var position = SkillOffset + new Position(0, i * 7);
             skill.Show(position.X, position.Y, 2);
@@ -216,8 +213,8 @@ internal class CharacterStatsScreen : ButtonGridScreen
             if ((partyMember.ConversationData.LearnedLanguages & languageValue) == 0)
                 continue;
 
-            var languageName = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.LanguageName, i)).GetString();
-            var language = languages[i] = game.TextManager.Create(languageName, 15);
+            var languageName = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.LanguageName, i)).GetString();
+            var language = languages[i] = Game.TextManager.Create(languageName, 15);
 
             language.Show(LanguageOffset.X, y, 2);
             y += 7;
@@ -226,8 +223,8 @@ internal class CharacterStatsScreen : ButtonGridScreen
         // Physical conditions
         if (partyMember.IsDead())
         {
-            int graphicIndex = game.GraphicIndexProvider.GetStatusIconIndex(StatusIcon.Dead);
-            physicalConditions[0] = game.CreateSprite(Layer.UI, PhysicalConditionOffset, new Size(16, 16), graphicIndex, uiPaletteIndex);
+            int graphicIndex = Game.GraphicIndexProvider.GetStatusIconIndex(StatusIcon.Dead);
+            physicalConditions[0] = Game.CreateSprite(Layer.UI, PhysicalConditionOffset, new Size(16, 16), graphicIndex, uiPaletteIndex);
 
             for (int i = 1; i < 5; i++)
             {
@@ -310,11 +307,11 @@ internal class CharacterStatsScreen : ButtonGridScreen
         switch (index)
         {
             case 0: // Stats
-                game?.ScreenHandler.PopScreen();
-                game?.ScreenHandler.PushScreen(ScreenType.Inventory);
+                Game.ScreenHandler.PopScreen();
+                Game.ScreenHandler.PushScreen(ScreenType.Inventory);
                 break;
             case 2:
-                game?.ScreenHandler.PopScreen();
+                Game.ScreenHandler.PopScreen();
                 break;
         }
     }

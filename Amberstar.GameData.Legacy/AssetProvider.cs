@@ -30,7 +30,8 @@ public enum EmbeddedDataOffset
 	Windows,
 	Cursors,
 	UITexts,
-	Music
+	Music,
+	EnterWordLabel,
 }
 
 public class AssetProvider : IAssetProvider
@@ -504,7 +505,33 @@ public class AssetProvider : IAssetProvider
                 if (!FindAndGotoByteSequence(dataReader, dataReader.Position + 4 + 30, 0x07, 0x65)) // Two palettes are there, search into end of first
                     return false;
 				return FindAndGotoByteSequence(dataReader, dataReader.Position + 32, 0x01, 0x08); // Set ink 8 (01 08) is start of the texts
-			case EmbeddedDataOffset.Music:
+			case EmbeddedDataOffset.EnterWordLabel:
+			{
+				int offset = 0x9000;
+
+				while (true)
+				{
+					if (!FindAndGotoByteSequence(dataReader, offset, 0x01, 0x0f, 0x02, 0x02))
+						return false;
+
+					dataReader.Position += 4;
+					offset = dataReader.Position;
+
+                    if (!FindAndGotoByteSequence(dataReader, offset, 0x3a, 0x00))
+                        return false;
+
+					if (dataReader.Position - offset <= 22)
+					{
+						dataReader.Position = offset;
+						break;
+					}
+
+					offset = dataReader.Position + 2;
+                }
+
+				return true;
+			}
+            case EmbeddedDataOffset.Music:
 				return FindAndGotoText(dataReader, 0x2a000, "COSO");
             default:
 				return false;
@@ -524,6 +551,7 @@ public class AssetProvider : IAssetProvider
         const int CursorRelocIndex = 0x00002a13;
 		const int UITextRelocIndex = 0x00001107;
         const int MusicRelocIndex = 0x000001c8;
+        const int AfterEnterWordLabelRelocIndex = 0x00000db8; // Unfortunately it is a PC-based ref, so we use the reloc index of the following function and move back a bit
 
         switch (embeddedDataFile)
 		{
@@ -560,6 +588,13 @@ public class AssetProvider : IAssetProvider
             case EmbeddedDataOffset.Music:
                 dataReader.Position = (int)relocTable[MusicRelocIndex];
                 return true;
+			case EmbeddedDataOffset.EnterWordLabel:
+				dataReader.Position = (int)relocTable[AfterEnterWordLabelRelocIndex] - 2; // - 2 as there is at least a 00 byte in between
+				// In front of the text there are the bytes 01 0f 02 02
+				while (dataReader.PeekByte() != 2)
+					dataReader.Position--;
+				dataReader.Position++;
+				return true;
             default:
                 return false;
         }
@@ -587,10 +622,10 @@ public class AssetProvider : IAssetProvider
                 dataReader.ReadByte() == 'M' &&
                 dataReader.ReadByte() == 'B' &&
                 dataReader.ReadByte() == 'E')
-			{
-				// n gives you the reloc index which is used to reference the data.
-				// relocTable[n] gives you the actual offset in the text segment.
-				Console.WriteLine(n);
+            {
+                // n gives you the reloc index which is used to reference the data.
+                // relocTable[n] gives you the actual offset in the text segment.
+                Console.WriteLine(n);
             }
 
 			n++;

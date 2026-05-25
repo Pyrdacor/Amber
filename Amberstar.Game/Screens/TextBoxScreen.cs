@@ -6,38 +6,36 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal class TextBoxScreen : Screen
+// TODO: Rework with WindowScreen and controls
+internal sealed class TextBoxScreen : Screen
 {
 	const int WindowX = 16;
 	const int WindowY = 52;
 	const int WindowWidthInTiles = 18;
 	const int WindowMinHeightInTiles = 4;
 	const int WindowMaxHeightInTiles = 9;
-	Game? game;
 	Window? window;
 	IRenderText? displayText;
 	bool scrolling = false;
 	bool closeOnNextInput = false;
 
-	public override ScreenType Type { get; } = ScreenType.TextBox;
+	public sealed override ScreenType Type { get; } = ScreenType.TextBox;
 
-	public override bool Transparent => true;
+	public sealed override bool Transparent => true;
 
-	public override void Open(Game game, Action? closeAction)
+	public override void Open(Action? closeAction)
 	{
-		base.Open(game, closeAction);
-
-		this.game = game;
+		base.Open(closeAction);
 
         // First check for text event
-        if (game.EventHandler.CurrentEvent is not ITextEvent @event)
+        if (Game.EventHandler.CurrentEvent is not ITextEvent @event)
         {
-            InitText(game.CurrentText ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened without providing a text."));
+            InitText(Game.CurrentText ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened without providing a text."));
             return;
         }
 
-        int mapIndex = game.EventHandler.CurrentEventMapIndex;
-        var text = game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
+        int mapIndex = Game.EventHandler.CurrentEventMapIndex;
+        var text = Game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 		text = text.GetTextBlock(@event.TextIndex);
 
 		InitText(text);
@@ -45,30 +43,30 @@ internal class TextBoxScreen : Screen
 
 	private byte GetPalette()
 	{
-		var lastScreen = game!.ScreenHandler.LastScreen;
+		var lastScreen = Game.ScreenHandler.LastScreen;
 
 		if (lastScreen is Map2DScreen map2DScreen)
 		{
 			var map = map2DScreen.Map;
-			return game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
+			return Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 		}
 		else if (lastScreen is Map3DScreen map3DScreen)
 		{
 			var map = map3DScreen.Map;
-			var labData = game!.AssetProvider.LabDataLoader.LoadLabData(map.LabDataIndex);
-			return game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
+			var labData = Game.AssetProvider.LabDataLoader.LoadLabData(map.LabDataIndex);
+			return Game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
 		}
 
 		// TODO: others?
 
-		return game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+		return Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 	}
 
 	private void InitText(IText text)
 	{
 		var palette = GetPalette();
 
-		displayText = game!.TextManager.Create(text, (WindowWidthInTiles - 2) * Window.TileWidth, 15, TextManager.TransparentPaper, palette);
+		displayText = Game.TextManager.Create(text, (WindowWidthInTiles - 2) * Window.TileWidth, 15, TextManager.TransparentPaper, palette);
 
 		// The width is fixed at 18*16 pixels.
 		// The height can range from 4*16 pixels to 9*16 pixels.
@@ -83,7 +81,7 @@ internal class TextBoxScreen : Screen
 
 		// Create the window
 		window?.Destroy();
-		window = new(game, WindowX, WindowY, WindowWidthInTiles, heightInTiles, dark: true, 100, palette);
+		window = new(Game, WindowX, WindowY, WindowWidthInTiles, heightInTiles, dark: true, 100, palette);
 
 		// Show the text
 		var clientArea = window.ClientArea;
@@ -92,12 +90,12 @@ internal class TextBoxScreen : Screen
 		closeOnNextInput = !displayText.SupportsScrolling;
 	}
 
-	public override void Close(Game game)
+	public override void Close()
 	{
 		displayText?.Delete();
 		window?.Destroy();
 
-		base.Close(game);
+		base.Close();
 	}
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -114,7 +112,7 @@ internal class TextBoxScreen : Screen
     {
         if (closeOnNextInput)
         {
-            game!.ScreenHandler.PopScreen();
+            Game.ScreenHandler.PopScreen();
             return true;
         }
 

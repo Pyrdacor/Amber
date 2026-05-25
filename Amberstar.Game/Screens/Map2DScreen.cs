@@ -88,12 +88,12 @@ internal class Map2DScreen : ButtonGridScreen
 
 		public IMap2D? GetMapByIndex(int index) => mapCache.GetValueOrDefault(index);
 
-		public IEvent? GetEvent(Game game, int x, int y, bool onlyActive = true)
+		public IEvent? GetEvent(Game Game, int x, int y, bool onlyActive = true)
 		{
-			return GetEventWithIndex(game, x, y, onlyActive)?.Event;
+			return GetEventWithIndex(Game, x, y, onlyActive)?.Event;
         }
 
-        public (int Index, IEvent Event)? GetEventWithIndex(Game game, int x, int y, bool onlyActive = true)
+        public (int Index, IEvent Event)? GetEventWithIndex(Game Game, int x, int y, bool onlyActive = true)
         {
             int eventIndex;
             IMap2D map;
@@ -136,7 +136,7 @@ internal class Map2DScreen : ButtonGridScreen
             if (eventIndex == 0)
                 return null;
 
-            if (onlyActive && !game.IsEventActive(map, eventIndex, events[eventIndex - 1]))
+            if (onlyActive && !Game.IsEventActive(map, eventIndex, events[eventIndex - 1]))
                 return null;
 
             return (eventIndex, events[eventIndex - 1]);
@@ -180,7 +180,6 @@ internal class Map2DScreen : ButtonGridScreen
 	const int RenderOrderOffset = TileHeight / 4;
 	const int MinScrollX = TilesPerRow / 2;
 	const int MinScrollY = TileRows / 2 + 1;
-	Game? game;
 	IMap2D? map;
 	WorldMap? worldMap;
 	ITileset[]? tilesets;
@@ -214,34 +213,35 @@ internal class Map2DScreen : ButtonGridScreen
 
     internal void MapChanged()
 	{
-		LoadMap(game!.State.MapIndex);
+		LoadMap(Game.State.MapIndex);
         ShowMapName();
         AfterMove();
 	}
 
-	public override void Init(Game game)
+	public override void Init()
 	{
-		this.game = game;
-		tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
+		base.Init();
 
-		timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+		tilesets = [Game.AssetProvider.TilesetLoader.LoadTileset(1), Game.AssetProvider.TilesetLoader.LoadTileset(2)];
+
+		timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
 		timeText.Show(220, 70, 100);
 
-		game.Time.MinuteChanged += () =>
+		Game.Time.MinuteChanged += () =>
 		{
 			timeText?.Delete();
 
-			if (game.ScreenHandler.ActiveScreen?.Type != ScreenType.Map2D)
+			if (Game.ScreenHandler.ActiveScreen?.Type != ScreenType.Map2D)
 				return;
 
-			timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+			timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
 			timeText.Show(220, 70, 100);
 		};
 	}
 
-	public override void ScreenPushed(Game game, Screen screen)
+	public override void ScreenPushed(Screen screen)
 	{
-		base.ScreenPushed(game, screen);
+		base.ScreenPushed(screen);
 
 		// Don't move any further
 		ResetMovement();
@@ -257,10 +257,10 @@ internal class Map2DScreen : ButtonGridScreen
 
 		timeText?.Delete();
 
-		game.Pause();
+		Game.Pause();
 	}
 
-	public override void ScreenPopped(Game game, Screen screen)
+	public override void ScreenPopped(Screen screen)
 	{
 		if (!screen.Transparent)
 		{
@@ -273,17 +273,17 @@ internal class Map2DScreen : ButtonGridScreen
         }
 
 		timeText?.Delete();
-		timeText = game.TextManager.Create($"{game.State.Hour:00}:{game.State.Minute:00}", 15, -1, palette);
+		timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
 		timeText.Show(220, 70, 100);
 
-		base.ScreenPopped(game, screen);
+		base.ScreenPopped(screen);
 
-		game.Resume();
+		Game.Resume();
 	}
 
-	public override void Open(Game game, Action? closeAction)
+	public override void Open(Action? closeAction)
 	{
-        base.Open(game, closeAction);
+        base.Open(closeAction);
 
         moveTickCounter = 0;
 		lastMoveStartTicks = 0;
@@ -292,7 +292,7 @@ internal class Map2DScreen : ButtonGridScreen
 		mouseDown = false;
 
 		SetLayout();
-		LoadMap(game.State.MapIndex);
+		LoadMap(Game.State.MapIndex);
         ShowMapName();
         InitPlayer();
 		AfterMove();
@@ -300,23 +300,23 @@ internal class Map2DScreen : ButtonGridScreen
 
 	private void SetLayout()
 	{
-        game!.SetLayout(Layout.Map2D, palette);
+        Game.SetLayout(Layout.Map2D, palette);
     }
 
     private void ShowMapName()
     {
 		mapNameText?.Delete();
-        mapNameText = game!.TextManager.Create(map!.Name, 15, TextManager.TransparentPaper, palette);
+        mapNameText = Game.TextManager.Create(map!.Name, 15, TextManager.TransparentPaper, palette);
         mapNameText.ShowInArea(OffsetX, OffsetY - mapNameText.LineHeight - 3, TilesPerRow * TileWidth, TileRows * TileHeight, 100, TextAlignment.Center);
     }
 
     protected override void ButtonClicked(int index)
 	{
-		if (game!.ButtonLayout == ButtonLayout.Movement)
+		if (Game.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (index == 4)
 			{
-				game!.Time.Tick();
+				Game.Time.Tick();
 				return;
 			}
 
@@ -324,13 +324,13 @@ internal class Map2DScreen : ButtonGridScreen
 			int moveY = index / 3 - 1;
 
 			if (moveY < 0)
-				game.State.PartyDirection = Direction.Up;
+				Game.State.PartyDirection = Direction.Up;
 			else if (moveY > 0)
-				game.State.PartyDirection = Direction.Down;
+				Game.State.PartyDirection = Direction.Down;
 			else if (moveX < 0)
-				game.State.PartyDirection = Direction.Left;
+				Game.State.PartyDirection = Direction.Left;
 			else if (moveX > 0)
-				game.State.PartyDirection = Direction.Right;
+				Game.State.PartyDirection = Direction.Right;
 
 			if (currentTicks - lastMoveStartTicks >= GetTicksPerStep())
 			{
@@ -345,7 +345,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 			Rect CreateActionCursorTrapArea(bool mouth)
 			{
-                var playerPosition = game.State.PartyPosition;
+                var playerPosition = Game.State.PartyPosition;
                 var playerRenderPosition = new Position(OffsetX + (playerPosition.X - lastScrollX) * TileWidth, OffsetY + (playerPosition.Y - lastScrollY) * TileHeight);
 
 				int range = mouth ? 2 : 1;
@@ -367,18 +367,18 @@ internal class Map2DScreen : ButtonGridScreen
 			switch (buttonType)
 			{
 				case ButtonType.Eye:
-					game.Cursor.CursorType = CursorType.Eye;
-					game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
+					Game.Cursor.CursorType = CursorType.Eye;
+					Game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
                     break;
                 case ButtonType.Ear:
                     // TODO: check for something to hear
-                    //game.Cursor.CursorType = CursorType.Ear;
-                    //game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
-                    game.ShowTextMessage(Message.ListenNothingHeard);
+                    //Game.Cursor.CursorType = CursorType.Ear;
+                    //Game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
+                    Game.ShowTextMessage(Message.ListenNothingHeard);
                     break;
                 case ButtonType.Mouth:
-                    game.Cursor.CursorType = CursorType.Mouth;
-                    game.TrapMouse(CreateActionCursorTrapArea(mouth: true));
+                    Game.Cursor.CursorType = CursorType.Mouth;
+                    Game.TrapMouse(CreateActionCursorTrapArea(mouth: true));
                     break;                
                 // TODO
             }
@@ -387,7 +387,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 	protected override void SetupButtons(ButtonGrid buttonGrid)
 	{
-		if (game!.ButtonLayout == ButtonLayout.Movement)
+		if (Game.ButtonLayout == ButtonLayout.Movement)
 		{
 			// Upper row
 			buttonGrid.SetButton(0, ButtonType.ArrowUpLeft);
@@ -402,7 +402,7 @@ internal class Map2DScreen : ButtonGridScreen
 			buttonGrid.SetButton(7, ButtonType.ArrowDown);
 			buttonGrid.SetButton(8, ButtonType.ArrowDownRight);
 
-			bool enableMoveButtons = game.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
+			bool enableMoveButtons = Game.State.ActivePartyMember?.CanMove(inBattle: false) ?? false;
 
             for (int i = 0; i< 9; i++)
 			{
@@ -428,7 +428,7 @@ internal class Map2DScreen : ButtonGridScreen
 		}
 	}
 
-	public override void Close(Game game)
+	public override void Close()
 	{
 		// Don't move any further
 		ResetMovement();
@@ -446,7 +446,7 @@ internal class Map2DScreen : ButtonGridScreen
 		timeText?.Delete();
         mapNameText!.Delete();
 
-        base.Close(game);
+        base.Close();
 	}
 
 	private void ResetMovement()
@@ -454,12 +454,12 @@ internal class Map2DScreen : ButtonGridScreen
 		moveX = 0;
 		moveY = 0;
 		mouseDown = false;
-		game!.DeleteDelayedActions(delayedMoveActionIndex);
+		Game.DeleteDelayedActions(delayedMoveActionIndex);
 	}
 
-	public override void Update(Game game, long elapsedTicks)
+	public override void Update(long elapsedTicks)
 	{
-		if (game.Paused || !game.InputEnabled)
+		if (Game.Paused || !Game.InputEnabled)
 			ResetMovement();
 
 		if (elapsedTicks == 0)
@@ -504,7 +504,7 @@ internal class Map2DScreen : ButtonGridScreen
 	private bool MovePlayer(int x, int y)
 	{
 		additionalMoveRequested = false;
-		var oldPosition = game!.State.PartyPosition;
+		var oldPosition = Game.State.PartyPosition;
 		int newX = MathUtil.Limit(0, oldPosition.X + x, map!.Width - 1);
 		int newY = MathUtil.Limit(0, oldPosition.Y + y, map.Height - 1);
 
@@ -522,7 +522,7 @@ internal class Map2DScreen : ButtonGridScreen
                     @event.Type == EventType.Door ||
                     @event.Type == EventType.Place ||
                     @event.Type == EventType.TravelExit ||
-					(@event.Type == EventType.WindGate && game.State.HasWindChain))
+					(@event.Type == EventType.WindGate && Game.State.HasWindChain))
 					return false;
 			}
 
@@ -544,7 +544,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 		bool BlocksMovement(TileFlags flags)
 		{
-			return flags.HasFlag(TileFlags.BlockAllMovement) || !flags.HasFlag((TileFlags)(1 << (8 + (int)game!.State.TravelType)));
+			return flags.HasFlag(TileFlags.BlockAllMovement) || !flags.HasFlag((TileFlags)(1 << (8 + (int)Game.State.TravelType)));
 		}
 
 		if (TileBlocksMovement(newX, newY))
@@ -552,13 +552,13 @@ internal class Map2DScreen : ButtonGridScreen
 			if (newY != oldPosition.Y && !TileBlocksMovement(oldPosition.X, newY))
 			{
 				// only move in y direction
-				game.State.SetPartyPosition(oldPosition.X, newY);
+				Game.State.SetPartyPosition(oldPosition.X, newY);
 				return true;
 			}
 			else if (newX != oldPosition.X && !TileBlocksMovement(newX, oldPosition.Y))
 			{
 				// only move in x direction
-				game.State.SetPartyPosition(newX, oldPosition.Y);
+				Game.State.SetPartyPosition(newX, oldPosition.Y);
 				return true;
 			}
 			else
@@ -570,7 +570,7 @@ internal class Map2DScreen : ButtonGridScreen
 		}
 
 		// Can move
-		game.State.SetPartyPosition(newX, newY);
+		Game.State.SetPartyPosition(newX, newY);
 		return true;
 	}
 
@@ -579,14 +579,14 @@ internal class Map2DScreen : ButtonGridScreen
 		if (worldMap != null)
 			UpdateWorldMap();
 
-		var playerPosition = game!.State.PartyPosition;
+		var playerPosition = Game.State.PartyPosition;
 
-		game.Time.Moved2D();
+		Game.Time.Moved2D();
 
         FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 
-		if (game.Cursor.CursorType != CursorType.Disk)
-			game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
+		if (Game.Cursor.CursorType != CursorType.Disk)
+			Game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
 
         // Check for events
         if (!ignoreEvents)
@@ -597,7 +597,7 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		if (x == 0)
 		{
-            (x, y) = game!.State.PartyPosition;
+            (x, y) = Game.State.PartyPosition;
         }
 
         var eventWithIndex = GetEventWithIndex(x, y);
@@ -613,7 +613,7 @@ internal class Map2DScreen : ButtonGridScreen
 				ResetPartyPosition();
             }
 
-			game!.EventHandler.HandleEvent(trigger, mapEvent, map!);
+			Game.EventHandler.HandleEvent(trigger, mapEvent, map!);
 
 			return true;
         }
@@ -623,7 +623,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 	internal void ResetPartyPosition()
 	{
-        game!.State.ResetPartyPosition();
+        Game.State.ResetPartyPosition();
 
         if (worldMap != null)
             UpdateWorldMap();
@@ -631,18 +631,18 @@ internal class Map2DScreen : ButtonGridScreen
 
 	private void UpdateMovement()
 	{
-		bool left = game!.IsKeyDown(Key.Left) || game.IsKeyDown('A');
-		bool right = game.IsKeyDown(Key.Right) || game.IsKeyDown('D');
-		bool up = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
-		bool down = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
-		bool upLeft = game.IsKeyDown('Q');
-		bool upRight = game.IsKeyDown('E');
-		bool downLeft = game.IsKeyDown('Y') || game.IsKeyDown('Z');
-		bool downRight = game.IsKeyDown('C');
+		bool left = Game.IsKeyDown(Key.Left) || Game.IsKeyDown('A');
+		bool right = Game.IsKeyDown(Key.Right) || Game.IsKeyDown('D');
+		bool up = Game.IsKeyDown(Key.Up) || Game.IsKeyDown('W');
+		bool down = Game.IsKeyDown(Key.Down) || Game.IsKeyDown('S');
+		bool upLeft = Game.IsKeyDown('Q');
+		bool upRight = Game.IsKeyDown('E');
+		bool downLeft = Game.IsKeyDown('Y') || Game.IsKeyDown('Z');
+		bool downRight = Game.IsKeyDown('C');
 
-		if (mouseDown && game.InputEnabled && !game.Paused)
+		if (mouseDown && Game.InputEnabled && !Game.Paused)
 		{
-			switch (game!.Cursor.CursorType)
+			switch (Game.Cursor.CursorType)
 			{
 				case CursorType.ArrowUp2D:
 					up = true;
@@ -677,24 +677,24 @@ internal class Map2DScreen : ButtonGridScreen
 			}
 		}
 
-		if (game.ButtonLayout == ButtonLayout.Movement)
+		if (Game.ButtonLayout == ButtonLayout.Movement)
 		{
 			if (!left)
-				left = game.IsKeyDown(Key.Keypad4);
+				left = Game.IsKeyDown(Key.Keypad4);
 			if (!right)
-				right = game.IsKeyDown(Key.Keypad6);
+				right = Game.IsKeyDown(Key.Keypad6);
 			if (!up)
-				up = game.IsKeyDown(Key.Keypad8);
+				up = Game.IsKeyDown(Key.Keypad8);
 			if (!down)
-				down = game.IsKeyDown(Key.Keypad2);
+				down = Game.IsKeyDown(Key.Keypad2);
 			if (!upLeft)
-				upLeft = game.IsKeyDown(Key.Keypad7);
+				upLeft = Game.IsKeyDown(Key.Keypad7);
 			if (!upRight)
-				upRight = game.IsKeyDown(Key.Keypad9);
+				upRight = Game.IsKeyDown(Key.Keypad9);
 			if (!downLeft)
-				downLeft = game.IsKeyDown(Key.Keypad1);
+				downLeft = Game.IsKeyDown(Key.Keypad1);
 			if (!downRight)
-				downRight = game.IsKeyDown(Key.Keypad3);
+				downRight = Game.IsKeyDown(Key.Keypad3);
 		}
 
 		if (upLeft || downLeft)
@@ -713,8 +713,8 @@ internal class Map2DScreen : ButtonGridScreen
 				long timeTillNextMove = Math.Max(0, GetTicksPerStep() - (currentTicks - lastMoveStartTicks));
 				int x = moveX;
 				int y = moveY;
-				game.DeleteDelayedActions(delayedMoveActionIndex);
-				delayedMoveActionIndex = game.AddDelayedAction(timeTillNextMove, () =>
+				Game.DeleteDelayedActions(delayedMoveActionIndex);
+				delayedMoveActionIndex = Game.AddDelayedAction(timeTillNextMove, () =>
 				{
 					lastMoveStartTicks = currentTicks;
 					if (MovePlayer(x, y))
@@ -734,12 +734,12 @@ internal class Map2DScreen : ButtonGridScreen
 
 		if (left && !right)
 		{
-			game.State.PartyDirection = Direction.Left;
+			Game.State.PartyDirection = Direction.Left;
 			moveX = -1;
 		}
 		else if (right && !left)
 		{
-			game.State.PartyDirection = Direction.Right;
+			Game.State.PartyDirection = Direction.Right;
 			moveX = 1;
 		}
 		else
@@ -749,12 +749,12 @@ internal class Map2DScreen : ButtonGridScreen
 
 		if (up && !down)
 		{
-			game.State.PartyDirection = Direction.Up;
+			Game.State.PartyDirection = Direction.Up;
 			moveY = -1;
 		}
 		else if (down && !up)
 		{
-			game.State.PartyDirection = Direction.Down;
+			Game.State.PartyDirection = Direction.Down;
 			moveY = 1;
 		}
 		else
@@ -779,7 +779,7 @@ internal class Map2DScreen : ButtonGridScreen
 		if (base.KeyDown(key, keyModifiers))
 			return true;
 
-		if (game!.Cursor.CursorType < CursorType.Eye || game.Cursor.CursorType > CursorType.Ear)
+		if (Game.Cursor.CursorType < CursorType.Eye || Game.Cursor.CursorType > CursorType.Ear)
 			UpdateMovement();
 
 		return true;
@@ -810,25 +810,25 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		if (buttons == MouseButtons.Right)
 		{
-			if (game!.Cursor.CursorType.ForcesMouseTrap())
+			if (Game.Cursor.CursorType.ForcesMouseTrap())
 			{
-                game.Cursor.CursorType = CursorType.Sword;
-                game.UntrapMouse();
+                Game.Cursor.CursorType = CursorType.Sword;
+                Game.UntrapMouse();
 				return true;
             }
             else if (ButtonGrid.Area.Contains(position))
 			{
-				game.ButtonLayout = (ButtonLayout)(1 - (int)game.ButtonLayout); // toggle
+				Game.ButtonLayout = (ButtonLayout)(1 - (int)Game.ButtonLayout); // toggle
 				RequestButtonSetup();
                 return true;
             }
 			else
 			{
-				int? characterSlotIndex = game.TestPartyPortraitHit(position);
+				int? characterSlotIndex = Game.TestPartyPortraitHit(position);
 
 				if (characterSlotIndex != null)
 				{
-					game.OpenInventory(characterSlotIndex.Value);
+					Game.OpenInventory(characterSlotIndex.Value);
 					return true;
 				}
             }
@@ -840,24 +840,24 @@ internal class Map2DScreen : ButtonGridScreen
 
 			if (mapArea.Contains(position))
 			{
-				if (game!.Cursor.CursorType == CursorType.Zzz)
+				if (Game.Cursor.CursorType == CursorType.Zzz)
 				{
-					game.Time.Tick();
+					Game.Time.Tick();
 					return true;
 				}
-				else if (game.Cursor.CursorType >= CursorType.Eye && game.Cursor.CursorType <= CursorType.Ear)
+				else if (Game.Cursor.CursorType >= CursorType.Eye && Game.Cursor.CursorType <= CursorType.Ear)
 				{
-					var eventTrigger = game.Cursor.CursorType.ToEventTrigger();
+					var eventTrigger = Game.Cursor.CursorType.ToEventTrigger();
 					var (x, y) = MousePositionToMapTilePosition(position);
 
-					game.Cursor.CursorType = CursorType.Sword;
+					Game.Cursor.CursorType = CursorType.Sword;
 
 					TryExecuteMapEvent(eventTrigger, x, y);
-					game.UntrapMouse();
+					Game.UntrapMouse();
 
 					return true;
 				}
-				else if (game.Cursor.CursorType >= CursorType.ArrowUp2D && game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
+				else if (Game.Cursor.CursorType >= CursorType.ArrowUp2D && Game.Cursor.CursorType <= CursorType.ArrowDownLeft2D)
 				{
 					UpdateMovement();
 					return true;
@@ -880,9 +880,9 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		base.MouseMove(position, buttons);
 
-		if (game!.Cursor.CursorType != CursorType.Eye &&
-			game.Cursor.CursorType != CursorType.Ear &&
-			game.Cursor.CursorType != CursorType.Mouth)
+		if (Game.Cursor.CursorType != CursorType.Eye &&
+			Game.Cursor.CursorType != CursorType.Ear &&
+			Game.Cursor.CursorType != CursorType.Mouth)
 		{
 			var mapArea = new Rect(OffsetX, OffsetY, TilesPerRow * TileWidth, TileRows * TileHeight);
 
@@ -893,42 +893,42 @@ internal class Map2DScreen : ButtonGridScreen
 				bool up = position.Y < player!.Position.Y;
 				bool down = position.Y >= player.Position.Y + 16;
 
-				var lastCursor = game.Cursor.CursorType;
+				var lastCursor = Game.Cursor.CursorType;
 
 				if (up)
 				{
 					if (left)
-						game.Cursor.CursorType = CursorType.ArrowUpLeft2D;
+						Game.Cursor.CursorType = CursorType.ArrowUpLeft2D;
 					else if (right)
-						game.Cursor.CursorType = CursorType.ArrowUpRight2D;
+						Game.Cursor.CursorType = CursorType.ArrowUpRight2D;
 					else
-						game.Cursor.CursorType = CursorType.ArrowUp2D;
+						Game.Cursor.CursorType = CursorType.ArrowUp2D;
 				}
 				else if (down)
 				{
 					if (left)
-						game.Cursor.CursorType = CursorType.ArrowDownLeft2D;
+						Game.Cursor.CursorType = CursorType.ArrowDownLeft2D;
 					else if (right)
-						game.Cursor.CursorType = CursorType.ArrowDownRight2D;
+						Game.Cursor.CursorType = CursorType.ArrowDownRight2D;
 					else
-						game.Cursor.CursorType = CursorType.ArrowDown2D;
+						Game.Cursor.CursorType = CursorType.ArrowDown2D;
 				}
 				else
 				{
 					if (left)
-						game.Cursor.CursorType = CursorType.ArrowLeft2D;
+						Game.Cursor.CursorType = CursorType.ArrowLeft2D;
 					else if (right)
-						game.Cursor.CursorType = CursorType.ArrowRight2D;
+						Game.Cursor.CursorType = CursorType.ArrowRight2D;
 					else
-						game.Cursor.CursorType = CursorType.Zzz;
+						Game.Cursor.CursorType = CursorType.Zzz;
 				}
 
-				if (buttons == MouseButtons.Left && lastCursor != game.Cursor.CursorType)
+				if (buttons == MouseButtons.Left && lastCursor != Game.Cursor.CursorType)
 					UpdateMovement();
 			}
-			else if (game!.Cursor.CursorType.IsArrow())
+			else if (Game.Cursor.CursorType.IsArrow())
 			{
-				game!.Cursor.CursorType = CursorType.Sword;
+				Game.Cursor.CursorType = CursorType.Sword;
 				UpdateMovement();
 			}
 		}
@@ -983,7 +983,7 @@ internal class Map2DScreen : ButtonGridScreen
 			}
 		}
 
-		var playerPosition = game!.State.PartyPosition;
+		var playerPosition = Game.State.PartyPosition;
 		int playerTileIndex = playerPosition.X + playerPosition.Y * map!.Width;
 		var playerTile = map.Tiles[playerTileIndex];
 		bool playerVisible = true;
@@ -1012,11 +1012,11 @@ internal class Map2DScreen : ButtonGridScreen
 
 		if (playerVisible)
 		{
-			var renderLayer = game!.GetRenderLayer(Layer.Map2D);
+			var renderLayer = Game.GetRenderLayer(Layer.Map2D);
 			var tileset = tilesets![map!.TilesetIndex - 1];
 			var tileInfo = tileset!.Tiles[tileset.PlayerSpriteIndex - 1];
 			player!.BaseLineOffset = playerBaseLineOffset;
-			player.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex + (int)game.State.TravelType * 4 + (int)game.State.PartyDirection);
+			player.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex + (int)Game.State.TravelType * 4 + (int)Game.State.PartyDirection);
 			player.Position = new(OffsetX + (playerPosition.X - scrollOffsetX) * TileWidth, OffsetY + (playerPosition.Y - scrollOffsetY) * TileHeight);
 		}
 
@@ -1025,15 +1025,15 @@ internal class Map2DScreen : ButtonGridScreen
 
 	private void InitPlayer()
 	{
-		var renderLayer = game!.GetRenderLayer(Layer.Map2D);
+		var renderLayer = Game.GetRenderLayer(Layer.Map2D);
 		var tileset = tilesets![map!.TilesetIndex - 1];
 		var tileInfo = tileset!.Tiles[tileset.PlayerSpriteIndex - 1];
-		var playerPosition = game.State.PartyPosition;
+		var playerPosition = Game.State.PartyPosition;
 		player = renderLayer.SpriteFactory!.Create();
 
 		player.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex);
 		player.Position = new(OffsetX + playerPosition.X * TileWidth, OffsetY + playerPosition.Y * TileHeight);
-		player.PaletteIndex = game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
+		player.PaletteIndex = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 		player.Size = new(TileWidth, TileHeight);
 		player.Visible = true;
 
@@ -1043,19 +1043,19 @@ internal class Map2DScreen : ButtonGridScreen
 
 	private void ShowOuchBubble()
 	{
-        game!.DeleteDelayedActions(ouchBubbleDeleteActionIndex);
+        Game.DeleteDelayedActions(ouchBubbleDeleteActionIndex);
 
-        var renderLayer = game.GetRenderLayer(Layer.UI);
-        var playerPosition = game.State.PartyPosition;
+        var renderLayer = Game.GetRenderLayer(Layer.UI);
+        var playerPosition = Game.State.PartyPosition;
         ouchBubble = renderLayer.SpriteFactory!.Create();
 
-        ouchBubble.TextureOffset = renderLayer.Config.Texture!.GetOffset(game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.SmallOuch));
+        ouchBubble.TextureOffset = renderLayer.Config.Texture!.GetOffset(Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.SmallOuch));
         ouchBubble.Position = new(OffsetX + (playerPosition.X - lastScrollX) * TileWidth + 14, OffsetY + (playerPosition.Y - lastScrollY) * TileHeight - 10);
-        ouchBubble.PaletteIndex = game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
+        ouchBubble.PaletteIndex = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
         ouchBubble.Size = UIGraphic.SmallOuch.GetSize();
         ouchBubble.Visible = true;
 
-        ouchBubbleDeleteActionIndex = game.AddDelayedAction(OuchDisplayTime, () =>
+        ouchBubbleDeleteActionIndex = Game.AddDelayedAction(OuchDisplayTime, () =>
 		{
 			if (ouchBubble != null)
 			{
@@ -1075,7 +1075,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 	private IAnimatedSprite CreateTileSprite(Dictionary<int, IAnimatedSprite> mapLayer, int gridIndex, int x, int y, int index, int baseLineOffset = 0)
 	{
-		var renderLayer = game!.GetRenderLayer(Layer.Map2D);
+		var renderLayer = Game.GetRenderLayer(Layer.Map2D);
 
 		if (!mapLayer.TryGetValue(gridIndex, out var tileSprite))
 		{
@@ -1090,7 +1090,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 		tileSprite.FrameCount = Math.Max(1, tileInfo.FrameCount);			
 		tileSprite.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex);
-		tileSprite.PaletteIndex = game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
+		tileSprite.PaletteIndex = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
 		tileSprite.BaseLineOffset = baseLineOffset;
 		tileSprite.Visible = true;
 
@@ -1103,7 +1103,7 @@ internal class Map2DScreen : ButtonGridScreen
 		return tileset!.Tiles[index - 1];
 	}
 
-	private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
+	private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[Game.State.TravelType] : CityTicksPerStep;
 
 	public static int GetWorldMapIndex(int index, int offsetX, int offsetY)
 	{
@@ -1119,14 +1119,14 @@ internal class Map2DScreen : ButtonGridScreen
 	private IEvent? GetEvent(int x, int y, bool onlyActive = true)
 	{
 		if (map is WorldMap worldMap)
-			return worldMap.GetEvent(game!, x, y, onlyActive);
+			return worldMap.GetEvent(Game, x, y, onlyActive);
 		
 		var eventIndex = map!.Tiles[x + y * map.Width].Event;
 
 		if (eventIndex == 0)
 			return null;
 
-        if (onlyActive && !game!.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
+        if (onlyActive && !Game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
             return null;
 
         return map.Events[eventIndex - 1];
@@ -1135,14 +1135,14 @@ internal class Map2DScreen : ButtonGridScreen
     private (int Index, IEvent Event)? GetEventWithIndex(int x, int y, bool onlyActive = true)
     {
         if (map is WorldMap worldMap)
-            return worldMap.GetEventWithIndex(game!, x, y, onlyActive);
+            return worldMap.GetEventWithIndex(Game, x, y, onlyActive);
 
         var eventIndex = map!.Tiles[x + y * map.Width].Event;
 
         if (eventIndex == 0)
             return null;
 
-        if (onlyActive && !game!.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
+        if (onlyActive && !Game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
             return null;
 
         return (eventIndex, map.Events[eventIndex - 1]);
@@ -1156,7 +1156,7 @@ internal class Map2DScreen : ButtonGridScreen
 			throw new AmberException(ExceptionScope.Application, "No world map active and no map index given.");
 		
 		int[] mapIndices;
-		var playerPosition = game!.State.PartyPosition;
+		var playerPosition = Game.State.PartyPosition;
 		bool changed = mapIndex != null;
 
 		if (playerPosition.X < WorldMapPreloadOffset)
@@ -1195,13 +1195,13 @@ internal class Map2DScreen : ButtonGridScreen
 				GetWorldMapIndex(newTopLeftMapIndex, 1, 1),
 			];
 
-			game.State.SetPartyPosition(playerPosition.X, playerPosition.Y);
+			Game.State.SetPartyPosition(playerPosition.X, playerPosition.Y);
 			bool firstTime = worldMap == null;
 			worldMap ??= new WorldMap();
 			worldMap.SetMaps(mapIndices.Select(GetMap).ToArray(), mapIndices);
 			map = worldMap;
 
-			game.State.MapIndex = newTopLeftMapIndex;
+			Game.State.MapIndex = newTopLeftMapIndex;
 
 			IMap2D GetMap(int index)
 			{
@@ -1210,7 +1210,7 @@ internal class Map2DScreen : ButtonGridScreen
 
 				var map = worldMap?.GetMapByIndex(index);
 
-				return map ?? (game!.AssetProvider.MapLoader.LoadMap(index) as IMap2D)!;
+				return map ?? (Game.AssetProvider.MapLoader.LoadMap(index) as IMap2D)!;
 			}
 		}
 	}
@@ -1219,30 +1219,30 @@ internal class Map2DScreen : ButtonGridScreen
 	{
 		lastScrollX = -1;
 		lastScrollY = -1;
-		map = game!.AssetProvider.MapLoader.LoadMap(index) as IMap2D; // TODO: catch exceptions
+		map = Game.AssetProvider.MapLoader.LoadMap(index) as IMap2D; // TODO: catch exceptions
 		bool isWorldMap = map!.Flags.HasFlag(MapFlags.Wilderness);
 
 		if (isWorldMap)
 		{
 			UpdateWorldMap(index);
 
-            game.PlaySong(worldMap!.SongIndex);
+            Game.PlaySong(worldMap!.SongIndex);
         }
 		else
 		{
             if (Map.SongIndex != 0)
-                game.PlaySong(1 + Map.SongIndex);
+                Game.PlaySong(1 + Map.SongIndex);
 
-            game.State.MapIndex = index;
+            Game.State.MapIndex = index;
 			worldMap = null;
 		}
 
 		tileGraphicOffset = map.TilesetIndex == 1 ? 0 : tilesets![0].Graphics.Count + 1;
-		palette = game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
+		palette = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
 		
-		game.State.SetIsWorldMap(isWorldMap);
-		game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
-		game.Cursor.PaletteIndex = palette;
+		Game.State.SetIsWorldMap(isWorldMap);
+		Game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
+		Game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
 	}
 }
