@@ -10,8 +10,6 @@ internal class ConversationScreen : ButtonGridScreen
 	Game? game;
     IPerson? person;
     PersonInfoView? personInfoView;
-    IRenderText? title;
-    // TODO: paper = 2, ink = 15
 
     public override ScreenType Type { get; } = ScreenType.Conversation;
 
@@ -36,6 +34,14 @@ internal class ConversationScreen : ButtonGridScreen
         buttonGrid.EnableButton(5, person is IPartyMember);
     }
 
+    public override void Init(Game game)
+    {
+        base.Init(game);
+
+        var dialogLabel = AddLabel(16, 39, game.LoadUIText(UIText.Dialog), 176, 7);
+        dialogLabel.Alignment = TextAlignment.Center;
+    }
+
     public override void Open(Game game, Action? closeAction)
 	{
 		base.Open(game, closeAction);
@@ -52,14 +58,11 @@ internal class ConversationScreen : ButtonGridScreen
 
         person = game!.AssetProvider.PersonLoader.LoadPerson(personIndex);
         personInfoView = new(game, person, personIndex, palette);
-
-        title = game.TextManager.Create("Gespräch", 1, TextManager.TransparentPaper, palette); // TODO
     }
 
     public override void Close(Game game)
     {
         personInfoView?.Destroy();
-        title?.Delete();
 
         base.Close(game);
     }
@@ -70,8 +73,6 @@ internal class ConversationScreen : ButtonGridScreen
         {
             if (personInfoView != null)
                 personInfoView.Visible = false;
-            if (title != null)
-                title.Visible = false;
         }
 
         base.ScreenPushed(game, screen);        
@@ -85,8 +86,6 @@ internal class ConversationScreen : ButtonGridScreen
         {
             if (personInfoView != null)
                 personInfoView.Visible = true;
-            if (title != null)
-                title.Visible = true;
         }
     }
 

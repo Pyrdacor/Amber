@@ -43,7 +43,7 @@ internal class TextManager(Game game, IFont font,
     IFontInfoProvider fontInfoProvider)
 {
     public const int DefaultInkColorIndex = 15;
-    public const int DefaultPaperColorIndex = 2;
+    public const int DefaultPaperColorIndex = TransparentPaper; // Usually in legacy systems 2, but here transparent makes more sense
     public const int TransparentPaper = -1;
     const int TicksPerScroll = 4; // TODO
     public const byte DefaultPaletteIndex = 0; // UI
