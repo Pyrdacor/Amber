@@ -1,5 +1,4 @@
-﻿using Amber.Assets.Common;
-using Amber.Common;
+﻿using Amber.Common;
 using Amber.Renderer;
 using Amber.Renderer.Common;
 using Amberstar.GameData.Serialization;
@@ -12,11 +11,14 @@ namespace Amberstar.Game.UI
 		public const int TileHeight = 16;
 		readonly ISprite[] borders;
 		readonly IColoredRect fill;
+		readonly Game game;
 
-		public Rect ClientArea { get; }
+        public Rect ClientArea { get; }
 
 		public Window(Game game, int x, int y, int widthInTiles, int heightInTiles, bool dark, byte displayLayer, byte? paletteIndex = null)
 		{
+			this.game = game;
+
 			if (widthInTiles < 3)
 				widthInTiles = 3;
 			if (heightInTiles < 3)

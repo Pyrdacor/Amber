@@ -23,7 +23,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
     readonly static Rect messageDisplayArea = new(112, 49, 192, 48);
     protected readonly static Rect itemArea;
     protected readonly static Rect itemTooltipArea;
-    ISprite? image;
+    Image? image;
     IRenderText? message;
     TEvent? lockedEvent;
     Image80x80 image80x80 = Image80x80.LockedDoor;
@@ -67,10 +67,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
             if (image != null)
             {
-                var textureAtlas = game!.GetRenderLayer(Layer.UI).Config.Texture!;
-
-                image.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.Get80x80ImageIndex(image80x80));
-                image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80); ;
+                image.SetTextureIndex(game!.GraphicIndexProvider.Get80x80ImageIndex(image80x80));
+                image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
             }
         }
     }
@@ -142,6 +140,10 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         {
             inventoryItemSlots[i] = new ItemContainer(game, inventorySlotPositions[i], 0, null, 10);
         }
+
+        var image = AddImage(16, 49, 80, 80, game.GraphicIndexProvider.Get80x80ImageIndex(Image), Layer.UI, 0, true);
+        image.PaletteIndex = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
+        this.image = image;
     }
 
     public override void Open(Game game, Action? closeAction)
@@ -152,19 +154,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
         lockpickReduction = lockedEvent.LockpickReduction;
 
         var palette = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
-
         game.SetLayout(Layout, palette);
         game.Cursor.CursorType = CursorType.Sword;
-
-        var layer = game.GetRenderLayer(Layer.UI);
-        image = layer.SpriteFactory!.Create();
-        var textureAtlas = layer.Config.Texture!;
-        image.Position = new(16, 49);
-        image.Size = new(80, 80);
-        image.Opaque = true;
-        image.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.Get80x80ImageIndex(Image));
-        image.PaletteIndex = palette;
-        image.Visible = true;
 
         trapFound = false;
         trapDisarmed = false;
@@ -243,6 +234,10 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
                 image.Visible = true;
 
             inventoryItemSlots.ToList().ForEach(slot => slot.Visible = true);
+
+            var palette = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
+            game.SetLayout(Layout, palette);
+            game.Cursor.CursorType = CursorType.Sword;
         }
     }
 

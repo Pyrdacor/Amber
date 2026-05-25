@@ -674,7 +674,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
 
     public IRenderText? Text => renderText;
 
-    public byte DisplayLayer
+    public override byte DisplayLayer
     {
         get => displayLayer;
         set

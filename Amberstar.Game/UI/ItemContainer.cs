@@ -37,7 +37,7 @@ internal class ItemContainer : Control
 
 	public static bool IsDragging => DraggedItem != null;
 
-	private byte DisplayLayer
+	public override byte DisplayLayer
 	{
 		get => displayLayer;
 		set

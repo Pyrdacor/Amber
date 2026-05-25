@@ -2,7 +2,6 @@
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
-using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;

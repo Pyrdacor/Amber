@@ -33,7 +33,27 @@ internal class Button : Control
 		}
 	}
 
-	public bool Disabled
+    public override byte DisplayLayer
+    {
+        get => sprite.DisplayLayer;
+        set
+        {
+            if (value < 2)
+                value = 2;
+            if (value > byte.MaxValue - 4)
+                value = byte.MaxValue - 4;
+
+			if (value == sprite.DisplayLayer)
+				return;
+
+            background.DisplayLayer = (byte)(value - 2);
+            sprite.DisplayLayer = value;
+            highlightOverlay.DisplayLayer = (byte)(value + 2);
+            disabledOverlay.DisplayLayer = (byte)(value + 4);
+        }
+    }
+
+    public bool Disabled
 	{
 		get => disabled || buttonType == ButtonType.Empty;
 		set
@@ -54,6 +74,18 @@ internal class Button : Control
             background.Visible = value;
             highlightOverlay.Visible = value && highlighted;
             disabledOverlay.Visible = value && disabled;
+        }
+	}
+
+	public Position Position
+	{
+		get => sprite.Position;
+		set
+		{
+			sprite.Position = value;
+            background.Position = value;
+            highlightOverlay.Position = value;
+            disabledOverlay.Position = value;
         }
 	}
 
@@ -83,7 +115,8 @@ internal class Button : Control
 		sprite.TextureOffset = textureAtlas.GetOffset(game.GraphicIndexProvider.GetButtonIndex(buttonType));
 		sprite.DisplayLayer = displayLayer;
 		sprite.PaletteIndex = paletteIndex.Value;
-		sprite.Visible = true;
+		sprite.Opaque = true;
+        sprite.Visible = true;
 
 		highlightOverlay = layer.SpriteFactory.Create();
 		highlightOverlay.Position = new(x, y);

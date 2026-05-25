@@ -21,9 +21,8 @@ internal class InventoryScreen : ItemGridScreen
     readonly static Rect messageDisplayArea = new(16, 50, 176, 14);
     readonly static Rect itemTooltipArea = new(16, 57, 176, 7);
     PersonInfoView? personInfoView;
-    IRenderText? message;
-    IRenderText? weightLabel;
-    IRenderText? weightText;
+    Label? message;
+    Label? weightText;
     bool ignoreItemChangeEvents = false;
 
     static InventoryScreen()
@@ -143,19 +142,35 @@ internal class InventoryScreen : ItemGridScreen
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
             int index = i; // important to capture this for the click handler
-            inventoryItemSlots[i] = new ItemContainer(game, InventorySlotPositions[i], 0, null, 10) { Draggable = true };
-            inventoryItemSlots[i].Clicked += (mouseButtons, keyModifiers) => InventorySlotClicked(index, mouseButtons, keyModifiers);
-            inventoryItemSlots[i].SlotChanged += () => UpdateInventoryItem(index);
+            var position = InventorySlotPositions[i];
+            var slot = AddItem(position.X, position.Y, item: null, count: 0, displayLayer: 10);
+            slot.Draggable = true;
+            slot.Clicked += (mouseButtons, keyModifiers) => InventorySlotClicked(index, mouseButtons, keyModifiers);
+            slot.SlotChanged += () => UpdateInventoryItem(index);
+            inventoryItemSlots[i] = slot;
         }
 
         foreach (var equipmentSlot in Enum.GetValues<EquipmentSlot>())
         {
             var targetSlot = equipmentSlot; // important to capture this for the click handler
-            var slot = new ItemContainer(game, EquipmentSlotPositions[equipmentSlot], 0, null, 10) { Draggable = true };
-            equippedItemSlots.Add(equipmentSlot, slot);
+            var position = EquipmentSlotPositions[equipmentSlot];
+            var slot = AddItem(position.X, position.Y, item: null, count: 0, displayLayer: 10);
+            slot.Draggable = true;            
             slot.Clicked += (mouseButtons, keyModifiers) => EquipmentSlotClicked(targetSlot, mouseButtons, keyModifiers);
             slot.SlotChanged += () => UpdateEquipment(targetSlot);
+            equippedItemSlots.Add(equipmentSlot, slot);
         }
+
+        var weightLabelName = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.Weight));
+        var weightLabel = AddLabel(16, 178, weightLabelName, width: 80, height: 10, displayLayer: 2);
+        weightLabel.Alignment = TextAlignment.Center;
+
+        var weightText = AddLabel(16, 186, "0", width: 80, height: 10, displayLayer: 2);
+        weightText.Alignment = TextAlignment.Center;
+        this.weightText = weightText;
+
+        var (x, y, width, height) = messageDisplayArea;
+        message = AddLabel(x, y, "", width, height, displayLayer: 20);
     }
 
     public override void Open(Game game, Action? closeAction)
@@ -167,13 +182,9 @@ internal class InventoryScreen : ItemGridScreen
         game.SetLayout(Layout.Inventory, palette);
         game.Cursor.CursorType = CursorType.Sword;
 
+        HideMessage();
+
         SwitchToPartyMember(game.State.CurrentInventoryIndex!.Value, true);
-
-        var weightLabelName = game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.Weight));
-        weightLabel?.Delete();
-        weightLabel = game.TextManager.Create(weightLabelName, 80, 15);
-        weightLabel.ShowInArea(16, 178, 80, 10, 2, TextAlignment.Center);
-
         SetupEventHandlers();
     }
 
@@ -200,10 +211,6 @@ internal class InventoryScreen : ItemGridScreen
 
         personInfoView?.Destroy();
         personInfoView = null;
-        weightLabel?.Delete();
-        weightLabel = null;
-        weightText?.Delete();
-        weightText = null;
 
         base.Close(game);
     }
@@ -218,10 +225,6 @@ internal class InventoryScreen : ItemGridScreen
                 personInfoView.Visible = false;
             if (message != null)
                 message.Visible = false;
-            if (weightLabel != null)
-                weightLabel.Visible = false;
-            if (weightText != null)
-                weightText.Visible = false;
         }
 
         base.ScreenPushed(game, screen);
@@ -239,10 +242,6 @@ internal class InventoryScreen : ItemGridScreen
                 personInfoView.Visible = true;
             if (message != null)
                 message.Visible = true;
-            if (weightLabel != null)
-                weightLabel.Visible = true;
-            if (weightText != null)
-                weightText.Visible = true;
         }
     }
 
@@ -345,9 +344,7 @@ internal class InventoryScreen : ItemGridScreen
         int colorIndex = partyMember.MentalConditions.HasFlag(MentalCondition.Overloaded) ? 1 : 15; // TODO: is the mental condition correct?
         if (weightString[0] == 1) // The weight string might contain a SetInk command. We overwrite it to match the color.
             weightString = $"\x1{(char)colorIndex}{weightString[2..]}";
-        weightText?.Delete();
-        weightText = game.TextManager.Create(weightString, colorIndex);
-        weightText.ShowInArea(16, 186, 80, 10, 2, TextAlignment.Center);
+        weightText!.SetText(weightString, colorIndex);
 
         RequestButtonSetup();
     }
@@ -542,10 +539,9 @@ internal class InventoryScreen : ItemGridScreen
 
     internal override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
-        message?.Delete();
-
-        message = game!.TextManager.Create(game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex)), messageDisplayArea.Size.Width, 15);
-        message.ShowInArea(messageDisplayArea, 20, TextAlignment.Left);
+        var messageText = game!.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
+        message!.SetText(messageText);
+        message.Visible = true;
 
         // TODO: Scrolling
 
@@ -561,8 +557,7 @@ internal class InventoryScreen : ItemGridScreen
 
     internal override void HideMessage()
     {
-        message?.Delete();
-        message = null;
+        message!.Visible = false;
     }
 
     internal override void PickItem(ScreenType sourceScreen, int? index)
