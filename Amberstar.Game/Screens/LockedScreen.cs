@@ -137,7 +137,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
-            inventoryItemSlots[i] = new ItemContainer(game, inventorySlotPositions[i], 0, null, 10);
+            var (slotX, slotY) = inventorySlotPositions[i];
+            inventoryItemSlots[i] = AddItem(slotX, slotY, item: null, count: 0, displayLayer: 10);
         }
 
         var image = AddImage(16, 49, 80, 80, game.GraphicIndexProvider.Get80x80ImageIndex(Image), Layer.UI, 0, true);
@@ -208,16 +209,6 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     public override void ScreenPushed(Game game, Screen screen)
     {
-        if (!screen.Transparent)
-        {
-            if (message != null)
-                message.Visible = false;
-            if (image != null)
-                image.Visible = false;
-
-            inventoryItemSlots.ToList().ForEach(slot => slot.Visible = false);
-        }
-
         if (screen is UseItemScreen)
             UpdateInventoryItems();
 
@@ -230,13 +221,6 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
         if (!screen.Transparent)
         {
-            if (message != null)
-                message.Visible = true;
-            if (image != null)
-                image.Visible = true;
-
-            inventoryItemSlots.ToList().ForEach(slot => slot.Visible = true);
-
             var palette = game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image);
             game.SetLayout(Layout, palette);
             game.Cursor.CursorType = CursorType.Sword;

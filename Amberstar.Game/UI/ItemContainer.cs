@@ -56,7 +56,7 @@ internal class ItemContainer : Control
         }
 	}
 
-    public byte PaletteIndex
+    public override byte PaletteIndex
 	{
 		get => paletteIndex;
 		set

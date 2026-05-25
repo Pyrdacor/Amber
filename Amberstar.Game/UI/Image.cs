@@ -38,7 +38,7 @@ internal class Image : Control
         set => image.DisplayLayer = value;
     }
 
-    public byte PaletteIndex
+    public override byte PaletteIndex
     {
         get => image.PaletteIndex;
         set => image.PaletteIndex = value;

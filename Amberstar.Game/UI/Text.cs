@@ -19,6 +19,8 @@ internal interface IRenderText
 	int LineHeight { get; }
     bool Visible { get; set; }
     byte Alpha { get; set; }
+    byte DisplayLayer { get; set; }
+    byte PaletteIndex { get; set; }
 
     event Action? ScrollEnded;
 
@@ -133,6 +135,40 @@ internal class TextManager(Game game, IFont font,
                     glyph.Alpha = alpha;
                 foreach (var shadow in glyphShadows.SelectMany(g => g))
                     shadow.Alpha = alpha;
+            }
+        }
+
+        public byte DisplayLayer
+        {
+            get => displayLayer;
+            set
+            {
+                if (displayLayer == value)
+                    return;
+
+                displayLayer = value;
+
+                foreach (var glyph in glyphs.SelectMany(g => g))
+                    glyph.DisplayLayer = displayLayer;
+                foreach (var shadow in glyphShadows.SelectMany(g => g))
+                    shadow.DisplayLayer = displayLayer;
+            }
+        }
+
+        public byte PaletteIndex
+        {
+            get => paletteIndex;
+            set
+            {
+                if (paletteIndex == value)
+                    return;
+
+                paletteIndex = value;
+
+                foreach (var glyph in glyphs.SelectMany(g => g))
+                    glyph.PaletteIndex = paletteIndex;
+                foreach (var shadow in glyphShadows.SelectMany(g => g))
+                    shadow.PaletteIndex = paletteIndex;
             }
         }
 
@@ -634,6 +670,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
     Rect area = new();
     IRenderText? renderText;
     byte displayLayer = 0;
+    byte paletteIndex = 0;
     byte alpha = 255;
     TextAlignment alignment = TextAlignment.Left;
     bool needsShowCall = true;
@@ -684,7 +721,23 @@ internal class Label(Game game) : Control, ILayeredDrawable
 
             displayLayer = value;
 
-            Show();
+            if (renderText != null)
+                renderText.DisplayLayer = displayLayer;
+        }
+    }
+
+    public override byte PaletteIndex
+    {
+        get => paletteIndex;
+        set
+        {
+            if (paletteIndex == value)
+                return;
+
+            paletteIndex = value;
+
+            if (renderText != null)
+                renderText.PaletteIndex = paletteIndex;
         }
     }
 

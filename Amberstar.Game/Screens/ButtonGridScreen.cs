@@ -22,8 +22,10 @@ internal abstract class ButtonGridScreen : Screen
 
         if (buttonGrid == null)
         {
-            buttonGrid = new(game);
-            buttonGrid.PaletteIndex = ButtonGridPaletteIndex;
+            buttonGrid = new(game)
+            {
+                PaletteIndex = ButtonGridPaletteIndex
+            };
             buttonGrid.ClickButtonAction += ButtonClicked;
         }
 
@@ -50,6 +52,8 @@ internal abstract class ButtonGridScreen : Screen
             buttonGrid.Destroy();
 			buttonGrid = null;
         }
+
+        base.ScreenPushed(game, screen);
     }
 
 	public override void ScreenPopped(Game game, Screen screen)
@@ -58,13 +62,17 @@ internal abstract class ButtonGridScreen : Screen
         {
 			if (buttonGrid == null)
 			{
-				buttonGrid = new(game);
-                buttonGrid.PaletteIndex = ButtonGridPaletteIndex;
+                buttonGrid = new(game)
+                {
+                    PaletteIndex = ButtonGridPaletteIndex
+                };
                 buttonGrid.ClickButtonAction += ButtonClicked;
 			}
 
             SetupButtons(buttonGrid);
         }
+
+        base.ScreenPopped(game, screen);
     }
 
 	public override bool KeyUp(Key key, KeyModifiers keyModifiers)

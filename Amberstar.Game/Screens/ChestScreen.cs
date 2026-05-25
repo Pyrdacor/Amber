@@ -35,16 +35,18 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
         var goldLabelText = game.AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)UIText.Gold));
 
-        goldLabel = new(game);
-        goldLabel.Area = goldDisplayArea;
+        var (x, y, width, height) = goldDisplayArea;
+        var goldLabel = AddLabel(x, y, goldLabelText, width, height);
         goldLabel.Alignment = TextAlignment.Center;
-        goldLabel.SetText(goldLabelText, goldDisplayArea.Size.Width, 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+        goldLabel.PaletteIndex = ButtonGridPaletteIndex;
         goldLabel.Visible = false;
+        this.goldLabel = goldLabel;
 
-        goldDisplay = new(game);
-        goldDisplay.Area = goldDisplayArea + new Position(0, 7);
+        var goldDisplay = AddLabel(x, y + 7, "0", width, height);
         goldDisplay.Alignment = TextAlignment.Center;
+        goldDisplay.PaletteIndex = ButtonGridPaletteIndex;
         goldDisplay.Visible = false;
+        this.goldDisplay = goldDisplay;
     }
 
     public override void Open(Game game, Action? closeAction)
@@ -66,6 +68,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         bool lockOpened = chestEvent.LockpickReduction == 0 || game.IsCurrentEventSaved();
 
         Image = lockOpened ? Image80x80.OpenChest : Image80x80.LockedChest;
+        goldLabel!.Visible = lockOpened;
+        goldDisplay!.Visible = lockOpened;
 
         base.Open(game, closeAction);
 
@@ -78,40 +82,9 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         }
     }
 
-    public override void Close(Game game)
-    {
-        base.Close(game);
-
-        if (goldLabel != null)
-            goldLabel.Visible = false;
-        if (goldDisplay != null)
-            goldDisplay.Visible = false;
-    }
-
-    public override void ScreenPushed(Game game, Screen screen)
-    {
-        if (!screen.Transparent)
-        {
-            if (goldLabel != null)
-                goldLabel.Visible = false;
-            if (goldDisplay != null)
-                goldDisplay.Visible = false;
-        }
-
-        base.ScreenPushed(game, screen);
-    }
-
     public override void ScreenPopped(Game game, Screen screen)
     {
         base.ScreenPopped(game, screen);
-
-        if (!screen.Transparent)
-        {
-            if (goldLabel != null)
-                goldLabel.Visible = true;
-            if (goldDisplay != null)
-                goldDisplay.Visible = true;
-        }
 
         if (screen is GiveGoldScreen && Game.CurrentAmount > 0)
         {
@@ -127,17 +100,6 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 ShowMessage(Message.NoMemberCanCarryThatMuchGold);
             }
         }
-    }
-
-    public override void Destroy(Game game)
-    {
-        base.Destroy(game);
-
-        goldLabel?.Destroy();
-        goldLabel = null;
-
-        goldDisplay?.Destroy();
-        goldDisplay = null;
     }
 
     private void ShowOpenChest()

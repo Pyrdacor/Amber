@@ -23,7 +23,7 @@ internal class Button : Control
     public event Action? ClickAction;
     public event Action? RightClickAction;
 
-    public byte PaletteIndex
+    public override byte PaletteIndex
 	{
 		get => sprite.PaletteIndex;
 		set
