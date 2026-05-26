@@ -5,9 +5,8 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-// TODO: Rework
 // TODO: Test cursed items
-internal class ItemDetailsScreen : Screen
+internal class ItemDetailsScreen() : WindowScreen(WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, WindowDisplayLayer)
 {
 	const int WindowX = 32;
 	const int WindowY = 48;
@@ -15,7 +14,6 @@ internal class ItemDetailsScreen : Screen
 	const int WindowHeightInTiles = 6;
     const byte WindowDisplayLayer = 150;
     const byte TextDisplayLayer = 175;
-	Window? window;
     byte uiPalette = 0;
     Label? lpMaxValue;
     Label? spMaxValue;
@@ -25,12 +23,10 @@ internal class ItemDetailsScreen : Screen
     Label? skillValue;
     Label? spellLabel; // If no spell just "Magic", otherwise spell school name
     Label? spellValue;
-    // Holds all created labels (including the above) to easily show/hide/destroy all of them at once
-    readonly List<Label> createdLabels = [];
 
     public override ScreenType Type { get; } = ScreenType.ItemDetails;
 
-	public override bool Transparent => true;
+    public override bool CloseOnNextInput { get; } = true;
 
     public override void Init()
     {
@@ -40,26 +36,19 @@ internal class ItemDetailsScreen : Screen
 
         Label CreateLabel(int x, int y, int width, IText? text = null)
         {
-            Label label = new(Game)
-            {
-                DisplayLayer = TextDisplayLayer,
-                Alignment = TextAlignment.Left,
-                Area = new(x, y, width, 7),
-            };
+            Label label = AddLabel(x, y, width, 7, TextDisplayLayer);
 
             if (text != null)
-                label.SetText(text, width, 15, TextManager.DefaultPaperColorIndex, uiPalette);
-
-            createdLabels.Add(label);
+                label.SetText(text, width);
 
             return label;
         }
 
         Label CreateFixedLabel(int x, int y, IText text) => CreateLabel(x, y, Game.GetMaxLineWidth(text), text);
 
-        Label CreateKeyValuePair(int x, int y, IText labelText, bool twoLines = false)
+        Label CreateKeyValuePairAndGetLabel(int x, int y, IText labelText, out Label label, bool twoLines = false)
         {
-            var label = CreateFixedLabel(x, y, labelText);
+            label = CreateFixedLabel(x, y, labelText);
             var value = CreateLabel(twoLines ? x : x + label.Size.Width, twoLines ? y + 7 : y, twoLines ? 160 : 80 - label.Size.Width);
 
             label.Visible = true;
@@ -67,6 +56,9 @@ internal class ItemDetailsScreen : Screen
 
             return value;
         }
+
+        Label CreateKeyValuePair(int x, int y, IText labelText, bool twoLines = false)
+            => CreateKeyValuePairAndGetLabel(x, y, labelText, out _, twoLines);
 
         var lpMaxText = Game.LoadUIText(UIText.LPMax);
         var spMaxText = Game.LoadUIText(UIText.SPMax);
@@ -76,8 +68,8 @@ internal class ItemDetailsScreen : Screen
         var skillText = Game.LoadUIText(UIText.Skill);
         var spellText = Game.LoadUIText(UIText.Magic);
 
-        int x = WindowX + 16;
-        int y = WindowY + 16;
+        int x = 0;
+        int y = 0;
 
         lpMaxValue = CreateKeyValuePair(x, y, lpMaxText);
         spMaxValue = CreateKeyValuePair(x + 80, y, spMaxText);
@@ -97,8 +89,7 @@ internal class ItemDetailsScreen : Screen
 
         y += 14;
 
-        spellValue = CreateKeyValuePair(x, y, spellText, true);
-        spellLabel = createdLabels[^2];
+        spellValue = CreateKeyValuePairAndGetLabel(x, y, spellText, out spellLabel, true);
     }
 
     public override void Open(Action? closeAction)
@@ -108,17 +99,11 @@ internal class ItemDetailsScreen : Screen
 
 		base.Open(closeAction);
 
-		InitText(Game.CurrentItem);
+		InitValues(Game.CurrentItem);
     }
 
-	private void InitText(IItem item)
+	private void InitValues(IItem item)
 	{
-        // Create the window
-        window?.Destroy();
-        window = new(Game, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
-
-        createdLabels.ForEach(label => label.Visible = true);
-
         bool cursed = item.Flags.HasFlag(ItemFlags.Cursed);
 
         void SetText(Label? label, string text, int colorIndex = 15)
@@ -176,39 +161,5 @@ internal class ItemDetailsScreen : Screen
             SetText(spellLabel, spellSchoolName, colorIndex: 1);
             SetText(spellValue, $"{spellName}{openBracket}{charges}{closingBracket}");
         }
-
-        Game.TrapMouse(window.ClientArea);
-    }
-
-	public override void Close()
-	{
-        window?.Destroy();
-        createdLabels.ForEach(label => label.Visible = false);
-
-        Game.UntrapMouse();
-
-        base.Close();
-	}
-
-    public override void Destroy()
-    {
-        window?.Destroy();
-
-        createdLabels.ForEach(label => label.Destroy());
-        createdLabels.Clear();
-
-        base.Destroy();
-    }
-
-	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
-	{
-        Game.ScreenHandler.PopScreen();
-        return true;
-    }
-
-	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
-	{
-        Game.ScreenHandler.PopScreen();
-        return true;
     }
 }

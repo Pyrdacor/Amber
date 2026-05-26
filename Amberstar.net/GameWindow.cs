@@ -1,19 +1,19 @@
-﻿using Silk.NET.Core.Contexts;
-using Silk.NET.Input;
-using Silk.NET.Input.Glfw;
-using Silk.NET.Windowing;
-using Silk.NET.Windowing.Glfw;
-using System.Reflection;
-using MousePosition = System.Numerics.Vector2;
-using WindowDimension = Silk.NET.Maths.Vector2D<int>;
-using Amber.Renderer.OpenGL;
-using Renderer = Ambermoon.Renderer.OpenGL.Renderer;
+﻿using System.Reflection;
+using Amber.Audio.OpenAL;
 using Amber.Common;
+using Amber.IO.FileSystem;
+using Amber.Renderer.OpenGL;
 using Amber.Serialization;
 using Amberstar.GameData.Legacy;
-using Amber.IO.FileSystem;
+using Silk.NET.Core.Contexts;
+using Silk.NET.Input;
+using Silk.NET.Input.Glfw;
 using Silk.NET.OpenGL;
-using Amber.Audio.OpenAL;
+using Silk.NET.Windowing;
+using Silk.NET.Windowing.Glfw;
+using MousePosition = System.Numerics.Vector2;
+using Renderer = Ambermoon.Renderer.OpenGL.Renderer;
+using WindowDimension = Silk.NET.Maths.Vector2D<int>;
 
 namespace Amberstar
 {
@@ -279,6 +279,8 @@ namespace Amberstar
             game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
                 paletteIndexProvider, paletteColorProvider, fontInfoProvider, configuration,
                 QueryPressedKeys, SetMousePosition);
+
+            game.QuitRequested += window.Close;
 
             StartCheatInputTask();
         }

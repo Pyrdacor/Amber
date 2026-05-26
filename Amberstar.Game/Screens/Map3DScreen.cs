@@ -360,58 +360,74 @@ internal class Map3DScreen : ButtonGridScreen
 		}
 		else // Actions
 		{
-			if (index == 0) // eye
+            var buttonType = GetButtonType(index);
+
+            switch (buttonType)
 			{
-                // TODO: NPCs
-
-                var playerPosition = Game.State.PartyPosition;
-                var forwardPosition = playerPosition + Game.State.PartyDirection.Offset();
-
-				if (forwardPosition.X >= 0 && forwardPosition.X < map!.Width &&
-					forwardPosition.Y >= 0 && forwardPosition.Y < map.Height &&
-					map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width].Event != 0)
+				case ButtonType.Eye:
 				{
-					var tile = map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width];
-					int eventIndex = tile.Event;
-                    Game.EventHandler.HandleEvent(EventTrigger.Eye, Event.CreateEvent(map.Events[eventIndex - 1], eventIndex), map);
-                }
-            }
-			else if (index == 1) // ear
-            {
-                // TODO
-            }
-            else if (index == 2) // mouth
-            {
-                var character = characters.FirstOrDefault(character => character.Position == Game.State.PartyPosition);
+					// TODO: NPCs
 
-				if (character != null && character.Type == MapCharacterType.Person)
+					var playerPosition = Game.State.PartyPosition;
+					var forwardPosition = playerPosition + Game.State.PartyDirection.Offset();
+
+					if (forwardPosition.X >= 0 && forwardPosition.X < map!.Width &&
+						forwardPosition.Y >= 0 && forwardPosition.Y < map.Height &&
+						map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width].Event != 0)
+					{
+						var tile = map.Tiles[forwardPosition.X + forwardPosition.Y * map.Width];
+						int eventIndex = tile.Event;
+						Game.EventHandler.HandleEvent(EventTrigger.Eye, Event.CreateEvent(map.Events[eventIndex - 1], eventIndex), map);
+					}
+
+                    break;
+                }				
+                case ButtonType.Ear:
+                {
+					// TODO
+					break;
+				}
+				case ButtonType.Mouth:
+                {
+					var character = characters.FirstOrDefault(character => character.Position == Game.State.PartyPosition);
+
+					if (character != null && character.Type == MapCharacterType.Person)
+					{
+						Game.State.CurrentConversationCharacterIndex = character.CharacterIndex;
+						Game.ScreenHandler.PushScreen(ScreenType.Conversation);
+						return;
+					}
+
+					break;
+				}
+				case ButtonType.UseMagic:
 				{
-                    Game.State.CurrentConversationCharacterIndex = character.CharacterIndex;
-					Game.ScreenHandler.PushScreen(ScreenType.Conversation);
-					return;
-                }
-            }
-            else if (index == 4) // use magic
-            {
-                // TODO
-            }
-            else if (index == 5) // camp
-            {
-                // TODO
-            }
-            else if (index == 6) // map
-            {
-				// TODO
-                // Game.ScreenHandler.PushScreen(ScreenType.Map);
-            }
-            else if (index == 7) // party positions
-            {
-                // TODO
-            }
-            else if (index == 8) // options
-            {
-                // TODO
-            }
+					// TODO
+					break;
+				}
+				case ButtonType.Camp:
+				{
+					// TODO
+					break;
+				}
+				case ButtonType.Map:
+				{
+					// TODO
+					// Game.ScreenHandler.PushScreen(ScreenType.Map);
+					break;
+				}
+				case ButtonType.PartyPositions:
+				{
+					// TODO
+					break;
+				}
+				case ButtonType.Disk: // options
+				{
+					// TODO: Show options
+					Game.Quit();
+					break;
+				}
+			}
         }
 	}
 

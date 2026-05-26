@@ -379,7 +379,11 @@ internal class Map2DScreen : ButtonGridScreen
                 case ButtonType.Mouth:
                     Game.Cursor.CursorType = CursorType.Mouth;
                     Game.TrapMouse(CreateActionCursorTrapArea(mouth: true));
-                    break;                
+                    break;
+				case ButtonType.Disk:
+					// TODO: Show options
+					Game.Quit();
+					break;
                 // TODO
             }
 		}

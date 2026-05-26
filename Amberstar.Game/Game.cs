@@ -123,7 +123,8 @@ public partial class Game : IDisposable
 	internal EventHandler EventHandler { get; }
 	internal TextManager TextManager { get; }
 	internal Time Time { get; }
-	internal event Action<bool>? CanSeeChanged;
+    public event Action? QuitRequested;
+    internal event Action<bool>? CanSeeChanged;
 
 	public void Update(double delta)
 	{
@@ -168,5 +169,14 @@ public partial class Game : IDisposable
 	public void Dispose()
 	{
 		ScreenHandler.Dispose();
+	}
+
+	public bool Quit()
+	{
+		// TODO: Ask
+		Dispose();
+		QuitRequested?.Invoke();
+
+        return true;
 	}
 }
