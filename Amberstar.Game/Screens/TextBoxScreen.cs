@@ -6,40 +6,70 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-// TODO: Rework with WindowScreen and controls
-internal sealed class TextBoxScreen : Screen
+internal sealed class TextBoxScreen() : WindowScreen(WindowX, WindowY, WindowWidthInTiles, WindowMinHeightInTiles, WindowDisplayLayer)
 {
 	const int WindowX = 16;
 	const int WindowY = 52;
 	const int WindowWidthInTiles = 18;
 	const int WindowMinHeightInTiles = 4;
 	const int WindowMaxHeightInTiles = 9;
-	Window? window;
-	IRenderText? displayText;
+    const byte WindowDisplayLayer = 200;
+    const byte TextDisplayLayer = 210;
+	Label? displayText;
 	bool scrolling = false;
 	bool closeOnNextInput = false;
+    int heightInTiles = WindowMinHeightInTiles;
+    byte paletteIndex = 0;
 
-	public sealed override ScreenType Type { get; } = ScreenType.TextBox;
+    public sealed override ScreenType Type { get; } = ScreenType.TextBox;
 
-	public sealed override bool Transparent => true;
+    public override bool Dark { get; } = true;
 
-	public override void Open(Action? closeAction)
+    public override bool CreateWindowInOpenHandler { get; } = true;
+
+    public override int HeightInTiles => heightInTiles;
+
+    public override byte? PaletteIndex => paletteIndex;
+
+    public override void Open(Action? closeAction)
 	{
-		base.Open(closeAction);
+        IText text;
 
         // First check for text event
         if (Game.EventHandler.CurrentEvent is not ITextEvent @event)
         {
-            InitText(Game.CurrentText ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened without providing a text."));
-            return;
+            text = Game.CurrentText ?? throw new AmberException(ExceptionScope.Application, "TextBox screen opened without providing a text.");
+        }
+        else
+        {
+            int mapIndex = Game.EventHandler.CurrentEventMapIndex;
+            text = Game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
+            text = text.GetTextBlock(@event.TextIndex);
         }
 
-        int mapIndex = Game.EventHandler.CurrentEventMapIndex;
-        var text = Game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
-		text = text.GetTextBlock(@event.TextIndex);
+        paletteIndex = GetPalette();
+        displayText = AddLabel(0, 0, text, width: (WindowWidthInTiles - 2) * Window.TileWidth, height: WindowMaxHeightInTiles * Window.TileHeight + 7, TextDisplayLayer);
+        displayText.PaletteIndex = paletteIndex;
 
-		InitText(text);
-	}
+        // The width is fixed at 18*16 pixels.
+        // The height can range from 4*16 pixels to 9*16 pixels.
+        // The text area is 256x32 to 256x112 pixels large (at max 16 text lines).
+        int numTextLines = displayText.TextLineCount;
+        heightInTiles = MathUtil.Limit
+        (
+            WindowMinHeightInTiles,
+            (numTextLines * displayText.LineHeight + Window.TileHeight - 1) / Window.TileHeight + 2,
+            WindowMaxHeightInTiles
+        );
+
+        base.Open(closeAction);
+
+        // Show the text
+        var (x, y, width, height) = ClientArea;
+        int textY = y + Math.Max(0, (height - numTextLines * displayText.LineHeight) / 2);
+        displayText.Area = new(x, textY, width, height);
+        closeOnNextInput = !displayText.SupportsScrolling;
+    }
 
 	private byte GetPalette()
 	{
@@ -62,42 +92,6 @@ internal sealed class TextBoxScreen : Screen
 		return Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
 	}
 
-	private void InitText(IText text)
-	{
-		var palette = GetPalette();
-
-		displayText = Game.TextManager.Create(text, (WindowWidthInTiles - 2) * Window.TileWidth, 15, TextManager.TransparentPaper, palette);
-
-		// The width is fixed at 18*16 pixels.
-		// The height can range from 4*16 pixels to 9*16 pixels.
-		// The text area is 256x32 to 256x112 pixels large (at max 16 text lines).
-		int numTextLines = displayText.TextLineCount;
-		int heightInTiles = MathUtil.Limit
-		(
-			WindowMinHeightInTiles,
-			(numTextLines * displayText.LineHeight + Window.TileHeight - 1) / Window.TileHeight + 2,
-			WindowMaxHeightInTiles
-		);
-
-		// Create the window
-		window?.Destroy();
-		window = new(Game, WindowX, WindowY, WindowWidthInTiles, heightInTiles, dark: true, 100, palette);
-
-		// Show the text
-		var clientArea = window.ClientArea;
-		int textY = clientArea.Top + Math.Max(0, (clientArea.Size.Height - numTextLines * displayText.LineHeight) / 2);
-		displayText.ShowInArea(clientArea.Left, textY, clientArea.Size.Width, clientArea.Size.Height, 110);
-		closeOnNextInput = !displayText.SupportsScrolling;
-	}
-
-	public override void Close()
-	{
-		displayText?.Delete();
-		window?.Destroy();
-
-		base.Close();
-	}
-
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
         return ScrollOrClose() || base.KeyDown(key, keyModifiers);
@@ -118,14 +112,14 @@ internal sealed class TextBoxScreen : Screen
 
         if (!scrolling && displayText?.SupportsScrolling == true)
         {
-            if (!displayText.ScrollFullHeight())
+            if (!displayText.Text!.ScrollFullHeight())
             {
                 closeOnNextInput = true;
             }
             else
             {
                 scrolling = true;
-                displayText.ScrollEnded += () => scrolling = false;
+                displayText.Text!.ScrollEnded += () => scrolling = false;
             }
 
             return true;

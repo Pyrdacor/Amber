@@ -17,6 +17,8 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 
     public virtual bool Dark { get; } = false;
 
+    public virtual byte? PaletteIndex { get; } = null;
+
     public sealed override bool Transparent { get; } = true;
 
     public Rect ClientArea => window?.ClientArea ?? new Rect(x, y, widthInTiles * 16, HeightInTiles * 16);
@@ -50,8 +52,9 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 
 	private void CreateWindow()
 	{
+        SetAnchor(0, 0);
 		window?.Destroy();
-		window = AddWindow(x, y, widthInTiles, HeightInTiles, Dark, windowDisplayLayer);
+		window = AddWindow(x, y, widthInTiles, HeightInTiles, Dark, windowDisplayLayer, PaletteIndex);
         SetAnchorToWindow(window);
     }
 

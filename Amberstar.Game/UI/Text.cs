@@ -788,6 +788,12 @@ internal class Label(Game game) : Control, ILayeredDrawable
         }
     }
 
+    public bool SupportsScrolling => renderText?.SupportsScrolling ?? false;
+
+    public int TextLineCount => renderText?.TextLineCount ?? 0;
+
+    public int LineHeight => renderText?.LineHeight ?? 0;
+
     private void Show(bool? wasVisible = null)
     {
         if (renderText != null)
