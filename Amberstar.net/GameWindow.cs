@@ -49,7 +49,7 @@ namespace Amberstar
             if (mouse != null)
             {
                 cursor = mouse.Cursor;
-                cursor.CursorMode = CursorMode.Hidden;
+                cursor.CursorMode = CursorMode.Disabled;
                 mouse.MouseDown += Mouse_MouseDown;
                 mouse.MouseUp += Mouse_MouseUp;
                 mouse.MouseMove += Mouse_MouseMove;

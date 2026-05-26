@@ -69,6 +69,8 @@ internal sealed class TextBoxScreen() : WindowScreen(WindowX, WindowY, WindowWid
         int textY = y + Math.Max(0, (height - numTextLines * displayText.LineHeight) / 2);
         displayText.Area = new(x, textY, width, height);
         closeOnNextInput = !displayText.SupportsScrolling;
+
+        Game.Cursor.CursorType = CursorType.Sword;
     }
 
 	private byte GetPalette()

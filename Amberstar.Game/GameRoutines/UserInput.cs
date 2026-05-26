@@ -78,19 +78,30 @@ partial class Game
 
 	public void MouseMove(Position position, MouseButtons buttons)
 	{
-		if (mouseTrapArea != null)
+		Position newPosition;
+
+
+        if (mouseTrapArea != null)
 		{
-			var newPosition = new Position
+			newPosition = new Position
 			(
 				MathUtil.Limit(mouseTrapArea.Value.Left, position.X, mouseTrapArea.Value.Right - 1),
 				MathUtil.Limit(mouseTrapArea.Value.Top, position.Y, mouseTrapArea.Value.Bottom - 1)
 			);
+        }
+		else
+		{
+            newPosition = new Position
+            (
+                MathUtil.Limit(0, position.X, 319),
+                MathUtil.Limit(0, position.Y, 199)
+            );
+        }
 
-			if (position != newPosition)
-			{
-				position = newPosition;
-				setMousePosition(position);
-			}
+        if (position != newPosition)
+        {
+            position = newPosition;
+            setMousePosition(position);
         }
 
         lastMousePosition = position;

@@ -851,9 +851,8 @@ internal class Map2DScreen : ButtonGridScreen
 					var (x, y) = MousePositionToMapTilePosition(position);
 
 					Game.Cursor.CursorType = CursorType.Sword;
-
-					TryExecuteMapEvent(eventTrigger, x, y);
-					Game.UntrapMouse();
+                    Game.UntrapMouse();
+                    TryExecuteMapEvent(eventTrigger, x, y);
 
 					return true;
 				}
