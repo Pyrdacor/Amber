@@ -326,7 +326,7 @@ internal abstract class Screen
         return button;
     }
 
-    public Image AddImage(int x, int y, int width, int height, int textureIndex, Layer layer = Layer.UI, byte displayLayer = 0, bool opaque = false)
+    public Image AddImage(int x, int y, int width, int height, int textureIndex, byte displayLayer = 0, bool opaque = false, Layer layer = Layer.UI)
     {
         int baseX = 0;
         int baseY = 0;
@@ -342,23 +342,23 @@ internal abstract class Screen
         return image;
     }
 
-    public Image AddImage(ref int x, int y, int width, int height, int textureIndex, Layer layer = Layer.UI, byte displayLayer = 0, bool opaque = false)
+    public Image AddImage(ref int x, int y, int width, int height, int textureIndex, byte displayLayer = 0, bool opaque = false, Layer layer = Layer.UI)
     {
-        var image = AddImage(x, y, width, height, textureIndex, layer, displayLayer, opaque);
+        var image = AddImage(x, y, width, height, textureIndex, displayLayer, opaque, layer);
         x += width;
         return image;
     }
 
-    public Image AddImage(int x, ref int y, int width, int height, int textureIndex, Layer layer = Layer.UI, byte displayLayer = 0, bool opaque = false)
+    public Image AddImage(int x, ref int y, int width, int height, int textureIndex, byte displayLayer = 0, bool opaque = false, Layer layer = Layer.UI)
     {
-        var image = AddImage(x, y, width, height, textureIndex, layer, displayLayer, opaque);
+        var image = AddImage(x, y, width, height, textureIndex, displayLayer, opaque, layer);
         y += height;
         return image;
     }
 
-    public Image AddImage(ref int x, ref int y, int width, int height, int textureIndex, Layer layer = Layer.UI, byte displayLayer = 0, bool opaque = false)
+    public Image AddImage(ref int x, ref int y, int width, int height, int textureIndex, byte displayLayer = 0, bool opaque = false, Layer layer = Layer.UI)
     {
-        var image = AddImage(x, y, width, height, textureIndex, layer, displayLayer, opaque);
+        var image = AddImage(x, y, width, height, textureIndex, displayLayer, opaque, layer);
         x += width;
         y += height;
         return image;

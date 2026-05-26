@@ -389,34 +389,34 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
     internal override void PickItem(ScreenType sourceScreen, int? index)
     {
-        if (index == null)
-        {
-            CleanUpItems();
-            return;
-        }
-
         switch (sourceScreen)
         {
             case ScreenType.LockedUseItem:
                 base.PickItem(sourceScreen, index);
                 break;
             case ScreenType.ChestExamineItem:
-                Game.CurrentItem = ItemContainers[index.Value].Item;
-                Game.ScreenHandler.PushScreen(ScreenType.ItemView);
+                if (index != null)
+                {
+                    Game.CurrentItem = ItemContainers[index.Value].Item;
+                    Game.ScreenHandler.PushScreen(ScreenType.ItemView);
+                }
                 break;
             case ScreenType.ChestGiveItem:
-                Game.CurrentItem = ItemContainers[index.Value].Item;
-                if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
+                if (index != null)
                 {
-                    currentChestSlot = index;
                     Game.CurrentItem = ItemContainers[index.Value].Item;
-                    ItemContainers[index.Value].StartDragging();
-                    Game.TrapMouseInPortraitArea();
-                }
-                else
-                {
-                    Game.ResetStatusIcons();
-                    ShowMessage(Message.NoMemberHasRoomForItem);
+                    if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
+                    {
+                        currentChestSlot = index;
+                        Game.CurrentItem = ItemContainers[index.Value].Item;
+                        ItemContainers[index.Value].StartDragging();
+                        Game.TrapMouseInPortraitArea();
+                    }
+                    else
+                    {
+                        Game.ResetStatusIcons();
+                        ShowMessage(Message.NoMemberHasRoomForItem);
+                    }
                 }
                 break;
         }

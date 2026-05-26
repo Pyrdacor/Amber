@@ -136,7 +136,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
             inventoryItemSlots[i] = AddItem(slotX, slotY, item: null, count: 0, displayLayer: 10);
         }
 
-        var image = AddImage(16, 49, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(Image), Layer.UI, 0, true);
+        var image = AddImage(16, 49, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(Image), 0, true);
         image.PaletteIndex = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(image80x80);
         this.image = image;
 

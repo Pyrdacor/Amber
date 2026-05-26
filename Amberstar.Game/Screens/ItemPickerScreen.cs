@@ -27,12 +27,9 @@ internal abstract class ItemPickerScreen : Screen
 	{
         base.Init();
 
-        itemNameTooltip = new(Game)
-        {
-            DisplayLayer = 100,
-            Alignment = TextAlignment.Center,
-            Area = ItemTooltipArea,
-        };
+        var (x, y, width, height) = ItemTooltipArea;
+        itemNameTooltip = AddLabel(x, y, width, height, displayLayer: 100);
+        itemNameTooltip.Alignment = TextAlignment.Center;
 
         // Note: During Init the ActiveScreen is still the last one.
         parentScreen = Game.ScreenHandler.ActiveScreen as ItemGridScreen;

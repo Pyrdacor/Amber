@@ -30,7 +30,7 @@ internal class PictureTextScreen : Screen
         var imageType = (Image80x80)@event.Picture;
         var palette = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(imageType);
         
-		image = AddImage(16, 81, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(imageType), Layer.UI, ControlDisplayLayer, true);
+		image = AddImage(16, 81, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(imageType), ControlDisplayLayer, true);
 		image.PaletteIndex = palette;
 		image.Visible = true;
 

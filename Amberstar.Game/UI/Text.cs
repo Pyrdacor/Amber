@@ -682,17 +682,20 @@ internal class Label(Game game) : Control, ILayeredDrawable
 
     public override bool Visible
     {
-        get => renderText?.Visible ?? false;
+        get => visibleRequest || (renderText?.Visible ?? false);
         set
         {
             if (renderText != null)
             {
-                visibleRequest = false;
-
                 if (needsShowCall && value)
-                    Show();
+                {
+                    Show(true);
+                }
                 else
+                {
+                    visibleRequest = false;
                     renderText.Visible = value;
+                }                
             }
             else
             {

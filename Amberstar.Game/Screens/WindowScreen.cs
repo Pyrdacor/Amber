@@ -50,6 +50,22 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
         base.Close();
     }
 
+    public override void ScreenPushed(Screen screen)
+    {
+        if (TrapMouse)
+            Game.UntrapMouse();
+
+        base.ScreenPushed(screen);
+    }
+
+    public override void ScreenPopped(Screen screen)
+    {
+        base.ScreenPopped(screen);
+
+        if (TrapMouse)
+            Game.TrapMouse(ClientArea);
+    }
+
 	private void CreateWindow()
 	{
         SetAnchor(0, 0);
