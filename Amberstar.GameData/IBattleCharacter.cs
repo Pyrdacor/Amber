@@ -12,9 +12,9 @@ public interface IBattleCharacter : ICharacter
     word BonusDamage { get; set; }
     PhysicalCondition PhysicalConditions { get; set; }
     MentalCondition MentalConditions { get; set; }
-    public byte MagicBonusWeapon { get; set; }
-    public byte MagicBonusArmor { get; set; }
-    public byte AttacksPerRound { get; set; }
+    byte MagicBonusWeapon { get; set; }
+    byte MagicBonusArmor { get; set; }
+    byte AttacksPerRound { get; set; }
     CharacterValue HitPoints { get; }
     CharacterValue SpellPoints { get; }
     ReadOnlyDictionary<Skill, CharacterValue> Skills { get; }

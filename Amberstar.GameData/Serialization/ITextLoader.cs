@@ -9,6 +9,7 @@ public interface ITextLoader
     IText ReadText(IDataReader dataReader);
     IText FromString(string text);
     IText FromTextFragmentIndex(word index);
+    word? FindWord(string word);
 }
 
 public static class TextLoaderExtensions

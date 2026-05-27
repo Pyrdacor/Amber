@@ -12,6 +12,8 @@ public enum Key
 	Delete,
 	Escape,
 	Space,
+	Home,
+	End,
 	Keypad1,
 	Keypad2,
 	Keypad3,

@@ -166,4 +166,17 @@ internal class ConversationData : IConversationData
     public IText? Texts { get; init; }
     public ReadOnlyDictionary<InteractionTrigger, IConversationInteraction> PrimaryInteractions => primaryInteractions.AsReadOnly();
     public ReadOnlyDictionary<InteractionTrigger, IConversationInteraction> SecondaryInteractions => secondaryInteractions.AsReadOnly();
+
+    public IConversationData Clone()
+    {
+        return new ConversationData(primaryInteractions, secondaryInteractions)
+        {
+            Age = Age.Copy(),
+            LearnedLanguages = LearnedLanguages,
+            JoinChance = JoinChance,
+            QuestCompletionIndex = QuestCompletionIndex,
+            Portrait = Portrait,
+            Texts = Texts
+        };
+    }
 }

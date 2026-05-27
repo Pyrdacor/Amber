@@ -8,6 +8,7 @@ public interface IMonster : IBattleCharacter
     byte Morale { get; init; }
     byte SpellCastChance { get; init; }
     byte MagicHitBonus { get; init; }
+    word DefeatExperience { get; init; }
     MonsterFlags MonsterFlags { get; init; }
     MonsterElementalFlags ElementalFlags { get; init; }
     /// <summary>
@@ -15,4 +16,6 @@ public interface IMonster : IBattleCharacter
     /// A spell can exist multiple times to increase it's chance to be picked.
     /// </summary>
     MonsterSpell[] Spells { get; init; }
+
+    IMonster Clone();
 }

@@ -6,6 +6,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+// TODO: use TextScrollHandler
 internal sealed class TextBoxScreen() : WindowScreen(WindowX, WindowY, WindowWidthInTiles, WindowMinHeightInTiles, WindowDisplayLayer)
 {
 	const int WindowX = 16;

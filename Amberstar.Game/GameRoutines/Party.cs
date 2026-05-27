@@ -153,6 +153,12 @@ partial class Game
         return false;
     }
 
+    public int DistributeFood(int amount)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
     // TODO: Needs testing with bigger party and different constellations
     public int DistributeGold(int amount)
     {

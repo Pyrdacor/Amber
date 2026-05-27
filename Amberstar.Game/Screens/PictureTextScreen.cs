@@ -13,12 +13,19 @@ internal class PictureTextScreen : Screen
 	const int TextWidth = 192;
 	const int TextHeight = 140;
     const int ControlDisplayLayer = 100;
+	readonly TextScrollHandler textScrollHandler = new();
     Image? image;
 	Label? displayText;
-	bool scrolling = false;
 	bool closeOnNextInput = false;
 
 	public override ScreenType Type { get; } = ScreenType.PictureText;
+
+    public override void Init()
+    {
+        base.Init();
+
+        textScrollHandler.ScrollEnded += () => Game.ScreenHandler.PopScreen();
+    }
 
 	public override void Open(Action? closeAction)
 	{
@@ -44,48 +51,39 @@ internal class PictureTextScreen : Screen
 		displayText = AddLabel(TextX, TextY, text, TextWidth, TextHeight, ControlDisplayLayer);
 		displayText.PaletteIndex = palette;
 		closeOnNextInput = !displayText.SupportsScrolling;
-	}
+
+        textScrollHandler.Attach(displayText);
+    }
 
     public override void Close()
     {
         Game.Cursor.CursorType = CursorType.Sword;
+		textScrollHandler.Detach();
 
         base.Close();
     }
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-        return ScrollOrClose() || base.KeyDown(key, keyModifiers);
+        if (closeOnNextInput)
+        {
+            closeOnNextInput = false;
+            Game.ScreenHandler.PopScreen();
+            return true;
+        }
+
+        return textScrollHandler.KeyDown(key, keyModifiers) || base.KeyDown(key, keyModifiers);
     }
 
 	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
-        return ScrollOrClose() || base.MouseDown(position, buttons, keyModifiers);
-    }
-
-	private bool ScrollOrClose()
-	{
-		if (closeOnNextInput)
-		{
+        if (closeOnNextInput)
+        {
+            closeOnNextInput = false;
             Game.ScreenHandler.PopScreen();
-			return true;
-		}
+            return true;
+        }
 
-		if (!scrolling && displayText?.SupportsScrolling == true)
-		{
-			if (!displayText.Text!.ScrollFullHeight())
-			{
-				closeOnNextInput = true;
-			}
-			else
-			{
-				scrolling = true;
-				displayText.Text!.ScrollEnded += () => scrolling = false;
-			}
-
-			return true;
-		}
-
-		return scrolling;
-	}
+        return textScrollHandler.MouseDown(buttons) || base.MouseDown(position, buttons, keyModifiers);
+    }
 }

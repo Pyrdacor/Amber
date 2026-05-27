@@ -5,13 +5,12 @@ namespace Amberstar.GameData.Legacy;
 
 internal class PartyMember : BattleCharacter, IPartyMember
 {
-    private ClassFlags possibleClasses;
     private byte defaultBattlePosition;
     private word attackPerRoundLevel;
     private word hitPointsPerLevel;
     private word spellPointsPerLevel;
     private word spellLearningPointsPerLevel;
-    private word spellLearningPoints;
+    private word saveBit;
     private IConversationData? conversationData;
 
     public static PartyMember Load(IAsset asset, ITextLoader textLoader)
@@ -29,7 +28,7 @@ internal class PartyMember : BattleCharacter, IPartyMember
         partyMember.defaultBattlePosition = reader.ReadByte();
 
         reader.Position = 0x46;
-        partyMember.possibleClasses = (ClassFlags)reader.ReadWord();
+        partyMember.PossibleClasses = (ClassFlags)reader.ReadWord();
 
         reader.Position = 0x70;
         partyMember.attackPerRoundLevel = reader.ReadWord();
@@ -38,7 +37,7 @@ internal class PartyMember : BattleCharacter, IPartyMember
         partyMember.spellLearningPointsPerLevel = reader.ReadWord();
 
         reader.Position = 0x8e;
-        partyMember.spellLearningPoints = reader.ReadWord();
+        partyMember.SpellLearningPoints = reader.ReadWord();
 
         reader.Position = 0xcc;
         partyMember.ExperiencePoints = reader.ReadDword();
@@ -54,13 +53,14 @@ internal class PartyMember : BattleCharacter, IPartyMember
         return partyMember;
     }
 
-    public ClassFlags PossibleClasses { get => possibleClasses; init => possibleClasses = value; }
+    public ClassFlags PossibleClasses { get; set; }
     public byte DefaultBattlePosition { get => defaultBattlePosition; init => defaultBattlePosition = value; }
     public word AttackPerRoundLevel { get => attackPerRoundLevel; init => attackPerRoundLevel = value; }
     public word HitPointsPerLevel { get => hitPointsPerLevel; init => hitPointsPerLevel = value; }
     public word SpellPointsPerLevel { get => spellPointsPerLevel; init => spellPointsPerLevel = value; }
     public word SpellLearningPointsPerLevel { get => spellLearningPointsPerLevel; init => spellLearningPointsPerLevel = value; }
-    public word SpellLearningPoints { get => spellLearningPoints; init => spellLearningPoints = value; }
+    public word SpellLearningPoints { get; set; }
+    public word SaveBit { get => saveBit; set => saveBit = value; }
     public dword ExperiencePoints { get; set; }
     public SpellSchoolFlags LearnedSpellSchools { get; set; }
     public dword LearnedWhiteSpells { get; set; }
@@ -79,22 +79,24 @@ internal class PartyMember : BattleCharacter, IPartyMember
         base.CloneInto(clone);
 
         // Copy PartyMember-specific fields
-        clone.possibleClasses = possibleClasses;
         clone.defaultBattlePosition = defaultBattlePosition;
         clone.attackPerRoundLevel = attackPerRoundLevel;
         clone.hitPointsPerLevel = hitPointsPerLevel;
         clone.spellPointsPerLevel = spellPointsPerLevel;
         clone.spellLearningPointsPerLevel = spellLearningPointsPerLevel;
-        clone.spellLearningPoints = spellLearningPoints;
-        clone.conversationData = conversationData;
+        clone.conversationData = conversationData?.Clone();
+        clone.saveBit = saveBit;
 
         // Copy properties
+        clone.PossibleClasses = PossibleClasses;
+        clone.SpellLearningPoints = SpellLearningPoints;
         clone.ExperiencePoints = ExperiencePoints;
         clone.LearnedSpellSchools = LearnedSpellSchools;
         clone.LearnedWhiteSpells = LearnedWhiteSpells;
         clone.LearnedGraySpells = LearnedGraySpells;
         clone.LearnedBlackSpells = LearnedBlackSpells;
         clone.LearnedSpecialSpells = LearnedSpecialSpells;
+        clone.TotalWeight = TotalWeight;
 
         return clone;
     }

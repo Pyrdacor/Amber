@@ -15,6 +15,8 @@ internal sealed class SelectWordScreen() : WindowScreen(WindowX, WindowY, Window
     const byte WindowDisplayLayer = 110;
     const byte ControlDisplayLayer = 120;
     List? list;
+    Button? upButton;
+    Button? downButton;
 
     public sealed override ScreenType Type { get; } = ScreenType.SelectWord;
 
@@ -26,6 +28,39 @@ internal sealed class SelectWordScreen() : WindowScreen(WindowX, WindowY, Window
 
         var (clientWidth, clientHeight) = ClientArea.Size;
         list = AddList(0, 0, clientWidth, clientHeight - Button.Height, ControlDisplayLayer, backgroundColorIndex: 3);
+        list.ItemClicked += (_, word) =>
+        {
+            Game.CurrentWord = word;
+            Game.ScreenHandler.PopScreen();
+        };
+
+        int x = 0;
+        int y = list.Area.Size.Height;
+
+        var mouthButton = AddButton(ref x, y, ButtonType.Mouth, ControlDisplayLayer);
+        mouthButton.ClickAction += () => Game.ScreenHandler.PushScreen(ScreenType.InputWord);
+
+        upButton = AddButton(ref x, y, ButtonType.ArrowUp, ControlDisplayLayer);
+        upButton.ClickAction += () => list?.Scroll(-1);
+        upButton.RightClickAction += () => list?.ScrollToBegin();
+
+        downButton = AddButton(ref x, y, ButtonType.ArrowDown, ControlDisplayLayer);
+        downButton.ClickAction += () => list?.Scroll(1);
+        downButton.RightClickAction += () => list?.ScrollToEnd();
+
+        var exitButton = AddButton(ref x, y, ButtonType.Exit, ControlDisplayLayer);
+        exitButton.ClickAction += () =>
+        {
+            Game.CurrentWord = null;
+            Game.ScreenHandler.PopScreen();
+        };
+    }
+
+    public override void Open(Action? closeAction)
+    {
+        base.Open(closeAction);
+
+        list!.Clear();
 
         List<IText> knownWords = [];
 
@@ -41,21 +76,17 @@ internal sealed class SelectWordScreen() : WindowScreen(WindowX, WindowY, Window
         {
             list.AddItem(knownWord);
         }
+    }
 
-        int x = 0;
-        int y = list.Area.Size.Height;
+    public override void ScreenPopped(Screen screen)
+    {
+        base.ScreenPopped(screen);
 
-        var mouthButton = AddButton(ref x, y, ButtonType.Mouth, ControlDisplayLayer);
-        mouthButton.ClickAction += () => Game.ScreenHandler.PushScreen(ScreenType.InputWord);
-
-        var upButton = AddButton(ref x, y, ButtonType.ArrowUp, ControlDisplayLayer);
-        //upButton.ClickAction += () => Game.ScreenHandler.PopScreen();
-
-        var downButton = AddButton(ref x, y, ButtonType.ArrowDown, ControlDisplayLayer);
-        //downButton.ClickAction += () => Game.ScreenHandler.PopScreen();
-
-        var exitButton = AddButton(ref x, y, ButtonType.Exit, ControlDisplayLayer);
-        exitButton.ClickAction += () => Game.ScreenHandler.PopScreen();
+        if (screen is InputWordScreen)
+        {
+            if (!string.IsNullOrEmpty(Game.CurrentWord))
+                Game.ScreenHandler.PopScreen();
+        }
     }
 
     /*private void ChangeAmount(int change)
@@ -74,36 +105,40 @@ internal sealed class SelectWordScreen() : WindowScreen(WindowX, WindowY, Window
 	{
         switch (key)
         {
-            /*case Key.Up:
+            case Key.Up:
                 if (keyModifiers == KeyModifiers.None)
-                    ChangeAmount(1);
+                    list?.Scroll(-1);
                 else
-                    ChangeAmount(Game.CurrentMaxAmount - Game.CurrentAmount);
+                    list?.ScrollToBegin();
                 return true;
             case Key.Down:
                 if (keyModifiers == KeyModifiers.None)
-                    ChangeAmount(-1);
+                    list?.Scroll(1);
                 else
-                    ChangeAmount(-Game.CurrentAmount);
+                    list?.ScrollToEnd();
                 return true;
             case Key.PageUp:
                 if (keyModifiers == KeyModifiers.None)
-                    ChangeAmount(10);
+                    list?.Scroll(-10);
                 else
-                    ChangeAmount(Game.CurrentMaxAmount - Game.CurrentAmount);
+                    list?.ScrollToBegin();
                 return true;
             case Key.PageDown:
                 if (keyModifiers == KeyModifiers.None)
-                    ChangeAmount(-10);
+                    list?.Scroll(10);
                 else
-                    ChangeAmount(-Game.CurrentAmount);
-                return true;*/
-            case Key.Escape:
-                Game.CurrentAmount = 0;
-                Game.ScreenHandler.PopScreen();
+                    list?.ScrollToEnd();
                 return true;
+            case Key.Home:
+                list?.ScrollToBegin();
+                return true;
+            case Key.End:
+                list?.ScrollToEnd();
+                return true;
+            case Key.Escape:
             case Key.Space:
             case Key.Enter:
+                Game.CurrentWord = null;
                 Game.ScreenHandler.PopScreen();
                 return true;
         }
@@ -113,9 +148,22 @@ internal sealed class SelectWordScreen() : WindowScreen(WindowX, WindowY, Window
 
 	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
-        if (keyModifiers != KeyModifiers.None && !list!.Area.Contains(position))
+        if (buttons == MouseButtons.Left && list?.MouseClick(position) == true)
+            return true;
+
+        // Ctrl, Shift or Alt with LMB has the same effect as RMB for up and down button.
+        if (keyModifiers != KeyModifiers.None &&
+            (upButton?.Area.Contains(position) == true ||
+            downButton?.Area.Contains(position) == true))
             buttons = MouseButtons.Right;
 
         return base.MouseDown(position, buttons, keyModifiers);
+    }
+
+    public override bool MouseWheel(Position position, float scrollX, float scrollY, MouseButtons buttons)
+    {
+        list?.MouseWheel(Math.Sign(scrollY));
+
+        return true;
     }
 }

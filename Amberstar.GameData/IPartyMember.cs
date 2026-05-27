@@ -2,13 +2,14 @@
 
 public interface IPartyMember : IBattleCharacter, IPerson
 {
-    ClassFlags PossibleClasses { get; init; }
+    ClassFlags PossibleClasses { get; set; }
     byte DefaultBattlePosition { get; init; }
     word AttackPerRoundLevel { get; init; }
     word HitPointsPerLevel { get; init; }
     word SpellPointsPerLevel { get; init; }
     word SpellLearningPointsPerLevel { get; init; }
-    word SpellLearningPoints { get; init; }
+    word SpellLearningPoints { get; set; }
+    word SaveBit { get; set; }
     dword ExperiencePoints { get; set; }
     SpellSchoolFlags LearnedSpellSchools { get; set; }
     dword LearnedWhiteSpells { get; set; }

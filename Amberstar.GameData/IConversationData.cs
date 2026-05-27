@@ -13,4 +13,6 @@ public interface IConversationData
     IText? Texts { get; init; }
     ReadOnlyDictionary<InteractionTrigger, IConversationInteraction> PrimaryInteractions { get; }
     ReadOnlyDictionary<InteractionTrigger, IConversationInteraction> SecondaryInteractions { get; }
+
+    IConversationData Clone();
 }    

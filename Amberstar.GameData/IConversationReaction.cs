@@ -86,8 +86,16 @@ public interface ICompleteQuestReaction : IConversationReaction
 
 public enum ChangeStatAction
 {
+    // Note: Based on offset, the affected size is either byte, word or long.
+    // Offset < 70: Byte
+    // Offset >= 204: Long
+    // In-between: Word
     Increase = 1,
-    SetBit = 7,
+    Decrease,
+    // Note: The bit operations only affect a single byte, so bit index should be only 0 to 7!
+    ClearBit,
+    SetBit,
+    ToggleBit
 }
 
 /// <summary>

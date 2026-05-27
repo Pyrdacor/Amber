@@ -89,6 +89,8 @@ internal class Button : Control
         }
 	}
 
+	public Rect Area => new(Position, new(Width, Height));
+
     public Button(Game game, int x, int y, ButtonType buttonType, byte displayLayer, byte? paletteIndex = null)
 	{
 		this.game = game;

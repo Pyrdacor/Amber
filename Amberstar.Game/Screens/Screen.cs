@@ -233,6 +233,7 @@ internal abstract class Screen
 		return false;
 	}
 
+    // TODO: Remove these and replace usage with Image/Label
 	#region Helper functions
 	protected static void ShowSprites(IEnumerable<ISprite?> sprites, bool show = true)
     {

@@ -21,6 +21,7 @@ internal interface IRenderText
     byte Alpha { get; set; }
     byte DisplayLayer { get; set; }
     byte PaletteIndex { get; set; }
+    bool Scrolling { get; }
 
     event Action? ScrollEnded;
 
@@ -78,6 +79,7 @@ internal class TextManager(Game game, IFont font,
         IFontInfoProvider fontInfoProvider, byte paletteIndex
     ) : IRenderText
     {
+        readonly static TextLine EmptyLine = new([]);
         readonly ILayer layer = game.GetRenderLayer(Layer.Text);
         readonly List<TextLine> textLines = textLines;
 		readonly List<List<IAlphaSprite>> glyphShadows = [];
@@ -171,6 +173,8 @@ internal class TextManager(Game game, IFont font,
                     shadow.PaletteIndex = paletteIndex;
             }
         }
+
+        public bool Scrolling { get; private set; }
 
         private static readonly Dictionary<char, int> UnicodeToAtariST = new()
         {
@@ -323,6 +327,19 @@ internal class TextManager(Game game, IFont font,
 
             lineCount = Math.Min(lineCount, textLines.Count);
 
+            if (SupportsScrolling)
+            {
+                textLines.InsertRange(0, Enumerable.Repeat(EmptyLine, lineCount));
+                Scrolling = true;
+                game.AddDelayedAction(10, () =>
+                {
+                    var oldMaxScroll = maxScroll;
+                    maxScroll = lineCount;
+                    Scroll(lineCount);
+                    maxScroll = oldMaxScroll;
+                });
+            }
+
             for (int i = 0; i < lineCount; i++)
             {
                 SetupTextLine(x, y, i, textLines[i]);
@@ -372,6 +389,8 @@ internal class TextManager(Game game, IFont font,
         {
             if (maxScroll == 0)
                 return false;
+
+            Scrolling = true;
 
             int scrollAmount = Math.Max(1, font.LineHeight / 2);
 
@@ -442,7 +461,11 @@ internal class TextManager(Game game, IFont font,
                 }
             }
 
-            void ScrollEnd() => ScrollEnded?.Invoke();
+            void ScrollEnd()
+            {
+                Scrolling = false;
+                ScrollEnded?.Invoke();
+            }
 
             int totalScrolls = lines * font.LineHeight / scrollAmount;
 

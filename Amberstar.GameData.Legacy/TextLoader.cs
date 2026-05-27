@@ -19,6 +19,16 @@ internal class TextLoader(Amber.Assets.Common.IAssetProvider assetProvider, List
         return Text.FromTextFragmentIndex(index, textFragments);
     }
 
+    public word? FindWord(string word)
+	{
+		int index = textFragments.FindIndex(text => string.Compare(text, word, true) == 0);
+
+		if (index == -1)
+			return null;
+
+		return (word)index;
+	}
+
     public IText ReadText(IDataReader dataReader)
 	{
 		return Text.Read(dataReader, textFragments);
