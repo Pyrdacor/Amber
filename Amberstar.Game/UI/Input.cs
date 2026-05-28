@@ -28,7 +28,8 @@ internal class Input : Control
         Area = new(x, y, width, Height);
 
         background = game.CreateColoredRect(Layer.UI, new(x, y), new(width, Height), game.PaletteColorProvider.GetPaletteColor(paletteIndex, 3));
-        background!.Visible = true;
+        background!.DisplayLayer = displayLayer;
+        background.Visible = true;
 
         this.maxLength = maxLength ?? (width - 1) / 6 - 1;
 
@@ -106,6 +107,12 @@ internal class Input : Control
         destroyed = true;
 
         label?.Destroy();
+    }
+
+    public void Clear()
+    {
+        text = "_";
+        UpdateText();
     }
 
     private void UpdateText()

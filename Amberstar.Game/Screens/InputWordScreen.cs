@@ -29,6 +29,14 @@ internal class InputWordScreen() : WindowScreen(WindowX, WindowY, WindowWidthInT
 		input = AddInput(-1, 16, 128, ControlDisplayLayer);
     }
 
+    public override void Open(Action? closeAction)
+    {
+        Game.CurrentWord = "";
+        input?.Clear();
+
+        base.Open(closeAction);
+    }
+
     public override bool KeyChar(char ch, KeyModifiers keyModifiers)
     {
 		if (input?.KeyChar(ch) == true)
