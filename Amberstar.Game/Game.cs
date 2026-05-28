@@ -9,6 +9,8 @@ using IAssetProvider = Amberstar.GameData.IAssetProvider;
 
 namespace Amberstar.Game;
 
+// TODO: Gold is not stored in character?
+
 /// <summary>
 /// Much of the implementation is located in the folder GameRoutines.
 /// </summary>
@@ -58,36 +60,13 @@ public partial class Game : IDisposable
 			var position = new Position(16 + i * 48, 1);
 			var size = new Size(32, 34);
 
-            if (partyMember != null)
-			{
-				var sprite = portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetPersonPortraitIndex(1), uiPaletteIndex);
-				sprite!.DisplayLayer = 0;
+			portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyCharSlot), uiPaletteIndex);
 
-				string name = partyMember.Name;
+			Destroy(partyMemberNameBackgrounds[i]);
+			partyMemberNameBackgrounds[i] = null;
 
-				if (name.Length > 5)
-					name = name[..5];
-
-				var namePosition = position + new Position(2, size.Height - 4);
-				var nameSize = new Size(TextManager.GetTextRenderWidth(name), 6);
-
-				var nameBackground = partyMemberNameBackgrounds[i] = CreateColoredRect(Layer.UI, namePosition, nameSize, Color.Black);
-				nameBackground!.DisplayLayer = 5;
-
-				var nameText = partyMemberNames[i] = TextManager.Create(name, 8);
-				nameText.ShowInArea(new Rect(namePosition, nameSize), 10);
-			}
-			else
-			{
-				portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyCharSlot), uiPaletteIndex);
-
-				Destroy(partyMemberNameBackgrounds[i]);
-				partyMemberNameBackgrounds[i] = null;
-
-				Destroy(partyMemberNames[i]);
-				partyMemberNames[i] = null;
-
-			}
+			Destroy(partyMemberNames[i]);
+			partyMemberNames[i] = null;
 
 			playerStatusIconIndices[i] = 0;
 			playerStatusIconTypes[i] = [];
@@ -97,6 +76,7 @@ public partial class Game : IDisposable
 		});
 
 		ResetStatusIcons();
+		UpdatePartyMembers();
 
         ScreenHandler.PushScreen(ScreenType.Map2D);
 

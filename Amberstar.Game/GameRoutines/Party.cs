@@ -220,6 +220,7 @@ partial class Game
     }
 
     // TODO: Needs testing with bigger party and different constellations
+    // TODO: Seems to only give the amount to the first member
     public int DistributeGold(int amount)
     {
         List<(IPartyMember Taker, int MaxAmount)> takers = [];
@@ -254,11 +255,11 @@ partial class Game
         while (amount > 0)
         {
             int takerCount = takers.Count;
+            int goldToTake = amount / takerCount;
 
             for (int i = 0; i < takers.Count; i++)
             {
-                var taker = takers[0];
-                int goldToTake = amount / takerCount;
+                var taker = takers[i];
 
                 if (goldToTake == 0)
                     goldToTake = amount;
@@ -268,9 +269,6 @@ partial class Game
                 taker.Taker.TotalWeight += (uint)takenGold * GoldWeight;
                 taker.MaxAmount -= takenGold;
                 amount -= takenGold;
-
-                if (taker.MaxAmount == 0)
-                    takerCount--;
             }
 
             // Remove takers who can't take any more gold

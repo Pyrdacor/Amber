@@ -257,13 +257,15 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
         return partyMembers[characterIndex];
     }
 
-	public void SetActivePartyMember(int slotIndex)
+	public IPartyMember? SetActivePartyMember(int slotIndex)
 	{
 		if (slotIndex < 1 || slotIndex > PartySize || PartyCharacterIndices[slotIndex - 1] == 0)
-			return;
+			return ActivePartyMember;
 
 		ActivePartyMemberIndex = slotIndex;
 		ActivePartyMemberChanged?.Invoke();
+
+        return ActivePartyMember;
     }
 
     public void SetCurrentInventory(int? slotIndex)

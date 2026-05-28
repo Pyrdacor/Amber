@@ -9,7 +9,8 @@ namespace Amberstar.Game.Screens;
 // MapCharacterIndex = Index inside the characters on the map (0..23)
 internal record ConversationCharacter(int CharacterIndex, IMap Map, int MapCharacterIndex);
 
-// TODO: Rework and implement fully
+// TODO: Silk has no gold and food (but he has in original)
+// TODO: When talking to Silk, the gold and food display is broken
 internal sealed class ConversationScreen : ItemGridScreen
 {
     const int ItemSlotCount = 12;
@@ -32,6 +33,12 @@ internal sealed class ConversationScreen : ItemGridScreen
     bool closeAfterClick = false;
     bool insideParty = false;
     int? dragSourceItemSlot = null;
+    Image? goldIcon = null;
+    Image? foodIcon = null;
+    Image? goldIconBackground = null;
+    Image? foodIconBackground = null;
+    Label? goldValue = null;
+    Label? foodValue = null;
 
     static ConversationScreen()
     {
@@ -107,6 +114,21 @@ internal sealed class ConversationScreen : ItemGridScreen
             var (slotX, slotY) = itemSlotPositions[i];
             items[i] = AddItem(slotX, slotY, item: null, count: 0, displayLayer: 10);
         }
+
+        var itemPalette = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item];
+
+        x = 208;
+        y = 113;
+        goldIconBackground = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), displayLayer: 10, true);
+        goldIcon = AddImage(ref x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(ItemGraphic.WishingCoins), displayLayer: 15);
+        goldIcon.PaletteIndex = itemPalette;
+        goldValue = AddLabel(x + 1, y + 5, 30, 7, displayLayer: 15);
+
+        x += 32;
+        foodIconBackground = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), displayLayer: 10, true);
+        foodIcon = AddImage(ref x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(ItemGraphic.Ration), displayLayer: 15);
+        foodIcon.PaletteIndex = itemPalette;
+        foodValue = AddLabel(x + 1, y + 5, 30, 7, displayLayer: 15);
     }
 
     public override void Open(Action? closeAction)
@@ -131,8 +153,13 @@ internal sealed class ConversationScreen : ItemGridScreen
         waitForClick = false;
         closeAfterClick = false;
 
+        var partyMember = Game.State.ActivePartyMember!;
+        goldValue!.SetText($"{partyMember.Gold:00000}");
+        foodValue!.SetText($"{partyMember.Food:00000}");
+
         HideText();
         ShowReceivedItems();
+        RequestButtonSetup();
     }
 
     public override void Close()
@@ -506,7 +533,7 @@ internal sealed class ConversationScreen : ItemGridScreen
                 }
                 else
                 {
-                    if (!Game.State.TryAddPartyMember(characterIndex, out int slotIndex))
+                    if (!Game.State.TryAddPartyMember(characterIndex, out _))
                     {
                         // NOTE: The original just ends silently here.
                         return;
@@ -516,7 +543,7 @@ internal sealed class ConversationScreen : ItemGridScreen
                     {
                         (person as IPartyMember)!.SaveBit = (word)((map!.Index - 1) * IMap.CharacterCount + mapCharacterIndex);
                         Game.State.SetMapCharacterActive(map.Index, mapCharacterIndex, false); // Remove from map
-                        Game.UpdatePortrait(slotIndex);
+                        Game.UpdatePartyMembers();
                         insideParty = true;
                         ShowReceivedItems();
                         RequestButtonSetup();
@@ -530,12 +557,15 @@ internal sealed class ConversationScreen : ItemGridScreen
             case 6: // Give item to person
                 ShowInventoryItems();
                 Game.ScreenHandler.PushScreen(ScreenType.ConversationGiveItem);
-                // TODO
                 break;
             case 7: // Give gold to person
-                Game.ScreenHandler.PushScreen(ScreenType.ConversationGiveItem);
+                Game.CurrentAmount = 0;
+                Game.CurrentMaxAmount = Game.State.ActivePartyMember!.Gold;
+                Game.ScreenHandler.PushScreen(ScreenType.ConversationGiveGold);
                 break;
             case 8: // Give food to person
+                Game.CurrentAmount = 0;
+                Game.CurrentMaxAmount = Game.State.ActivePartyMember!.Food;
                 Game.ScreenHandler.PushScreen(ScreenType.ConversationGiveFood);
                 break;
         }
@@ -615,9 +645,26 @@ internal sealed class ConversationScreen : ItemGridScreen
                     return true;
                 }
             }
+            else
+            {
+                int? characterSlotIndex = Game.TestPartyPortraitHit(position);
+
+                if (characterSlotIndex != null)
+                {
+                    SwitchToPartyMember(characterSlotIndex.Value);
+                    return true;
+                }
+            }
         }
 
         return base.MouseDown(position, buttons, keyModifiers);
+    }
+
+    public override void MouseMove(Position position, MouseButtons buttons)
+    {
+        ItemContainer.UpdateDragPosition(position);
+
+        base.MouseMove(position, buttons);
     }
 
     private void AbortItemDrag()
@@ -724,6 +771,20 @@ internal sealed class ConversationScreen : ItemGridScreen
 
             item.Visible = true;
         }
+    }
+
+    public void SwitchToPartyMember(int index)
+    {
+        if (Game.State.ActivePartyMemberIndex == index)
+            return;
+
+        var partyMember = Game.State.SetActivePartyMember(index)!;
+
+        goldValue!.SetText($"{partyMember.Gold:00000}");
+        foodValue!.SetText($"{partyMember.Food:00000}");
+
+        Game.UpdatePartyMembers();
+        RequestButtonSetup();
     }
 
     private void ShowInventoryItems() => ShowItems([.. Game.State.ActivePartyMember!.Inventory]);

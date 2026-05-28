@@ -354,6 +354,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
         if (!LockOpened || chestGold == 0)
             return;
 
+        Game.CurrentAmount = 0;
         Game.CurrentMaxAmount = chestGold;
         Game.ScreenHandler.PushScreen(ScreenType.ChestGiveGold);
     }

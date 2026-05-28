@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-using System.Reflection.Emit;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
 using Amber.Common;
 using Amber.Renderer;
@@ -45,9 +43,15 @@ partial class Game
 			layoutSprite.PaletteIndex = paletteIndex.Value;
 	}
 
-    internal void UpdatePortrait(int slotIndex)
+    internal void UpdatePartyMembers()
     {
-        var partyMember = State.GetPartyMember(slotIndex);
+        for (int i = 0; i < MaxPartyMembers; i++)
+            UpdatePartyMember(i);
+    }
+
+    internal void UpdatePartyMember(int slotIndex)
+    {
+        var partyMember = State.GetPartyMember(1 + slotIndex);
         var layer = GetRenderLayer(Layer.UI);
         var textureIndex = partyMember == null
             ? GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyCharSlot)
@@ -55,9 +59,33 @@ partial class Game
                 ? GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.Skull)
                 : GraphicIndexProvider.GetPersonPortraitIndex(State.PartyCharacterIndices[slotIndex]));
 
-        portraitSprites[slotIndex]!.TextureOffset = layer.Config.Texture!.GetOffset(textureIndex);
+        var portrait = portraitSprites[slotIndex]!;
 
-        
+        portrait.TextureOffset = layer.Config.Texture!.GetOffset(textureIndex);
+
+        Destroy(partyMemberNameBackgrounds[slotIndex]);
+        partyMemberNameBackgrounds[slotIndex] = null;
+
+        Destroy(partyMemberNames[slotIndex]);
+        partyMemberNames[slotIndex] = null;
+
+        if (partyMember != null)
+        {
+            string name = partyMember.Name;
+
+            if (name.Length > 5)
+                name = name[..5];
+
+            var namePosition = portrait.Position + new Position(2, portrait.Size.Height - 4);
+            var nameSize = new Size(TextManager.GetTextRenderWidth(name), 6);
+
+            var nameBackground = partyMemberNameBackgrounds[slotIndex] = CreateColoredRect(Layer.UI, namePosition, nameSize, Color.Black);
+            nameBackground!.DisplayLayer = 5;
+
+            int nameColorIndex = slotIndex == State.ActivePartyMemberIndex - 1 ? 8 : 9;
+            var nameText = partyMemberNames[slotIndex] = TextManager.Create(name, nameColorIndex);
+            nameText.ShowInArea(new Rect(namePosition, nameSize), 10);
+        }
     }
 
     internal int SetHandIconsByItem(IItem item, int count = 1)
