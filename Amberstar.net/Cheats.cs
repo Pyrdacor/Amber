@@ -32,6 +32,7 @@ internal static class Cheats
         AddCommand("help", Help, "Shows the help (for some command)", 0, "command");
         AddCommand("teleport", Teleport, "Teleports to a new location", 1, "mapIndex", "x", "y", new("dir", "0: Up, 1: Right, 2: Down, 3: Left"));
         AddCommand("maps", Maps, "Shows all maps", 0, "partialMapNameOrIndex");
+        AddCommand("where", Where, "Shows current location", 0);
     }
 
     public static void Init()
@@ -225,5 +226,13 @@ internal static class Cheats
         }
 
         game.Teleport(x, y, direction, mapIndex, fade: false);
+    }
+
+    private static void Where(G game, string[] args)
+    {
+        var (position, mapIndex, direction) = game.GetCurrentLocation();
+        var mapName = game.GetMaps().FirstOrDefault(map => map.Index == mapIndex).Name;
+
+        Console.WriteLine($"At {1 + position.X}, {1 + position.Y} looking {direction} on map {mapIndex:000} ({mapName})");
     }
 }

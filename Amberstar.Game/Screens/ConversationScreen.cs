@@ -5,15 +5,22 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+// CharacterIndex = Index of person or monster
+// MapCharacterIndex = Index inside the characters on the map (0..23)
+internal record ConversationCharacter(int CharacterIndex, IMap Map, int MapCharacterIndex);
+
 // TODO: Rework and implement fully
 internal sealed class ConversationScreen : ButtonGridScreen
 {
     readonly TextScrollHandler textScrollHandler = new();
     IPerson? person;
+    IMap? map;
+    int mapCharacterIndex = 0;
     PersonInfoView? personInfoView;
     Label? conversationText;
     bool waitForClick = false;
     bool closeAfterClick = false;
+    bool insideParty = false; // TODO: Set to true if talking to a party member
 
     public sealed override ScreenType Type { get; } = ScreenType.Conversation;
 
@@ -21,6 +28,11 @@ internal sealed class ConversationScreen : ButtonGridScreen
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
+        bool itemsAvailable = false; // TODO: Given by the NPC
+        bool partyMemberHasItems = Game.State.ActivePartyMember!.Inventory.Any(itemSlot => itemSlot.Count > 0);
+        bool partyMemberHasGold = Game.State.ActivePartyMember.Gold > 0;
+        bool partyMemberHasFood = Game.State.ActivePartyMember.Food > 0;
+
         // Upper row
         buttonGrid.SetButton(0, ButtonType.GiveItem);
         buttonGrid.SetButton(1, ButtonType.DropItem);
@@ -34,8 +46,16 @@ internal sealed class ConversationScreen : ButtonGridScreen
         buttonGrid.SetButton(7, ButtonType.GiveGoldToPerson);
         buttonGrid.SetButton(8, ButtonType.GiveFoodToPerson);
 
-        // Enable "Ask to join" button only for party members
-        buttonGrid.EnableButton(5, person is IPartyMember);
+        buttonGrid.EnableButton(0, itemsAvailable);
+        buttonGrid.EnableButton(1, itemsAvailable);
+
+        buttonGrid.EnableButton(3, partyMemberHasItems);
+        buttonGrid.EnableButton(6, partyMemberHasItems);
+        buttonGrid.EnableButton(7, partyMemberHasGold);
+        buttonGrid.EnableButton(8, partyMemberHasFood);
+
+        // Enable "Ask to join" button only if not in party already
+        buttonGrid.EnableButton(5, !insideParty);
     }
 
     public override void Init()
@@ -58,11 +78,13 @@ internal sealed class ConversationScreen : ButtonGridScreen
         Game.SetLayout(Layout.Conversation, palette);
         Game.Cursor.CursorType = CursorType.Sword;
 
-        if (Game.State.CurrentConversationCharacterIndex is not int personIndex)
+        if (Game.State.CurrentConversationCharacter is not ConversationCharacter conversationCharacter)
             throw new AmberException(ExceptionScope.Application, "No conversation character specified.");
 
-        person = Game.AssetProvider.PersonLoader.LoadPerson(personIndex);
-        personInfoView = new(Game, person, personIndex, palette);
+        person = Game.AssetProvider.PersonLoader.LoadPerson(conversationCharacter.CharacterIndex);
+        personInfoView = new(Game, person, conversationCharacter.CharacterIndex, palette);
+        map = conversationCharacter.Map;
+        mapCharacterIndex = conversationCharacter.MapCharacterIndex + 1; // They are 1-based for save bits etc
 
         waitForClick = false;
         closeAfterClick = false;
@@ -128,7 +150,7 @@ internal sealed class ConversationScreen : ButtonGridScreen
                 return;
         }
 
-        ShowText(Game.LoadMessageText(Message.NothingToSayAboutThat));
+        ShowMessage(Message.NothingToSayAboutThat);
     }
 
     private bool TryExecuteReactionsForTrigger(InteractionTriggerType triggerType, word param = 0)
@@ -351,6 +373,8 @@ internal sealed class ConversationScreen : ButtonGridScreen
         }
     }
 
+    private void ShowMessage(Message message) => ShowText(Game.LoadMessageText(message));
+
     private void ShowText(IText text, bool closeAfterClick = false)
     {
         conversationText!.SetText(text);
@@ -388,8 +412,33 @@ internal sealed class ConversationScreen : ButtonGridScreen
                 Game.ScreenHandler.PushScreen(ScreenType.SelectWord);
                 break;
             case 5: // Ask to join
-                // TODO
+            {
+                bool joins = person!.ConversationData.JoinChance == 100 || (
+                    person!.ConversationData.JoinChance != 0 && Game.Probe(person.ConversationData.JoinChance));
+
+                if (!joins)
+                {
+                    ShowMessage(Message.NotInterestedInJoining);
+                }
+                else
+                {
+                    int firstFreeSlot = Game.State.PartyMembersWithSlot.Where(p => p.PartyMember == null).Select(p => p.SlotIndex).FirstOrDefault(-1);
+
+                    if (firstFreeSlot == -1 || !Game.State.TryAddPartyMember(firstFreeSlot))
+                    {
+                        // NOTE: The original just ends silently here.
+                        return;
+                    }
+
+                    (person as IPartyMember)!.SaveBit = (word)((map!.Index - 1) * IMap.CharacterCount + mapCharacterIndex);
+                    Game.State.SetMapCharacterActive(map.Index, mapCharacterIndex, true); // Remove from map
+
+                    RequestButtonSetup();
+                    TryExecuteReactionsForTrigger(InteractionTriggerType.Join);
+                }
+
                 break;
+            }            
             case 6: // Give item to person
                 // TODO
                 break;

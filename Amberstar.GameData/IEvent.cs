@@ -38,12 +38,8 @@ public interface IEvent
 	public const int DataSize = 10;
 }
 
-public interface IEventProvider
+public interface IMapEventProvider
 {
-	/// <summary>
-	/// For persons, this is the map they are currently located.
-	/// For maps it is the map itself.
-	/// </summary>
 	IMap Map { get; }
 
 	List<IEvent> Events { get; }

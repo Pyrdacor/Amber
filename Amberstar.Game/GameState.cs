@@ -392,7 +392,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
     #region Conversation
 
-    public int? CurrentConversationCharacterIndex { get; set; } = null;
+    public ConversationCharacter? CurrentConversationCharacter { get; set; } = null;
 
     #endregion
 

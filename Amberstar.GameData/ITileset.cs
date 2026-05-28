@@ -6,6 +6,7 @@ namespace Amberstar.GameData;
 [Flags]
 public enum TileFlags : uint
 {
+	None = 0,
 	/// <summary>
 	/// If set animation goes back and forth, otherwise only in one direction.
 	/// </summary>

@@ -93,127 +93,6 @@ internal class Map3DScreen : ButtonGridScreen
 			}
 		};
 
-	class Character
-	{
-		private readonly IMap3D map;
-		private readonly MapCharacter data;
-		private readonly Position[] positions;
-		private readonly Func<int, int, int, bool> canMoveChecker;
-		private int currentPathLength = 0;
-		private Direction direction = Direction.North;
-		private Position position; // this one is 1-based
-
-		public int Index { get; }
-
-        public int CharacterIndex => data.Index;
-
-        public MapCharacterType Type => data.Type;
-
-		public Position Position => new(position.X - 1, position.Y - 1);
-
-		public int Icon => data.Icon;
-
-		public Character(IMap3D map, int index, Position[] positions, GameState GameState,
-			Func<int, int, int, bool> canMoveChecker)
-		{
-			this.map = map;
-			Index = index;
-			data = map.Characters[index];
-			this.positions = positions;
-			this.canMoveChecker = canMoveChecker;
-
-			UpdatePosition(GameState);
-		}
-
-		private void UpdatePosition(GameState GameState)
-		{
-			void TryWalkTo(Position position)
-			{
-				if (canMoveChecker(position.X - 1, position.Y - 1, data.TravelType))
-					this.position = position;
-			}
-
-			switch (data.WalkType)
-			{
-				case MapCharacterWalkType.Stationary:
-					position = positions[0];
-					break;
-				case MapCharacterWalkType.Path:
-				{
-					int totalSteps = GameState.Hour * 12 + GameState.Minute / 5;
-					TryWalkTo(positions[totalSteps]);
-					break;
-				}
-				case MapCharacterWalkType.Chase:
-					// TODO
-					break;
-				default: // random
-					if (position == new Position()) // first time
-						position = positions[0];
-					else
-						MoveRandomly();
-					break;
-			}
-		}
-
-		private void SetupNewRandomPath()
-		{
-			currentPathLength = Game.Random(1, 4);
-			int dir = (int)direction + 1;
-			dir += Game.Random(0, 1);
-			dir &= 0x3;
-			direction = (Direction)dir;
-
-			switch (direction)
-			{
-				case Direction.North:
-					if (currentPathLength <= position.Y)
-						currentPathLength += position.Y - currentPathLength - 1;
-					break;
-				case Direction.East:
-					if (currentPathLength > map.Width - position.X)
-						currentPathLength += map.Width - position.X - currentPathLength - 1;
-					break;
-				case Direction.South:
-					if (currentPathLength > map.Height - position.Y)
-						currentPathLength += map.Height - position.Y - currentPathLength - 1;
-					break;
-				case Direction.West:
-					if (currentPathLength <= position.X)
-						currentPathLength += position.X - currentPathLength - 1;
-					break;
-			}
-		}
-
-		private void MoveRandomly()
-		{
-			if (currentPathLength == 0)
-				SetupNewRandomPath();
-
-			for (int i = 0; i < 4; i++)
-			{
-				// 4 tries
-				var offset = direction.Offset();
-
-				if (canMoveChecker(Position.X + offset.X, Position.Y + offset.Y, data.TravelType))
-				{
-					currentPathLength--;
-					position = new(position.X + offset.X, position.Y + offset.Y);
-					return;
-				}
-
-				SetupNewRandomPath();
-			}
-
-			currentPathLength = 0;
-		}
-		
-		public void Update(Game Game)
-		{
-			UpdatePosition(Game.State);
-		}
-	}
-
 	const int TicksPerStep = 16;
 	const int TicksPerTurn = 16;
 	const int AnimationTicksPerFrame = 25;
@@ -230,7 +109,7 @@ internal class Map3DScreen : ButtonGridScreen
 	ILabData? labData;
 	readonly List<IColoredRect> skyGradient = [];
 	readonly List<IAnimatedSprite> images = [];
-	readonly List<Character> characters = [];
+	readonly List<Characters.MapCharacter> characters = [];
 	long currentTicks = 0;
 	long lastMoveTicks = 0;
 	long lastTurnTicks = 0;
@@ -393,7 +272,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 					if (character != null && character.Type == MapCharacterType.Person)
 					{
-						Game.State.CurrentConversationCharacterIndex = character.CharacterIndex;
+						Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
 						Game.ScreenHandler.PushScreen(ScreenType.Conversation);
 						return;
 					}
@@ -482,7 +361,7 @@ internal class Map3DScreen : ButtonGridScreen
 		ClearView();
 		skyGradient.ForEach(g => g.Visible = false);
 		skyGradient.Clear();
-		characters.Clear();
+        characters.Clear();
 		mapNameText!.Delete();
 
 		base.Close();
@@ -612,10 +491,7 @@ internal class Map3DScreen : ButtonGridScreen
 		if (tileFlags.HasFlag(LabTileFlags.BlockAllMovement))
 			return false;
 
-		if (!tileFlags.HasFlag((LabTileFlags)(1 << (8 + collisionClass))))
-			return false;
-
-		return true;
+		return tileFlags.HasFlag((LabTileFlags)(1 << (8 + collisionClass)));
 	}
 
 	private void UpdateLight()
@@ -1168,7 +1044,7 @@ internal class Map3DScreen : ButtonGridScreen
 
 			if (characterData.Index != 0 && characterData.Icon != 0)
 			{
-				characters.Add(new Character(map, i, map.CharacterPositions[i], Game.State,
+				characters.Add(new Characters.MapCharacter(map, i, map.CharacterPositions[i], Game.State,
 					(x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass)));
 			}
 		}

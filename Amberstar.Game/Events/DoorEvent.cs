@@ -18,7 +18,7 @@ namespace Amberstar.Game.Events
         // We need to save it only if the door was opened!
         public override bool AutoSave => false;
 
-        public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
+        public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
             if (trigger == EventTrigger.Move)
                 game.ShowDoor();

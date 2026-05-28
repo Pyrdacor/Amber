@@ -11,7 +11,7 @@ namespace Amberstar.Game.Events
 
         public bool Fill => @event.Fill;
 
-        public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
+        public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
             ForeachPartyMemberAction regenerate = Fill
 				? partyMember => partyMember.FillHitPoints()

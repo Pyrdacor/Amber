@@ -13,7 +13,7 @@ namespace Amberstar.Game.Events
 
 		public word MapIndex => @event.MapIndex;
 
-		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
+		public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
             if (trigger != EventTrigger.Move)
                 return false;

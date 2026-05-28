@@ -54,7 +54,7 @@ internal class DoorScreen : LockedScreen<DoorEvent>
 
             if (extraEvent != null && extraEvent != 0)
             {
-                IEventProvider eventProvider;
+                IMapEventProvider eventProvider;
 
                 void ExecuteFollowUpEvent(Screen _)
                 {

@@ -13,7 +13,7 @@ namespace Amberstar.Game.Events
 
 		public word SetWordBit => @event.SetWordBit;
 
-		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
+		public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
 			int expectedTriggerMask = (int)Trigger + 1;
 			int triggerMask = ((int)trigger + 1) & 0x3;

@@ -37,7 +37,7 @@ namespace Amberstar.Game.Events
 
 		public virtual bool AutoSave => true;
 
-        public abstract bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider);
+        public abstract bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider);
 
 		public static Event CreateEvent(IEvent @event, int eventIndex)
 		{

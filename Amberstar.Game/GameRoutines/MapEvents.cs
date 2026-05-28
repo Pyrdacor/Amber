@@ -62,6 +62,11 @@ partial class Game
 		return maps.Select(map => (map.Key, map.Value.Name)).ToArray();
     }
 
+	public (Position Position, int MapIndex, Direction Direction) GetCurrentLocation()
+	{
+		return (State.PartyPosition, State.GetIndexOfMapWithPlayer(), State.PartyDirection);
+	}
+
     public void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
 	{
 		EnableInput(false);

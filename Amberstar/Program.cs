@@ -119,7 +119,21 @@ namespace Amberstar
 				WriteGraphic($@"{basePath}\Backgrounds\{background.Key:000}.png", background.Value, uiPalette, false);
 			}
 
-			var labBlocks = assetProvider.LabDataLoader.LoadAllLabBlocks();
+			ITileset[] tilesets = [assetProvider.TilesetLoader.LoadTileset(1), assetProvider.TilesetLoader.LoadTileset(2)];
+			for (int i = 1; i <= 2; i++)
+			{
+				var tileset = tilesets[i - 1];
+				var tilesetGraphics = tileset.Graphics;
+				var palette = tileset.Palette;
+				int tileIndex = 1;
+
+                foreach (var tilesetGraphic in tilesetGraphics)
+				{
+					WriteGraphic($@"{basePath}\Tilesets\{i:000}\{tileIndex++:000}.png", tilesetGraphic, palette.GetData(), false);
+				}
+			}
+
+            var labBlocks = assetProvider.LabDataLoader.LoadAllLabBlocks();
 
 			foreach (var labBlock in labBlocks)
 			{

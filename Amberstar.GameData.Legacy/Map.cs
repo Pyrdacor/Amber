@@ -104,7 +104,7 @@ internal abstract class Map : IMap
 			return Map3D.Load(asset.Identifier.Index, header, reader);
 	}
 
-    IMap IEventProvider.Map => this;
+    IMap IMapEventProvider.Map => this;
 
 	public int Index { get; internal set; }
 

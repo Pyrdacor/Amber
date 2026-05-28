@@ -11,7 +11,7 @@ namespace Amberstar.Game.Events
 
         public byte TextIndex => @event.Damage;
 
-        public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
+        public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
             void ExecuteTrap() => game.TriggerTrap(TrapType, Damage);
 

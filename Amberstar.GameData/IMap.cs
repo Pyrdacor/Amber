@@ -78,7 +78,7 @@ public struct MapCharacter
 	public byte Month; // 0xff = always there	
 }
 
-public interface IMap : IEventProvider
+public interface IMap : IMapEventProvider
 {
 	int Index { get; }
 	int Width { get; }

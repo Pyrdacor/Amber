@@ -9,6 +9,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+// TODO: Shadows (see Do_shadow)
 internal class Map2DScreen : ButtonGridScreen
 {
 	class WorldMap : IMap2D
@@ -19,7 +20,7 @@ internal class Map2DScreen : ButtonGridScreen
 		List<IEvent> events = [];
 		Tile2D[] tiles = [];
 
-		IMap IEventProvider.Map => this;
+		IMap IMapEventProvider.Map => this;
 
 		public int Index => maps[0].Index;
 
@@ -143,13 +144,13 @@ internal class Map2DScreen : ButtonGridScreen
         }
     }
 
-	// Note: In original you could only move by mouse or buttons on 2D maps.
-	// In general travel types had a delay which was given in number
-	// of vertical blanks. The delays were 5, 2, 3, 2, 4, 0, 0.
-	// For movement in cities it was even 0 for waling.
-	// However this is way too fast when using automatic movement
-	// (e.g. holding the key down).
-	const int CityTicksPerStep = 20;
+    // Note: In original you could only move by mouse or buttons on 2D maps.
+    // In general travel types had a delay which was given in number
+    // of vertical blanks. The delays were 5, 2, 3, 2, 4, 0, 0.
+    // For movement in cities it was even 0 for waling.
+    // However this is way too fast when using automatic movement
+    // (e.g. holding the key down).
+    const int CityTicksPerStep = 20;
 	const int WorldMapBaseTicksPerStep = 2;
 	const long OuchDisplayTime = Game.TicksPerSecond / 6;
 	static readonly Dictionary<TravelType, int> TicksPerStep = new()
@@ -183,10 +184,11 @@ internal class Map2DScreen : ButtonGridScreen
 	IMap2D? map;
 	WorldMap? worldMap;
 	ITileset[]? tilesets;
-	static readonly Rect mapViewArea = new(OffsetX, OffsetY, MapViewWidth, MapViewHeight);
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
 	readonly Dictionary<int, IAnimatedSprite> overlay = [];
-	ISprite? player;
+    readonly List<Characters.MapCharacter> characters = [];
+    readonly List<ISprite> mapCharacters = [];
+    ISprite? player;
     ISprite? ouchBubble;
 	long ouchBubbleDeleteActionIndex = -1;
     int lastScrollX = -1;
@@ -291,6 +293,8 @@ internal class Map2DScreen : ButtonGridScreen
 		additionalMoveRequested = false;
 		mouseDown = false;
 
+        Game.Time.MinuteChanged += MinuteChanged;
+
 		SetLayout();
 		LoadMap(Game.State.MapIndex);
         ShowMapName();
@@ -298,7 +302,20 @@ internal class Map2DScreen : ButtonGridScreen
 		AfterMove();
 	}
 
-	private void SetLayout()
+    private void MinuteChanged()
+    {
+        if (Game.Paused)
+            return;
+
+        foreach (var character in characters)
+        {
+            character.Update(Game);
+        }
+
+		FillMap(lastScrollX, lastScrollY, true);
+    }
+
+    private void SetLayout()
 	{
         Game.SetLayout(Layout.Map2D, palette);
     }
@@ -437,11 +454,17 @@ internal class Map2DScreen : ButtonGridScreen
 		// Don't move any further
 		ResetMovement();
 
-		ClearMap();
+        Game.Time.MinuteChanged -= MinuteChanged;
+
+        ClearMap();
 		player!.Visible = false;
 		player = null;
+        characters.Clear();
 
-		if (ouchBubble != null)
+		mapCharacters.ForEach(c => c.Visible = false);
+		mapCharacters.Clear();
+
+        if (ouchBubble != null)
 		{
 			ouchBubble.Visible = false;
 			ouchBubble = null;
@@ -469,7 +492,7 @@ internal class Map2DScreen : ButtonGridScreen
 		if (elapsedTicks == 0)
 			return;
 
-		currentTicks += elapsedTicks;
+        currentTicks += elapsedTicks;
 
 		if (moveX != 0 || moveY != 0)
 		{
@@ -856,6 +879,16 @@ internal class Map2DScreen : ButtonGridScreen
 
 					Game.Cursor.CursorType = CursorType.Sword;
                     Game.UntrapMouse();
+
+                    var character = characters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
+
+                    if (character != null && character.Type == MapCharacterType.Person)
+                    {
+                        Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
+                        Game.ScreenHandler.PushScreen(ScreenType.Conversation);
+                        return true;
+                    }
+
                     TryExecuteMapEvent(eventTrigger, x, y);
 
 					return true;
@@ -953,12 +986,13 @@ internal class Map2DScreen : ButtonGridScreen
 
 		lastScrollX = scrollOffsetX;
 		lastScrollY = scrollOffsetY;
+        Rect displayedMapPortion = new(Math.Max(0, scrollOffsetX), Math.Max(0, scrollOffsetY), TilesPerRow, TileRows);
 
-		// Regarding render order. There are only 2 supported scenarios:
-		// - Underlay <- Player <- Overlay (default)
-		// - Underlay <- Overlay <- Player
+        // Regarding render order. There are only 2 supported scenarios:
+        // - Underlay <- Player <- Overlay (default)
+        // - Underlay <- Overlay <- Player
 
-		for (int y = 0; y < TileRows; y++)
+        for (int y = 0; y < TileRows; y++)
 		{
 			for (int x = 0; x < TilesPerRow; x++)
 			{
@@ -989,34 +1023,63 @@ internal class Map2DScreen : ButtonGridScreen
 		var playerPosition = Game.State.PartyPosition;
 		int playerTileIndex = playerPosition.X + playerPosition.Y * map!.Width;
 		var playerTile = map.Tiles[playerTileIndex];
-		bool playerVisible = true;
-		int playerBaseLineOffset = 3 * RenderOrderOffset; // ensure drawing player over overlay by default
 
-		if (playerTile.Underlay != 0)
+		int GetBaseLineOffset(Tile2D tile, out bool visible)
 		{
-			var flags = GetTileInfo(playerTile.Underlay).Flags;
+			int baseLineOffset = 3 * RenderOrderOffset; // By default draw over overlay
+			visible = true;
 
-			if (flags.HasFlag(TileFlags.PartyInvisible))
-				playerVisible = false;
+            if (tile.Underlay != 0)
+            {
+                var flags = GetTileInfo(tile.Underlay).Flags;
+
+                if (flags.HasFlag(TileFlags.PartyInvisible))
+                    visible = false;
+            }
+
+            if (tile.Overlay != 0)
+            {
+                var flags = GetTileInfo(tile.Overlay).Flags;
+
+                if (flags.HasFlag(TileFlags.PartyInvisible))
+                    visible = false;
+
+                if (flags.HasFlag(TileFlags.Foreground))
+                    baseLineOffset = RenderOrderOffset; // draw below overlay
+            }
+
+			return baseLineOffset;
+        }
+
+		int playerBaseLineOffset = GetBaseLineOffset(playerTile, out bool playerVisible);
+        var renderLayer = Game.GetRenderLayer(Layer.Map2D);
+        var tileset = tilesets![map!.TilesetIndex - 1];
+
+        for (int i = 0; i < characters.Count; i++)
+		{
+			var character = characters[i];
+			var mapCharacter = mapCharacters[i];
+            var tile = map.Tiles[character.Position.X + character.Position.Y * map.Width];
+			int baseLineOffset = GetBaseLineOffset(tile, out bool visible);
+
+            mapCharacter.Visible = visible && displayedMapPortion.Contains(character.Position);
+
+			if (mapCharacter.Visible)
+			{
+				var relativePosition = character.Position - displayedMapPortion.Position;
+                mapCharacter.Position = new(OffsetX + relativePosition.X * TileWidth, OffsetY + relativePosition.Y * TileHeight);
+				mapCharacter.BaseLineOffset = baseLineOffset;
+
+                var tileInfo = tileset!.Tiles[character.Icon - 1];
+
+                mapCharacter.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex); // TODO: Animation
+            }
 		}
 
-		if (playerTile.Overlay != 0)
-		{
-			var flags = GetTileInfo(playerTile.Overlay).Flags;
-
-			if (flags.HasFlag(TileFlags.PartyInvisible))
-				playerVisible = false;
-
-			if (flags.HasFlag(TileFlags.Foreground))
-				playerBaseLineOffset = RenderOrderOffset; // draw player below overlay
-		}
-
-		// TODO: NPCs and transports
+		// TODO: Transports
 
 		if (playerVisible)
 		{
-			var renderLayer = Game.GetRenderLayer(Layer.Map2D);
-			var tileset = tilesets![map!.TilesetIndex - 1];
 			var tileInfo = tileset!.Tiles[tileset.PlayerSpriteIndex - 1];
 			player!.BaseLineOffset = playerBaseLineOffset;
 			player.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex + (int)Game.State.TravelType * 4 + (int)Game.State.PartyDirection);
@@ -1238,14 +1301,65 @@ internal class Map2DScreen : ButtonGridScreen
 
             Game.State.MapIndex = index;
 			worldMap = null;
-		}
+        }
 
 		tileGraphicOffset = map.TilesetIndex == 1 ? 0 : tilesets![0].Graphics.Count + 1;
 		palette = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
-		
-		Game.State.SetIsWorldMap(isWorldMap);
+
+        for (int i = 0; i < map.Characters.Length; i++)
+        {
+            var characterData = map.Characters[i];
+
+            if (characterData.Index != 0 && characterData.Icon != 0)
+            {
+                characters.Add(new Characters.MapCharacter(map, i, map.CharacterPositions[i], Game.State,
+                    (x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass)));
+                var sprite = Game.CreateSprite(Layer.Map2D, new(), new(16, 16), 1, palette, false)!;
+                sprite.Visible = false;
+                mapCharacters.Add(sprite);
+            }
+        }
+
+        Game.State.SetIsWorldMap(isWorldMap);
 		Game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
 		Game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
 	}
+
+    private TileFlags GetTileFlags(int x, int y)
+    {
+		var tile = map!.Tiles[x + y * map.Width];
+		var underlayFlags = tile.Underlay == 0 ? TileFlags.None : GetTileInfo(tile.Underlay).Flags;
+
+		if (tile.Overlay == 0)
+			return underlayFlags;
+
+		var overlayFlags = GetTileInfo(tile.Overlay).Flags;
+
+        if (overlayFlags.HasFlag(TileFlags.UnderlayHasPriority))
+            return underlayFlags;
+
+        return overlayFlags;
+    }
+
+    private bool CanMoveTo(int x, int y, bool player, int collisionClass)
+    {
+        if (x < 0 || y < 0 || x >= map!.Width || y >= map.Height)
+            return false;
+
+        if (!player)
+        {
+            var testPosition = new Position(x, y);
+
+            if (characters.Any(character => character.Position == testPosition))
+                return false;
+        }
+
+        var tileFlags = GetTileFlags(x, y);
+
+        if (tileFlags.HasFlag(TileFlags.BlockAllMovement))
+            return false;
+
+		return tileFlags.HasFlag((TileFlags)(1 << (8 + collisionClass)));
+    }
 }

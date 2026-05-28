@@ -19,7 +19,7 @@ namespace Amberstar.Game.Events
 
 		public bool AlwaysOpen => @event.AlwaysOpen;
 
-		public override bool Handle(EventTrigger trigger, Game game, IEventProvider eventProvider)
+		public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
             if (trigger != EventTrigger.Move)
                 return false;
