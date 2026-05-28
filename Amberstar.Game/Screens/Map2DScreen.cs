@@ -255,6 +255,8 @@ internal class Map2DScreen : ButtonGridScreen
 			screenPushPlayerWasVisible = player!.Visible;
 			player!.Visible = false;
             mapNameText!.Visible = false;
+
+			mapCharacters.ForEach(c => c.Visible = false);
         }
 
 		timeText?.Delete();
@@ -271,7 +273,7 @@ internal class Map2DScreen : ButtonGridScreen
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			player!.Visible = screenPushPlayerWasVisible;
             mapNameText!.Visible = true;
-			AfterMove(ignoreEvents: true);
+            UpdateMap();
         }
 
 		timeText?.Delete();
@@ -601,19 +603,24 @@ internal class Map2DScreen : ButtonGridScreen
 		return true;
 	}
 
-	private void AfterMove(bool ignoreEvents = false)
+	private void UpdateMap()
 	{
-		if (worldMap != null)
-			UpdateWorldMap();
+        if (worldMap != null)
+            UpdateWorldMap();
 
-		var playerPosition = Game.State.PartyPosition;
-
-		Game.Time.Moved2D();
+        var playerPosition = Game.State.PartyPosition;
 
         FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
 
-		if (Game.Cursor.CursorType != CursorType.Disk)
-			Game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
+        if (Game.Cursor.CursorType != CursorType.Disk)
+            Game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
+    }
+
+	private void AfterMove(bool ignoreEvents = false)
+	{
+		UpdateMap();
+
+		Game.Time.Moved2D();
 
         // Check for events
         if (!ignoreEvents)
@@ -1061,6 +1068,10 @@ internal class Map2DScreen : ButtonGridScreen
 			var mapCharacter = mapCharacters[i];
             var tile = map.Tiles[character.Position.X + character.Position.Y * map.Width];
 			int baseLineOffset = GetBaseLineOffset(tile, out bool visible);
+
+			// Note: This would not work for world maps but there are no characters on world maps.
+			if (visible && !Game.State.IsMapCharacterActive(map.Index, 1 + i))
+				visible = false;
 
             mapCharacter.Visible = visible && displayedMapPortion.Contains(character.Position);
 

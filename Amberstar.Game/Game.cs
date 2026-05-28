@@ -79,7 +79,7 @@ public partial class Game : IDisposable
 			}
 			else
 			{
-				portraitSprites[i] = CreateSprite(Layer.UI, position, size, (int)UIGraphic.EmptyCharSlot, uiPaletteIndex);
+				portraitSprites[i] = CreateSprite(Layer.UI, position, size, GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyCharSlot), uiPaletteIndex);
 
 				Destroy(partyMemberNameBackgrounds[i]);
 				partyMemberNameBackgrounds[i] = null;

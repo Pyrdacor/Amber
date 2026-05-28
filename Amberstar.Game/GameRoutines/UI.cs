@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System.Drawing;
+using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
 using Amber.Common;
@@ -43,6 +44,21 @@ partial class Game
 		if (paletteIndex != null)
 			layoutSprite.PaletteIndex = paletteIndex.Value;
 	}
+
+    internal void UpdatePortrait(int slotIndex)
+    {
+        var partyMember = State.GetPartyMember(slotIndex);
+        var layer = GetRenderLayer(Layer.UI);
+        var textureIndex = partyMember == null
+            ? GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyCharSlot)
+            : (partyMember.IsDead()
+                ? GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.Skull)
+                : GraphicIndexProvider.GetPersonPortraitIndex(State.PartyCharacterIndices[slotIndex]));
+
+        portraitSprites[slotIndex]!.TextureOffset = layer.Config.Texture!.GetOffset(textureIndex);
+
+        
+    }
 
     internal int SetHandIconsByItem(IItem item, int count = 1)
     {

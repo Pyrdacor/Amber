@@ -15,12 +15,14 @@ internal sealed class ConversationScreen : ButtonGridScreen
     readonly TextScrollHandler textScrollHandler = new();
     IPerson? person;
     IMap? map;
+    int characterIndex = 0;
     int mapCharacterIndex = 0;
     PersonInfoView? personInfoView;
     Label? conversationText;
+    Action? afterWaitClickAction = null;
     bool waitForClick = false;
     bool closeAfterClick = false;
-    bool insideParty = false; // TODO: Set to true if talking to a party member
+    bool insideParty = false;
 
     public sealed override ScreenType Type { get; } = ScreenType.Conversation;
 
@@ -85,6 +87,8 @@ internal sealed class ConversationScreen : ButtonGridScreen
         personInfoView = new(Game, person, conversationCharacter.CharacterIndex, palette);
         map = conversationCharacter.Map;
         mapCharacterIndex = conversationCharacter.MapCharacterIndex + 1; // They are 1-based for save bits etc
+        characterIndex = conversationCharacter.CharacterIndex;
+        insideParty = Game.State.PartyCharacterIndices.Any(index => index == characterIndex);
 
         waitForClick = false;
         closeAfterClick = false;
@@ -134,6 +138,9 @@ internal sealed class ConversationScreen : ButtonGridScreen
         HideText();
         Game.UntrapMouse();
 
+        afterWaitClickAction?.Invoke();
+        afterWaitClickAction = null;
+
         if (closeAfterClick)
             Game.ScreenHandler.PopScreen();
     }
@@ -153,7 +160,7 @@ internal sealed class ConversationScreen : ButtonGridScreen
         ShowMessage(Message.NothingToSayAboutThat);
     }
 
-    private bool TryExecuteReactionsForTrigger(InteractionTriggerType triggerType, word param = 0)
+    private bool TryExecuteReactionsForTrigger(InteractionTriggerType triggerType, word param = 0, Action? finishAction = null)
     {
         var conversationData = person!.ConversationData;
         bool questCompleted = Game.State.IsQuestBitSet(conversationData.QuestCompletionIndex);
@@ -161,13 +168,23 @@ internal sealed class ConversationScreen : ButtonGridScreen
 
         var trigger = new InteractionTrigger(triggerType, param);
         var matchingInteraction = interactions.GetValueOrDefault(trigger);
+        bool finishActionBoundToText = false;
 
         if (matchingInteraction != null)
         {
             foreach (var reaction in matchingInteraction.Reactions)
             {
+                if (!finishActionBoundToText && reaction is ISayReaction)
+                {
+                    afterWaitClickAction = finishAction;
+                    finishActionBoundToText = true;
+                }
+
                 ExecuteReaction(reaction);
             }
+
+            if (!finishActionBoundToText)
+                finishAction?.Invoke();
 
             return true;
         }
@@ -422,19 +439,22 @@ internal sealed class ConversationScreen : ButtonGridScreen
                 }
                 else
                 {
-                    int firstFreeSlot = Game.State.PartyMembersWithSlot.Where(p => p.PartyMember == null).Select(p => p.SlotIndex).FirstOrDefault(-1);
-
-                    if (firstFreeSlot == -1 || !Game.State.TryAddPartyMember(firstFreeSlot))
+                    if (!Game.State.TryAddPartyMember(characterIndex, out int slotIndex))
                     {
                         // NOTE: The original just ends silently here.
                         return;
                     }
 
-                    (person as IPartyMember)!.SaveBit = (word)((map!.Index - 1) * IMap.CharacterCount + mapCharacterIndex);
-                    Game.State.SetMapCharacterActive(map.Index, mapCharacterIndex, true); // Remove from map
+                    void Joined()
+                    {
+                        (person as IPartyMember)!.SaveBit = (word)((map!.Index - 1) * IMap.CharacterCount + mapCharacterIndex);
+                        Game.State.SetMapCharacterActive(map.Index, mapCharacterIndex, false); // Remove from map
+                        Game.UpdatePortrait(slotIndex);
+                        insideParty = true;
+                        RequestButtonSetup();
+                    }
 
-                    RequestButtonSetup();
-                    TryExecuteReactionsForTrigger(InteractionTriggerType.Join);
+                    TryExecuteReactionsForTrigger(InteractionTriggerType.Join, 0, Joined);
                 }
 
                 break;

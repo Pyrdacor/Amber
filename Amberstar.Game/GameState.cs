@@ -180,15 +180,26 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 	public event Action? ActivePartyMemberChanged;
     public event Action? CurrentInventoryChanged;
 
-    public bool TryAddPartyMember(int index)
+    public bool TryAddPartyMember(int characterIndex, out int slotIndex)
 	{
+        slotIndex = -1;
+
 		if (PartySize == ISavegame.MaxPartyMembers)
 			return false;
 
-		PartyCharacterIndices[ISavegame.MaxPartyMembers] = index;
-		PartySize++;
+        for (int i = 1; i < Game.MaxPartyMembers; i++)
+        {
+            if (PartyCharacterIndices[i] == 0)
+            {
+                PartyCharacterIndices[i] = characterIndex;
+                PartySize++;
+                slotIndex = i;
 
-		return true;
+                return true;
+            }
+        }
+
+        return false;
 	}
 
 	public IPartyMember? CurrentInventory
