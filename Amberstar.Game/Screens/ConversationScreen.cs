@@ -31,6 +31,7 @@ internal sealed class ConversationScreen : ItemGridScreen
     bool waitForClick = false;
     bool closeAfterClick = false;
     bool insideParty = false;
+    int? dragSourceItemSlot = null;
 
     static ConversationScreen()
     {
@@ -63,7 +64,7 @@ internal sealed class ConversationScreen : ItemGridScreen
         bool partyMemberHasItems = Game.State.ActivePartyMember!.Inventory.Any(itemSlot => itemSlot.Count > 0);
         bool partyMemberHasGold = Game.State.ActivePartyMember.Gold > 0;
         bool partyMemberHasFood = Game.State.ActivePartyMember.Food > 0;
-        bool allowInteractions = receivedItems.Count < ItemSlotCount;
+        bool allowInteractions = !insideParty && receivedItems.Count < ItemSlotCount;
 
         // Upper row
         buttonGrid.SetButton(0, ButtonType.GiveItem);
@@ -80,10 +81,11 @@ internal sealed class ConversationScreen : ItemGridScreen
 
         buttonGrid.EnableButton(0, itemsAvailable);
         buttonGrid.EnableButton(1, itemsAvailable);
+        buttonGrid.EnableButton(2, !itemsAvailable);
 
         buttonGrid.EnableButton(3, allowInteractions && partyMemberHasItems);
         buttonGrid.EnableButton(4, allowInteractions);
-        buttonGrid.EnableButton(5, allowInteractions && !insideParty);
+        buttonGrid.EnableButton(5, allowInteractions);
         buttonGrid.EnableButton(6, allowInteractions && partyMemberHasItems);
         buttonGrid.EnableButton(7, allowInteractions && partyMemberHasGold);
         buttonGrid.EnableButton(8, allowInteractions && partyMemberHasFood);
@@ -170,14 +172,14 @@ internal sealed class ConversationScreen : ItemGridScreen
         }
         else if (screen is GiveGoldScreen && Game.CurrentAmount > 0 && Game.CurrentAmount <= word.MaxValue)
         {
-            if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Pay, (word)Game.CurrentAmount))
+            if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Pay, (word)Game.CurrentAmount, ShowReceivedItems))
             {
                 ShowMessage(Message.KeepYourGold);
             }
         }
         else if (screen is GiveFoodScreen && Game.CurrentAmount > 0 && Game.CurrentAmount <= word.MaxValue)
         {
-            if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Feed, (word)Game.CurrentAmount))
+            if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Feed, (word)Game.CurrentAmount, ShowReceivedItems))
             {
                 ShowMessage(Message.KeepYourFood);
             }
@@ -257,17 +259,17 @@ internal sealed class ConversationScreen : ItemGridScreen
         }
         else if (reaction is IGiveItemReaction giveItemReaction)
         {
+            int slotIndex = giveItemReaction.ItemSlotIndex - 1;
             ItemSlot itemSlot;
 
             if (giveItemReaction.ItemSlotIndex < 9)
-                itemSlot = person!.Equipment[(EquipmentSlot)giveItemReaction.ItemSlotIndex];
+                itemSlot = person!.Equipment[(EquipmentSlot)slotIndex];
             else
-                itemSlot = person!.Inventory[giveItemReaction.ItemSlotIndex - 9];
+                itemSlot = person!.Inventory[slotIndex - 9];
 
             if (itemSlot != null && receivedItems.Count < ItemSlotCount)
             {
                 receivedItems.Add(new(itemSlot)); // Clone
-                ShowReceivedItems();
                 RequestButtonSetup();
             }
         }
@@ -449,7 +451,7 @@ internal sealed class ConversationScreen : ItemGridScreen
 
     private void ShowMessage(Message message) => ShowText(Game.LoadMessageText(message));
 
-    private void ShowText(IText text, bool closeAfterClick = false, int yOffset = 0, bool center = false)
+    private void ShowText(IText text, bool waitForClick = true, bool closeAfterClick = false, int yOffset = 0, bool center = false)
     {
         int y = textDisplayArea.Top + yOffset;
         conversationText!.Position = new(textDisplayArea.Left, y);
@@ -460,7 +462,7 @@ internal sealed class ConversationScreen : ItemGridScreen
         textScrollHandler.Attach(conversationText!);
         Game.TrapMouse(conversationText.Area);
         Game.Cursor.CursorType = CursorType.Zzz;
-        waitForClick = true;
+        this.waitForClick = waitForClick;
         this.closeAfterClick = closeAfterClick;
     }
 
@@ -516,6 +518,7 @@ internal sealed class ConversationScreen : ItemGridScreen
                         Game.State.SetMapCharacterActive(map.Index, mapCharacterIndex, false); // Remove from map
                         Game.UpdatePortrait(slotIndex);
                         insideParty = true;
+                        ShowReceivedItems();
                         RequestButtonSetup();
                     }
 
@@ -592,6 +595,11 @@ internal sealed class ConversationScreen : ItemGridScreen
                     // TODO: allow many stacked items? use count param
                     if (Game.TryAddItem(characterSlotIndex.Value, Game.CurrentItem!))
                     {
+                        var sourceSlot = receivedItems[dragSourceItemSlot!.Value];
+                        if (sourceSlot.Count == 1)
+                            sourceSlot.ClearItem();
+                        else
+                            sourceSlot.Count--;
                         ItemContainer.ConsumeDragged(Game);
                         Game.UntrapMouse();
                         Game.ResetStatusIcons();
@@ -636,7 +644,7 @@ internal sealed class ConversationScreen : ItemGridScreen
             center = false;
         }
 
-        ShowText(text, false, yOffset, center);
+        ShowText(text, waitForClick, closeAfterClick, yOffset, center);
     }
 
     internal override void HideMessage() => HideText();
@@ -652,6 +660,7 @@ internal sealed class ConversationScreen : ItemGridScreen
                     if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
                     {
                         Game.CurrentItem = ItemContainers[index.Value].Item;
+                        dragSourceItemSlot = index;
                         ItemContainers[index.Value].StartDragging();
                         Game.TrapMouseInPortraitArea();
                     }
@@ -659,6 +668,38 @@ internal sealed class ConversationScreen : ItemGridScreen
                     {
                         Game.ResetStatusIcons();
                         ShowMessage(Message.NoMemberHasRoomForItem);
+                    }
+                }
+                break;
+            case ScreenType.ConversationDropItem:
+                if (index != null)
+                {
+                    // TODO: Show ask message, if yes, remove it from receivedItems and update
+                }
+                break;
+            case ScreenType.ConversationShowItem:
+                if (index != null)
+                {
+                    if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Show, (word)ItemContainers[index.Value].Item!.Index, ShowReceivedItems))
+                    {
+                        afterWaitClickAction = ShowReceivedItems;
+                        ShowMessage(Message.NotInterestedInItem);
+
+                    }
+                }
+                break;
+            case ScreenType.ConversationGiveItem:
+                if (index != null)
+                {
+                    if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Give, (word)ItemContainers[index.Value].Item!.Index, () =>
+                    {
+                        Game.RemoveInventoryItem(Game.State.ActivePartyMember!, index.Value); // TODO: allow count > 1?
+                        RequestButtonSetup();
+                        ShowReceivedItems();
+                    }))
+                    {
+                        afterWaitClickAction = ShowReceivedItems;
+                        ShowMessage(Message.NotInterestedInItem);
                     }
                 }
                 break;

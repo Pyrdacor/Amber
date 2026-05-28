@@ -147,9 +147,7 @@ internal class Input : Control
         if (text.Length == maxLength)
             return true;
 
-        if ((ch >= '0' && ch <= '9') ||
-            (ch >= 'A' && ch <= 'Z') ||
-            (ch >= 'a' && ch <= 'z') ||
+        if (char.IsLetterOrDigit(ch) || // TODO: later limit to printable chars
             ch == ' ' || ch == '.' /* ||
             ch == '/' || ch == ':' || ch == '\'' || ch == '_'*/)
         {

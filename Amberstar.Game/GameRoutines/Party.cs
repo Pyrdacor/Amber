@@ -85,6 +85,66 @@ partial class Game
             ScreenHandler.PushScreen(ScreenType.Inventory);
     }
 
+    private IPartyMember EnsurePartyMember(int slotIndex)
+    {
+        return State.GetPartyMember(slotIndex)
+            ?? throw new IndexOutOfRangeException("No party member in slot {slotIndex}.");   
+    }
+
+    public void RemoveInventoryItem(int partyMemberSlotIndex, int itemSlotIndex, int count = 1)
+    {
+        var partyMember = EnsurePartyMember(partyMemberSlotIndex);
+
+        RemoveInventoryItem(partyMember, itemSlotIndex, count);
+    }
+
+    public void RemoveEquipment(int partyMemberSlotIndex, EquipmentSlot equipmentSlot, int count = 1)
+    {
+        var partyMember = EnsurePartyMember(partyMemberSlotIndex);
+
+        RemoveEquipment(partyMember, equipmentSlot, count);
+    }
+
+    public void RemoveInventoryItem(IPartyMember partyMember, int itemSlotIndex, int count = 1)
+    {
+        var itemSlot = partyMember.Inventory[itemSlotIndex];
+
+        ItemRemoved(partyMember, itemSlot, count, false);
+    }
+
+    public void RemoveEquipment(IPartyMember partyMember, EquipmentSlot equipmentSlot, int count = 1)
+    {
+        var itemSlot = partyMember.Equipment[equipmentSlot];
+
+        ItemRemoved(partyMember, itemSlot, count, true);
+    }
+
+    private void ItemRemoved(IPartyMember partyMember, ItemSlot itemSlot, int count, bool wasEquipped)
+    {
+        if (count == 0)
+            return;
+
+        if (count < 0)
+            throw new InvalidOperationException("Can't remove a negative amount of items.");
+
+        if (itemSlot.Count < count)
+            throw new InvalidOperationException($"Tried to remove {count} items but only {itemSlot.Count} were there.");
+
+        var item = itemSlot.Item ?? throw new InvalidOperationException($"Unexpected null item in item slot.");
+
+        if (itemSlot.Count == count)
+            itemSlot.ClearItem();
+        else 
+            itemSlot.Count -= (byte)count;
+
+        partyMember.TotalWeight -= (uint)count * item.Weight;
+
+        if (wasEquipped)
+        {
+            // TODO
+        }
+    }
+
     public bool TryAddItem(int partyMemberSlotIndex, IItem item, int count = 1)
     {
         var partyMember = State.GetPartyMember(partyMemberSlotIndex);
