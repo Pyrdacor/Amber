@@ -32,6 +32,13 @@ public enum ScreenType
 	ChestGiveItem,
     ChestExamineItem,
     ChestGiveGold,
+    // Conversation sub screens
+    ConversationPickupItem,
+    ConversationDropItem,
+    ConversationShowItem,
+    ConversationGiveItem,
+    ConversationGiveGold,
+    ConversationGiveFood,
     // TODO ...
 }
 
@@ -644,6 +651,13 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.ChestGiveItem => new ChestScreen.GiveItemScreen(),
 			ScreenType.ChestExamineItem => new ChestScreen.ExamineItemScreen(),
 			ScreenType.ChestGiveGold => new ChestScreen.GiveGoldScreen(),
+            // Conversation sub screens
+            ScreenType.ConversationPickupItem => new ConversationScreen.PickupItemScreen(),
+            ScreenType.ConversationDropItem => new ConversationScreen.DropItemScreen(),
+            ScreenType.ConversationShowItem => new ConversationScreen.ShowItemScreen(),
+            ScreenType.ConversationGiveItem => new ConversationScreen.GiveItemScreen(),
+            ScreenType.ConversationGiveGold => new ConversationScreen.GiveGoldScreen(),
+            ScreenType.ConversationGiveFood => new ConversationScreen.GiveFoodScreen(),
             _ => throw new NotImplementedException()
 		};
 

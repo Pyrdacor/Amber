@@ -222,7 +222,7 @@ internal class ItemContainer : Control
 		return false;
 	}
 
-    public void SetItem(int count, IItem item)
+    public void SetItem(int count, IItem? item)
 	{
         if (count > 0 && item == null)
             throw new AmberException(ExceptionScope.Application, "Item count is greater than 0 but item is null.");

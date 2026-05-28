@@ -8,6 +8,12 @@ public record ItemSlot
         Item = item;
     }
 
+    public ItemSlot(ItemSlot other)
+    {
+        Count = other.Count;
+        Item = other.Item;
+    }
+
     public byte Count { get; set; }
     public IItem? Item { get; private set; }
 

@@ -243,9 +243,11 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                         Game.UntrapMouse();
                         Game.ResetStatusIcons();
 
+                        UpdateChestItems();
                         RequestButtonSetup();
 
-                        // TODO: If chest is empty, close screen
+                        if (chestGold == 0 || !chestHasItems) // TODO: Test this
+                            Game.ScreenHandler.PopScreen();
                     }
                     else
                     {
@@ -273,9 +275,12 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                         goldDisplay!.SetText($"{chestGold:00000}", 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
 
                         if (chestGold == 0)
+                        {
                             RequestButtonSetup();
 
-                        // TODO: If chest is empty, close screen
+                            if (!chestHasItems) // TODO: Test this
+                                Game.ScreenHandler.PopScreen();
+                        }
                     }
                 }
 
