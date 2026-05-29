@@ -9,7 +9,7 @@ using IAssetProvider = Amberstar.GameData.IAssetProvider;
 
 namespace Amberstar.Game;
 
-// TODO: Gold is not stored in character?
+// TODO: Savegame needs to store the character data
 
 /// <summary>
 /// Much of the implementation is located in the folder GameRoutines.

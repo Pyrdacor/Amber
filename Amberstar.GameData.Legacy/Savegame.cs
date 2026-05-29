@@ -1,4 +1,5 @@
-﻿using Amber.Serialization;
+﻿using Amber.IO.FileFormats.Compression;
+using Amber.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
@@ -16,6 +17,12 @@ internal class Savegame : ISavegame
 
 	public void Read(IDataReader dataReader)
 	{
+        if (dataReader.PeekDword() == 0x59415921) // "YAY!"?
+        {
+            dataReader.Position += 4;
+            dataReader = new DataReader(YAY.Decrypt(dataReader));
+        }
+
         Month = dataReader.ReadByte();
         Day = dataReader.ReadByte();
         Hour = dataReader.ReadByte();
@@ -94,8 +101,16 @@ internal class Savegame : ISavegame
         }
     }
 
-    public void Write(IDataWriter dataWriter)
+    public void Write(IDataWriter dataWriter, bool encrypt)
     {
+        if (encrypt)
+        {
+            var writer = new DataWriter();
+            Write(writer, false);
+            dataWriter.Write(YAY.Encrypt(writer.ToArray()));
+            return;
+        }
+
         dataWriter.Write((byte)Month);
         dataWriter.Write((byte)Day);
         dataWriter.Write((byte)Hour);
