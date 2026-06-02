@@ -10,7 +10,6 @@ namespace Amberstar.Game.Screens;
 internal record ConversationCharacter(int CharacterIndex, IMap Map, int MapCharacterIndex);
 
 // TODO: Silk has no gold and food (but he has in original)
-// TODO: When talking to Silk, the gold and food display is broken
 internal sealed class ConversationScreen : ItemGridScreen
 {
     const int ItemSlotCount = 12;
@@ -142,7 +141,10 @@ internal sealed class ConversationScreen : ItemGridScreen
             throw new AmberException(ExceptionScope.Application, "No conversation character specified.");
 
         person = Game.AssetProvider.PersonLoader.LoadPerson(conversationCharacter.CharacterIndex);
-        personInfoView = new(Game, person, conversationCharacter.CharacterIndex, palette);
+        personInfoView = new(Game, person, conversationCharacter.CharacterIndex, palette)
+        {
+            Extended = false
+        };
         map = conversationCharacter.Map;
         mapCharacterIndex = conversationCharacter.MapCharacterIndex + 1; // They are 1-based for save bits etc
         characterIndex = conversationCharacter.CharacterIndex;

@@ -3,6 +3,7 @@ using Amber.Renderer;
 using Amber.Renderer.Common;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Amberstar.Game.UI;
 
@@ -31,6 +32,7 @@ internal class PersonInfoView
     readonly ISprite? swordIcon;
     readonly ISprite? shieldIcon;
     bool visible = true;
+    bool extended = true;
 
     public PersonInfoView(Game game, IPerson person, int personIndex, byte palette)
     {
@@ -195,13 +197,47 @@ internal class PersonInfoView
                 var text = personInfoTexts[i];
 
                 if (text != null)
-                    text.Visible = value;
+                {
+                    if (i == (int)InfoText.GoldAndFood || i == (int)InfoText.Damage || i == (int)InfoText.Protection)
+                        text.Visible = value && extended;
+                    else
+                        text.Visible = value;
+                }
             }
 
             if (swordIcon != null)
-                swordIcon.Visible = value;
+                swordIcon.Visible = value && extended;
             if (shieldIcon != null)
-                shieldIcon.Visible = value;
+                shieldIcon.Visible = value && extended;
+        }
+    }
+
+    public bool Extended
+    {
+        get => extended;
+        set
+        {
+            if (extended == value)
+                return;
+
+            extended = value;
+
+            void SetExtendedTextVisibility(int index)
+            {
+                var text = personInfoTexts[index];
+
+                if (text != null)
+                    text.Visible = visible && extended;
+            }
+
+            SetExtendedTextVisibility((int)InfoText.GoldAndFood);
+            SetExtendedTextVisibility((int)InfoText.Damage);
+            SetExtendedTextVisibility((int)InfoText.Protection);
+
+            if (swordIcon != null)
+                swordIcon.Visible = visible && extended;
+            if (shieldIcon != null)
+                shieldIcon.Visible = visible && extended;
         }
     }
 
