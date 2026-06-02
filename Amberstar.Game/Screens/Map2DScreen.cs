@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Amber.Common;
+﻿using Amber.Common;
 using Amber.Renderer.Common;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
@@ -1316,6 +1315,10 @@ internal class Map2DScreen : ButtonGridScreen
 
 		tileGraphicOffset = map.TilesetIndex == 1 ? 0 : tilesets![0].Graphics.Count + 1;
 		palette = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
+
+		characters.Clear();
+		mapCharacters.ForEach(c => c.Visible = false);
+        mapCharacters.Clear();
 
         for (int i = 0; i < map.Characters.Length; i++)
         {

@@ -26,7 +26,7 @@ internal class SavegameManager(AssetProvider assetProvider) : ISavegameManager
     public void SaveToFile(string filename, ISavegame savegame)
     {
         var dataWriter = new DataWriter();
-        ExtendedSavegame.CreateFrom(assetProvider, savegame, false).Write(dataWriter);
+        ExtendedSavegame.CreateFrom(assetProvider, savegame, false).Write(dataWriter, false);
 
         File.WriteAllBytes(filename, dataWriter.ToArray());
     }

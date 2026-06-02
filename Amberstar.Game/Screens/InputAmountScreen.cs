@@ -6,6 +6,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+// TODO: Use WindowScreen
 internal abstract class InputAmountScreen : Screen
 {
 	const int WindowX = 32;

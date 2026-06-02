@@ -35,8 +35,6 @@ internal sealed class ConversationScreen : ItemGridScreen
     int? dragSourceItemSlot = null;
     Image? goldIcon = null;
     Image? foodIcon = null;
-    Image? goldIconBackground = null;
-    Image? foodIconBackground = null;
     Label? goldValue = null;
     Label? foodValue = null;
 
@@ -119,13 +117,13 @@ internal sealed class ConversationScreen : ItemGridScreen
 
         x = 208;
         y = 113;
-        goldIconBackground = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), displayLayer: 10, true);
+        var goldIconBackground = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), displayLayer: 10, true);
         goldIcon = AddImage(ref x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(ItemGraphic.WishingCoins), displayLayer: 15);
         goldIcon.PaletteIndex = itemPalette;
         goldValue = AddLabel(x + 1, y + 5, 30, 7, displayLayer: 15);
 
         x += 32;
-        foodIconBackground = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), displayLayer: 10, true);
+        var foodIconBackground = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), displayLayer: 10, true);
         foodIcon = AddImage(ref x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(ItemGraphic.Ration), displayLayer: 15);
         foodIcon.PaletteIndex = itemPalette;
         foodValue = AddLabel(x + 1, y + 5, 30, 7, displayLayer: 15);
@@ -297,6 +295,7 @@ internal sealed class ConversationScreen : ItemGridScreen
             if (itemSlot != null && receivedItems.Count < ItemSlotCount)
             {
                 receivedItems.Add(new(itemSlot)); // Clone
+                ShowReceivedItems();
                 RequestButtonSetup();
             }
         }
@@ -721,7 +720,12 @@ internal sealed class ConversationScreen : ItemGridScreen
             case ScreenType.ConversationDropItem:
                 if (index != null)
                 {
-                    // TODO: Show ask message, if yes, remove it from receivedItems and update
+                    Game.AskForConfirmation(Game.LoadMessageText(Message.ReallyDropItem), () =>
+                    {
+                        receivedItems[index.Value].ClearItem(); // TODO: allow count > 1?
+                        ShowReceivedItems();
+                        RequestButtonSetup();
+                    });
                 }
                 break;
             case ScreenType.ConversationShowItem:

@@ -10,7 +10,7 @@ partial class Game
     {
         // TODO: For now we just store it in some local file.
         var writer = new DataWriter();
-        State.ToSavegame(AssetProvider.SavegameLoader).Write(writer);
+        State.ToSavegame(AssetProvider.SavegameLoader).Write(writer, false);
 
         using var fileStream = File.Create(TempSaveFile);
         writer.CopyTo(fileStream);

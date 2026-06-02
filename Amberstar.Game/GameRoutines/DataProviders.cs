@@ -12,6 +12,7 @@ partial class Game
     internal int CurrentAmount { get; set; } // Result from amount input screen etc (e.g. gold amount to give)
     internal int CurrentMaxAmount { get; set; } // For amount input screen etc (e.g. gold amount to give)
     internal string? CurrentWord { get; set; }
+    internal bool CurrentResult { get; set; } = false;
     internal IText LoadUIText(UIText uiText) => AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)uiText));
     internal IText LoadMessageText(Message message) => AssetProvider.TextLoader.LoadText(new(AssetType.Message, (int)message));
     internal int GetMaxLineLength(IText text)

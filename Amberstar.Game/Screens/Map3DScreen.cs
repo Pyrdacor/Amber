@@ -1037,8 +1037,10 @@ internal class Map3DScreen : ButtonGridScreen
 		map = Game.AssetProvider.MapLoader.LoadMap(index) as IMap3D; // TODO: catch exceptions
 		labData = Game.AssetProvider.LabDataLoader.LoadLabData(map!.LabDataIndex);
 		palette = Game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
+		characters.Clear();
 
-		for (int i = 0; i < map.Characters.Length; i++)
+
+        for (int i = 0; i < map.Characters.Length; i++)
 		{
 			var characterData = map.Characters[i];
 

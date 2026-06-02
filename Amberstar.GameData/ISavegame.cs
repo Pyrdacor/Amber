@@ -99,7 +99,7 @@ public interface ISavegame
 	TileChange[] TileChanges { get; set; }
 
 	void Read(IDataReader dataReader);
-	void Write(IDataWriter dataWriter);
+	void Write(IDataWriter dataWriter, bool encrypt);
 
 
     public const int MaxTransportCount = 30;

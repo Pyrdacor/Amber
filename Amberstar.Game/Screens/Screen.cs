@@ -25,6 +25,7 @@ public enum ScreenType
     ItemDetails,
     SelectWord,
     InputWord,
+    Confirmation,
     // Inventory sub screens
     InventoryDropItem,
 	// Door/chest sub screens
@@ -616,6 +617,8 @@ internal abstract class Screen
     #endregion
 }
 
+internal delegate void ScreenChangedHandler(Screen newScreen, Screen oldScreen);
+
 internal class ScreenHandler(Game Game) : IDisposable
 {
 	readonly Stack<Screen> screens = [];
@@ -624,7 +627,7 @@ internal class ScreenHandler(Game Game) : IDisposable
 	public Screen? ActiveScreen => screens.Count == 0 ? null : screens.Peek();
 	public Screen? LastScreen => screens.Skip(1).FirstOrDefault();
 
-	public event Action<Screen>? ScreenChanged;
+	public event ScreenChangedHandler? ScreenChanged;
 
 	public Screen Create(ScreenType screenType)
 	{
@@ -644,6 +647,7 @@ internal class ScreenHandler(Game Game) : IDisposable
 			ScreenType.ItemDetails => new ItemDetailsScreen(),
             ScreenType.SelectWord => new SelectWordScreen(),
             ScreenType.InputWord => new InputWordScreen(),
+            ScreenType.Confirmation => new ConfirmationScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
 			// Door/chest sub screens
@@ -690,7 +694,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             screen!.PreOpen();
             screen.Open(followAction);
 
-			ScreenChanged?.Invoke(screen);
+			ScreenChanged?.Invoke(screen, currentScreen);
         }
 
         bool transparent = currentScreen?.Transparent == true || screen.Transparent;
@@ -722,7 +726,7 @@ internal class ScreenHandler(Game Game) : IDisposable
 			screen.Close();
             prevScreen?.ScreenPopped(screen);
 
-            ScreenChanged?.Invoke(screen);
+            ScreenChanged?.Invoke(prevScreen ?? screen, screen);
         }
 
         bool transparent = prevScreen?.Transparent == true || screen.Transparent;

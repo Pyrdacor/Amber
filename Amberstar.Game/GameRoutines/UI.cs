@@ -231,6 +231,32 @@ partial class Game
         ShowTextMessage(text, nextAction);
     }
 
+    internal void AskForConfirmation(string text, Action confirmAction, Action? cancelAction = null)
+    {
+        AskForConfirmation(AssetProvider.TextLoader.FromString(text), confirmAction, cancelAction);
+    }
+
+    internal void AskForConfirmation(IText text, Action confirmAction, Action? cancelAction = null)
+    {
+        CurrentText = text;
+        ScreenHandler.PushScreen(ScreenType.Confirmation);
+
+        ScreenHandler.ScreenChanged += Changed;
+
+        void Changed(Screen newScreen, Screen oldScreen)
+        {
+            if (oldScreen.Type == ScreenType.Confirmation)
+            {
+                ScreenHandler.ScreenChanged -= Changed;
+
+                if (!CurrentResult)
+                    cancelAction?.Invoke();
+                else
+                    confirmAction?.Invoke();
+            }
+        }
+    }
+
     /// <summary>
     /// Amberstar gives some format strings in the form of:
     /// 

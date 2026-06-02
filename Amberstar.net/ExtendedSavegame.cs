@@ -1,4 +1,5 @@
-﻿using Amber.Serialization;
+﻿using Amber.IO.FileFormats.Compression;
+using Amber.Serialization;
 using Amberstar.Game;
 using Amberstar.GameData;
 using Amberstar.GameData.Legacy;
@@ -397,8 +398,16 @@ internal class ExtendedSavegame(AssetProvider assetProvider) : IExtendedSavegame
         }
     }
 
-    public void Write(IDataWriter dataWriter)
+    public void Write(IDataWriter dataWriter, bool encrypt)
     {
+        if (encrypt)
+        {
+            var writer = new DataWriter();
+            Write(writer, false);
+            dataWriter.Write(YAY.Encrypt(writer.ToArray()));
+            return;
+        }
+
         dataWriter.WriteWithoutLength(Magic);
         dataWriter.Write(MaxSupportFileFormatVersion);
 

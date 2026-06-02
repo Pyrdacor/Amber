@@ -56,7 +56,7 @@ internal class DoorScreen : LockedScreen<DoorEvent>
             {
                 IMapEventProvider eventProvider;
 
-                void ExecuteFollowUpEvent(Screen _)
+                void ExecuteFollowUpEvent(Screen _, Screen __)
                 {
                     Game.ScreenHandler.ScreenChanged -= ExecuteFollowUpEvent;
 
