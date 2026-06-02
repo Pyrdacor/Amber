@@ -1,34 +1,21 @@
 ﻿using Amber.Common;
-using Amber.Renderer.Common;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-// TODO: Use WindowScreen
-internal abstract class InputAmountScreen : Screen
+internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, WindowDisplayLayer)
 {
 	const int WindowX = 32;
 	const int WindowY = 80+32;
 	const int WindowWidthInTiles = 10;
 	const int WindowHeightInTiles = 6;
     const byte WindowDisplayLayer = 150;
-    const byte TextDisplayLayer = 175;
-	Window? window;
-    byte uiPalette = 0;
-    ISprite? imageBackground;
-    ISprite? image;
-    Label? inputLabel;
+    const byte ControlDisplayLayer = 175;
     Label? inputValue;
-    Label? message;
     Button? upButton;
     Button? downButton;
-    Button? exitButton;
-    // Holds all created controls (including the above) to easily show/hide/destroy all of them at once
-    readonly List<Control> createdControls = [];
-
-	public sealed override bool Transparent => true;
 
     protected abstract ItemGraphic Graphic { get; }
 
@@ -36,25 +23,18 @@ internal abstract class InputAmountScreen : Screen
 
     protected abstract Message Message { get; }
 
+    public override bool CloseOnEscape { get; } = false;
+
     public override void Init()
     {
         base.Init();
 
-        uiPalette = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
-
         Label CreateLabel(int x, int y, int width, IText? text = null)
         {
-            Label label = new(Game)
-            {
-                DisplayLayer = TextDisplayLayer,
-                Alignment = TextAlignment.Left,
-                Area = new(x, y, width, 7),
-            };
+            var label = AddLabel(x, y, width, 7, ControlDisplayLayer);
 
             if (text != null)
-                label.SetText(text, width, 15, TextManager.DefaultPaperColorIndex, uiPalette);
-
-            createdControls.Add(label);
+                label.SetText(text, width);
 
             return label;
         }
@@ -64,18 +44,16 @@ internal abstract class InputAmountScreen : Screen
         int x = WindowX + 16;
         int y = WindowY + 16;
 
-        imageBackground = Game.CreateSprite(Layer.UI, new(x, y), new(16, 16), Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), uiPalette, true);
-        imageBackground!.DisplayLayer = TextDisplayLayer;
-        imageBackground.Visible = true;
+        // Image background
+        AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), ControlDisplayLayer, true);
 
-        image = Game.CreateSprite(Layer.UI, new(x, y), new(16, 16), Game.GraphicIndexProvider.GetItemGraphicIndex(Graphic), Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item]);
-        image!.DisplayLayer = TextDisplayLayer + 2;
-        image.Visible = true;
+        var image = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(Graphic), ControlDisplayLayer + 5);
+        image.PaletteIndex = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item];
 
         x += 16 + 3;
         y += 2;
 
-        inputLabel = CreateFixedLabel(x, y, InputLabelText);
+        var inputLabel = CreateFixedLabel(x, y, InputLabelText);
         inputLabel.Visible = true;
 
         y += 11;
@@ -87,25 +65,21 @@ internal abstract class InputAmountScreen : Screen
         y += 9;
 
         var text = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)Message));
-        message = CreateFixedLabel(x, y, text);
+        var message = CreateFixedLabel(x, y, text);
         message.Visible = true;
 
         x = WindowX + 16;
         y = WindowY + 48;
 
-        upButton = new Button(Game, x, y, ButtonType.ArrowUp, TextDisplayLayer, uiPalette);
+        upButton = AddButton(x, y, ButtonType.ArrowUp, ControlDisplayLayer);
         upButton.ClickAction += () => ChangeAmount(1);
         upButton.RightClickAction += () => ChangeAmount(short.MaxValue);
-        downButton = new Button(Game, x, y + 16, ButtonType.ArrowDown, TextDisplayLayer, uiPalette);
+        downButton = AddButton(x, y + 16, ButtonType.ArrowDown, ControlDisplayLayer);
         downButton.ClickAction += () => ChangeAmount(-1);
         downButton.RightClickAction += () => ChangeAmount(short.MinValue);
 
-        exitButton = new Button(Game, x + 48, y + 16, ButtonType.Exit, TextDisplayLayer, uiPalette);
+        var exitButton = AddButton(x + 48, y + 16, ButtonType.Exit, ControlDisplayLayer);
         exitButton.ClickAction += () => Game.ScreenHandler.PopScreen();
-
-        createdControls.Add(upButton);
-        createdControls.Add(downButton);
-        createdControls.Add(exitButton);
     }
 
     private void ChangeAmount(int change)
@@ -114,7 +88,13 @@ internal abstract class InputAmountScreen : Screen
             return;
 
         Game.CurrentAmount = MathUtil.Limit(0, Game.CurrentAmount + change, Game.CurrentMaxAmount);
-        inputValue!.SetText(Game.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
+
+        UpdateControls();
+    }
+
+    private void UpdateControls()
+    {
+        inputValue!.SetText(Game.CurrentAmount.ToString());
 
         upButton!.Disabled = Game.CurrentAmount == Game.CurrentMaxAmount;
         downButton!.Disabled = Game.CurrentAmount == 0;
@@ -127,62 +107,7 @@ internal abstract class InputAmountScreen : Screen
 
 		base.Open(closeAction);
 
-		InitControls();
-    }
-
-	private void InitControls()
-	{
-        // Create the window
-        window?.Destroy();
-        window = new(Game, WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, dark: false, WindowDisplayLayer, uiPalette);
-
-        inputValue!.SetText(Game.CurrentAmount.ToString(), 15, TextManager.TransparentPaper, uiPalette);
-        inputValue.Visible = true;
-
-        upButton!.Disabled = Game.CurrentAmount == Game.CurrentMaxAmount;
-        downButton!.Disabled = Game.CurrentAmount == 0;
-
-        createdControls.ForEach(control => control.Visible = true);
-
-        Game.TrapMouse(window.ClientArea);
-    }
-
-	public override void Close()
-	{
-        window?.Destroy();
-        createdControls.ForEach(label => label.Visible = false);
-
-        if (image != null)
-            image.Visible = false;
-
-        if (imageBackground != null)
-            imageBackground.Visible = false;
-
-        Game.UntrapMouse();
-
-        base.Close();
-	}
-
-    public override void Destroy()
-    {
-        window?.Destroy();
-
-        if (image != null)
-        {
-            image.Visible = false;
-            image = null;
-        }
-
-        if (imageBackground != null)
-        {
-            imageBackground.Visible = false;
-            imageBackground = null;
-        }
-
-        createdControls.ForEach(label => label.Destroy());
-        createdControls.Clear();
-
-        base.Destroy();
+        UpdateControls();
     }
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -231,11 +156,6 @@ internal abstract class InputAmountScreen : Screen
         if (keyModifiers != KeyModifiers.None)
             buttons = MouseButtons.Right;
 
-        if (upButton!.MouseClick(position, buttons) ||
-            downButton!.MouseClick(position, buttons) ||
-            exitButton!.MouseClick(position))
-            return true;
-
-        return false;
+        return base.MouseDown(position, buttons, keyModifiers);
     }
 }
