@@ -78,9 +78,9 @@ partial class Game
         State.SetCurrentInventory(characterSlotIndex);
 
         if (ScreenHandler.ActiveScreen is InventoryScreen inventoryScreen)
-            inventoryScreen.SwitchToPartyMember(characterSlotIndex, false);
+            inventoryScreen.SwitchToPartyMember(characterSlotIndex, true);
         else if (ScreenHandler.ActiveScreen is CharacterStatsScreen characterStatsScreen)
-            characterStatsScreen.SwitchToPartyMember(characterSlotIndex, false);
+            characterStatsScreen.SwitchToPartyMember(characterSlotIndex, true);
         else
             ScreenHandler.PushScreen(ScreenType.Inventory);
     }

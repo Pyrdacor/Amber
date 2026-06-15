@@ -221,6 +221,27 @@ internal abstract class Screen
                 return true;
         }
 
+        if (AllowCharacterSelection && buttons == MouseButtons.Left)
+        {
+            int? characterSlotIndex = Game.TestPartyPortraitHit(position);
+
+            if (characterSlotIndex != null)
+            {
+                Game.State.SetActivePartyMember(characterSlotIndex.Value);
+                return true;
+            }
+        }
+        else if (AllowInventoryAccess && buttons == MouseButtons.Right)
+        {
+            int? characterSlotIndex = Game.TestPartyPortraitHit(position);
+
+            if (characterSlotIndex != null)
+            {
+                Game.OpenInventory(characterSlotIndex.Value);
+                return true;
+            }
+        }
+
         return false;
 	}
 

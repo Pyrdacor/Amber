@@ -133,7 +133,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
             return;
 
         Game.State.CurrentInventoryIndex = index;
-        int partyMemberIndex = 1; // TODO: get from savegame, slot is index
+        int partyMemberIndex = Game.State.PartyCharacterIndices[index - 1];
         partyMember = (Game.AssetProvider.PersonLoader.LoadPerson(partyMemberIndex) as IPartyMember)!;
         var graphicLoader = Game.AssetProvider.GraphicLoader;
         var uiPaletteIndex = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];

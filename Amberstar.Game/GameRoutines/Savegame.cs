@@ -24,5 +24,8 @@ partial class Game
         savegame.Read(reader);
 
         State.LoadFrom(savegame);
+
+        ResetStatusIcons();
+        UpdatePartyMembers();
     }
 }

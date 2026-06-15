@@ -20,7 +20,7 @@ partial class Game
 		else if (key == Key.F5)
 		{
 			SaveGame();
-			ShowTextMessage($"Game was saved at '{TempSaveFile}'.");
+			ShowTextMessage($"Game was saved at '{Path.GetFileName(TempSaveFile)}'.");
 			return;
 		}
         else if (key == Key.F7)

@@ -332,7 +332,8 @@ internal class InventoryScreen : ItemGridScreen
         }
 
         personInfoView?.Destroy();
-        personInfoView = new(Game, partyMember, index, uiPaletteIndex);
+        int partyMemberIndex = Game.State.PartyCharacterIndices[index - 1];
+        personInfoView = new(Game, partyMember, partyMemberIndex, uiPaletteIndex);
 
         var weightString = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.WeightTwoValues)).GetString();
         weightString = Game.InsertNumberIntoString(weightString, " KG", false, partyMember.TotalWeight / 1000, 3, '0');

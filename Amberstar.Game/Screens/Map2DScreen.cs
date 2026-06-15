@@ -888,7 +888,7 @@ internal class Map2DScreen : ButtonGridScreen
 
                     var character = characters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
 
-                    if (character != null && character.Type == MapCharacterType.Person)
+                    if (character != null && Game.State.IsMapCharacterActive(map!.Index, 1 + character.Index) && character.Type == MapCharacterType.Person)
                     {
                         Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
                         Game.ScreenHandler.PushScreen(ScreenType.Conversation);
