@@ -26,7 +26,7 @@ partial class Game
         else if (key == Key.F7)
         {
             LoadGame();
-			ShowTextMessage($"Game was loaded from '{TempSaveFile}'.", () =>
+			ShowTextMessage($"Game was loaded from '{Path.GetFileName(TempSaveFile)}'.", () =>
 			{
 				Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true);
 			});

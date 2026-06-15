@@ -628,7 +628,10 @@ internal sealed class ConversationScreen : ItemGridScreen
                     {
                         var sourceSlot = receivedItems[dragSourceItemSlot!.Value];
                         if (sourceSlot.Count == 1)
+                        {
                             sourceSlot.ClearItem();
+                            receivedItems.RemoveAt(dragSourceItemSlot.Value);
+                        }
                         else
                             sourceSlot.Count--;
                         ItemContainer.ConsumeDragged(Game);

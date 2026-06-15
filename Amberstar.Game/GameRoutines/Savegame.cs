@@ -4,7 +4,7 @@ namespace Amberstar.Game;
 
 partial class Game
 {
-    const string TempSaveFile = "temp.save";
+    const string TempSaveFile = @"D:\Projects\Amber\Amberstar.net\temp.save";
 
     public void SaveGame()
     {
