@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amber.Common\Amber.Common.csproj" />
+    <ProjectReference Include="..\Amber.IO.FileFormats\Amber.IO.FileFormats.csproj" />
+    <ProjectReference Include="..\Amber.IO.FileSystem\Amber.IO.FileSystem.csproj" />
+    <ProjectReference Include="..\Amber.Renderer.Common\Amber.Renderer.Common.csproj" />
+    <ProjectReference Include="..\Amberworlds.GameData\Amberworlds.GameData.csproj" />
+  </ItemGroup>
+
+</Project>
