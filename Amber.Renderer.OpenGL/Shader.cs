@@ -39,13 +39,12 @@ internal class Shader : IDisposable
 	internal static readonly string ZName = "z";
 	internal static readonly string LayerName = "layer";
 	internal static readonly string UsePaletteName = "usePalette";
-	internal static readonly string TexCoordName = "texCoord";
+	internal static readonly string TextureCoordName = "textureCoord";
 	internal static readonly string TextureName = "sampler";
 	internal static readonly string AtlasSizeName = "atlasSize";
 	internal static readonly string PaletteName = "palette";
 	internal static readonly string PaletteIndexName = "paletteIndex";
-	internal static readonly string ColorKeyName = "colorKeyIndex";
-	internal static readonly string MaskColorIndexName = "maskColorIndex";
+	internal static readonly string MaskColorIndexName = "maskColorIndex";	
 	internal static readonly string TransparentColorIndexName = "transparentColorIndex";	
 	internal static readonly string PaletteCountName = "palCount";
     internal static readonly string PaletteSizeName = "palSize";
@@ -53,6 +52,17 @@ internal class Shader : IDisposable
     internal static readonly string AllowTransparencyName = "allowTransparency";
     internal static readonly string AllowAlphaName = "allowAlpha";
     internal static readonly string AlphaName = "alpha";
+    internal static readonly string FogColorName = "fogColor";
+    internal static readonly string FogStartDistanceName = "fogStartDistance";
+    internal static readonly string FogEndDistanceName = "fogEndDistance";
+    internal static readonly string FogEnabledName = "fogEnabled";
+    internal static readonly string LightIntensityName = "lightIntensity";
+    internal static readonly string AllowColorReplacementName = "allowColorReplacement";
+    internal static readonly string ColorReplacementName = "colorReplacement";
+    internal static readonly string SkyColorIndexName = "skyColorIndex";
+    internal static readonly string SkyReplacementColorName = "skyReplacementColor";
+    internal static readonly string FadeFactorName = "fadeFactor";
+    internal static readonly string TintColorName = "tintColor";
 
     readonly State state;
 	readonly string code = "";

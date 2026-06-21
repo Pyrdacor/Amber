@@ -1,5 +1,5 @@
 ﻿using Amber.IO.Common.FileSystem;
-using Amber.Serialization;
+using Amber.IO.Common.Serialization;
 
 namespace Amber.IO.FileSystem.Virtual;
 

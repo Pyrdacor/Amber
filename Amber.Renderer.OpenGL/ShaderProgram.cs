@@ -283,6 +283,22 @@ internal class ShaderProgram : IDisposable
         );
     }
 
+    public void SetInputColorArray(string name, Color[] colors)
+    {
+        var bytes = new byte[colors.Length * 4];
+        int index = 0;
+
+        foreach (var color in colors)
+        {
+            bytes[index++] = color.R;
+            bytes[index++] = color.G;
+            bytes[index++] = color.B;
+            bytes[index++] = color.A;
+        }
+
+        SetInputColorArray(name, bytes);
+    }
+
     public void SetInputColorArray(string name, byte[] array)
     {
         var location = GetLocation(name);
@@ -292,6 +308,18 @@ internal class ShaderProgram : IDisposable
         (
             () => state.Gl.Uniform4((int)location, (uint)array.Length, normalizedArray),
             () => state.Gl.ProgramUniform4(ProgramIndex, (int)location, (uint)array.Length, normalizedArray)
+        );
+    }
+
+    public void SetInputColor(string name, Color color)
+    {
+        var location = GetLocation(name);
+        float[] normalizedArray = [color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f];
+
+        CallUniform
+        (
+            () => state.Gl.Uniform4((int)location, normalizedArray),
+            () => state.Gl.ProgramUniform4(ProgramIndex, (int)location, normalizedArray)
         );
     }
 

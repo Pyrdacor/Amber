@@ -19,6 +19,7 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Numerics;
 using Amber.Common;
 
 namespace Amber.Renderer.OpenGL
@@ -71,7 +72,7 @@ namespace Amber.Renderer.OpenGL
             if (far - near <= float.Epsilon)
                 throw new ArgumentException("Near z value equals far z value or far is smaller than near which is not allowed.");
 
-            float scale = near * (float)Math.Tan(0.5 * fovY);
+            float scale = near * (float)Math.Tan(0.5 * fovY * Math.PI / 180.0);
 
             float t = scale; // top
             float b = -t; // bottom
@@ -302,6 +303,35 @@ namespace Amber.Renderer.OpenGL
 
                 return inverseMatrix;
             }
+        }
+
+        /*public static Matrix4 LookAt(Vector3 eye, Vector3 target, Vector3 up)
+        {
+            var z = Vector3.Normalize(eye - target);            // forward (points away from target)
+            var x = Vector3.Normalize(Vector3.Cross(up, z));    // right
+            var y = Vector3.Cross(z, x);                        // corrected up
+
+            return new(
+            [
+                x.X,                    y.X,                    z.X,                    0,
+                x.Y,                    y.Y,                    z.Y,                    0,
+                x.Z,                    y.Z,                    z.Z,                    0,
+                -Vector3.Dot(x, eye),   -Vector3.Dot(y, eye),   -Vector3.Dot(z, eye),   1
+            ]);
+        }*/
+        public static Matrix4 LookAt(Vector3 eye, Vector3 target, Vector3 up)
+        {
+            var z = Vector3.Normalize(eye - target);
+            var x = Vector3.Normalize(Vector3.Cross(up, z));
+            var y = Vector3.Cross(z, x);
+
+            return new(
+            [
+                x.X,  x.Y,  x.Z,  -Vector3.Dot(x, eye),
+                y.X,  y.Y,  y.Z,  -Vector3.Dot(y, eye),
+                z.X,  z.Y,  z.Z,  -Vector3.Dot(z, eye),
+                0,    0,    0,     1
+            ]);
         }
 
         public Matrix4(float[] matrix)

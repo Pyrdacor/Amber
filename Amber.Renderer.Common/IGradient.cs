@@ -1,8 +1,8 @@
 ﻿using Amber.Common;
 
-namespace Amber.Renderer;
+namespace Amber.Renderer.Common;
 
-public interface IGradient : IDrawable
+public interface IGradient : IDrawable2D
 {
 	Size Size { get; }
 	/// <summary>

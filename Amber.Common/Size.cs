@@ -139,6 +139,16 @@ public readonly struct FloatSize : IEquatable<FloatSize>
         width = Width;
         height = Height;
     }
+
+	public Size Round()
+	{
+		return new(MathUtil.Round(Width), MathUtil.Round(Height));
+	}
+
+    public Size Floor()
+    {
+        return new((int)Math.Floor(Width), (int)Math.Floor(Height));
+    }
 }
 
 public delegate FloatSize SizeTransformation(FloatSize size);

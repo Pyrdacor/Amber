@@ -24,6 +24,13 @@ namespace Amber.Renderer.OpenGL.Shaders;
 using Amber.Renderer.OpenGL.Buffers;
 using static Shader;
 
+public enum ShaderProjection
+{
+	Orthogonal,
+	Perspective,
+	Sky
+}
+
 internal abstract class BaseShader : IShader
 {
     internal ShaderProgram shaderProgram;
@@ -42,12 +49,27 @@ internal abstract class BaseShader : IShader
 
 	public virtual bool NeedsBlending { get; } = false;
 
-	public ShaderProgram ShaderProgram => shaderProgram;
+	public virtual ShaderProjection Projection { get; } = ShaderProjection.Orthogonal;
+
+    public ShaderProgram ShaderProgram => shaderProgram;
 
 	public abstract Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject);
 
 	public void UpdateMatrices(State state)
 	{
+		switch (Projection)
+		{
+			case ShaderProjection.Perspective:
+				state.RestoreProjectionMatrix(state.ProjectionMatrix3D);
+				break;
+			case ShaderProjection.Sky:
+				// TODO
+				break;
+			default:
+				state.RestoreProjectionMatrix(state.ProjectionMatrix2D);
+				break;
+		}
+
 		shaderProgram.SetInputMatrix(ModelViewMatrixName, state.CurrentModelViewMatrix.ToArray(), true);
 		shaderProgram.SetInputMatrix(ProjectionMatrixName, state.CurrentProjectionMatrix.ToArray(), true);
 	}

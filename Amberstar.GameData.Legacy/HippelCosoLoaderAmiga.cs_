@@ -1,5 +1,5 @@
 ﻿using Amber.Common;
-using Amber.IO.Common.Serialization;
+using Amber.Serialization;
 using System.Text;
 
 namespace Amberstar.GameData.Legacy;
@@ -36,7 +36,7 @@ file class IndexTable
 file record DivisionData
 {
     // Atari ST uses 3 channels (voices), Amiga most likely uses 4 channels instead.
-    public int ChannelCount { get; }
+    public const int ChannelCount = 3;
 
     public record Channel
     {
@@ -54,13 +54,10 @@ file record DivisionData
         }
     }
 
-    public Channel[] Channels { get; }
+    public Channel[] Channels { get; } = new Channel[ChannelCount];
 
-    public DivisionData(IDataReader dataReader, int channelCount)
+    public DivisionData(IDataReader dataReader)
     {
-        ChannelCount = channelCount;
-        Channels = new Channel[ChannelCount];
-
         for (int i = 0; i < ChannelCount; i++)
         {
             Channels[i] = new Channel(dataReader);
@@ -68,13 +65,12 @@ file record DivisionData
     }
 }
 
-internal static class HippelCosoLoader
+internal static class HippelCosoLoaderAmiga
 {
     private readonly static byte[] CosoHeader = Encoding.ASCII.GetBytes("COSO"); // COmpressed SOng
     private readonly static byte[] TfmxHeader = Encoding.ASCII.GetBytes("TFMX"); // The Final Musicsystem eXtended
     private readonly static byte[] MmmeHeader = Encoding.ASCII.GetBytes("MMME"); // Mad Max Music Editor
     private readonly static byte[] LsmpHeader = Encoding.ASCII.GetBytes("LSMP");
-    private readonly static byte[] MarcHeader = Encoding.ASCII.GetBytes("MARC"); // Can happen (at least on Atari) but not used in Amberstar
 
     private static bool BytesMatch(byte[] a, byte[] b)
     {
@@ -97,7 +93,7 @@ internal static class HippelCosoLoader
         return readFunc(reader);
     }
 
-    public static List<HippelCosoSong> Load(IDataReader dataReader, LegacyPlatform legacyPlatform)
+    public static List<HippelCosoSong> Load(IDataReader dataReader)
     {
         var position = dataReader.Position;
         var header = dataReader.ReadBytes(4);
@@ -105,7 +101,7 @@ internal static class HippelCosoLoader
         if (BytesMatch(header, CosoHeader))
         {
             dataReader.Position = position;
-            return LoadCoso(dataReader, legacyPlatform);
+            return LoadCoso(dataReader);
         }
         else if (BytesMatch(header, TfmxHeader))
         {
@@ -116,12 +112,12 @@ internal static class HippelCosoLoader
             }
 
             dataReader.Position = position;
-            return LoadTfmx(dataReader, legacyPlatform);
+            return LoadTfmx(dataReader);
         }
         else if (BytesMatch(header, MmmeHeader))
         {
             dataReader.Position = position;
-            return LoadMmme(dataReader, legacyPlatform);
+            return LoadMmme(dataReader);
         }
         else
         {
@@ -129,7 +125,7 @@ internal static class HippelCosoLoader
         }
     }
 
-    private static List<HippelCosoSong> LoadCoso(IDataReader dataReader, LegacyPlatform legacyPlatform)
+    private static List<HippelCosoSong> LoadCoso(IDataReader dataReader)
     {
         // Load COmpressed SOng
 
@@ -153,11 +149,11 @@ internal static class HippelCosoLoader
 
         if (BytesMatch(header, TfmxHeader))
         {
-            return LoadTfmx(dataReader, legacyPlatform);
+            return LoadTfmx(dataReader);
         }
         else if (BytesMatch(header, MmmeHeader))
         {
-            return LoadMmme(dataReader, legacyPlatform);
+            return LoadMmme(dataReader);
         }
         else
         {
@@ -166,12 +162,12 @@ internal static class HippelCosoLoader
     }
 
     // Load The Final Musicsystem eXtended
-    private static List<HippelCosoSong> LoadTfmx(IDataReader dataReader, LegacyPlatform legacyPlatform) => Load(dataReader, legacyPlatform, false);
+    private static List<HippelCosoSong> LoadTfmx(IDataReader dataReader) => Load(dataReader, false);
 
     // Load Mad Max Music Editor
-    private static List<HippelCosoSong> LoadMmme(IDataReader dataReader, LegacyPlatform legacyPlatform) => Load(dataReader, legacyPlatform, true);
+    private static List<HippelCosoSong> LoadMmme(IDataReader dataReader) => Load(dataReader, true);
 
-    private static List<HippelCosoSong> Load(IDataReader dataReader, LegacyPlatform legacyPlatform, bool isMmme)
+    private static List<HippelCosoSong> Load(IDataReader dataReader, bool isMmme)
     {
         // NOTE: In some cases there are 4 byte indices used which also changes
         // some other logic. Most likely some other file format version. But
@@ -232,7 +228,7 @@ internal static class HippelCosoLoader
 
         for (int i = 0; i < numDivisions; i++)
         {
-            divisionData[i] = new DivisionData(dataReader, legacyPlatform == LegacyPlatform.Atari ? 3 : 4); // TODO: 7 voices?
+            divisionData[i] = new DivisionData(dataReader);
         }
 
         dataReader.Position = position + (int)posSongs;
@@ -276,62 +272,64 @@ internal static class HippelCosoLoader
                 switch (command)
                 {
                     case 0xe0:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Loop, instrumentData[++b]));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Loop, instrumentData[++b]));
                         break;
                     case 0xe1:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Complete));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Complete));
                         break;
                     case 0xe2:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.ResetTimbre));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.ResetTimbre));
                         break;
                     case 0xe3:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Vibrato, instrumentData[++b], instrumentData[++b]));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Vibrato, instrumentData[++b], instrumentData[++b]));
                         break;
                     case 0xe4:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.EnableToneAndNoise, instrumentData[++b]));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.EnableToneAndNoise, instrumentData[++b]));
                         break;
                     case 0xe5:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.DisableToneEnableNoise));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.DisableToneEnableNoise));
                         break;
                     case 0xe6:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.EnableToneDisableNoise));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.EnableToneDisableNoise));
                         break;
                     case 0xe7: // Set timbre
                         // Note: In some versions (with 4 byte indices) this defaults to command ed instead.
                         // This seems to be bugged in the original player...
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.SetTimbre, instrumentData[++b]));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.SetTimbre, instrumentData[++b]));
                         break;
                     case 0xe8: // Delay
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Delay, instrumentData[++b]));                        
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Delay, instrumentData[++b]));                        
                         break;
                     case 0xe9:
                         // It seems this is just skipping data and immediately processes the next command.
                         b++;
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.NextCommand));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.NextCommand));
                         break;
                     case 0xea: // Portando (arg = slope)
                         // Note: In some versions (with 4 byte indices) this defaults to command ec instead.
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Portando, instrumentData[++b]));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.Portando, instrumentData[++b]));
                         break;
                     case 0xeb:
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.SetInstrumentFlags, instrumentData[++b]));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.SetInstrumentFlags, instrumentData[++b]));
                         break;
                     case 0xec:
-                        // Never used in Atari ST Amberstar.
-                        // Seems to have only an effect on some
-                        // special format marked with "MARC".
-                        // 4 bytes (command + 3 args).
                         break;
                     case 0xed:
-                        // Not sure what it does or if it is
-                        // used. 2 bytes (command + 1 arg).
+                        // TODO: Looks like the instrument index is incremented.
+                        // Then something is set to 0 (sample reset?)
+                        // Then the next instrument command is processed immediately
                         break;
                     case 0xee:
+                        // TODO: Param is stored in (0x36,A0), then next command
+                        // Usually is only set via "st (0x36,A0)" but here it is
+                        // set to a value with "move.b".
+                        // At the end if (0x36,A0) is 0, it will be set to -1.
+                        break;
                     case 0xef:
-                        // Not supported in Atari ST Amberstar
-                        throw new NotSupportedException("Invalid instrument command");
+                        // TODO: Param is stored in (0x37,A0), then next command
+                        break;
                     default: // Pitch
-                        commands.Add(new(b, HippelCosoSong.Instrument.CommandType.SetPitch, command));
+                        commands.Add(new(HippelCosoSong.Instrument.CommandType.SetPitch, command));
                         break;
                 }
             }
@@ -358,20 +356,21 @@ internal static class HippelCosoLoader
 
                 if (command < 0xe0)
                 {
-                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.SetVolume, command));
+                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.SetVolume, command));
                 }
                 else if (command == 0xe0) // LOOP(offset)
                 {
-                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Loop, timbreData[++b]));
+                    var offset = timbreData[++b] - 5;
+                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Loop, offset));
                 }
                 else if (command == 0xe1) // HOLD
                 {
-                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Hold));
+                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Hold));
                 }
                 else if (command == 0xe8) // SUSTAIN(ticks)
                 {
                     var ticks = timbreData[++b];
-                    commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Sustain, ticks));
+                    commands.Add(new(HippelCosoSong.VolumeEnvelop.CommandType.Sustain, ticks));
                 }
                 else if (command > 0xe8)
                 {
@@ -396,7 +395,6 @@ internal static class HippelCosoLoader
 
                 var effect = data.Channels[c].Effect;
 
-                // In Amberstar player only volume reduction is supported
                 if ((effect & 0xf0) == 0xf0)
                 {
                     volumeReduction = effect & 0xf;
@@ -448,7 +446,6 @@ internal static class HippelCosoLoader
                     var arg = patternData[++b];
                     int instrument = -1;
                     int timbreAdjust = -1;
-                    bool portando = (arg & 0x20) != 0;
 
                     if ((arg & 0xe0) != 0)
                     {
@@ -469,17 +466,13 @@ internal static class HippelCosoLoader
                         instrument = -1;
                     }
 
-                    commands.Add(new(HippelCosoSong.Pattern.CommandType.SetNote, note, timbreAdjust, instrument, portando ? 1 : 0));
+                    commands.Add(new(HippelCosoSong.Pattern.CommandType.SetNote, note, timbreAdjust, instrument));
                 }
             }
 
             patterns[i] = new([.. commands]);
         }
 
-        Func<HippelCosoSong.SongInfo, HippelCosoSong> factory = legacyPlatform == LegacyPlatform.Atari
-            ? (song) => new HippelCosoSongAtari(song, instruments, timbres, divisions, patterns)
-            : (song) => new HippelCosoSongAmiga(song, instruments, timbres, divisions, patterns);
-
-        return [..songs.Select(factory)];
+        return [..songs.Select(song => new HippelCosoSong(song, instruments, timbres, divisions, patterns))];
     }
 }

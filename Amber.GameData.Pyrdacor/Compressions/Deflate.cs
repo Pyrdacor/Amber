@@ -1,4 +1,5 @@
-﻿using Amber.Serialization;
+﻿using Amber.IO.Common.Serialization;
+using Amber.Serialization;
 using System.IO.Compression;
 
 namespace Amber.GameData.Pyrdacor.Compressions

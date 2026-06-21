@@ -19,6 +19,8 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Numerics;
+
 namespace Amber.Renderer.OpenGL.Buffers;
 
 internal class VectorBuffer(State state, bool staticData) : Buffer<float>(state, staticData)
@@ -50,8 +52,12 @@ internal class VectorBuffer(State state, bool staticData) : Buffer<float>(state,
         return base.Add(UpdateVectorData, Tuple.Create(x, y, z), index);
     }
 
+    public int Add(Vector3 vector, int index = -1) => Add(vector.X, vector.Y, vector.Z, index);
+
     public void Update(int index, float x, float y, float z)
     {
         base.Update(UpdateVectorData, index, Tuple.Create(x, y, z));
     }
+
+    public void Update(int index, Vector3 vector) => Update(index, vector.X, vector.Y, vector.Z);
 }

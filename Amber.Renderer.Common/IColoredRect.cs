@@ -1,6 +1,6 @@
 ﻿using Amber.Common;
 
-namespace Amber.Renderer;
+namespace Amber.Renderer.Common;
 
 public interface IColoredRect : ILayeredDrawable, ISizedDrawable
 {

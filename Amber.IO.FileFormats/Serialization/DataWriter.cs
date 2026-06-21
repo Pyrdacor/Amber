@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amber.IO.Common.Serialization;
 
 namespace Amber.Serialization;
 

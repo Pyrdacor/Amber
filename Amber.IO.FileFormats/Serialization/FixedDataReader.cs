@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Amber.IO.Common.Serialization;
 
 namespace Amber.Serialization;
 

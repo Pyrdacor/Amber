@@ -1,5 +1,5 @@
 ﻿using Amber.Common;
-using Amber.Renderer;
+using Amber.Renderer.Common;
 using Amberstar.GameData;
 
 namespace Amberstar.Game.UI;

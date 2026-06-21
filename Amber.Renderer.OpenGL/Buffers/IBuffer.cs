@@ -28,7 +28,6 @@ public enum BufferPurpose
     Color,
     Alpha,
     TextureCoordinates,
-    TextureSize,
     DisplayLayer,
     PaletteIndex,
     MaskColorIndex,

@@ -1,4 +1,4 @@
-﻿using Amber.Serialization;
+﻿using Amber.IO.Common.Serialization;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData;

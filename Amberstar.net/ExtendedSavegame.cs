@@ -1,4 +1,5 @@
-﻿using Amber.IO.FileFormats.Compression;
+﻿using Amber.IO.Common.Serialization;
+using Amber.IO.FileFormats.Compression;
 using Amber.Serialization;
 using Amberstar.Game;
 using Amberstar.GameData;

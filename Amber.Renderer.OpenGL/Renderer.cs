@@ -19,6 +19,7 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Numerics;
 using Amber.Common;
 using Amber.Renderer;
 using Amber.Renderer.Common;
@@ -32,6 +33,7 @@ namespace Ambermoon.Renderer.OpenGL
         readonly State state;
 		readonly LayerFactory layerFactory;
 		readonly TextureFactory textureFactory;
+		readonly Camera3D camera;
 		readonly List<ILayer> layers = [];
 
         public Renderer(IContextProvider contextProvider, Size size, Size virtualSize)
@@ -45,15 +47,20 @@ namespace Ambermoon.Renderer.OpenGL
 			state.Gl.Enable(EnableCap.DepthTest);
 			state.Gl.DepthRange(0.0f, 1.0f);
 			state.Gl.DepthFunc(DepthFunction.Lequal);
-			state.Gl.Disable(EnableCap.CullFace);
-			state.Gl.Enable(EnableCap.Texture2D);
+            state.Gl.Disable(EnableCap.CullFace);
+            state.Gl.Enable(EnableCap.CullFace);
+            state.Gl.CullFace(GLEnum.Back);
+            state.Gl.FrontFace(FrontFaceDirection.CW);
+            state.Gl.Enable(EnableCap.Texture2D);
 
 			state.Gl.BlendEquationSeparate(BlendEquationModeEXT.FuncAdd, BlendEquationModeEXT.FuncAdd);
 			state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.Zero);
 
 			state.ProjectionMatrix2D = Matrix4.CreateOrtho2D(0, virtualSize.Width, 0, virtualSize.Height, 0, 1);
 
-			Resize(size);
+            camera = new Camera3D(position: new Vector3(5, 5, 0));
+
+            Resize(size);
         }
 
 		public Size Size => throw new NotImplementedException();
@@ -64,6 +71,8 @@ namespace Ambermoon.Renderer.OpenGL
 
 		public ITextureFactory TextureFactory => textureFactory;
 
+		public ICamera3D Camera => camera;
+
 		public void Render()
 		{
 			foreach (var layer in layers)
@@ -72,7 +81,7 @@ namespace Ambermoon.Renderer.OpenGL
 
 		public void Resize(Size size)
 		{
-			//state.ProjectionMatrix3D = Matrix4.CreatePerspectiveFieldOfView(FovY3D, aspect, 0.1f, 40.0f * Global.DistancePerBlock); // Max 3D map dimension is 41
+			state.ProjectionMatrix3D = Matrix4.CreatePerspective(60.0f, (float)size.Width / size.Height, 0.1f, 1000.0f);
 
 			state.ClearMatrices();
 			state.PushModelViewMatrix(Matrix4.Identity);

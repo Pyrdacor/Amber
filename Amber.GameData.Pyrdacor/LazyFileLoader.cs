@@ -1,5 +1,5 @@
 ﻿using Amber.GameData.Pyrdacor.FileSpecs;
-using Amber.Serialization;
+using Amber.IO.Common.Serialization;
 
 namespace Amber.GameData.Pyrdacor
 {

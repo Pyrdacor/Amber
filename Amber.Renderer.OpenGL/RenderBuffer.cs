@@ -1,7 +1,7 @@
 ﻿/*
  * RenderBuffer.cs - Renders several data buffers
  *
- * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
+ * Copyright (C) 2024-2026  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
  * This file is part of Amber.
  *
@@ -19,6 +19,7 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Numerics;
 using Amber.Common;
 using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL.Buffers;
@@ -29,6 +30,60 @@ namespace Amber.Renderer.OpenGL;
 
 internal class RenderBuffer : IDisposable
 {
+    delegate Vector3 SurfaceOffsetProvider(FloatSize size);
+
+    // The position of the surface is always the upper left corner.
+    static readonly SurfaceOffsetProvider[] SurfaceFaceOffsets =
+    [
+        // [Back face]
+        // Upper right
+        (size) => new(-size.Width, 0.0f, 0.0f),
+        // Lower right
+        (size) => new(-size.Width, -size.Height, 0.0f),
+        // Lower left
+        (size) => new(0.0f, -size.Height, 0.0f),
+
+        // [Right face]
+        // Upper right
+        (size) => new(0.0f, 0.0f, -size.Width),
+        // Lower right
+        (size) => new(0.0f, -size.Height, -size.Width),
+        // Lower left
+        (size) => new(0.0f, -size.Height, 0.0f),
+
+        // [Front face]
+        // Upper right
+        (size) => new(size.Width, 0.0f, 0.0f),
+        // Lower right
+        (size) => new(size.Width, -size.Height, 0.0f),
+        // Lower left
+        (size) => new(0.0f, -size.Height, 0.0f),
+
+        // [Left face]
+        // Upper right
+        (size) => new(0.0f, 0.0f, size.Width),
+        // Lower right
+        (size) => new(0.0f, -size.Height, size.Width),
+        // Lower left
+        (size) => new(0.0f, -size.Height, 0.0f),
+
+        // [Down face]
+        // Upper right
+        (size) => new(size.Width, 0.0f, 0.0f),
+        // Lower right
+        (size) => new(size.Width, 0.0f, size.Height),
+        // Lower left
+        (size) => new(0.0f, 0.0f, size.Height),
+        
+        // [Up face]
+        // Upper right
+        (size) => new(size.Width, 0.0f, 0.0f),
+        // Lower right
+        (size) => new(size.Width, 0.0f, -size.Height),
+        // Lower left
+        (size) => new(0.0f, 0.0f, -size.Height),
+    ];
+
     bool disposed = false;
 	readonly State state;
 	readonly int textureFactor = 1;
@@ -284,6 +339,85 @@ internal class RenderBuffer : IDisposable
 
 		return index;
     }
+    public int GetDrawIndex(ISurface3D surface)
+    {
+        var position = surface.Position;
+        var size = surface.Size;
+        var textureOffset = new Position(surface.TextureOffset);
+        var textureSize = new FloatSize(surface.TextureSize != null ? new FloatSize(surface.TextureSize.Value) : size);
+        textureSize = new FloatSize(textureSize.Width * textureFactor * surface.TextureSizeFactor.X, textureSize.Height * textureFactor * surface.TextureSizeFactor.Y);
+
+		var positionBuffer = GetBuffer<VectorBuffer, float>(BufferPurpose.Position3D);
+        int offsetIndex = (int)surface.Face * 3;
+
+        int index = positionBuffer!.Add(position);
+        positionBuffer.Add(position + SurfaceFaceOffsets[offsetIndex++](size), index + 1);
+        positionBuffer.Add(position + SurfaceFaceOffsets[offsetIndex++](size), index + 2);
+        positionBuffer.Add(position + SurfaceFaceOffsets[offsetIndex++](size), index + 3);
+
+        indexBuffer.InsertQuad(index / 4);
+
+		var paletteIndexBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.PaletteIndex);
+
+		if (paletteIndexBuffer != null)
+        {
+            int paletteIndexBufferIndex = paletteIndexBuffer.Add(surface.PaletteIndex, index);
+            paletteIndexBuffer.Add(surface.PaletteIndex, paletteIndexBufferIndex + 1);
+            paletteIndexBuffer.Add(surface.PaletteIndex, paletteIndexBufferIndex + 2);
+            paletteIndexBuffer.Add(surface.PaletteIndex, paletteIndexBufferIndex + 3);
+        }
+
+        var alphaBuffer = GetBuffer<ByteBuffer, byte>(BufferPurpose.Alpha);
+
+        if (alphaBuffer != null)
+        {
+            if (surface is IAlphaSprite alphaSprite)
+            {
+                byte alpha = alphaSprite.Alpha;
+
+                int alphaBufferIndex = alphaBuffer.Add(alpha, index);
+                alphaBuffer.Add(alpha, alphaBufferIndex + 1);
+                alphaBuffer.Add(alpha, alphaBufferIndex + 2);
+                alphaBuffer.Add(alpha, alphaBufferIndex + 3);
+            }
+            else
+            {
+                int alphaBufferIndex = alphaBuffer.Add(255, index);
+                alphaBuffer.Add(255, alphaBufferIndex + 1);
+                alphaBuffer.Add(255, alphaBufferIndex + 2);
+                alphaBuffer.Add(255, alphaBufferIndex + 3);
+            }
+        }
+
+        var textureOffsetBuffer = GetBuffer<PositionBuffer, short>(BufferPurpose.TextureCoordinates);
+
+		if (textureOffsetBuffer != null)
+        {
+            var texSize = textureSize.Floor();
+
+            if (surface.CurrentFrameIndex > 0)
+            {
+                textureOffset = new(textureOffset.X + surface.CurrentFrameIndex * texSize.Width, textureOffset.Y);
+            }
+
+            if (surface.MirrorX)
+            {
+                int textureOffsetBufferIndex = textureOffsetBuffer.Add((short)(textureOffset.X + texSize.Width), (short)textureOffset.Y, index);
+				textureOffsetBuffer.Add((short)textureOffset.X, (short)textureOffset.Y, textureOffsetBufferIndex + 1);
+				textureOffsetBuffer.Add((short)textureOffset.X, (short)(textureOffset.Y + texSize.Height), textureOffsetBufferIndex + 2);
+				textureOffsetBuffer.Add((short)(textureOffset.X + texSize.Width), (short)(textureOffset.Y + texSize.Height), textureOffsetBufferIndex + 3);
+            }
+            else
+            {
+                int textureOffsetBufferIndex = textureOffsetBuffer.Add((short)textureOffset.X, (short)textureOffset.Y, index);
+                textureOffsetBuffer.Add((short)(textureOffset.X + texSize.Width), (short)textureOffset.Y, textureOffsetBufferIndex + 1);
+                textureOffsetBuffer.Add((short)(textureOffset.X + texSize.Width), (short)(textureOffset.Y + texSize.Height), textureOffsetBufferIndex + 2);
+                textureOffsetBuffer.Add((short)textureOffset.X, (short)(textureOffset.Y + texSize.Height), textureOffsetBufferIndex + 3);
+            }
+        }
+
+        return index;
+    }
 
     public void UpdatePosition(int index, ISizedDrawable drawable,
         PositionTransformation? positionTransformation, SizeTransformation? sizeTransformation)
@@ -311,6 +445,20 @@ internal class RenderBuffer : IDisposable
             // Based on lower Y (baseline)
 			SetupDisplayLayer(index, drawable);
 		}
+    }
+
+    public void UpdatePosition(int index, ISurface3D surface)
+    {
+        var position = surface.Position;
+        var size = surface.Size;
+
+        var positionBuffer = GetBuffer<VectorBuffer, float>(BufferPurpose.Position3D);
+        int offsetIndex = (int)surface.Face * 3;
+
+        positionBuffer!.Update(index, position);
+        positionBuffer.Update(index + 1, position + SurfaceFaceOffsets[offsetIndex++](size));
+        positionBuffer.Update(index + 2, position + SurfaceFaceOffsets[offsetIndex++](size));
+        positionBuffer.Update(index + 3, position + SurfaceFaceOffsets[offsetIndex++](size));
     }
 
     public void UpdateMaskColor(int index, byte? maskColor)
@@ -415,6 +563,40 @@ internal class RenderBuffer : IDisposable
             textureOffsetBuffer.Update(index + 1, (short)(textureOffset.X + textureSize.Width), (short)textureOffset.Y);
             textureOffsetBuffer.Update(index + 2, (short)(textureOffset.X + textureSize.Width), (short)(textureOffset.Y + textureSize.Height));
             textureOffsetBuffer.Update(index + 3, (short)textureOffset.X, (short)(textureOffset.Y + textureSize.Height));
+        }
+    }
+
+    public void UpdateTextureOffset(int index, ISurface3D surface)
+    {
+        var textureOffsetBuffer = GetBuffer<PositionBuffer, short>(BufferPurpose.TextureCoordinates);
+
+        if (textureOffsetBuffer == null)
+            return;
+
+        var size = surface.Size;
+        var textureOffset = new Position(surface.TextureOffset);
+        var textureSize = new FloatSize(surface.TextureSize != null ? new FloatSize(surface.TextureSize.Value) : size);
+        textureSize = new FloatSize(textureSize.Width * textureFactor * surface.TextureSizeFactor.X, textureSize.Height * textureFactor * surface.TextureSizeFactor.Y);
+        var texSize = textureSize.Floor();
+
+        if (surface.CurrentFrameIndex > 0)
+        {
+            textureOffset = new(textureOffset.X + surface.CurrentFrameIndex * texSize.Width, textureOffset.Y);
+        }
+
+        if (surface.MirrorX)
+        {
+            textureOffsetBuffer.Update(index, (short)(textureOffset.X + texSize.Width), (short)textureOffset.Y);
+            textureOffsetBuffer.Update(index + 1, (short)textureOffset.X, (short)textureOffset.Y);
+            textureOffsetBuffer.Update(index + 2, (short)textureOffset.X, (short)(textureOffset.Y + texSize.Height));
+            textureOffsetBuffer.Update(index + 3, (short)(textureOffset.X + texSize.Width), (short)(textureOffset.Y + texSize.Height));
+        }
+        else
+        {
+            textureOffsetBuffer.Update(index, (short)textureOffset.X, (short)textureOffset.Y);
+            textureOffsetBuffer.Update(index + 1, (short)(textureOffset.X + texSize.Width), (short)textureOffset.Y);
+            textureOffsetBuffer.Update(index + 2, (short)(textureOffset.X + texSize.Width), (short)(textureOffset.Y + texSize.Height));
+            textureOffsetBuffer.Update(index + 3, (short)textureOffset.X, (short)(textureOffset.Y + texSize.Height));
         }
     }
 

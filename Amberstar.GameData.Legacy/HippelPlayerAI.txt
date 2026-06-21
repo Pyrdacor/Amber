@@ -1,0 +1,208 @@
+﻿using System;
+using System.Collections.Generic;
+
+public sealed class YmPsgVoice
+{
+    // YM2149 on Atari ST:
+    // master 2 MHz, internal divider /16 => 125 kHz tick domain for tone/noise/envelope stepping
+    public const double PsgTickHz = 2_000_000.0 / 16.0;
+
+    // Tone
+    private int tonePeriod = 1;   // 1..4095 (0 treated as 1)
+    private int toneCounter = 1;
+    private int toneBit = 0;      // 0/1
+    private bool toneEnabled = false;
+
+    // Noise (global in real chip; kept here for single-voice demo)
+    private int noisePeriod = 1;  // 1..31 (0 treated as 1)
+    private int noiseCounter = 1;
+    private uint lfsr = 0x1FFFF;  // 17-bit, non-zero
+    private int noiseBit = 0;     // 0/1
+    private bool noiseEnabled = false;
+
+    // Volume from your domain: 0..64
+    private int volume64 = 0;
+
+    // Optional: lowpass state
+    private double lpState = 0;
+
+    public void SetTonePeriod(int period)
+    {
+        // YM: period=0 is valid but behaves like 1 (very high)
+        if (period <= 0) period = 1;
+
+        tonePeriod = period;
+        toneEnabled = true;
+
+        // Reset phase/counter for deterministic note-on feel (optional, but usually good)
+        toneBit = 0;
+        toneCounter = tonePeriod;
+    }
+
+    public void DisableTone()
+    {
+        toneEnabled = false;
+    }
+
+    public void SetNoisePeriod(int period)
+    {
+        // YM noise: 0 treated as 1, range is 0..31 in reg6
+        if (period <= 0) period = 1;
+        if (period > 31) period = 31;
+
+        noisePeriod = period;
+        if (noiseCounter <= 0) noiseCounter = noisePeriod;
+    }
+
+    public void SetNoiseEnabled(bool enabled)
+    {
+        noiseEnabled = enabled;
+        if (noiseEnabled && noiseCounter <= 0) noiseCounter = noisePeriod;
+    }
+
+    public void SetVolume64(int vol)
+    {
+        volume64 = Math.Clamp(vol, 0, 64);
+    }
+
+    /// <summary>Advance PSG by one tick at 125 kHz.</summary>
+    public void Tick()
+    {
+        // Tone
+        if (toneEnabled)
+        {
+            if (--toneCounter <= 0)
+            {
+                toneCounter += tonePeriod;
+                toneBit ^= 1;
+            }
+        }
+
+        // Noise (only step if enabled; in real chip it always runs, but gating is OK for now)
+        if (noiseEnabled)
+        {
+            if (--noiseCounter <= 0)
+            {
+                noiseCounter += noisePeriod;
+
+                // 17-bit LFSR taps: bit0 xor bit3 (polynomial x^17 + x^14 + 1)
+                uint newBit = (lfsr ^ (lfsr >> 3)) & 1u;
+                lfsr = (lfsr >> 1) | (newBit << 16);
+                noiseBit = (int)(lfsr & 1u);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get instantaneous PSG output sample in [-1..+1] scaled by volume.
+    /// Uses YM mixer style gating: (tone or 1) AND (noise or 1).
+    /// </summary>
+    public double GetSampleBipolar()
+    {
+        int t = toneEnabled ? toneBit : 1;
+        int n = noiseEnabled ? noiseBit : 1;
+        int outBit = t & n; // 0/1
+
+        double vol = volume64 / 64.0;
+
+        // Bipolar to avoid DC offset
+        return (outBit == 0 ? -1.0 : 1.0) * vol;
+    }
+
+    /// <summary>
+    /// Optional cheap lowpass. Call with the sample and get filtered sample.
+    /// a in (0..1): smaller = more smoothing.
+    /// </summary>
+    public double LowPass(double s, double a)
+    {
+        lpState += a * (s - lpState);
+        return lpState;
+    }
+}
+
+public sealed class YmAudioRenderer
+{
+    private readonly YmPsgVoice _voice = new();
+
+    // Persist across callbacks
+    private double _tickAcc = 0.0;
+
+    // Your event streams
+    private readonly Queue<(double TimeMs, int Period, int Volume64)> _noteEvents = new();
+    private readonly Queue<(double TimeMs, int NoisePeriod, bool NoiseOn)> _noiseEvents = new();
+
+    public int SampleRate { get; }
+
+    public YmAudioRenderer(int sampleRate)
+    {
+        SampleRate = sampleRate;
+    }
+
+    // enqueue helpers (adapt to your real data)
+    public void EnqueueNote(double timeMs, int ymPeriod, int volume64)
+        => _noteEvents.Enqueue((timeMs, ymPeriod, volume64));
+
+    public void EnqueueNoise(double timeMs, int noisePeriod, bool noiseOn)
+        => _noiseEvents.Enqueue((timeMs, noisePeriod, noiseOn));
+
+    /// <summary>
+    /// Render into PCM16 buffer. timeMs is the absolute time of the first sample.
+    /// </summary>
+    public void Render(short[] buffer, double timeMs, int oversample = 8, bool useLowpass = true, double lowpassA = 0.15)
+    {
+        if (oversample <= 0) oversample = 1;
+
+        double psgTicksPerSample = YmPsgVoice.PsgTickHz / SampleRate;
+        double dtMs = 1000.0 / SampleRate;
+
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            // --- Apply events scheduled up to current time ---
+            while (_noteEvents.Count != 0 && _noteEvents.Peek().TimeMs <= timeMs)
+            {
+                var e = _noteEvents.Dequeue();
+                if (e.Period > 0)
+                    _voice.SetTonePeriod(e.Period);
+                else
+                    _voice.DisableTone();
+
+                _voice.SetVolume64(e.Volume64);
+            }
+
+            while (_noiseEvents.Count != 0 && _noiseEvents.Peek().TimeMs <= timeMs)
+            {
+                var e = _noiseEvents.Dequeue();
+                _voice.SetNoisePeriod(e.NoisePeriod);
+                _voice.SetNoiseEnabled(e.NoiseOn);
+            }
+
+            // --- Oversampled accumulate ---
+            double acc = 0.0;
+            double step = psgTicksPerSample / oversample;
+
+            for (int os = 0; os < oversample; os++)
+            {
+                _tickAcc += step;
+                while (_tickAcc >= 1.0)
+                {
+                    _voice.Tick();
+                    _tickAcc -= 1.0;
+                }
+
+                acc += _voice.GetSampleBipolar();
+            }
+
+            double s = acc / oversample;
+
+            // Optional lowpass to tame remaining fizz
+            if (useLowpass)
+                s = _voice.LowPass(s, lowpassA);
+
+            // --- to PCM16 ---
+            int v = (int)Math.Round(s * 32767.0);
+            buffer[i] = (short)Math.Clamp(v, short.MinValue, short.MaxValue);
+
+            timeMs += dtMs;
+        }
+    }
+}

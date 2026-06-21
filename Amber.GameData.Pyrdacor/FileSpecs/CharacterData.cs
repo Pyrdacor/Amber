@@ -2,7 +2,7 @@
 using Amber.GameData.Pyrdacor.Compressions;
 using Ambermoon.Data.Serialization;
 using Amber.Common;
-using Amber.Serialization;
+using Amber.IO.Common.Serialization;
 
 namespace Amber.GameData.Pyrdacor.FileSpecs
 {

@@ -1,16 +1,25 @@
-﻿using Amber.Common;
-using Amber.Renderer.Common;
+﻿using System.Numerics;
+using Amber.Common;
 
-namespace Amber.Renderer;
+namespace Amber.Renderer.Common;
 
 public interface IDrawable
 {
-	Position Position { get; set; }
 	bool Visible { get; set; }
 	ILayer Layer { get; }
 }
 
-public interface ISizedDrawable : IDrawable
+public interface IDrawable2D : IDrawable
+{
+    Position Position { get; set; }
+}
+
+public interface IDrawable3D : IDrawable
+{
+    Vector3 Position { get; set; }
+}
+
+public interface ISizedDrawable : IDrawable2D
 {
 	Size Size { get; set; }
 	/// <summary>
@@ -22,7 +31,7 @@ public interface ISizedDrawable : IDrawable
 	Rect? ClipRect { get; set; }
 }
 
-public interface ILayeredDrawable : IDrawable
+public interface ILayeredDrawable : IDrawable2D
 {
 	byte DisplayLayer { get; set; }
 }

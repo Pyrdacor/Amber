@@ -1,4 +1,4 @@
-﻿namespace Amber.Serialization;
+﻿namespace Amber.IO.Common.Serialization;
 
 public interface IDataReader
 {

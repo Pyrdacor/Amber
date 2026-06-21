@@ -1,4 +1,6 @@
-﻿namespace Amber.Renderer.Common;
+﻿using Amber.Common;
+
+namespace Amber.Renderer.Common;
 
 [Flags]
 public enum LayerFeatures
@@ -7,6 +9,11 @@ public enum LayerFeatures
 	Transparency = 0x1,
 	DisplayLayers = 0x2,
 	Alpha = 0x4,
+	Fog = 0x8,
+	Fading = 0x10,
+	Tinting = 0x20,
+	ColorReplacement = 0x40,
+	SkyColorReplacemnet = 0x80,
 }
 
 public enum LayerType
@@ -69,6 +76,20 @@ public interface ILayer
 	ISpriteFactory? SpriteFactory { get; }
 
 	void Render(IRenderer renderer);
+}
+
+public interface ILayer3D : ILayer
+{
+	Color? FogColor { get; set; }
+	float FogStartDistance { get; set; }
+	float FogEndDistance { get; set; }
+	Color[]? ReplacementColors { get; set; }
+	Color? TintColor { get; set; }
+	int? SkyColorIndex { get; set; }
+    Color? SkyReplacementColor { get; set; }
+	float LightIntensity { get; set; }
+    float FadeFactor { get; set; }
+    ISurface3DFactory? Surface3DFactory { get; }
 }
 
 public interface ILayerFactory

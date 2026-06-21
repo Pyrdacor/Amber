@@ -1,5 +1,5 @@
 ﻿using Amber.Common;
-using Amber.Serialization;
+using Amber.IO.Common.Serialization;
 using Amberstar.GameData.Events;
 
 namespace Amberstar.GameData.Legacy;

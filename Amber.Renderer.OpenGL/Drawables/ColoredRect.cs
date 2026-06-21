@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amber.Renderer.Common;
 
 namespace Amber.Renderer.OpenGL.Drawables
 {

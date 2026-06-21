@@ -2,6 +2,7 @@
 using Amber.Assets.Common;
 using Amber.Common;
 using Amber.IO.Common.FileSystem;
+using Amber.IO.Common.Serialization;
 using Amber.IO.FileFormats.Serialization;
 using Amber.Serialization;
 using Amberstar.GameData.Serialization;

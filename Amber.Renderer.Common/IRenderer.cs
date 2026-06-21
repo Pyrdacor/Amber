@@ -1,7 +1,6 @@
 ﻿using Amber.Common;
-using Amber.Renderer.Common;
 
-namespace Amber.Renderer;
+namespace Amber.Renderer.Common;
 
 public interface IRenderer
 {
@@ -18,4 +17,5 @@ public interface IRenderer
 	IReadOnlyList<ILayer> Layers { get; }
 	ILayerFactory LayerFactory { get; }
 	ITextureFactory TextureFactory { get; }
+	ICamera3D Camera { get; }
 }

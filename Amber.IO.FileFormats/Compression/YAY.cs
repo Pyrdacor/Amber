@@ -1,5 +1,5 @@
 ﻿using System.Buffers.Binary;
-using Amber.Serialization;
+using Amber.IO.Common.Serialization;
 
 namespace Amber.IO.FileFormats.Compression;
 

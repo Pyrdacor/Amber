@@ -39,11 +39,11 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         uniform float {AllowTransparencyName};
         uniform float {AllowAlphaName};
         in vec2 varTexCoord;
-        flat in float palIndex;
-        flat in float maskColIndex;
-        flat in float transparentColIndex;
-        flat in float noTransparency;
-        flat in float a;
+        flat in float varPaletteIndex;
+        flat in float varMaskColorIndex;
+        flat in float varTransparentColorIndex;
+        flat in float varNoTransparency;
+        flat in float varAlpha;
         
         void main()
         {{
@@ -54,32 +54,32 @@ internal class Texture2DShader : BaseShader, IPaletteShader
                 float colorIndex = texture({TextureName}, varTexCoord).r * 255.0f;
                 float transparentPixel = 0.0f;
 
-                if (abs(colorIndex - transparentColIndex) < 0.5f)
+                if (abs(colorIndex - varTransparentColorIndex) < 0.5f)
                     transparentPixel = 1.0f;
                 
-                if (transparentPixel >= 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                if (transparentPixel >= 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                     discard;
                 else
                 {{
                     if (colorIndex > {PaletteSizeName} - 0.5f)
                         colorIndex = 0.0f;
-                    pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
-                    if (pixelColor.a < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                    pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName}));
+                    if (pixelColor.a < 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                         discard;
                 }}
+
+                if (varMaskColorIndex < {PaletteSizeName} - 0.5f)
+                    pixelColor = texture({PaletteName}, vec2((varMaskColorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName}));
             }}
             else
             {{
                 pixelColor = texture({TextureName}, varTexCoord);
-                if (pixelColor.a < 0.5f && noTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                if (pixelColor.a < 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
                     discard;
             }}
-           
-            if (maskColIndex < {PaletteSizeName} - 0.5f)
-                pixelColor = texture({PaletteName}, vec2((maskColIndex + 0.5f) / {PaletteSizeName}, (palIndex + 0.5f) / {PaletteCountName}));
 
             if ({AllowAlphaName} >= 0.5f)
-                pixelColor.a = a;
+                pixelColor.a = varAlpha;
             else
                 pixelColor.a = 1.0f;
                 
@@ -89,7 +89,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
 
     protected static string TextureVertexShader(State state) => GetVertexShaderHeader(state) + $@"
         in vec2 {PositionName};
-        in ivec2 {TexCoordName};
+        in ivec2 {TextureCoordName};
         in uint {LayerName};
         in uint {PaletteIndexName};
         in uint {MaskColorIndexName};
@@ -101,22 +101,22 @@ internal class Texture2DShader : BaseShader, IPaletteShader
         uniform mat4 {ProjectionMatrixName};
         uniform mat4 {ModelViewMatrixName};
         out vec2 varTexCoord;
-        flat out float palIndex;
-        flat out float maskColIndex;
-        flat out float transparentColIndex;
-        flat out float noTransparency;
-        flat out float a;
+        flat out float varPaletteIndex;
+        flat out float varMaskColorIndex;
+        flat out float varTransparentColorIndex;
+        flat out float varNoTransparency;
+        flat out float varAlpha;
         
         void main()
         {{
             vec2 atlasFactor = vec2(1.0f / float({AtlasSizeName}.x), 1.0f / float({AtlasSizeName}.y));
             vec2 pos = vec2({PositionName}.x + 0.49f, {PositionName}.y + 0.49f);
-            varTexCoord = atlasFactor * vec2({TexCoordName}.x, {TexCoordName}.y);
-            palIndex = float({PaletteIndexName});
-            maskColIndex = float({MaskColorIndexName});
-            transparentColIndex = float({TransparentColorIndexName});
-            noTransparency = float({OpaqueName});
-            a = float({AlphaName}) / 255.0f;
+            varTexCoord = atlasFactor * vec2({TextureCoordName}.x, {TextureCoordName}.y);
+            varPaletteIndex = float({PaletteIndexName});
+            varMaskColorIndex = float({MaskColorIndexName});
+            varTransparentColorIndex = float({TransparentColorIndexName});
+            varNoTransparency = float({OpaqueName});
+            varAlpha = float({AlphaName}) / 255.0f;
             float z = clamp(1.0f - {ZName} - float({LayerName}) * 0.00001f, 0.0f, 1.0f);
             gl_Position = {ProjectionMatrixName} * {ModelViewMatrixName} * vec4(pos, z, 1.0f);
         }}
@@ -145,7 +145,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
 		}
 
 		Add(BufferPurpose.Position2D, PositionName, new FloatPositionBuffer(State, false));
-		Add(BufferPurpose.TextureCoordinates, TexCoordName, new PositionBuffer(State, false));
+		Add(BufferPurpose.TextureCoordinates, TextureCoordName, new PositionBuffer(State, false));
 		Add(BufferPurpose.DisplayLayer, LayerName, new ByteBuffer(State, true));
 		Add(BufferPurpose.PaletteIndex, PaletteIndexName, new ByteBuffer(State, true));
 		Add(BufferPurpose.MaskColorIndex, MaskColorIndexName, new ByteBuffer(State, true));
