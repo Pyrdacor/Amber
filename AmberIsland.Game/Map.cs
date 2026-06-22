@@ -2,6 +2,6 @@
 
 internal class Map
 {
-    public int Width { get; }
-    public int Height { get; }
+    public int Width { get; init; }
+    public int Height { get; init; }
 }

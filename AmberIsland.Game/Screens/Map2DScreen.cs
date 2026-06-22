@@ -7,6 +7,7 @@ namespace AmberIsland.Game.Screens;
 
 internal class Map2DScreen : Screen
 {
+	const int TicksPerStep = 6;
 	const int TilesPerRow = 11;
 	const int TileRows = 9;
 	const int TileWidth = 16;
@@ -22,7 +23,6 @@ internal class Map2DScreen : Screen
 	//ITileset[]? tilesets;
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
 	readonly Dictionary<int, IAnimatedSprite> overlay = [];
-	ISprite? player;
 	int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
@@ -53,6 +53,13 @@ internal class Map2DScreen : Screen
 	{
 		this.game = game;
 		//tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
+
+		// TODO
+		map = new Map
+		{
+			Width = 100,
+			Height = 100,
+		};
 	}
 
 	public override void ScreenPushed(Game game, Screen screen)
@@ -66,8 +73,6 @@ internal class Map2DScreen : Screen
 		{
 			underlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
-			screenPushPlayerWasVisible = player!.Visible;
-			player!.Visible = false;
             //mapNameText!.Visible = false;
         }
 
@@ -81,7 +86,6 @@ internal class Map2DScreen : Screen
 			SetLayout();
             underlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
-			player!.Visible = screenPushPlayerWasVisible;
             //mapNameText!.Visible = true;
         }
 
@@ -126,8 +130,6 @@ internal class Map2DScreen : Screen
 		ResetMovement();
 
 		ClearMap();
-		player!.Visible = false;
-		player = null;
 
         //mapNameText!.Delete();
 
@@ -139,16 +141,19 @@ internal class Map2DScreen : Screen
 		moveX = 0;
 		moveY = 0;
 		mouseDown = false;
-		//game!.DeleteDelayedActions(delayedMoveActionIndex);
+		game!.DeleteDelayedActions(delayedMoveActionIndex);
+		game.Player.CurrentState = Player.State.Idle;
 	}
 
 	public override void Update(Game game, long elapsedTicks)
 	{
-		/*if (game.Paused || !game.InputEnabled)
+		if (game.Paused || !game.InputEnabled)
 			ResetMovement();
 
 		if (elapsedTicks == 0)
 			return;
+
+		game.Player.Update(game.GameTicks);
 
 		currentTicks += elapsedTicks;
 
@@ -156,7 +161,7 @@ internal class Map2DScreen : Screen
 		{
 			moveTickCounter += elapsedTicks;
 
-			var ticksPerStep = GetTicksPerStep();
+			var ticksPerStep = TicksPerStep;
 
 			if (ticksPerStep > 0 && moveTickCounter >= ticksPerStep)
 			{
@@ -166,12 +171,16 @@ internal class Map2DScreen : Screen
 				{
 					if (MovePlayer(moveX, moveY))
 					{
-						moved = true;
+                        game.Player.CurrentState = Player.State.Walking;
+                        game.Player.Position = game.State.PlayerPosition;
+                        game.Player.CurrentDirection = game.State.PlayerDirection;
+                        moved = true;
 						moveTickCounter -= ticksPerStep;
 					}
 					else
 					{
-						moveTickCounter = 0;
+                        game.Player.CurrentState = Player.State.Idle;
+                        moveTickCounter = 0;
 						break;
 					}
 				}
@@ -183,7 +192,7 @@ internal class Map2DScreen : Screen
 		else
 		{
 			moveTickCounter = 0;
-		}*/
+		}
 	}
 
 	private bool MovePlayer(int x, int y)
@@ -236,6 +245,7 @@ internal class Map2DScreen : Screen
 
 		// Can move
 		game.State.PlayerPosition = new(newX, newY);
+
 		return true;
 	}
 
@@ -295,7 +305,7 @@ internal class Map2DScreen : Screen
 					right = true;
 					break;
 			}
-		}
+		}*/
 
 		if (upLeft || downLeft)
 			left = true;
@@ -308,7 +318,7 @@ internal class Map2DScreen : Screen
 
 		if (additionalMoveRequested && !left && !right && !up && !down)
 		{
-			long timeTillNextMove = Math.Max(0, GetTicksPerStep() - (currentTicks - lastMoveStartTicks));
+			long timeTillNextMove = Math.Max(0, TicksPerStep - (currentTicks - lastMoveStartTicks));
 			int x = moveX;
 			int y = moveY;
 			game.DeleteDelayedActions(delayedMoveActionIndex);
@@ -316,14 +326,19 @@ internal class Map2DScreen : Screen
 			{
 				lastMoveStartTicks = currentTicks;
 				if (MovePlayer(x, y))
+				{
+					game.Player.CurrentState = Player.State.Walking;
+					game.Player.Position = game.State.PlayerPosition;
+					game.Player.CurrentDirection = game.State.PlayerDirection;
 					AfterMove();
+				}
 				moveTickCounter = 0;
 			});
 			additionalMoveRequested = false;
 		}
 		else if (!additionalMoveRequested)
 		{
-			additionalMoveRequested = (currentTicks - lastMoveStartTicks) < GetTicksPerStep();
+			additionalMoveRequested = (currentTicks - lastMoveStartTicks) < TicksPerStep;
 		}
 
 		bool wasMovingBefore = moveX != 0 || moveY != 0 || additionalMoveRequested;
@@ -362,13 +377,19 @@ internal class Map2DScreen : Screen
 		{
 			if (MovePlayer(moveX, moveY))
 			{
+                game.Player.CurrentState = Player.State.Walking;
+                game.Player.Position = game.State.PlayerPosition;
+				game.Player.CurrentDirection = game.State.PlayerDirection;
 				lastMoveStartTicks = currentTicks;
-				moveTickCounter = -GetTicksPerStep();
+				moveTickCounter = -TicksPerStep;
 
 				AfterMove();					
 			}
-		}*/
-	}
+		}
+
+		if (moveX == 0 && moveY == 0)
+            game.Player.CurrentState = Player.State.Idle;
+    }
 
 	public override void KeyDown(Key key, KeyModifiers keyModifiers)
 	{

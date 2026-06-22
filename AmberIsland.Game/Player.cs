@@ -13,14 +13,6 @@ internal class Player
         Running
     }
 
-    public enum Direction
-    {
-        Down,
-        Up,
-        Right,
-        Left
-    }
-
     private const int HeightOverGround = 32;
     private const int TicksPerAnimationFrame = 10;
     private readonly Game game;
@@ -67,6 +59,8 @@ internal class Player
         set => sprite.Position = value;
     }
 
+    public Rect CollisionArea => new(Position.X + 4, Position.Y + 1, sprite.Size.Width - 8, 15);
+
     static Player()
     {
         var frameSize = new Size(32, 40);
@@ -107,6 +101,7 @@ internal class Player
         sprite.TextureOffset = animation.FirstFrameOffset;
         sprite.TextureSize = animation.FrameSize;
         sprite.Position = new(0, 0);
+        sprite.Size = new(16, 20);
         sprite.CurrentFrameIndex = 0;
         sprite.FrameCount = (int)animation.FrameCount;
         sprite.PaletteIndex = 0;
@@ -132,6 +127,8 @@ internal class Player
                 sprite.CurrentFrameIndex += 1;
                 elapsed -= TicksPerAnimationFrame;
             }
+
+            lastAnimationTicks = ticks - elapsed;
         }
     }
 

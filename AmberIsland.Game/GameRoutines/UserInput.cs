@@ -5,8 +5,8 @@ namespace AmberIsland.Game;
 
 partial class Game
 {
-	readonly Func<List<Key>> pressedKeyProvider;
-	List<Key>? pressedKeys = null;
+	readonly Func<HashSet<Key>> pressedKeyProvider;
+	HashSet<Key>? pressedKeys = null;
 
 	internal Cursor Cursor { get; }
 	internal bool InputEnabled { get; private set; } = true;		

@@ -13,11 +13,14 @@ public partial class Game
     readonly Player player;
 
     internal IRenderer Renderer { get; }
+    internal Player Player => player;
+    internal long GameTicks => gameTicks;
     private ScreenHandler ScreenHandler { get; }
 
-    public Game(GameData.GameData gameData, IRenderer renderer)
+    public Game(GameData.GameData gameData, IRenderer renderer, Func<HashSet<Key>> pressedKeyProvider)
     {
         this.gameData = gameData;
+        this.pressedKeyProvider = pressedKeyProvider;
         Renderer = renderer;
         ScreenHandler = new(this);
         //Cursor = new(this);
@@ -25,6 +28,7 @@ public partial class Game
         SetupLayers();
 
         player = new(this);
+        ScreenHandler.PushScreen(ScreenType.Map2D);
     }
 
     public void Render(double delta)

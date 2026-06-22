@@ -64,9 +64,9 @@ namespace AmberIsland
             return new MousePosition(x, y);
 		}
 
-        List<Game.Key> QueryPressedKeys()
+        HashSet<Game.Key> QueryPressedKeys()
         {
-            return keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToList() ?? [];
+            return keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToHashSet() ?? [];
         }
 
         void Keyboard_KeyChar(IKeyboard keyboard, char keyChar)
@@ -154,7 +154,7 @@ namespace AmberIsland
 
             renderer = new(this, new Size(Width, Height), new Size(320, 200));
 
-			var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
+			//var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
 
             /*var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
 
@@ -167,7 +167,7 @@ namespace AmberIsland
 			game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
                 paletteIndexProvider, paletteColorProvider, fontInfoProvider, QueryPressedKeys);*/
 
-            game = new Game.Game(new GameData.GameData(@"D:\Projects\Amber\AmberIsland\assets"), renderer);
+            game = new Game.Game(new GameData.GameData(@"D:\Projects\Amber\AmberIsland\assets"), renderer, QueryPressedKeys);
         }
 
         void Window_Render(double delta)
