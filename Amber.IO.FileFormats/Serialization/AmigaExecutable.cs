@@ -1,7 +1,7 @@
 ﻿using Amber.Common;
 using Amber.IO.Common.Serialization;
 
-namespace Amber.Serialization;
+namespace Amber.IO.FileFormats.Serialization;
 
 /**
  * The imploder creates

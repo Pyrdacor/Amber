@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Amber.Serialization;
+namespace Amber.IO.FileFormats.Serialization;
 
 public enum FileType : uint
 {

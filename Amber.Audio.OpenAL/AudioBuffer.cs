@@ -1,4 +1,5 @@
-﻿using Silk.NET.OpenAL;
+﻿using Amber.Audio.Common;
+using Silk.NET.OpenAL;
 using System;
 
 namespace Amber.Audio.OpenAL;

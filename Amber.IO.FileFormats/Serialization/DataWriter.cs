@@ -1,7 +1,8 @@
-﻿using Amber.Common;
+﻿using System.Runtime.CompilerServices;
+using Amber.Common;
 using Amber.IO.Common.Serialization;
 
-namespace Amber.Serialization;
+namespace Amber.IO.FileFormats.Serialization;
 
 public class DataWriter : IDataWriter
 {
@@ -262,5 +263,189 @@ public class DataWriter : IDataWriter
     public void Clear()
     {
         data.Clear();
+    }
+}
+
+public sealed class StreamBoundDataWriter(Stream stream, bool keepOpen = false) : IDataWriter, IDisposable
+{
+    private readonly DataWriter writer = new();
+
+    public int Position => writer.Position;
+    public int Size => writer.Size;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void CopyTo(Stream stream)
+    {
+        writer.CopyTo(stream);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte[] GetBytes(int offset, int length)
+    {
+        return writer.GetBytes(offset, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, bool value)
+    {
+        writer.Replace(offset, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, byte value)
+    {
+        writer.Replace(offset, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, ushort value)
+    {
+        writer.Replace(offset, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, uint value)
+    {
+        writer.Replace(offset, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, ulong value)
+    {
+        writer.Replace(offset, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, byte[] data)
+    {
+        writer.Replace(offset, data);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, byte[] data, int dataOffset)
+    {
+        writer.Replace(offset, data, dataOffset);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Replace(int offset, byte[] data, int dataOffset, int length)
+    {
+        writer.Replace(offset, data, dataOffset, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte[] ToArray()
+    {
+        return writer.ToArray();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(bool value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(byte value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(ushort value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(uint value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(ulong value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(char value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(string value)
+    {
+        writer.Write(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(string value, int length, char fillChar = ' ')
+    {
+        writer.Write(value, length, fillChar);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(string value, Encoding encoding)
+    {
+        writer.Write(value, encoding);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(string value, Encoding encoding, int length, char fillChar = ' ')
+    {
+        writer.Write(value, encoding, length, fillChar);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(byte[] bytes)
+    {
+        writer.Write(bytes);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteEnumAsByte<T>(T value) where T : struct, Enum, IConvertible
+    {
+        writer.WriteEnumAsByte(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteEnumAsWord<T>(T value) where T : struct, Enum, IConvertible
+    {
+        writer.WriteEnumAsWord(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteNullTerminated(string value)
+    {
+        writer.WriteNullTerminated(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteNullTerminated(string value, Encoding encoding)
+    {
+        writer.WriteNullTerminated(value, encoding);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteWithoutLength(string value)
+    {
+        writer.WriteWithoutLength(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteWithoutLength(string value, Encoding encoding)
+    {
+        writer.WriteWithoutLength(value, encoding);
+    }
+
+    public void Dispose()
+    {
+        stream.Write(ToArray());
+
+        if (!keepOpen)
+            stream.Dispose();
     }
 }

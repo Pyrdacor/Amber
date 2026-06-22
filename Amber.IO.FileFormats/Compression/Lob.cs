@@ -1,9 +1,9 @@
 ﻿using Amber.IO.Common.Serialization;
-using Amber.Serialization;
+using Amber.IO.FileFormats.Serialization;
 
 namespace Amber.IO.FileFormats.Compression;
 
-internal static class Lob
+public static class Lob
 {
     const int MinMatchLength = 3;
     const int MaxMatchLength = 18;

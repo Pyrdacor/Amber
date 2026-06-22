@@ -59,6 +59,10 @@ public readonly struct Position : IEquatable<Position>
 
     public static Position operator -(Position left, Position right) => new(left.X - right.X, left.Y - right.Y);
 
+    public static Position operator *(int factor, Position position) => new(factor * position.X, factor * position.Y);
+
+    public static Position operator *(Position position, int factor) => new(factor * position.X, factor * position.Y);
+
     public override readonly string ToString() => $"({X}, {Y})";
 
     public void Deconstruct(out int x, out int y)

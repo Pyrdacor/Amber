@@ -1,5 +1,4 @@
 ﻿using Amber.IO.Common.FileSystem;
-using Ambermoon.Data.FileSystems.Virtual;
 
 namespace Amber.IO.FileSystem.Virtual;
 

@@ -1,9 +1,9 @@
 ﻿using System.Reflection;
 using Amber.Audio.OpenAL;
 using Amber.Common;
+using Amber.IO.FileFormats.Serialization;
 using Amber.IO.FileSystem;
 using Amber.Renderer.OpenGL;
-using Amber.Serialization;
 using Amberstar.GameData.Legacy;
 using Silk.NET.Core.Contexts;
 using Silk.NET.Input;
@@ -12,7 +12,7 @@ using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using Silk.NET.Windowing.Glfw;
 using MousePosition = System.Numerics.Vector2;
-using Renderer = Ambermoon.Renderer.OpenGL.Renderer;
+using Renderer = Amber.Renderer.OpenGL.Renderer;
 using WindowDimension = Silk.NET.Maths.Vector2D<int>;
 
 namespace Amberstar

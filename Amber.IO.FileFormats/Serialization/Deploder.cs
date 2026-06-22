@@ -1,6 +1,6 @@
 ﻿using Amber.Common;
 
-namespace Amber.Serialization;
+namespace Amber.IO.FileFormats.Serialization;
 
 public static class Deploder
 {

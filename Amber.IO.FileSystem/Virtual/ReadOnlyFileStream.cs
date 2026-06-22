@@ -1,7 +1,6 @@
 ﻿using Amber.IO.Common.FileSystem;
-using Amber.IO.FileSystem.Virtual;
 
-namespace Ambermoon.Data.FileSystems.Virtual;
+namespace Amber.IO.FileSystem.Virtual;
 
 internal class ReadOnlyFileStream : IReadOnlyFileStream
 {

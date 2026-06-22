@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Amber;
+namespace Amber.IO.FileFormats;
 
 public class AmberEncoding : Encoding
 {

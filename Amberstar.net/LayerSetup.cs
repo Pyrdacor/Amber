@@ -1,6 +1,6 @@
 ﻿using Amber.Assets.Common;
 using Amber.Renderer.Common;
-using Ambermoon.Renderer.OpenGL;
+using Amber.Renderer.OpenGL;
 using Amberstar.GameData;
 using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;

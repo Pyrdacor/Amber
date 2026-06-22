@@ -23,9 +23,8 @@ using System.Numerics;
 using Amber.Common;
 using Amber.Renderer;
 using Amber.Renderer.Common;
-using Amber.Renderer.OpenGL;
 
-namespace Ambermoon.Renderer.OpenGL
+namespace Amber.Renderer.OpenGL
 {
     public class Renderer : IRenderer, IDisposable
     {

@@ -1,5 +1,5 @@
 ﻿using Amber.IO.Common.FileSystem;
-using Amber.Serialization;
+using Amber.IO.FileFormats.Serialization;
 using System.Text;
 
 namespace Amber.IO.FileSystem;

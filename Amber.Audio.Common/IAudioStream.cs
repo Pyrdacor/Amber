@@ -1,4 +1,4 @@
-﻿namespace Amber.Audio;
+﻿namespace Amber.Audio.Common;
 
 public delegate void DataStreamEventHandler(short[] data, bool endOfStream);
 

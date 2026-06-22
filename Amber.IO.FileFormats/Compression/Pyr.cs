@@ -1,4 +1,4 @@
-﻿using Amber.Serialization;
+﻿using Amber.IO.FileFormats.Serialization;
 
 namespace Amber.IO.FileFormats.Compression
 {

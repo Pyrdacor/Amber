@@ -1,4 +1,4 @@
-﻿namespace Amber.Serialization;
+﻿namespace Amber.IO.FileFormats.Serialization;
 
 internal static class ADFReader
 {

@@ -1,4 +1,4 @@
-﻿namespace Amber.Audio;
+﻿namespace Amber.Audio.Common;
 
 public enum ChannelDataFormat
 {

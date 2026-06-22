@@ -1,6 +1,6 @@
 ﻿using Amber.IO.Common.Serialization;
 
-namespace Amber.Serialization;
+namespace Amber.IO.FileFormats.Serialization;
 
 public class DataReader : IDataReader
 {

@@ -2,7 +2,7 @@
 using Amber.IO.Common.Serialization;
 using Amber.IO.FileFormats.Compression;
 
-namespace Amber.Serialization;
+namespace Amber.IO.FileFormats.Serialization;
 
 public static class FileWriter
 {
