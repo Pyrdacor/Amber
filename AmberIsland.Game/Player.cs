@@ -15,8 +15,8 @@ internal class Player
 
     private const int TicksPerAnimationFrame = 6;
     private readonly Game game;
-    private readonly IAnimatedSprite sprite;
-    private readonly IAnimatedSprite outfitSprite;
+    private readonly ISequencedSprite sprite;
+    private readonly ISequencedSprite outfitSprite;
     private static readonly Dictionary<State, Animation> animations = [];
     private State state = State.Idle;
     private Direction direction = Direction.Down;
@@ -44,11 +44,14 @@ internal class Player
             if (direction == value)
                 return;
 
+            int directionDiff = value - direction;
+
             direction = value;
             lastAnimationTicks = 0;
 
             var animation = GetAnimation();
-            outfitSprite.TextureOffset = sprite.TextureOffset = animation.FirstFrameOffset + ((int)direction * animation.DirectionOffset!.Value);
+            var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Position.Zero);
+            outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
             outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
         }
     }
@@ -71,25 +74,22 @@ internal class Player
 
         animations.Add(State.Idle, new()
         {
-            FirstFrameOffset = new(0, 0),
             FrameSize = frameSize,
-            FrameCount = 1,
+            FrameIndices = [0],
             DirectionOffset = new(0, 40),
         });
 
         animations.Add(State.Walking, new()
         {
-            FirstFrameOffset = new(0, 160),
             FrameSize = frameSize,
-            FrameCount = 6,
+            FrameIndices = [32, 33, 34, 35, 36, 37],
             DirectionOffset = new(0, 40),
         });
 
         animations.Add(State.Running, new()
         {
-            FirstFrameOffset = new(288, 160),
             FrameSize = frameSize,
-            FrameCount = 2,
+            FrameIndices = [37, 39, 34, 38],
             DirectionOffset = new(0, 40),
         });
     }
@@ -101,27 +101,21 @@ internal class Player
         var layer = game.GetRenderLayer(Layer.Player);
 
         var animation = GetAnimation();
-        sprite = layer.SpriteFactory!.CreateAnimated();
-        sprite.TextureOffset = animation.FirstFrameOffset;
-        sprite.TextureSize = animation.FrameSize;
+        sprite = layer.SpriteFactory!.CreateSequenced();
         sprite.Position = new(0, 0);
         sprite.Size = new(24, 20);
-        sprite.CurrentFrameIndex = 0;
-        sprite.FrameCount = (int)animation.FrameCount;
         sprite.PaletteIndex = 0;
         sprite.Visible = true;
 
         layer = game.GetRenderLayer(Layer.Outfit);
 
-        outfitSprite = layer.SpriteFactory!.CreateAnimated();
-        outfitSprite.TextureOffset = sprite.TextureOffset;
-        outfitSprite.TextureSize = sprite.TextureSize;
+        outfitSprite = layer.SpriteFactory!.CreateSequenced();
         outfitSprite.Position = sprite.Position;
         outfitSprite.Size = sprite.Size;
-        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
-        outfitSprite.FrameCount = sprite.FrameCount;
         outfitSprite.PaletteIndex = 0;
         outfitSprite.Visible = sprite.Visible;
+
+        SetFrameIndicesAndOrigin(resetFrameIndex: true);
     }
 
     private Animation GetAnimation()
@@ -134,7 +128,7 @@ internal class Player
         if (lastAnimationTicks == 0)
             lastAnimationTicks = ticks;
 
-        if (sprite.FrameCount > 1)
+        if (sprite.FrameIndices.Length > 1)
         {
             long elapsed = ticks - lastAnimationTicks;
 
@@ -151,11 +145,24 @@ internal class Player
 
     private void InitAnimation()
     {
-        var animation = GetAnimation();
+        SetFrameIndicesAndOrigin(resetFrameIndex: true);
+    }
 
-        outfitSprite.TextureOffset = sprite.TextureOffset = animation.FirstFrameOffset + ((int)direction * animation.DirectionOffset!.Value);
+    private void SetFrameIndicesAndOrigin(bool resetFrameIndex)
+    {
+        var animation = GetAnimation();
+        var atlas = sprite.Layer.Config.Texture!;
+        int framesPerRow = atlas.Size.Width / animation.FrameSize.Width;
+        int firstIndex = (int)animation.FrameIndices.Min();
+        int row = firstIndex / framesPerRow;
+        int column = firstIndex % framesPerRow;
+        var origin = new Position(column * animation.FrameSize.Width, row * animation.FrameSize.Height) + (int)direction * (animation.DirectionOffset ?? Position.Zero);
+
         outfitSprite.TextureSize = sprite.TextureSize = animation.FrameSize;
-        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
-        outfitSprite.FrameCount = sprite.FrameCount = (int)animation.FrameCount;
+        outfitSprite.FrameOrigin = sprite.FrameOrigin = origin;
+        outfitSprite.FrameIndices = sprite.FrameIndices = animation.FrameIndices.Select(index => (int)(index - firstIndex)).ToArray();
+
+        if (resetFrameIndex)
+            outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
     }
 }

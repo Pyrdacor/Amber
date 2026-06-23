@@ -24,9 +24,17 @@ public interface IAnimatedSprite : ISprite
 	int FrameCount { get; set; }
 }
 
+public interface ISequencedSprite : ISprite
+{
+	Position FrameOrigin { get; set; }
+    int CurrentFrameIndex { get; set; }
+    int[] FrameIndices { get; set; }
+}
+
 public interface ISpriteFactory
 {
 	ISprite Create();
 	IAnimatedSprite CreateAnimated();
 	IAlphaSprite CreateWithAlpha();
+    ISequencedSprite CreateSequenced();
 }

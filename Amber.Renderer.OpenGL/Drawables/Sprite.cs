@@ -214,6 +214,66 @@ namespace Amber.Renderer.OpenGL.Drawables
         }
     }
 
+    internal class SequencedSprite(Layer layer) : Sprite(layer), ISequencedSprite
+    {
+        int currentFrameIndex = 0;
+		int[] frameIndices = [];
+		Position frameOrigin = Position.Zero;
+
+        public int CurrentFrameIndex
+        {
+            get => currentFrameIndex;
+            set
+            {
+                value %= Math.Max(1, frameIndices.Length);
+
+                if (value < 0)
+                    value += frameIndices.Length;
+
+                if (currentFrameIndex != value)
+                {
+                    currentFrameIndex = value;
+
+                    if (Visible && DrawIndex != -1)
+                        renderBuffer.UpdateTextureOffset(DrawIndex, this);
+                }
+            }
+        }
+
+        public Position FrameOrigin
+        {
+            get => frameOrigin;
+            set
+            {
+                if (frameOrigin != value)
+                {
+                    frameOrigin = value;
+
+                    if (Visible && DrawIndex != -1)
+                        renderBuffer.UpdateTextureOffset(DrawIndex, this);
+                }
+            }
+        }
+
+        public int[] FrameIndices
+        {
+            get => frameIndices;
+            set
+            {
+                if (frameIndices != value)
+                {
+                    frameIndices = value;
+
+                    if (currentFrameIndex >= frameIndices.Length)
+                        currentFrameIndex = 0;
+
+                    if (Visible && DrawIndex != -1)
+                        renderBuffer.UpdateTextureOffset(DrawIndex, this);
+                }
+            }
+        }
+    }
+
     internal class SpriteFactory(Layer layer) : ISpriteFactory
 	{
 		public ISprite Create() => new Sprite(layer);
@@ -221,5 +281,7 @@ namespace Amber.Renderer.OpenGL.Drawables
 		public IAnimatedSprite CreateAnimated() => new AnimatedSprite(layer);
 
 		public IAlphaSprite CreateWithAlpha() => new AlphaSprite(layer);
+
+		public ISequencedSprite CreateSequenced() => new SequencedSprite(layer);
     }
 }

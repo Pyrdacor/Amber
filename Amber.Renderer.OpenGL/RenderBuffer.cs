@@ -180,6 +180,21 @@ internal class RenderBuffer : IDisposable
         var textureOffset = new Position(sprite.TextureOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
 
+        if (sprite is IAnimatedSprite animatedSprite && animatedSprite.CurrentFrameIndex > 0)
+        {
+            textureOffset = new(textureOffset.X + animatedSprite.CurrentFrameIndex * textureSize.Width, textureOffset.Y);
+        }
+        else if (sprite is ISequencedSprite sequenced)
+        {
+            textureOffset = sequenced.FrameOrigin;
+
+            if (sequenced.FrameIndices.Length > 0)
+            {
+                int frameIndex = sequenced.FrameIndices[sequenced.CurrentFrameIndex];
+                textureOffset = new(textureOffset.X + frameIndex * textureSize.Width, textureOffset.Y);
+            }
+        }
+
         if (sprite.ClipRect != null)
         {
             float textureWidthFactor = (float)spriteSize.Width / textureSize.Width;
@@ -517,6 +532,18 @@ internal class RenderBuffer : IDisposable
         if (sprite is IAnimatedSprite animatedSprite && animatedSprite.CurrentFrameIndex > 0)
         {
             textureOffset = new(textureOffset.X + animatedSprite.CurrentFrameIndex * textureSize.Width, textureOffset.Y);
+        }
+        else if (sprite is ISequencedSprite sequenced)
+        {
+            textureOffset = sequenced.FrameOrigin;
+
+            if (sequenced.FrameIndices.Length > 0)
+            {
+                int frameIndex = sequenced.FrameIndices[sequenced.CurrentFrameIndex];
+                textureOffset = new(textureOffset.X + frameIndex * textureSize.Width, textureOffset.Y);
+            }
+
+            Console.WriteLine($"{textureOffset.X}, {textureOffset.Y}");
         }
 
         if (sprite.ClipRect != null)

@@ -66,7 +66,11 @@ public readonly struct Size : IEquatable<Size>
 		return !(left == right);
 	}
 
-	public override readonly string ToString() => $"[{Width}x{Height}]";
+    public static Position operator *(int factor, Size size) => new(factor * size.Width, factor * size.Height);
+
+    public static Position operator *(Size size, int factor) => new(factor * size.Width, factor * size.Height);
+
+    public override readonly string ToString() => $"[{Width}x{Height}]";
 
     public void Deconstruct(out int width, out int height)
     {

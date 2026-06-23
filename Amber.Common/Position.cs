@@ -1,10 +1,10 @@
-﻿using System.Reflection;
-
-namespace Amber.Common;
+﻿namespace Amber.Common;
 
 public readonly struct Position : IEquatable<Position>
 {
-	public readonly int X;
+	public static readonly Position Zero = new(0, 0);
+
+    public readonly int X;
 	public readonly int Y;
 
 	public Position()
