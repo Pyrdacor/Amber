@@ -1,6 +1,7 @@
 ﻿namespace AmberIsland.GameData;
 
-public readonly record struct Graphic(
+public readonly record struct Graphic
+(
     ushort Width,
     ushort Height,
     ColorRgba[] Pixels

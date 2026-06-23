@@ -2,7 +2,8 @@
 
 namespace AmberIsland.GameData;
 
-public readonly record struct GraphicAtlas(
+public readonly record struct GraphicAtlas
+(
     Graphic Graphic,
     Dictionary<uint, Position> Offsets
 )

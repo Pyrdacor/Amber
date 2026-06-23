@@ -13,10 +13,10 @@ internal class Player
         Running
     }
 
-    private const int HeightOverGround = 32;
-    private const int TicksPerAnimationFrame = 10;
+    private const int TicksPerAnimationFrame = 6;
     private readonly Game game;
     private readonly IAnimatedSprite sprite;
+    private readonly IAnimatedSprite outfitSprite;
     private static readonly Dictionary<State, Animation> animations = [];
     private State state = State.Idle;
     private Direction direction = Direction.Down;
@@ -48,22 +48,26 @@ internal class Player
             lastAnimationTicks = 0;
 
             var animation = GetAnimation();
-            sprite.TextureOffset = animation.FirstFrameOffset + ((int)direction * animation.DirectionOffset!.Value);
-            sprite.CurrentFrameIndex = 0;
+            outfitSprite.TextureOffset = sprite.TextureOffset = animation.FirstFrameOffset + ((int)direction * animation.DirectionOffset!.Value);
+            outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
         }
     }
 
     public Position Position
     {
         get => sprite.Position;
-        set => sprite.Position = value;
+        set
+        {
+            sprite.Position = value;
+            outfitSprite.Position = value;
+        }
     }
 
     public Rect CollisionArea => new(Position.X + 4, Position.Y + 1, sprite.Size.Width - 8, 15);
 
     static Player()
     {
-        var frameSize = new Size(32, 40);
+        var frameSize = new Size(48, 40);
 
         animations.Add(State.Idle, new()
         {
@@ -83,7 +87,7 @@ internal class Player
 
         animations.Add(State.Running, new()
         {
-            FirstFrameOffset = new(192, 160),
+            FirstFrameOffset = new(288, 160),
             FrameSize = frameSize,
             FrameCount = 2,
             DirectionOffset = new(0, 40),
@@ -101,11 +105,23 @@ internal class Player
         sprite.TextureOffset = animation.FirstFrameOffset;
         sprite.TextureSize = animation.FrameSize;
         sprite.Position = new(0, 0);
-        sprite.Size = new(16, 20);
+        sprite.Size = new(24, 20);
         sprite.CurrentFrameIndex = 0;
         sprite.FrameCount = (int)animation.FrameCount;
         sprite.PaletteIndex = 0;
         sprite.Visible = true;
+
+        layer = game.GetRenderLayer(Layer.Outfit);
+
+        outfitSprite = layer.SpriteFactory!.CreateAnimated();
+        outfitSprite.TextureOffset = sprite.TextureOffset;
+        outfitSprite.TextureSize = sprite.TextureSize;
+        outfitSprite.Position = sprite.Position;
+        outfitSprite.Size = sprite.Size;
+        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+        outfitSprite.FrameCount = sprite.FrameCount;
+        outfitSprite.PaletteIndex = 0;
+        outfitSprite.Visible = sprite.Visible;
     }
 
     private Animation GetAnimation()
@@ -125,6 +141,7 @@ internal class Player
             while (elapsed >= TicksPerAnimationFrame)
             {
                 sprite.CurrentFrameIndex += 1;
+                outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
                 elapsed -= TicksPerAnimationFrame;
             }
 
@@ -136,9 +153,9 @@ internal class Player
     {
         var animation = GetAnimation();
 
-        sprite.TextureOffset = animation.FirstFrameOffset + ((int)direction * animation.DirectionOffset!.Value);
-        sprite.TextureSize = animation.FrameSize;
-        sprite.CurrentFrameIndex = 0;
-        sprite.FrameCount = (int)animation.FrameCount;
+        outfitSprite.TextureOffset = sprite.TextureOffset = animation.FirstFrameOffset + ((int)direction * animation.DirectionOffset!.Value);
+        outfitSprite.TextureSize = sprite.TextureSize = animation.FrameSize;
+        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
+        outfitSprite.FrameCount = sprite.FrameCount = (int)animation.FrameCount;
     }
 }

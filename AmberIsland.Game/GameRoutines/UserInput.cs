@@ -15,7 +15,9 @@ partial class Game
 	static int Song = 0; // TODO: REMOVE
 	public void KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		if (!InputEnabled)
+        pressedKeys?.Add(key);
+
+        if (!InputEnabled)
 			return;
 
 		ScreenHandler.ActiveScreen?.KeyDown(key, keyModifiers);
@@ -23,6 +25,8 @@ partial class Game
 
 	public void KeyUp(Key key, KeyModifiers keyModifiers)
 	{
+		pressedKeys?.Remove(key);
+
 		if (!InputEnabled)
 			return;
 

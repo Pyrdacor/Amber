@@ -3,7 +3,8 @@ using Amber.IO.FileFormats.Compression;
 
 namespace AmberIsland.GameData;
 
-public readonly record struct Sprite(
+public readonly record struct Sprite
+(
     ushort Width,
     ushort Height,
     ColorRgb[] Colors, // Only for embedded (fixed) palettes!
@@ -14,7 +15,7 @@ public readonly record struct Sprite(
     {
         writer.Write(Width);
         writer.Write(Height);
-        writer.Write((byte)Colors.Length);
+        writer.Write((ushort)Colors.Length);
 
         foreach (var color in Colors)
             color.Write(writer);
@@ -26,7 +27,7 @@ public readonly record struct Sprite(
     {
         ushort width = reader.ReadWord();
         ushort height = reader.ReadWord();
-        int colorCount = reader.ReadByte();
+        int colorCount = reader.ReadWord();
         var colors = new ColorRgb[colorCount];
 
         for (int i = 0; i < colorCount; i++)
@@ -38,7 +39,8 @@ public readonly record struct Sprite(
     }
 }
 
-public readonly record struct SpriteWithPalettes(
+public readonly record struct SpriteWithPalettes
+(
     ushort Width,
     ushort Height,
     PaletteRgb[] Palettes,

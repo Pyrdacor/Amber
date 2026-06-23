@@ -268,12 +268,12 @@ namespace AmberIsland
             var api = GraphicsAPI.Default;
 #endif
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            gameVersion = $"Amberstar.net v{version.Major}.{version.Minor}.{version.Build}";
+            gameVersion = $"AmberIsland v{version.Major}.{version.Minor}.{version.Build}";
             var videoMode = new VideoMode(60);
             var options = new WindowOptions(true, new WindowDimension(100, 100),
                 new WindowDimension(Width, Height), 60.0, 120.0, api, gameVersion,
                 WindowState.Normal, WindowBorder.Fixed, true, false, videoMode, 24);
-            options.WindowClass = "Amberstar.net";
+            options.WindowClass = "AmberIsland";
 
             GlfwWindowing.RegisterPlatform();
             GlfwInput.RegisterPlatform();

@@ -1,12 +1,7 @@
 ﻿using Amber.Common;
+using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
-
-public enum Direction
-{
-    // Same order as in the sprite sheets
-    Down, Up, Right, Left 
-}
 
 public sealed class GameState
 {

@@ -9,13 +9,21 @@ namespace AmberIsland.Game;
 
 public enum Layer
 {
-	/*MapBackground,
-	Characters,*/
-	Player,
-	/*MapForeground,
-	UI,
+	MapBackground,
+	Objects,
+    /*Characters,*/
+    Player,
+	Outfit,
+	/*Capes,
+	FaceAssets,
+	Hair,
+	Hats,
+	PrimaryTool,
+	SecondaryTool,*/
+	MapForeground,
+	/*UI,
 	TopMost = UI*/
-	TopMost = Player
+	TopMost = MapForeground
 }
 
 partial class Game
@@ -38,14 +46,29 @@ partial class Game
             Renderer.AddLayer(layer);
         }
 
-		// MapBackground
-		/*AddLayer(LayerType.Texture2D, new()
+        // TODO
+        var tilesetAtlasSprite = gameData.GetTilesetAtlasSprite();
+        var (tilesetAtlas, tilesetPalette) = CreateGraphicAtlasAndPalette(tilesetAtlasSprite, palette: null, new(16, 16));
+
+        // MapBackground
+        AddLayer(LayerType.Texture2D, new()
 		{
-            BaseZ = 0.15f,
+            BaseZ = 0.2f,
             RenderTarget = LayerRenderTarget.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
-			// TODO
-        });*/
+			Texture = tilesetAtlas,
+			Palette = tilesetPalette
+        });
+
+        // Objects
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.3f,
+            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = tilesetAtlas,
+            Palette = tilesetPalette
+        });
 
         // Characters
         /*AddLayer(LayerType.Texture2D, new()
@@ -56,29 +79,43 @@ partial class Game
             // TODO
         });*/
 
-		// Player
-		var playerSprite = gameData.GetPlayerSprite();
+        // Player
+        var playerSprite = gameData.GetPlayerSprite();
 		var (playerAtlas, playerPalette) = CreateGraphicAtlasAndPalette(playerSprite);
 
         AddLayer(LayerType.Texture2D, new()
 		{
-			BaseZ = 0.45f,
+			BaseZ = 0.3f,
 			RenderTarget = LayerRenderTarget.VirtualScreen2D,
 			LayerFeatures = LayerFeatures.Transparency,
 			Texture = playerAtlas,
 			Palette = playerPalette
         });
 
-        // MapForeground
-        /*AddLayer(LayerType.Texture2D, new()
+        // Outfit
+        var outfitSprite = gameData.GetOutfitSprite();
+        var (outfitAtlas, outfitPalette) = CreateGraphicAtlasAndPalette(outfitSprite);
+
+        AddLayer(LayerType.Texture2D, new()
         {
-            BaseZ = 0.6f,
+            BaseZ = 0.4f,
             RenderTarget = LayerRenderTarget.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
-            // TODO
-        });*/
+            Texture = outfitAtlas,
+            Palette = outfitPalette
+        });
 
-		// UI
+        // MapForeground
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.5f,
+            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = tilesetAtlas,
+            Palette = tilesetPalette
+        });
+
+        // UI
         /*AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.75f,
@@ -88,12 +125,62 @@ partial class Game
         });*/
     }
 
-	private (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(SpriteWithPalettes sprite)
+    private (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(Sprite sprite, PaletteRgb? palette, Size? tileSize)
+	{
+		if (sprite.Colors.Length == 0)
+		{
+			if (palette == null)
+				throw new InvalidOperationException("Sprite has no embedded palette and no palette was given.");
+
+			// TODO ...
+			throw new NotImplementedException();
+		}
+		else
+		{
+            var atlasGraphic = new Graphic(sprite.Width, sprite.Height, sprite.ColorIndices, GraphicFormat.PaletteIndices);
+			ITextureAtlas atlas;
+			
+			if (tileSize == null || tileSize.Value.Empty)
+				atlas = Renderer.TextureFactory.CreateAtlas(new() { { 0, atlasGraphic } });
+			else
+			{
+				int tileWidth = tileSize.Value.Width;
+				int tileHeight = tileSize.Value.Height;
+				int tilesPerRow = sprite.Width / tileWidth;
+				int tileRows = sprite.Height / tileHeight;
+                var offsets = new Dictionary<int, Position>(tileRows * tilesPerRow);
+				int index = 0;
+
+                for (int y = 0; y < tilesPerRow; y++)
+				{
+					for (int x = 0; x < tileRows; x++)
+					{
+						offsets.Add(index++, new(x * tileWidth, y * tileHeight));
+                    }
+				}
+
+                atlas = Renderer.TextureFactory.CreateAtlas(offsets, atlasGraphic);
+            }
+
+            int paletteWidth = 1 + sprite.Colors.Length;
+            int paletteHeight = 1;
+            var paletteData = new byte[paletteWidth * paletteHeight * 4];
+
+            var embeddedPalette = new PaletteRgb(sprite.Colors);
+            Buffer.BlockCopy(embeddedPalette.ToBytes(), 0, paletteData, 0, paletteWidth * 4);
+
+            var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
+
+            return (atlas, Renderer.TextureFactory.Create(paletteGraphic));
+        }
+	}
+
+    private (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(SpriteWithPalettes sprite)
 	{
 		var atlasGraphic = new Graphic(sprite.Width, sprite.Height, sprite.ColorIndices, GraphicFormat.PaletteIndices);
 		var atlas = Renderer.TextureFactory.CreateAtlas(new() { { 0, atlasGraphic } });
 
-		int paletteWidth = sprite.Palettes[0].Colors.Length;
+		int paletteWidth = 1 + sprite.Palettes[0].Colors.Length;
 		int paletteHeight = sprite.Palettes.Length;
         var paletteData = new byte[paletteWidth * paletteHeight * 4];
 		int index = 0;

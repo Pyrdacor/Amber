@@ -19,4 +19,5 @@ public interface ITextureFactory
 {
 	ITexture Create(IGraphic graphic, int numMipMapLevels = 0);
 	ITextureAtlas CreateAtlas(Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0);
+    ITextureAtlas CreateAtlas(Dictionary<int, Position> offsets, IGraphic atlasGraphic, int numMipMapLevels = 0);
 }

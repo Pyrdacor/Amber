@@ -2,7 +2,8 @@
 
 namespace AmberIsland.GameData;
 
-public readonly record struct PaletteRgb(
+public readonly record struct PaletteRgb
+(
     ColorRgb[] Colors
 )
 {

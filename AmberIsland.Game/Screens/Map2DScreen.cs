@@ -2,30 +2,35 @@
 using Amber.Renderer.Common;
 using AmberIsland.Game;
 using AmberIsland.Game.UI;
+using AmberIsland.GameData;
 
 namespace AmberIsland.Game.Screens;
 
 internal class Map2DScreen : Screen
 {
-	const int TicksPerStep = 6;
-	const int TilesPerRow = 11;
-	const int TileRows = 9;
+	const int WalkTicksPerStep = 2;
+    const int RunTicksPerStep = 1;
+    const int TilesPerRow = 8;
+	const int TileRows = 8;
 	const int TileWidth = 16;
 	const int TileHeight = 16;
-	const int OffsetX = 16;
-	const int OffsetY = 49;
+	const int OffsetX = 0;
+	const int OffsetY = 0;
 	const int RenderOrderOffset = TileHeight / 4;
 	const int MinScrollX = TilesPerRow / 2;
 	const int MinScrollY = TileRows / 2 + 1;
 	Game? game;
 	Map? map;
+	Tileset? tileset;
 	//WorldMap? worldMap;
 	//ITileset[]? tilesets;
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
-	readonly Dictionary<int, IAnimatedSprite> overlay = [];
+    readonly Dictionary<int, IAnimatedSprite> objects = [];
+    readonly Dictionary<int, IAnimatedSprite> overlay = [];
 	int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
+	int ticksPerStep = WalkTicksPerStep;
 
 	int moveX = 0;
 	int moveY = 0;
@@ -55,12 +60,10 @@ internal class Map2DScreen : Screen
 		//tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
 
 		// TODO
-		map = new Map
-		{
-			Width = 100,
-			Height = 100,
-		};
-	}
+		map = game.GameData.GetMap();
+		tileset = game.GameData.GetTileset();
+		FillMap(0, 0, true);
+    }
 
 	public override void ScreenPushed(Game game, Screen screen)
 	{
@@ -72,7 +75,8 @@ internal class Map2DScreen : Screen
 		if (!screen.Transparent)
 		{
 			underlay.Values.ToList().ForEach(tile => tile.Visible = false);
-			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
+            objects.Values.ToList().ForEach(tile => tile.Visible = false);
+            overlay.Values.ToList().ForEach(tile => tile.Visible = false);
             //mapNameText!.Visible = false;
         }
 
@@ -85,6 +89,7 @@ internal class Map2DScreen : Screen
 		{
 			SetLayout();
             underlay.Values.ToList().ForEach(tile => tile.Visible = true);
+            objects.Values.ToList().ForEach(tile => tile.Visible = true);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
             //mapNameText!.Visible = true;
         }
@@ -161,8 +166,6 @@ internal class Map2DScreen : Screen
 		{
 			moveTickCounter += elapsedTicks;
 
-			var ticksPerStep = TicksPerStep;
-
 			if (ticksPerStep > 0 && moveTickCounter >= ticksPerStep)
 			{
 				bool moved = false;
@@ -171,7 +174,8 @@ internal class Map2DScreen : Screen
 				{
 					if (MovePlayer(moveX, moveY))
 					{
-                        game.Player.CurrentState = Player.State.Walking;
+						if (game.Player.CurrentState != Player.State.Running)
+							game.Player.CurrentState = Player.State.Walking;
                         game.Player.Position = game.State.PlayerPosition;
                         game.Player.CurrentDirection = game.State.PlayerDirection;
                         moved = true;
@@ -199,8 +203,8 @@ internal class Map2DScreen : Screen
 	{
 		additionalMoveRequested = false;
 		var oldPosition = game!.State.PlayerPosition;
-		int newX = MathUtil.Limit(0, oldPosition.X + x, map!.Width - 1);
-		int newY = MathUtil.Limit(0, oldPosition.Y + y, map.Height - 1);
+		int newX = MathUtil.Limit(0, oldPosition.X + x, /*map!.Width - 1*/int.MaxValue);
+		int newY = MathUtil.Limit(0, oldPosition.Y + y, /*map.Height - 1*/int.MaxValue);
 
 		bool TileBlocksMovement(int x, int y)
 		{
@@ -264,9 +268,9 @@ internal class Map2DScreen : Screen
 	private void UpdateMovement()
 	{
 		bool left = game!.IsKeyDown(Key.Left) || game.IsKeyDown('A');
-		bool right = game!.IsKeyDown(Key.Right) || game.IsKeyDown('D');
-		bool up = game!.IsKeyDown(Key.Up) || game.IsKeyDown('W');
-		bool down = game!.IsKeyDown(Key.Down) || game.IsKeyDown('S');
+		bool right = game.IsKeyDown(Key.Right) || game.IsKeyDown('D');
+		bool up = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
+		bool down = game.IsKeyDown(Key.Down) || game.IsKeyDown('S');
 		bool upLeft = game.IsKeyDown('Q');
 		bool upRight = game.IsKeyDown('E');
 		bool downLeft = game.IsKeyDown('Y') || game.IsKeyDown('Z');
@@ -318,7 +322,7 @@ internal class Map2DScreen : Screen
 
 		if (additionalMoveRequested && !left && !right && !up && !down)
 		{
-			long timeTillNextMove = Math.Max(0, TicksPerStep - (currentTicks - lastMoveStartTicks));
+			long timeTillNextMove = Math.Max(0, ticksPerStep - (currentTicks - lastMoveStartTicks));
 			int x = moveX;
 			int y = moveY;
 			game.DeleteDelayedActions(delayedMoveActionIndex);
@@ -327,7 +331,8 @@ internal class Map2DScreen : Screen
 				lastMoveStartTicks = currentTicks;
 				if (MovePlayer(x, y))
 				{
-					game.Player.CurrentState = Player.State.Walking;
+                    if (game.Player.CurrentState != Player.State.Running)
+                        game.Player.CurrentState = Player.State.Walking;
 					game.Player.Position = game.State.PlayerPosition;
 					game.Player.CurrentDirection = game.State.PlayerDirection;
 					AfterMove();
@@ -338,7 +343,7 @@ internal class Map2DScreen : Screen
 		}
 		else if (!additionalMoveRequested)
 		{
-			additionalMoveRequested = (currentTicks - lastMoveStartTicks) < TicksPerStep;
+			additionalMoveRequested = (currentTicks - lastMoveStartTicks) < ticksPerStep;
 		}
 
 		bool wasMovingBefore = moveX != 0 || moveY != 0 || additionalMoveRequested;
@@ -373,15 +378,20 @@ internal class Map2DScreen : Screen
 			moveY = 0;
 		}
 
-		if (!wasMovingBefore && (moveX != 0 || moveY != 0))
+		if (moveX != 0 || moveY != 0)
+		{
+			ticksPerStep = game.IsKeyDown(Key.Space) ? RunTicksPerStep : WalkTicksPerStep;
+		}
+
+        if (!wasMovingBefore && (moveX != 0 || moveY != 0))
 		{
 			if (MovePlayer(moveX, moveY))
 			{
-                game.Player.CurrentState = Player.State.Walking;
+                game.Player.CurrentState = game.IsKeyDown(Key.Space) ? Player.State.Running : Player.State.Walking;
                 game.Player.Position = game.State.PlayerPosition;
 				game.Player.CurrentDirection = game.State.PlayerDirection;
 				lastMoveStartTicks = currentTicks;
-				moveTickCounter = -TicksPerStep;
+				moveTickCounter = -ticksPerStep;
 
 				AfterMove();					
 			}
@@ -435,7 +445,46 @@ internal class Map2DScreen : Screen
 
 	private void FillMap(int scrollOffsetX, int scrollOffsetY, bool force = false)
 	{
-		/*if (scrollOffsetX < MinScrollX)
+        for (int y = 0; y < TileRows; y++)
+        {
+            for (int x = 0; x < TilesPerRow; x++)
+            {
+                int gridIndex = x + y * TilesPerRow;
+                int index = (x + scrollOffsetX) + (y + scrollOffsetY) * map!.Width;
+                var backgroundTileIndex = map.BackgroundLayer[index];
+                var objectTileIndex = map.ObjectLayer[index];
+                var foregroundTileIndex = map.ForegroundLayer[index];
+
+                if (backgroundTileIndex != 0)
+                {
+                    CreateTileSprite(Layer.MapBackground, underlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, backgroundTileIndex);
+                }
+                else if (underlay.TryGetValue(gridIndex, out var underlaySprite))
+                {
+                    underlaySprite.Visible = false;
+                }
+
+                if (foregroundTileIndex != 0)
+                {
+                    CreateTileSprite(Layer.Objects, objects, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, objectTileIndex, 2 * RenderOrderOffset);
+                }
+                else if (objects.TryGetValue(gridIndex, out var objectSprite))
+                {
+                    objectSprite.Visible = false;
+                }
+
+                if (foregroundTileIndex != 0)
+                {
+                    CreateTileSprite(Layer.MapForeground, overlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, foregroundTileIndex);
+                }
+                else if (overlay.TryGetValue(gridIndex, out var overlaySprite))
+                {
+                    overlaySprite.Visible = false;
+                }
+            }
+        }
+
+        /*if (scrollOffsetX < MinScrollX)
 			scrollOffsetX = MinScrollX;
 		else if (scrollOffsetX + TilesPerRow > map!.Width - MinScrollX)
 			scrollOffsetX = map!.Width - TilesPerRow - MinScrollX;
@@ -518,7 +567,7 @@ internal class Map2DScreen : Screen
 		}
 
 		player!.Visible = playerVisible;*/
-	}
+    }
 
 	private void InitPlayer()
 	{
@@ -546,9 +595,9 @@ internal class Map2DScreen : Screen
 		overlay.Clear();
 	}
 
-	private IAnimatedSprite CreateTileSprite(Dictionary<int, IAnimatedSprite> mapLayer, int gridIndex, int x, int y, int index, int baseLineOffset = 0)
+	private IAnimatedSprite CreateTileSprite(Layer layer, Dictionary<int, IAnimatedSprite> mapLayer, int gridIndex, int x, int y, int index, int baseLineOffset = 0)
 	{
-		/*var renderLayer = game!.GetRenderLayer(Layer.Map2D);
+		var renderLayer = game!.GetRenderLayer(layer);
 
 		if (!mapLayer.TryGetValue(gridIndex, out var tileSprite))
 		{
@@ -559,25 +608,23 @@ internal class Map2DScreen : Screen
 			mapLayer.Add(gridIndex, tileSprite);
 		}
 
-		var tileInfo = GetTileInfo(index);
+		var tileInfo = GetTile(index);
 
-		tileSprite.FrameCount = Math.Max(1, tileInfo.FrameCount);			
-		tileSprite.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex);
-		tileSprite.PaletteIndex = game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
+		tileSprite.FrameCount = Math.Max(1, (int)tileInfo.FrameCount);
+		tileSprite.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileInfo.ImageIndex);
+		tileSprite.PaletteIndex = 0; // TODO
 		tileSprite.BaseLineOffset = baseLineOffset;
 		tileSprite.Visible = true;
 
-		return tileSprite;*/
-		return null!;
+		return tileSprite;
 	}
 
-	/*private ITile GetTileInfo(int index)
+	private Tile GetTile(int index)
 	{
-		var tileset = tilesets![map!.TilesetIndex - 1];
 		return tileset!.Tiles[index - 1];
 	}
 
-	private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
+	/*private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
 
 	public static int GetWorldMapIndex(int index, int offsetX, int offsetY)
 	{

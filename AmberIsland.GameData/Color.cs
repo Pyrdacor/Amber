@@ -2,7 +2,8 @@
 
 namespace AmberIsland.GameData;
 
-public readonly record struct ColorRgb(
+public readonly record struct ColorRgb
+(
     byte R,
     byte G,
     byte B
@@ -25,7 +26,8 @@ public readonly record struct ColorRgb(
     }
 }
 
-public readonly record struct ColorRgba(
+public readonly record struct ColorRgba
+(
     byte R,
     byte G,
     byte B,

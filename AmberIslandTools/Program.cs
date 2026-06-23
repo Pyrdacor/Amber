@@ -1,4 +1,5 @@
-﻿#define CHECK
+﻿#define CREATE
+#define OUTFIT
 
 using System.Diagnostics;
 using System.Drawing;
@@ -7,6 +8,7 @@ using System.Runtime.InteropServices;
 using Amber.IO.FileFormats.Compression;
 using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 unsafe
 {
@@ -81,17 +83,36 @@ unsafe
         Process.Start("mspaint", tempfile);
     }
 #elif CREATE
+#if PLAYER
+    string outDirectory = @"D:\Projects\Amber\AmberIsland\assets\player\temp";
+    string outFileTemplate = "{0:000}.aig";
+    string palFileTemplate = "{0:000}.aip";
+    string spriteOutFile = @"D:\Projects\Amber\AmberIsland\assets\player\player.aisp";
+    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\player.aifc";
     var directory = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1";
-    var schema = "char_a_p1_0bas_humn_v{0}.png";
+    var schema = "char_a_p1_0bas_humn_v{0:00}.png";
+    int firstFileIndex = 0;
     int fileCount = 11;
+#elif OUTFIT
+    string outDirectory = @"D:\Projects\Amber\AmberIsland\assets\outfit\temp";
+    string outFileTemplate = "{0:000}.aig";
+    string palFileTemplate = "{0:000}.aip";
+    string spriteOutFile = @"D:\Projects\Amber\AmberIsland\assets\outfit\outfit.aisp";
+    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\outfit.aifc";
+    var directory = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1\1out";
+    var schema = "char_a_p1_1out_fstr_v{0:00}.png";
+    int firstFileIndex = 1;
+    int fileCount = 5;
+#endif
+
     Size frameSize = new(64, 64);
-    Size extractSize = new(32, 40);
+    Size extractSize = new(48, 40);
     Sprite? firstSprite = null;
     List<PaletteRgb> palettes = [];
 
-    for (int i = 0; i < fileCount; i++)
+    for (int i = firstFileIndex; i < firstFileIndex + fileCount; i++)
     {
-        string file = Path.Combine(directory, string.Format(schema, i.ToString("00")));
+        string file = Path.Combine(directory, string.Format(schema, i));
 
         using var bitmap = (Bitmap)Image.FromFile(file);
         var data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -160,12 +181,12 @@ unsafe
             Colors = [] // Don't embed palette!
         };
 
-        Directory.CreateDirectory(@"D:\Projects\Amber\AmberIsland\assets\player\temp");
-        using var outFile = File.Create($@"D:\Projects\Amber\AmberIsland\assets\player\temp\{i:000}.aig");
+        Directory.CreateDirectory(outDirectory);
+        using var outFile = File.Create(Path.Combine(outDirectory, string.Format(outFileTemplate, i)));
         using var outWriter = new StreamBoundDataWriter(outFile);
         sprite.Write(outWriter);
 
-        using var palFile = File.Create($@"D:\Projects\Amber\AmberIsland\assets\player\temp\{i:000}.aip");
+        using var palFile = File.Create(Path.Combine(outDirectory, string.Format(palFileTemplate, i)));
         using var palWriter = new StreamBoundDataWriter(palFile);
         palWriter.Write((byte)palette.Count);
 
@@ -174,27 +195,77 @@ unsafe
             color.Write(palWriter);
         }
 
-        if (i == 0)
+        if (i == firstFileIndex)
             firstSprite = sprite;
 
         palettes.Add(new PaletteRgb(palette.ToArray()));
     }
 
-    if (firstSprite is Sprite playerSprite)
+    if (firstSprite is Sprite baseSprite)
     {
-        var spriteWithPalettes = SpriteWithPalettes.FromSpriteAndPalettes(playerSprite, palettes.ToArray());
+        var spriteWithPalettes = SpriteWithPalettes.FromSpriteAndPalettes(baseSprite, palettes.ToArray());
 
         {
-            using var playerOutFile = File.Create($@"D:\Projects\Amber\AmberIsland\assets\player\player.aisp");
+            using var playerOutFile = File.Create(spriteOutFile);
             using var playerOutWriter = new StreamBoundDataWriter(playerOutFile);
             spriteWithPalettes.Write(playerOutWriter);
         }
 
-        var data = File.ReadAllBytes($@"D:\Projects\Amber\AmberIsland\assets\player\player.aisp");
-        using var containerStream = File.Create(@"D:\Projects\Amber\AmberIsland\assets\player.aifc");
+        var data = File.ReadAllBytes(spriteOutFile);
+        using var containerStream = File.Create(containerFile);
 
         FileContainer.Write(containerStream, new() { { 1u, data } });
     }
+#elif CREATE_TILESET               
+    var tilesetPath = @"D:\Projects\Amber\AmberIsland\assets\tilesets\seasonal sample (spring).png";
+    using var bitmap = (Bitmap)Image.FromFile(tilesetPath);
+    var bmp = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+    var bgra = new byte[bitmap.Width * bitmap.Height * 4];
+    Marshal.Copy(bmp.Scan0, bgra, 0, bgra.Length);
+    bitmap.UnlockBits(bmp);
+
+    var colors = new List<ColorRgb>();
+    var colorIndices = new byte[bitmap.Width * bitmap.Height];
+    int pixelCount = colorIndices.Length;
+    int index = 0;
+
+    for (int i = 0; i < pixelCount; i++)
+    {
+        if (bgra[index + 3] == 0)
+        {
+            colorIndices[i] = 0;
+            index += 4;
+        }
+        else
+        {
+            byte b = bgra[index++];
+            byte g = bgra[index++];
+            byte r = bgra[index++];
+            index += 1;
+            var color = new ColorRgb(r, g, b);
+            int colorIndex = colors.IndexOf(color);
+
+            if (colorIndex == -1)
+            {
+                colors.Add(color);
+                colorIndices[i] = (byte)colors.Count;
+            }
+            else
+            {
+                colorIndices[i] = (byte)(1 + colorIndex);
+            }
+        }
+    }
+
+    var tilesetAtlas = new Sprite((ushort)bitmap.Width, (ushort)bitmap.Height, colors.ToArray(), colorIndices);
+    var dataWriter = new DataWriter();
+
+    tilesetAtlas.Write(dataWriter);
+
+    File.WriteAllBytes(@"D:\Projects\Amber\AmberIsland\assets\tilesets\test.aits", dataWriter.ToArray());
+
+    using var containerStream = File.Create(@"D:\Projects\Amber\AmberIsland\assets\tileset.aifc");
+    FileContainer.Write(containerStream, new() { { 1u, dataWriter.ToArray() } });
 #endif
 }
 

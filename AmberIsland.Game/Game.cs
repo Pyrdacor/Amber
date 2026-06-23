@@ -14,6 +14,7 @@ public partial class Game
 
     internal IRenderer Renderer { get; }
     internal Player Player => player;
+    internal GameData.GameData GameData => gameData;
     internal long GameTicks => gameTicks;
     private ScreenHandler ScreenHandler { get; }
 

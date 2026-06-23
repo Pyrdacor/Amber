@@ -2,7 +2,8 @@
 
 namespace AmberIsland.GameData;
 
-public readonly record struct Animation(
+public readonly record struct Animation
+(
     Position FirstFrameOffset, // Inside the atlas
     Size FrameSize,
     uint FrameCount,

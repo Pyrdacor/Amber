@@ -147,7 +147,17 @@ internal class TextureAtlas : Texture, ITextureAtlas
 
 	readonly Dictionary<int, Position> textureOffsets = [];
 
-	public TextureAtlas(State state, Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0)
+	public TextureAtlas(State state, Dictionary<int, Position> offsets, IGraphic atlasGraphic, int numMipMapLevels = 0)
+		: base(state)
+	{
+        Size = new(atlasGraphic.Width, atlasGraphic.Height);
+		textureOffsets = new(offsets);
+
+        Create(atlasGraphic.Format, atlasGraphic.GetData(), numMipMapLevels);
+    }
+
+
+    public TextureAtlas(State state, Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0)
 		: base(state)
 	{
 		if (graphics.Count == 0)
@@ -289,5 +299,10 @@ internal class TextureFactory(State state) : ITextureFactory
 	public ITextureAtlas CreateAtlas(Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0)
     {
         return new TextureAtlas(state, graphics, numMipMapLevels);
+    }
+
+    public ITextureAtlas CreateAtlas(Dictionary<int, Position> offsets, IGraphic atlasGraphic, int numMipMapLevels = 0)
+	{
+        return new TextureAtlas(state, offsets, atlasGraphic, numMipMapLevels);
     }
 }

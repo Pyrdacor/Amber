@@ -1,4 +1,6 @@
 ﻿using System.IO.Compression;
+using Amber.IO.Common.Serialization;
+using Amber.IO.FileFormats.Serialization;
 
 namespace Amber.IO.FileFormats.Compression;
 
@@ -14,6 +16,11 @@ public static class Deflate
         return targetStream.ToArray();
     }
 
+    public static IDataReader Decompress(IDataReader dataReader)
+    {
+        return new DataReader(Decompress(dataReader.ReadToEnd()));
+    }
+
     public static byte[] Compress(byte[] data)
     {
         using Stream sourceStream = new MemoryStream(data);
@@ -26,4 +33,6 @@ public static class Deflate
 
         return compressedStream.ToArray();
     }
+
+    public static byte[] Compress(IDataWriter dataWriter) => Compress(dataWriter.ToArray());
 }
