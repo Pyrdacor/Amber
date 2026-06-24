@@ -42,11 +42,15 @@ internal sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
 
         var menu = BuildMenu();
-        var sidePanel = BuildSidePanel();
+        var atlasArea = BuildAtlasArea();
+        var tileListColumn = BuildTileListColumn();
+        var propsColumn = BuildPropsColumn();
 
-        Controls.Add(atlasCanvas);
-        Controls.Add(sidePanel);
-        Controls.Add(menu);
+        // Add Fill first, then the right columns (last added docks furthest right).
+        Controls.Add(atlasArea);       // Fill (center)
+        Controls.Add(tileListColumn);  // Right
+        Controls.Add(propsColumn);     // Right (far right)
+        Controls.Add(menu);            // Top
         MainMenuStrip = menu;
 
         WireEvents();
@@ -85,77 +89,90 @@ internal sealed class MainForm : Form
         return menu;
     }
 
-    // ---- Side panel ----
+    // ---- Layout: atlas area (center) ----
 
-    private Panel BuildSidePanel()
+    private Control BuildAtlasArea()
     {
-        var panel = new Panel { Dock = DockStyle.Right, Width = 380, Padding = new Padding(8) };
+        var panel = new Panel { Dock = DockStyle.Fill };
 
-        panel.Controls.Add(tileListHost); // Fill (added first)
-        panel.Controls.Add(BuildAtlasPanel()); // Top
-        panel.Controls.Add(BuildPropsPanel()); // Bottom
-
-        tileListHost.Controls.Add(tileList);
-        return panel;
-    }
-
-    private Control BuildAtlasPanel()
-    {
-        var flow = new FlowLayoutPanel
+        var bar = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
             AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Padding = new Padding(4)
         };
 
-        flow.Controls.Add(Bold("Atlas"));
-
-        var buttonRow = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoSize = true };
         var openAtlasButton = new Button { Text = "Open atlas…", AutoSize = true };
         openAtlasButton.Click += (_, _) => OnOpenAtlas();
         var zoomOut = new Button { Text = "−", Width = 30 };
         zoomOut.Click += (_, _) => atlasCanvas.Zoom--;
         var zoomIn = new Button { Text = "+", Width = 30 };
         zoomIn.Click += (_, _) => atlasCanvas.Zoom++;
-        buttonRow.Controls.Add(openAtlasButton);
-        buttonRow.Controls.Add(zoomOut);
-        buttonRow.Controls.Add(zoomIn);
-        flow.Controls.Add(buttonRow);
 
-        var gridCheck = new CheckBox { Text = "Show grid", Checked = true, AutoSize = true };
+        var gridCheck = new CheckBox { Text = "Grid", Checked = true, AutoSize = true, Margin = new Padding(8, 6, 4, 0) };
         gridCheck.CheckedChanged += (_, _) => { atlasCanvas.ShowGrid = gridCheck.Checked; atlasCanvas.Invalidate(); };
-        var indexCheck = new CheckBox { Text = "Show tile indices (0-based)", Checked = true, AutoSize = true };
+        var indexCheck = new CheckBox { Text = "Indices (0-based)", Checked = true, AutoSize = true, Margin = new Padding(4, 6, 8, 0) };
         indexCheck.CheckedChanged += (_, _) => { atlasCanvas.ShowIndices = indexCheck.Checked; atlasCanvas.Invalidate(); };
-        flow.Controls.Add(gridCheck);
-        flow.Controls.Add(indexCheck);
-        flow.Controls.Add(atlasInfo);
 
-        var tilesHeader = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoSize = true, Margin = new Padding(0, 8, 0, 0) };
-        tilesHeader.Controls.Add(Bold("Tiles"));
-        var addButton = new Button { Text = "Add", AutoSize = true, Margin = new Padding(16, 4, 4, 0) };
-        addButton.Click += (_, _) => OnAddTile();
-        var removeButton = new Button { Text = "Remove", AutoSize = true, Margin = new Padding(0, 4, 0, 0) };
-        removeButton.Click += (_, _) => OnRemoveTile();
-        tilesHeader.Controls.Add(addButton);
-        tilesHeader.Controls.Add(removeButton);
-        flow.Controls.Add(tilesHeader);
+        atlasInfo.Margin = new Padding(4, 7, 0, 0);
 
-        return flow;
+        bar.Controls.Add(openAtlasButton);
+        bar.Controls.Add(zoomOut);
+        bar.Controls.Add(zoomIn);
+        bar.Controls.Add(gridCheck);
+        bar.Controls.Add(indexCheck);
+        bar.Controls.Add(atlasInfo);
+
+        panel.Controls.Add(atlasCanvas); // Fill (added first)
+        panel.Controls.Add(bar);         // Top
+        return panel;
     }
 
-    private Control BuildPropsPanel()
+    // ---- Layout: tile list column ----
+
+    private Control BuildTileListColumn()
     {
+        var panel = new Panel { Dock = DockStyle.Right, Width = 290, Padding = new Padding(8) };
+
+        var header = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true
+        };
+        header.Controls.Add(Bold("Tiles"));
+        var addButton = new Button { Text = "Add", AutoSize = true, Margin = new Padding(16, 2, 4, 0) };
+        addButton.Click += (_, _) => OnAddTile();
+        var removeButton = new Button { Text = "Remove", AutoSize = true, Margin = new Padding(0, 2, 0, 0) };
+        removeButton.Click += (_, _) => OnRemoveTile();
+        header.Controls.Add(addButton);
+        header.Controls.Add(removeButton);
+
+        tileListHost.Controls.Add(tileList);
+
+        panel.Controls.Add(tileListHost); // Fill (added first)
+        panel.Controls.Add(header);       // Top
+        return panel;
+    }
+
+    // ---- Layout: tile properties column ----
+
+    private Control BuildPropsColumn()
+    {
+        var host = new ScrollPanel { Dock = DockStyle.Right, Width = 320, Padding = new Padding(8) };
+
         propsPanel = new FlowLayoutPanel
         {
-            Dock = DockStyle.Bottom,
+            Dock = DockStyle.Top,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Enabled = false,
-            Padding = new Padding(0, 8, 0, 0)
+            Enabled = false
         };
 
         propsPanel.Controls.Add(Bold("Tile properties"));
@@ -198,7 +215,8 @@ internal sealed class MainForm : Form
         propsPanel.Controls.Add(new Label { Text = "Preview:", AutoSize = true, Margin = new Padding(0, 6, 0, 0) });
         propsPanel.Controls.Add(preview);
 
-        return propsPanel;
+        host.Controls.Add(propsPanel);
+        return host;
     }
 
     private void WireEvents()

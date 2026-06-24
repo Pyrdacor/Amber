@@ -61,8 +61,8 @@ internal class MapScreen : Screen
 		//tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
 
 		// TODO
-		map = game.GameData.GetMap();
-		tileset = game.GameData.GetTileset();
+		map = game.GameData.GetMap(1);
+		tileset = game.GameData.GetTileset(1);
 		FillMap(0, 0, true);
 		SpawnMonster(new Position(100, 100), Direction.Down, 0);
     }

@@ -48,7 +48,7 @@ partial class Game
         }
 
         // TODO
-        var tilesetAtlasSprite = gameData.GetTilesetAtlasSprite();
+        var tilesetAtlasSprite = gameData.GetTilesetAtlasSprite(1);
         var (tilesetAtlas, tilesetPalette) = CreateGraphicAtlasAndPalette(tilesetAtlasSprite, palette: null, new(16, 16));
 
         // MapBackground
@@ -81,7 +81,7 @@ partial class Game
         });*/
 
         // Monsters
-        var monsterSprite = gameData.GetMonsterAtlasSprite();
+        var monsterSprite = gameData.GetMonsterAtlasSprite(1);
         var (monsterAtlas, monsterPalette) = CreateGraphicAtlasAndPalette(monsterSprite, null, new(64, 64));
 
         AddLayer(LayerType.Texture2D, new()
@@ -107,7 +107,7 @@ partial class Game
         });
 
         // Outfit
-        var outfitSprite = gameData.GetOutfitSprite();
+        var outfitSprite = gameData.GetOutfitSprite(1);
         var (outfitAtlas, outfitPalette) = CreateGraphicAtlasAndPalette(outfitSprite);
 
         AddLayer(LayerType.Texture2D, new()

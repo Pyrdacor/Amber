@@ -99,11 +99,7 @@ internal class ActiveMonster
         }
     }
 
-    private Monster GetMonsterData()
-    {
-        // TODO: get it from game data via monsterIndex
-        return game.GameData.GetMonster();
-    }
+    private Monster GetMonsterData() => game.GameData.GetMonster(monsterIndex);
 
     private Animation GetAnimation()
     {

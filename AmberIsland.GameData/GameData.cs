@@ -1,106 +1,84 @@
-﻿namespace AmberIsland.GameData;
+﻿using Amber.IO.Common.Serialization;
+using Amber.IO.FileFormats.Serialization;
 
-public sealed class GameData : IDisposable
+namespace AmberIsland.GameData;
+
+public sealed class GameData
 {
-    private enum FileContainerType
-    {
-        PlayerGraphic,
-        OutfitGraphic,
-        TilesetGraphic,
-        TilesetData,
-        MapData,
-        MonsterGraphic,
-        MonsterData,
-        MonsterAnimation,
-    }
+    const int TileGraphicCacheSize = 10;
+    const int TileDataCacheSize = 10;
+    const int MapDataCacheSize = 4;
+    const int MonsterGraphicCacheSize = 20; // We might have several monsters on the same map (adjust if needed)
+    const int MonsterDataCacheSize = 20;
+    const int MonsterAnimationCacheSize = 100; // Really small, should not matter much
 
-    private readonly Dictionary<FileContainerType, Lazy<FileContainer>> containers = [];
+    // Non-cached assets
+    private readonly SpriteWithPalettes playerGraphic;
+    private readonly Dictionary<uint, SpriteWithPalettes> outfitGraphics;
+
+    // Cached assets
+    private readonly AssetCache<Sprite> tilesetGraphicCache;
+    private readonly AssetCache<Tileset> tilesetDataCache;
+    private readonly AssetCache<Map> mapDataCache;
+    private readonly AssetCache<Sprite> monsterGraphicCache;
+    private readonly AssetCache<Monster> monsterDataCache;
+    private readonly AssetCache<Animation> monsterAnimationCache;
 
     public GameData(string path)
     {
-        void AddContainer(FileContainerType type, string filename)
-        {
-            containers.Add(type, new(() => FileContainer.Read(File.OpenRead(Path.Combine(path, filename)))));
-        }
+        string Full(string filename) => Path.Combine(path, filename);
 
-        AddContainer(FileContainerType.PlayerGraphic, "player.aic");
-        AddContainer(FileContainerType.OutfitGraphic, "outfit.aic");
-        AddContainer(FileContainerType.TilesetGraphic, "tileatlas.aic");
-        AddContainer(FileContainerType.TilesetData, "tileset.aic");
-        AddContainer(FileContainerType.MapData, "map.aic");
-        AddContainer(FileContainerType.MonsterGraphic, "mon_atlas.aic");
-        AddContainer(FileContainerType.MonsterData, "mon_data.aic");
-        AddContainer(FileContainerType.MonsterAnimation, "mon_anim.aic");
+        // Non-cached
+        playerGraphic = ReadSingleContainerFile(Full("player.aic"), 1, SpriteWithPalettes.Read);
+        outfitGraphics = ReadAllContainerFiles(Full("outfit.aic"), SpriteWithPalettes.Read);
+
+        // Cached
+        tilesetGraphicCache = new(Full("tileatlas.aic"), TileGraphicCacheSize, Sprite.Read);
+        tilesetDataCache = new(Full("tileset.aic"), TileDataCacheSize, Tileset.Read);
+        mapDataCache = new(Full("map.aic"), MapDataCacheSize, Map.Read);
+        monsterGraphicCache = new(Full("mon_atlas.aic"), MonsterGraphicCacheSize, Sprite.Read);
+        monsterDataCache = new(Full("mon_data.aic"), MonsterDataCacheSize, Monster.Read);
+        monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, Animation.Read);
+
         // TODO ...
     }
 
-    private T ProcessOneTimeFileContainer<T>(FileContainerType type, Func<FileContainer, T> processAction)
+    private static T? ReadSingleContainerFile<T>(string containerPath, uint index, Func<IDataReader, T> assetLoader)
     {
-        var container = containers[type].Value;
-        var result = processAction(container);
-        DisposeFileContainer(type);
-        return result;
+        var file = FileContainer.ReadFiles(containerPath, index).FirstOrDefault().Value;
+
+        if (file == null)
+            return default;
+
+        return assetLoader(new DataReader(file));
     }
 
-    public SpriteWithPalettes GetPlayerSprite()
+    private static Dictionary<uint, T> ReadAllContainerFiles<T>(string containerPath, Func<IDataReader, T> assetLoader)
     {
-        return ProcessOneTimeFileContainer(FileContainerType.PlayerGraphic, container => SpriteWithPalettes.Read(container.GetFileReader(1)));
+        var files = FileContainer.ReadAllFiles(containerPath);
+
+        if (files.Count == 0)
+            return [];
+
+        return files.ToDictionary(file => file.Key, file => assetLoader(new DataReader(file.Value)));
     }
 
-    public SpriteWithPalettes GetOutfitSprite()
-    {
-        return ProcessOneTimeFileContainer(FileContainerType.OutfitGraphic, container => SpriteWithPalettes.Read(container.GetFileReader(1)));
-    }
+    // Non-cached assets
+    public SpriteWithPalettes GetPlayerSprite() => playerGraphic;
 
-    public Sprite GetTilesetAtlasSprite()
-    {
-        return ProcessOneTimeFileContainer(FileContainerType.TilesetGraphic, container => Sprite.Read(container.GetFileReader(1)));
-    }
+    public SpriteWithPalettes GetOutfitSprite(uint index) => outfitGraphics.GetValueOrDefault(index);
 
-    public Tileset GetTileset()
-    {
-        return ProcessOneTimeFileContainer(FileContainerType.TilesetData, container => Tileset.Read(container.GetFileReader(1)));
-    }
 
-    public Map GetMap()
-    {
-        return ProcessOneTimeFileContainer(FileContainerType.MapData, container => Map.Read(container.GetFileReader(1)));
-    }
+    // Cached assets
+    public Sprite GetTilesetAtlasSprite(uint index) => tilesetGraphicCache.LoadAsset(index);
 
-    public Sprite GetMonsterAtlasSprite()
-    {
-        return ProcessOneTimeFileContainer(FileContainerType.MonsterGraphic, container => Sprite.Read(container.GetFileReader(1)));
-    }
+    public Tileset? GetTileset(uint index) => tilesetDataCache.LoadAsset(index);
 
-    public Monster GetMonster()
-    {
-        return ProcessOneTimeFileContainer(FileContainerType.MonsterData, container => Monster.Read(container.GetFileReader(1)));
-    }
+    public Map? GetMap(uint index) => mapDataCache.LoadAsset(index);
 
-    private void DisposeFileContainer(FileContainerType type)
-    {
-        if (containers.TryGetValue(type, out var container))
-        {
-            if (container.IsValueCreated)
-                container.Value.Dispose();
+    public Sprite GetMonsterAtlasSprite(uint index) => monsterGraphicCache.LoadAsset(index);
 
-            containers.Remove(type);
-        }
-    }
+    public Monster GetMonster(uint index) => monsterDataCache.LoadAsset(index);
 
-    private void DisposeAllFileContainers()
-    {
-        foreach (var container in containers.Values)
-        {
-            if (container.IsValueCreated)
-                container.Value.Dispose();
-        }
-
-        containers.Clear();
-    }
-
-    public void Dispose()
-    {
-        DisposeAllFileContainers();
-    }
+    public Animation GetMonsterAnimation(uint index) => monsterAnimationCache.LoadAsset(index);
 }

@@ -87,6 +87,12 @@ public sealed class FileContainer : IDisposable
         return fileContainer;
     }
 
+    public static Dictionary<uint, byte[]> ReadAllFiles(string containerPath)
+    {
+        using var stream = File.OpenRead(containerPath);
+        return ReadAllFiles(stream);
+    }
+
     /// <summary>
     /// Reads a whole container into memory, returning the raw bytes of every
     /// contained file keyed by its file index. The passed stream is not disposed.
@@ -100,6 +106,32 @@ public sealed class FileContainer : IDisposable
         {
             var reader = container.GetFileReader(entry.Key);
             result[entry.Key] = reader.ReadBytes((int)entry.Value.Size);
+        }
+
+        return result;
+    }
+
+    public static Dictionary<uint, byte[]> ReadFiles(string containerPath, params uint[] fileIndices)
+    {
+        using var stream = File.OpenRead(containerPath);
+        return ReadFiles(stream, fileIndices);
+    }
+
+    public static Dictionary<uint, byte[]> ReadFiles(Stream stream, params uint[] fileIndices)
+    {
+        if (fileIndices == null || fileIndices.Length == 0)
+            return [];
+
+        using var container = Read(stream);
+        var result = new Dictionary<uint, byte[]>(fileIndices.Length);
+
+        foreach (var fileIndex in fileIndices)
+        {
+            if (container.files.TryGetValue(fileIndex, out var location))
+            {
+                var reader = container.GetFileReader(fileIndex);
+                result[fileIndex] = reader.ReadBytes((int)location.Size);
+            }
         }
 
         return result;
