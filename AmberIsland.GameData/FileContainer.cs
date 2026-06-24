@@ -25,6 +25,52 @@ public sealed class FileContainer : IDisposable
     private Stream? stream = null;
     private readonly Dictionary<uint, FileLocation> files = [];
 
+    public static FileContainer Read(IDataReader reader)
+    {
+        if (reader.ReadString(4) != Magic)
+            throw new IOException("Invalid Amber Island File Container");
+
+        int fileVersion = reader.ReadByte();
+
+        if (fileVersion > SupportedFileVersion)
+            throw new IOException("File version not supported by this reader");
+
+        var flags = (FileContainerFlags)reader.ReadByte();
+
+        int fileCount = reader.ReadWord();
+        List<ushort>? fileIndices = null;
+
+        if (flags.HasFlag(FileContainerFlags.StoreFileIndices))
+        {
+            fileIndices = new(fileCount);
+
+            for (uint i = 0; i < fileCount; i++)
+            {
+                fileIndices.Add(reader.ReadWord());
+            }
+        }
+
+        uint offset = (uint)(reader.Position + fileCount * 2);
+        var fileContainer = new FileContainer();
+
+        for (uint i = 0; i < fileCount; i++)
+        {
+            uint size = reader.ReadWord();
+            uint index = fileIndices == null ? (1 + i) : fileIndices[(int)i];
+
+            fileContainer.files.Add(index, new FileLocation(offset, size));
+
+            offset += size;
+        }
+
+        fileContainer.stream = new MemoryStream(reader.ToArray())
+        {
+            Position = 0
+        };
+
+        return fileContainer;
+    }
+
     public static FileContainer Read(Stream stream)
     {
         Span<byte> nameBuffer = stackalloc byte[4];
@@ -212,5 +258,13 @@ public sealed class FileContainer : IDisposable
             throw new KeyNotFoundException($"No file with index {fileIndex} was found in file container");
 
         return new StreamedDataReader(stream, fileInfo.Offset, (int)fileInfo.Size);
+    }
+
+    public Dictionary<uint, IDataReader> GetAllFileReaders()
+    {
+        if (stream == null)
+            throw new KeyNotFoundException("File container was already disposed");
+
+        return files.ToDictionary(file => file.Key, file => (IDataReader)new StreamedDataReader(stream, file.Value.Offset, (int)file.Value.Size));
     }
 }

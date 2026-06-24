@@ -10,7 +10,7 @@ public sealed class GameData
     const int MapDataCacheSize = 4;
     const int MonsterGraphicCacheSize = 20; // We might have several monsters on the same map (adjust if needed)
     const int MonsterDataCacheSize = 20;
-    const int MonsterAnimationCacheSize = 100; // Really small, should not matter much
+    const int MonsterAnimationCacheSize = 20;
 
     // Non-cached assets
     private readonly SpriteWithPalettes playerGraphic;
@@ -22,7 +22,7 @@ public sealed class GameData
     private readonly AssetCache<Map> mapDataCache;
     private readonly AssetCache<Sprite> monsterGraphicCache;
     private readonly AssetCache<Monster> monsterDataCache;
-    private readonly AssetCache<Animation> monsterAnimationCache;
+    private readonly AssetCache<FileContainer> monsterAnimationCache;
 
     public GameData(string path)
     {
@@ -38,7 +38,7 @@ public sealed class GameData
         mapDataCache = new(Full("map.aic"), MapDataCacheSize, Map.Read);
         monsterGraphicCache = new(Full("mon_atlas.aic"), MonsterGraphicCacheSize, Sprite.Read);
         monsterDataCache = new(Full("mon_data.aic"), MonsterDataCacheSize, Monster.Read);
-        monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, Animation.Read);
+        monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, FileContainer.Read);
 
         // TODO ...
     }
@@ -80,5 +80,16 @@ public sealed class GameData
 
     public Monster GetMonster(uint index) => monsterDataCache.LoadAsset(index);
 
-    public Animation GetMonsterAnimation(uint index) => monsterAnimationCache.LoadAsset(index);
+    public Dictionary<MonsterState, Animation> GetMonsterAnimations(uint index)
+    {
+        return monsterAnimationCache.LoadAsset(index)?
+            .GetAllFileReaders()
+            .ToDictionary(
+                file => (MonsterState)(file.Key - 1),
+                file =>
+                {
+                    file.Value.Position = 0;
+                    return Animation.Read(file.Value);
+                }) ?? [];
+    }
 }

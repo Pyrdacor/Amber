@@ -8,20 +8,6 @@ namespace AmberIsland.Game;
 
 internal class ActiveMonster
 {
-    public enum MonsterState
-    {
-        Idle,
-        Walking,
-        Chasing,
-        Fleeing,
-        Sleeping,
-        Attacking,
-        Casting,
-        ReceivingDamage,
-        Die,
-        Spawn,
-    }
-
     private const int TicksPerAnimationFrame = 10; // TODO: maybe dependent on animation and monster
     private readonly Game game;
     private readonly MapScreen mapScreen;
@@ -37,11 +23,11 @@ internal class ActiveMonster
     private long monsterTicks = 0;
     private ISequencedSprite sprite;
     // TODO: We need some monster animation info
-    private static readonly Dictionary<MonsterState, Animation> animations = [];
+    private readonly Dictionary<MonsterState, Animation> animations = [];
 
     static ActiveMonster()
     {
-        var frameSize = new Size(64, 64);
+        /*var frameSize = new Size(64, 64);
 
         void AddAnimation(MonsterState state, params uint[] frameIndices)
         {
@@ -53,7 +39,7 @@ internal class ActiveMonster
         AddAnimation(MonsterState.Walking, 2, 3, 4, 5, 6, 5, 4, 3);
         AddAnimation(MonsterState.Chasing, 2, 3, 4, 5, 6, 5, 4, 3);
         AddAnimation(MonsterState.Fleeing, 2, 3, 4, 5, 6, 5, 4, 3);
-        AddAnimation(MonsterState.Sleeping, 10, 11, 12, 13, 14, 13, 12, 11);
+        AddAnimation(MonsterState.Sleeping, 10, 11, 12, 13, 14, 13, 12, 11);*/
     }
 
     public ActiveMonster(Game game, MapScreen mapScreen, uint monsterIndex, Position position, Direction direction)
@@ -62,6 +48,8 @@ internal class ActiveMonster
         this.mapScreen = mapScreen;
         this.monsterIndex = monsterIndex;
         currentPosition = position;
+
+        animations = game.GameData.GetMonsterAnimations(monsterIndex);
 
         var monster = GetMonsterData();
         var layer = game.GetRenderLayer(Layer.Monsters);
@@ -101,10 +89,7 @@ internal class ActiveMonster
 
     private Monster GetMonsterData() => game.GameData.GetMonster(monsterIndex);
 
-    private Animation GetAnimation()
-    {
-        return animations[currentState];
-    }
+    private Animation GetAnimation() => animations[currentState];
 
     public void Update(long elapsedTicks)
     {

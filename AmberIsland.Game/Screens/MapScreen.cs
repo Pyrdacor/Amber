@@ -64,7 +64,7 @@ internal class MapScreen : Screen
 		map = game.GameData.GetMap(1);
 		tileset = game.GameData.GetTileset(1);
 		FillMap(0, 0, true);
-		SpawnMonster(new Position(100, 100), Direction.Down, 0);
+		SpawnMonster(new Position(100, 100), Direction.Down, 1);
     }
 
 	public override void ScreenPushed(Game game, Screen screen)
