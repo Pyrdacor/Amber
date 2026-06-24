@@ -46,16 +46,16 @@ internal sealed class AnimationPreview : Panel
 
     public int Zoom { get; set; } = 4;
 
-    public int Fps
+    public int FramesPerMinute
     {
-        get => fps;
+        get => framesPerMinute;
         set
         {
-            fps = Math.Max(1, value);
-            timer.Interval = Math.Max(1, 1000 / fps);
+            framesPerMinute = Math.Max(1, value);
+            timer.Interval = Math.Max(1, 60000 / framesPerMinute);
         }
     }
-    private int fps = 8;
+    private int framesPerMinute = 480;
 
     public bool Playing
     {

@@ -1,3 +1,6 @@
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
 
 namespace AmberIslandSpriteViewer;
@@ -6,6 +9,8 @@ internal sealed class MainForm : Form
 {
     private readonly ImageCanvas canvas = new() { Dock = DockStyle.Fill };
     private readonly AnimationPreview preview = new();
+
+    private string? currentFilePath;
 
     // File
     private readonly Label fileLabel = new() { Text = "(no file)", AutoSize = true, MaximumSize = new Size(240, 0) };
@@ -27,10 +32,10 @@ internal sealed class MainForm : Form
     private readonly CheckBox animationCheck = new() { Text = "Animation", AutoSize = true };
     private readonly TextBox frameIndicesInput = new() { Text = "0, 1, 2, 3", Width = 150 };
     private readonly CheckBox directionsCheck = new() { Text = "Has directions", AutoSize = true };
-    private readonly NumericUpDown dirOffsetXInput = Num(-4096, 4096, 0);
-    private readonly NumericUpDown dirOffsetYInput = Num(-4096, 4096, 0);
+    private readonly NumericUpDown dirOffsetXInput = Num(0, 9999, 0);
+    private readonly NumericUpDown dirOffsetYInput = Num(0, 9999, 0);
     private readonly ComboBox directionCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 110 };
-    private readonly NumericUpDown fpsInput = Num(1, 60, 8);
+    private readonly NumericUpDown framesPerMinuteInput = Num(1, 6000, 480);
     private readonly Button playButton = new() { Text = "Pause", Width = 80, Height = 24 };
 
     public MainForm()
@@ -73,8 +78,13 @@ internal sealed class MainForm : Form
 
         var fileMenu = new ToolStripMenuItem("&File");
         var openItem = new ToolStripMenuItem("&Open PNG…", null, OnOpen) { ShortcutKeys = Keys.Control | Keys.O };
+        var saveSpriteItem = new ToolStripMenuItem("Save &sprite…", null, OnSaveSprite);
+        var saveAnimationItem = new ToolStripMenuItem("Save &animation…", null, OnSaveAnimation);
         var exitItem = new ToolStripMenuItem("E&xit", null, (_, _) => Close());
         fileMenu.DropDownItems.Add(openItem);
+        fileMenu.DropDownItems.Add(new ToolStripSeparator());
+        fileMenu.DropDownItems.Add(saveSpriteItem);
+        fileMenu.DropDownItems.Add(saveAnimationItem);
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(exitItem);
 
@@ -121,7 +131,7 @@ internal sealed class MainForm : Form
             Row("Offset X", dirOffsetXInput),
             Row("Offset Y", dirOffsetYInput),
             Row("Direction", directionCombo),
-            Row("Speed (FPS)", fpsInput),
+            Row("Frames/minute", framesPerMinuteInput),
             playButton,
             LabelInfo("Preview:"),
             preview));
@@ -155,7 +165,7 @@ internal sealed class MainForm : Form
         dirOffsetXInput.ValueChanged += (_, _) => ApplyAll();
         dirOffsetYInput.ValueChanged += (_, _) => ApplyAll();
         directionCombo.SelectedIndexChanged += (_, _) => ApplyAll();
-        fpsInput.ValueChanged += (_, _) => ApplyAll();
+        framesPerMinuteInput.ValueChanged += (_, _) => ApplyAll();
         playButton.Click += (_, _) =>
         {
             preview.Playing = !preview.Playing;
@@ -181,6 +191,7 @@ internal sealed class MainForm : Form
             preview.Sheet = bmp;
             previous?.Dispose();
 
+            currentFilePath = dlg.FileName;
             fileLabel.Text = Path.GetFileName(dlg.FileName);
             preview.Restart();
             ApplyAll();
@@ -217,20 +228,15 @@ internal sealed class MainForm : Form
         dirOffsetXInput.Enabled = animEnabled && hasDir;
         dirOffsetYInput.Enabled = animEnabled && hasDir;
         directionCombo.Enabled = animEnabled && hasDir;
-        fpsInput.Enabled = animEnabled;
+        framesPerMinuteInput.Enabled = animEnabled;
         playButton.Enabled = animEnabled;
 
         if (animEnabled)
         {
-            var indices = ParseIndices(frameIndicesInput.Text);
-            Amber.Common.Position? offset = hasDir
-                ? new Amber.Common.Position((int)dirOffsetXInput.Value, (int)dirOffsetYInput.Value)
-                : null;
-
-            preview.Animation = new Animation(new Amber.Common.Size(fw, fh), indices, offset);
+            preview.Animation = BuildAnimation();
             preview.Direction = (Direction)directionCombo.SelectedIndex;
             preview.Zoom = (int)zoomInput.Value;
-            preview.Fps = (int)fpsInput.Value;
+            preview.FramesPerMinute = (int)framesPerMinuteInput.Value;
             if (!preview.Playing)
             {
                 preview.Playing = true;
@@ -254,6 +260,142 @@ internal sealed class MainForm : Form
                 result.Add(value);
         }
         return result.ToArray();
+    }
+
+    private Animation BuildAnimation()
+    {
+        int fw = (int)frameWidthInput.Value;
+        int fh = (int)frameHeightInput.Value;
+
+        Amber.Common.Position? offset = directionsCheck.Checked
+            ? new Amber.Common.Position((int)dirOffsetXInput.Value, (int)dirOffsetYInput.Value)
+            : null;
+
+        return new Animation(
+            new Amber.Common.Size(fw, fh),
+            ParseIndices(frameIndicesInput.Text),
+            (ushort)framesPerMinuteInput.Value,
+            offset);
+    }
+
+    // ---- File menu: serialization ----
+
+    private void OnSaveSprite(object? sender, EventArgs e)
+    {
+        if (canvas.Image is null)
+        {
+            MessageBox.Show(this, "Open a PNG first.", "Save sprite",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        Sprite sprite;
+        try
+        {
+            sprite = BuildSprite(canvas.Image);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Save sprite",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        using var dlg = new SaveFileDialog
+        {
+            Filter = "Sprite (*.aispr)|*.aispr|All files (*.*)|*.*",
+            FileName = SuggestFileName(".aispr")
+        };
+        if (dlg.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        var writer = new DataWriter();
+        sprite.Write(writer);
+        File.WriteAllBytes(dlg.FileName, writer.ToArray());
+    }
+
+    private void OnSaveAnimation(object? sender, EventArgs e)
+    {
+        var animation = BuildAnimation();
+
+        if (animation.FrameIndices.Length == 0)
+        {
+            MessageBox.Show(this, "Enable \"Animation\" and enter at least one frame index first.",
+                "Save animation", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new SaveFileDialog
+        {
+            Filter = "Animation (*.aianim)|*.aianim|All files (*.*)|*.*",
+            FileName = SuggestFileName(".aianim")
+        };
+        if (dlg.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        var writer = new DataWriter();
+        animation.Write(writer);
+        File.WriteAllBytes(dlg.FileName, writer.ToArray());
+    }
+
+    private string SuggestFileName(string extension) =>
+        currentFilePath is null
+            ? "untitled" + extension
+            : Path.GetFileNameWithoutExtension(currentFilePath) + extension;
+
+    /// <summary>
+    /// Converts the loaded bitmap into a <see cref="Sprite"/> with an embedded
+    /// palette: fully transparent pixels become color index 0, every other
+    /// distinct color is added to the Colors array (referenced 1-based).
+    /// </summary>
+    private static Sprite BuildSprite(Bitmap bitmap)
+    {
+        int width = bitmap.Width;
+        int height = bitmap.Height;
+
+        var data = bitmap.LockBits(new Rectangle(0, 0, width, height),
+            ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        var bgra = new byte[width * height * 4];
+        Marshal.Copy(data.Scan0, bgra, 0, bgra.Length);
+        bitmap.UnlockBits(data);
+
+        var colors = new List<ColorRgb>();
+        var colorIndices = new byte[width * height];
+        int offset = 0;
+
+        for (int i = 0; i < colorIndices.Length; i++)
+        {
+            byte b = bgra[offset];
+            byte g = bgra[offset + 1];
+            byte r = bgra[offset + 2];
+            byte a = bgra[offset + 3];
+            offset += 4;
+
+            if (a == 0)
+            {
+                colorIndices[i] = 0;
+                continue;
+            }
+
+            var color = new ColorRgb(r, g, b);
+            int index = colors.IndexOf(color);
+
+            if (index == -1)
+            {
+                if (colors.Count >= 255)
+                    throw new InvalidOperationException(
+                        "The image uses more than 255 distinct colors and cannot be stored as a palette sprite.");
+
+                colors.Add(color);
+                colorIndices[i] = (byte)colors.Count; // 1-based
+            }
+            else
+            {
+                colorIndices[i] = (byte)(1 + index);
+            }
+        }
+
+        return new Sprite((ushort)width, (ushort)height, colors.ToArray(), colorIndices);
     }
 
     // ---- Tiny layout helpers (code-only WinForms) ----
