@@ -11,7 +11,8 @@ public enum Layer
 {
 	MapBackground,
 	Objects,
-    /*Characters,*/
+    //NPCs,
+    Monsters,
     Player,
 	Outfit,
 	/*Capes,
@@ -70,7 +71,7 @@ partial class Game
             Palette = tilesetPalette
         });
 
-        // Characters
+        // NPCs
         /*AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.3f,
@@ -78,6 +79,19 @@ partial class Game
             LayerFeatures = LayerFeatures.Transparency,
             // TODO
         });*/
+
+        // Monsters
+        var monsterSprite = gameData.GetMonsterAtlasSprite();
+        var (monsterAtlas, monsterPalette) = CreateGraphicAtlasAndPalette(monsterSprite, null, new(64, 64));
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.3f,
+            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = monsterAtlas,
+            Palette = monsterPalette
+        });
 
         // Player
         var playerSprite = gameData.GetPlayerSprite();

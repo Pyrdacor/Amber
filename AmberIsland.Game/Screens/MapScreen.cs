@@ -6,7 +6,7 @@ using AmberIsland.GameData;
 
 namespace AmberIsland.Game.Screens;
 
-internal class Map2DScreen : Screen
+internal class MapScreen : Screen
 {
 	const int WalkTicksPerStep = 2;
     const int RunTicksPerStep = 1;
@@ -27,6 +27,7 @@ internal class Map2DScreen : Screen
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
     readonly Dictionary<int, IAnimatedSprite> objects = [];
     readonly Dictionary<int, IAnimatedSprite> overlay = [];
+	readonly List<ActiveMonster> activeMonsters = [];
 	int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
@@ -63,6 +64,7 @@ internal class Map2DScreen : Screen
 		map = game.GameData.GetMap();
 		tileset = game.GameData.GetTileset();
 		FillMap(0, 0, true);
+		SpawnMonster(new Position(100, 100), Direction.Down, 0);
     }
 
 	public override void ScreenPushed(Game game, Screen screen)
@@ -159,6 +161,9 @@ internal class Map2DScreen : Screen
 			return;
 
 		game.Player.Update(game.GameTicks);
+
+		foreach (var monster in activeMonsters)
+			monster.Update(elapsedTicks);
 
 		currentTicks += elapsedTicks;
 
@@ -747,4 +752,9 @@ internal class Map2DScreen : Screen
 		game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
 	}*/
+
+	private void SpawnMonster(Position position, Direction direction, uint monsterIndex)
+	{
+		activeMonsters.Add(new(game!, this, monsterIndex, position, direction));
+	}
 }

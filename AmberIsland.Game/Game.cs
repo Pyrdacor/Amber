@@ -32,6 +32,10 @@ public partial class Game
         ScreenHandler.PushScreen(ScreenType.Map2D);
     }
 
+    internal static double TicksToSeconds(long ticks) => (double)ticks / TicksPerSecond;
+
+    internal static double TicksToMinutes(long ticks) => TicksToSeconds(ticks) / 60;
+
     public void Render(double delta)
     {
 

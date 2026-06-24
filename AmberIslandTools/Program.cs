@@ -1,5 +1,5 @@
 ﻿#define CREATE
-#define OUTFIT
+#define BAT
 
 using System.Diagnostics;
 using System.Drawing;
@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using Amber.IO.FileFormats.Compression;
 using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 unsafe
 {
@@ -94,6 +93,16 @@ unsafe
     int firstFileIndex = 0;
     int fileCount = 11;
 #elif OUTFIT
+    string outDirectory = @"D:\Projects\Amber\AmberIsland\assets\outfit\temp";
+    string outFileTemplate = "{0:000}.aig";
+    string palFileTemplate = "{0:000}.aip";
+    string spriteOutFile = @"D:\Projects\Amber\AmberIsland\assets\outfit\outfit.aisp";
+    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\outfit.aifc";
+    var directory = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1\1out";
+    var schema = "char_a_p1_1out_fstr_v{0:00}.png";
+    int firstFileIndex = 1;
+    int fileCount = 5;
+#elif BAT
     string outDirectory = @"D:\Projects\Amber\AmberIsland\assets\outfit\temp";
     string outFileTemplate = "{0:000}.aig";
     string palFileTemplate = "{0:000}.aip";
@@ -216,7 +225,7 @@ unsafe
 
         FileContainer.Write(containerStream, new() { { 1u, data } });
     }
-#elif CREATE_TILESET               
+#elif CREATE_TILESET
     var tilesetPath = @"D:\Projects\Amber\AmberIsland\assets\tilesets\seasonal sample (spring).png";
     using var bitmap = (Bitmap)Image.FromFile(tilesetPath);
     var bmp = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);

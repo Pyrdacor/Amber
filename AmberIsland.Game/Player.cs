@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.Renderer.Common;
+using AmberIsland.Game.Extensions;
 using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
@@ -150,19 +151,11 @@ internal class Player
 
     private void SetFrameIndicesAndOrigin(bool resetFrameIndex)
     {
-        var animation = GetAnimation();
-        var atlas = sprite.Layer.Config.Texture!;
-        int framesPerRow = atlas.Size.Width / animation.FrameSize.Width;
-        int firstIndex = (int)animation.FrameIndices.Min();
-        int row = firstIndex / framesPerRow;
-        int column = firstIndex % framesPerRow;
-        var origin = new Position(column * animation.FrameSize.Width, row * animation.FrameSize.Height) + (int)direction * (animation.DirectionOffset ?? Position.Zero);
+        sprite.SetFrameIndicesAndOrigin(GetAnimation, direction, resetFrameIndex);
 
-        outfitSprite.TextureSize = sprite.TextureSize = animation.FrameSize;
-        outfitSprite.FrameOrigin = sprite.FrameOrigin = origin;
-        outfitSprite.FrameIndices = sprite.FrameIndices = animation.FrameIndices.Select(index => (int)(index - firstIndex)).ToArray();
-
-        if (resetFrameIndex)
-            outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
+        outfitSprite.TextureSize = sprite.TextureSize;
+        outfitSprite.FrameOrigin = sprite.FrameOrigin;
+        outfitSprite.FrameIndices = sprite.FrameIndices;
+        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
     }
 }

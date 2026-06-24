@@ -132,7 +132,7 @@ internal class ScreenHandler(Game game) : IDisposable
 	{
 		Screen screen = screenType switch
 		{
-			ScreenType.Map2D => new Map2DScreen(),
+			ScreenType.Map2D => new MapScreen(),
             _ => throw new NotImplementedException()
 		};
 

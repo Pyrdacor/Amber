@@ -542,8 +542,6 @@ internal class RenderBuffer : IDisposable
                 int frameIndex = sequenced.FrameIndices[sequenced.CurrentFrameIndex];
                 textureOffset = new(textureOffset.X + frameIndex * textureSize.Width, textureOffset.Y);
             }
-
-            Console.WriteLine($"{textureOffset.X}, {textureOffset.Y}");
         }
 
         if (sprite.ClipRect != null)

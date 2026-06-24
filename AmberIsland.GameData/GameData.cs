@@ -4,11 +4,13 @@ public sealed class GameData : IDisposable
 {
     private enum FileContainerType
     {
-        Player,
-        Outfit,
-        TilesetAtlas,
-        Tileset,
-        Map,
+        PlayerGraphic,
+        OutfitGraphic,
+        TilesetGraphic,
+        TilesetData,
+        MapData,
+        MonsterGraphic,
+        MonsterData,
     }
 
     private readonly Dictionary<FileContainerType, Lazy<FileContainer>> containers = [];
@@ -20,11 +22,13 @@ public sealed class GameData : IDisposable
             containers.Add(type, new(() => FileContainer.Read(File.OpenRead(Path.Combine(path, filename)))));
         }
 
-        AddContainer(FileContainerType.Player, "player.aifc");
-        AddContainer(FileContainerType.Outfit, "outfit.aifc");
-        AddContainer(FileContainerType.TilesetAtlas, "tileatlas.aifc");
-        AddContainer(FileContainerType.Tileset, "tileset.aifc");
-        AddContainer(FileContainerType.Map, "map.aifc");
+        AddContainer(FileContainerType.PlayerGraphic, "player.aifc");
+        AddContainer(FileContainerType.OutfitGraphic, "outfit.aifc");
+        AddContainer(FileContainerType.TilesetGraphic, "tileatlas.aifc");
+        AddContainer(FileContainerType.TilesetData, "tileset.aifc");
+        AddContainer(FileContainerType.MapData, "map.aifc");
+        AddContainer(FileContainerType.MonsterGraphic, "monsteratlas.aifc");
+        AddContainer(FileContainerType.MonsterData, "monster.aifc");
         // TODO ...
     }
 
@@ -38,27 +42,37 @@ public sealed class GameData : IDisposable
 
     public SpriteWithPalettes GetPlayerSprite()
     {
-        return ProcessOneTimeFileContainer(FileContainerType.Player, container => SpriteWithPalettes.Read(container.GetFileReader(1)));
+        return ProcessOneTimeFileContainer(FileContainerType.PlayerGraphic, container => SpriteWithPalettes.Read(container.GetFileReader(1)));
     }
 
     public SpriteWithPalettes GetOutfitSprite()
     {
-        return ProcessOneTimeFileContainer(FileContainerType.Outfit, container => SpriteWithPalettes.Read(container.GetFileReader(1)));
+        return ProcessOneTimeFileContainer(FileContainerType.OutfitGraphic, container => SpriteWithPalettes.Read(container.GetFileReader(1)));
     }
 
     public Sprite GetTilesetAtlasSprite()
     {
-        return ProcessOneTimeFileContainer(FileContainerType.TilesetAtlas, container => Sprite.Read(container.GetFileReader(1)));
+        return ProcessOneTimeFileContainer(FileContainerType.TilesetGraphic, container => Sprite.Read(container.GetFileReader(1)));
     }
 
     public Tileset GetTileset()
     {
-        return ProcessOneTimeFileContainer(FileContainerType.Tileset, container => Tileset.Read(container.GetFileReader(1)));
+        return ProcessOneTimeFileContainer(FileContainerType.TilesetData, container => Tileset.Read(container.GetFileReader(1)));
     }
 
     public Map GetMap()
     {
-        return ProcessOneTimeFileContainer(FileContainerType.Map, container => Map.Read(container.GetFileReader(1)));
+        return ProcessOneTimeFileContainer(FileContainerType.MapData, container => Map.Read(container.GetFileReader(1)));
+    }
+
+    public Sprite GetMonsterAtlasSprite()
+    {
+        return ProcessOneTimeFileContainer(FileContainerType.MonsterGraphic, container => Sprite.Read(container.GetFileReader(1)));
+    }
+
+    public Monster GetMonster()
+    {
+        return ProcessOneTimeFileContainer(FileContainerType.MonsterData, container => Monster.Read(container.GetFileReader(1)));
     }
 
     private void DisposeFileContainer(FileContainerType type)
