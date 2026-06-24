@@ -12,8 +12,8 @@ string filename = @"D:\Projects\Amber\AmberIsland\assets\monsters\bat_blue.png";
 //string filename = @"D:\Projects\Amber\AmberIsland\assets\monsters\bat";
 //string containerPath = @"D:\Projects\Amber\AmberIsland\assets\tileset.aic";
 //string containerPath = @"D:\Projects\Amber\AmberIsland\assets\map.aic";
-string containerPath = @"D:\Projects\Amber\AmberIsland\assets\monsteratlas.aic";
-//string containerPath = @"D:\Projects\Amber\AmberIsland\assets\monster.aic";
+string containerPath = @"D:\Projects\Amber\AmberIsland\assets\mon_atlas.aic";
+//string containerPath = @"D:\Projects\Amber\AmberIsland\assets\mon_data.aic";
 
 //var fileData = File.ReadAllBytes(filename);
 //var fileData = Deflate.Compress(File.ReadAllBytes(filename));

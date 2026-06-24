@@ -105,6 +105,20 @@ public sealed class FileContainer : IDisposable
         return result;
     }
 
+    public static Dictionary<uint, IDataReader> StreamAllFiles(Stream stream)
+    {
+        var container = Read(stream);
+        var result = new Dictionary<uint, IDataReader>(container.files.Count);
+
+        foreach (var entry in container.files)
+        {
+            var reader = container.GetFileReader(entry.Key);
+            result[entry.Key] = reader;
+        }
+
+        return result;
+    }
+
     public static void Write(Stream stream, Dictionary<uint, byte[]> files, bool flushAfterWrite = true)
     {
         stream.Write(Encoding.ASCII.GetBytes(Magic));

@@ -11,6 +11,7 @@ public sealed class GameData : IDisposable
         MapData,
         MonsterGraphic,
         MonsterData,
+        MonsterAnimation,
     }
 
     private readonly Dictionary<FileContainerType, Lazy<FileContainer>> containers = [];
@@ -27,8 +28,9 @@ public sealed class GameData : IDisposable
         AddContainer(FileContainerType.TilesetGraphic, "tileatlas.aic");
         AddContainer(FileContainerType.TilesetData, "tileset.aic");
         AddContainer(FileContainerType.MapData, "map.aic");
-        AddContainer(FileContainerType.MonsterGraphic, "monsteratlas.aic");
-        AddContainer(FileContainerType.MonsterData, "monster.aic");
+        AddContainer(FileContainerType.MonsterGraphic, "mon_atlas.aic");
+        AddContainer(FileContainerType.MonsterData, "mon_data.aic");
+        AddContainer(FileContainerType.MonsterAnimation, "mon_anim.aic");
         // TODO ...
     }
 

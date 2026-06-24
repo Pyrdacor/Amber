@@ -13,7 +13,6 @@ where you see the sky beneath. Usually you should not use it on normal maps.
 
 Each map layer uses its own tileset but of course can use the same tileset as other layers as well.
 
-
 ## Tileset
 
 A tileset can have up to 255 tiles but also less.
@@ -28,7 +27,6 @@ Each tile has the following information:
 - Collision block modes (walking, flying, swimming, player/monster only, use lower layer block mode, etc)
 - Tile type (normal, mud, water, sky, chair down/up/right/left, bed down/up/right/left, etc), maybe other terrains as well
 
-
 ## Monsters
 
 Monsters spawn randomly. The map can specify a set of values per monster type:
@@ -38,7 +36,6 @@ Monsters spawn randomly. The map can specify a set of values per monster type:
 - Max Amount (spawning stops there)
 - Respawn Min Delay (minimum delay before respawning)
 - Respawn Max Delay (maximum delay before respawning)
-
 
 ## Map events
 
@@ -84,7 +81,6 @@ Each event can have conditions:
 - Has level
 - tbd ...
 
-
 Map events are stored after the tile layers.
 First 4 words, giving the amount of triggers, conditions, actions and events.
 Then all triggers, all conditions, all actions and all events follow.
@@ -99,9 +95,42 @@ Events just store:
 - 1 word for the amount of tiles which use the event
 - n words (x and y as byte) for the tile which uses this event
 
-
 # Names
 
 Names of maps, characters, items, etc are not stored in those object data.
 Instead they are provided in text/name containes with an id and text. This
 also makes translations much more easy.
+
+# Monsters
+
+Monsters consist of 3 parts:
+
+- Graphic frames
+- Monster data
+- Animation data
+
+Each is provided by its own container:
+
+"monatlas.aic" contains all monster graphic atlasses
+which are combined into one large atlas per map.
+
+"mondata.aic" contains all monster data files.
+
+"monanim.aic" contains all animations. The same
+file index belongs to the same atlas graphic.
+Each container file itself is a container where
+each file represents one monster state (like idle).
+The file index should be the state + 1. Not all
+states have to be present. The fallback is:
+
+- Walking -> Idle
+- Chasing -> Walking
+- Fleeing -> Walking
+- Sleeping -> Idle
+- Attacking -> Walking
+- Casting -> Attacking
+- ReceiveDamage -> Idle
+- Die -> nothing shown
+- Spawn -> nothing shown
+
+So only the idle state (file index 1) is mandatory.

@@ -19,6 +19,7 @@ internal class ActiveMonster
         Casting,
         ReceivingDamage,
         Die,
+        Spawn,
     }
 
     private const int TicksPerAnimationFrame = 10; // TODO: maybe dependent on animation and monster
