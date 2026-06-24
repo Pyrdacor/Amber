@@ -36,6 +36,10 @@ public partial class Game
 
     internal static double TicksToMinutes(long ticks) => TicksToSeconds(ticks) / 60;
 
+    internal static long SecondsToTicks(double seconds) => (long)Math.Round(seconds * TicksPerSecond);
+
+    internal static long MinutesToTicks(double minutes) => (long)Math.Round(minutes * 60 * TicksPerSecond);
+
     public void Render(double delta)
     {
 

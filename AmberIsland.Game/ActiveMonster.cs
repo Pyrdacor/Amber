@@ -8,7 +8,6 @@ namespace AmberIsland.Game;
 
 internal class ActiveMonster
 {
-    private const int TicksPerAnimationFrame = 10; // TODO: maybe dependent on animation and monster
     private readonly Game game;
     private readonly MapScreen mapScreen;
     private readonly uint monsterIndex;
@@ -21,26 +20,8 @@ internal class ActiveMonster
     private long lastAttackTicks = 0;
     private long lastAnimationTicks = 0;
     private long monsterTicks = 0;
-    private ISequencedSprite sprite;
-    // TODO: We need some monster animation info
+    private readonly ISequencedSprite sprite;
     private readonly Dictionary<MonsterState, Animation> animations = [];
-
-    static ActiveMonster()
-    {
-        /*var frameSize = new Size(64, 64);
-
-        void AddAnimation(MonsterState state, params uint[] frameIndices)
-        {
-            animations.Add(state, new Animation { FrameSize = frameSize, FrameIndices = frameIndices });
-        }
-
-        //AddAnimation(MonsterState.Idle, 0, 1, 4, 5, 4);
-        AddAnimation(MonsterState.Idle, 2, 3, 4, 5, 6, 5, 4, 3);
-        AddAnimation(MonsterState.Walking, 2, 3, 4, 5, 6, 5, 4, 3);
-        AddAnimation(MonsterState.Chasing, 2, 3, 4, 5, 6, 5, 4, 3);
-        AddAnimation(MonsterState.Fleeing, 2, 3, 4, 5, 6, 5, 4, 3);
-        AddAnimation(MonsterState.Sleeping, 10, 11, 12, 13, 14, 13, 12, 11);*/
-    }
 
     public ActiveMonster(Game game, MapScreen mapScreen, uint monsterIndex, Position position, Direction direction)
     {
@@ -89,7 +70,24 @@ internal class ActiveMonster
 
     private Monster GetMonsterData() => game.GameData.GetMonster(monsterIndex);
 
-    private Animation GetAnimation() => animations[currentState];
+    private Animation GetAnimation(MonsterState state)
+    {
+        if (animations.TryGetValue(state, out var animation))
+            return animation;
+
+        // Fallbacks
+        return state switch
+        {
+            MonsterState.Idle => default, // Not good :(
+            MonsterState.Chasing => GetAnimation(MonsterState.Walking),
+            MonsterState.Fleeing => GetAnimation(MonsterState.Walking),
+            MonsterState.Attacking => GetAnimation(MonsterState.Walking),
+            MonsterState.Casting => GetAnimation(MonsterState.Attacking),
+            _ => GetAnimation(MonsterState.Idle)
+        };
+    }
+
+    private Animation GetAnimation() => GetAnimation(currentState);
 
     public void Update(long elapsedTicks)
     {
@@ -102,13 +100,17 @@ internal class ActiveMonster
         {
             long elapsed = monsterTicks - lastAnimationTicks;
 
-            while (elapsed >= TicksPerAnimationFrame)
+            if (elapsed > 0)
             {
-                sprite.CurrentFrameIndex += 1;
-                elapsed -= TicksPerAnimationFrame;
-            }
+                double elapsedMinutes = Game.TicksToMinutes(elapsed);
+                double framesPerMinute = GetAnimation().FramesPerMinute;
+                int elapsedFrames = MathUtil.Floor(framesPerMinute * elapsedMinutes);
 
-            lastAnimationTicks = monsterTicks - elapsed;
+                sprite.CurrentFrameIndex += elapsedFrames;
+                elapsed -= Game.MinutesToTicks(elapsedFrames / framesPerMinute);
+
+                lastAnimationTicks = monsterTicks - elapsed;
+            }
         }
 
         switch (currentState)
