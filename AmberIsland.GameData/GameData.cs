@@ -22,13 +22,13 @@ public sealed class GameData : IDisposable
             containers.Add(type, new(() => FileContainer.Read(File.OpenRead(Path.Combine(path, filename)))));
         }
 
-        AddContainer(FileContainerType.PlayerGraphic, "player.aifc");
-        AddContainer(FileContainerType.OutfitGraphic, "outfit.aifc");
-        AddContainer(FileContainerType.TilesetGraphic, "tileatlas.aifc");
-        AddContainer(FileContainerType.TilesetData, "tileset.aifc");
-        AddContainer(FileContainerType.MapData, "map.aifc");
-        AddContainer(FileContainerType.MonsterGraphic, "monsteratlas.aifc");
-        AddContainer(FileContainerType.MonsterData, "monster.aifc");
+        AddContainer(FileContainerType.PlayerGraphic, "player.aic");
+        AddContainer(FileContainerType.OutfitGraphic, "outfit.aic");
+        AddContainer(FileContainerType.TilesetGraphic, "tileatlas.aic");
+        AddContainer(FileContainerType.TilesetData, "tileset.aic");
+        AddContainer(FileContainerType.MapData, "map.aic");
+        AddContainer(FileContainerType.MonsterGraphic, "monsteratlas.aic");
+        AddContainer(FileContainerType.MonsterData, "monster.aic");
         // TODO ...
     }
 

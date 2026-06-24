@@ -87,6 +87,24 @@ public sealed class FileContainer : IDisposable
         return fileContainer;
     }
 
+    /// <summary>
+    /// Reads a whole container into memory, returning the raw bytes of every
+    /// contained file keyed by its file index. The passed stream is not disposed.
+    /// </summary>
+    public static Dictionary<uint, byte[]> ReadAllFiles(Stream stream)
+    {
+        var container = Read(stream);
+        var result = new Dictionary<uint, byte[]>(container.files.Count);
+
+        foreach (var entry in container.files)
+        {
+            var reader = container.GetFileReader(entry.Key);
+            result[entry.Key] = reader.ReadBytes((int)entry.Value.Size);
+        }
+
+        return result;
+    }
+
     public static void Write(Stream stream, Dictionary<uint, byte[]> files, bool flushAfterWrite = true)
     {
         stream.Write(Encoding.ASCII.GetBytes(Magic));

@@ -87,7 +87,7 @@ unsafe
     string outFileTemplate = "{0:000}.aig";
     string palFileTemplate = "{0:000}.aip";
     string spriteOutFile = @"D:\Projects\Amber\AmberIsland\assets\player\player.aisp";
-    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\player.aifc";
+    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\player.aic";
     var directory = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1";
     var schema = "char_a_p1_0bas_humn_v{0:00}.png";
     int firstFileIndex = 0;
@@ -97,7 +97,7 @@ unsafe
     string outFileTemplate = "{0:000}.aig";
     string palFileTemplate = "{0:000}.aip";
     string spriteOutFile = @"D:\Projects\Amber\AmberIsland\assets\outfit\outfit.aisp";
-    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\outfit.aifc";
+    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\outfit.aic";
     var directory = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1\1out";
     var schema = "char_a_p1_1out_fstr_v{0:00}.png";
     int firstFileIndex = 1;
@@ -107,7 +107,7 @@ unsafe
     string outFileTemplate = "{0:000}.aig";
     string palFileTemplate = "{0:000}.aip";
     string spriteOutFile = @"D:\Projects\Amber\AmberIsland\assets\outfit\outfit.aisp";
-    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\outfit.aifc";
+    string containerFile = @"D:\Projects\Amber\AmberIsland\assets\outfit.aic";
     var directory = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1\1out";
     var schema = "char_a_p1_1out_fstr_v{0:00}.png";
     int firstFileIndex = 1;
@@ -273,7 +273,7 @@ unsafe
 
     File.WriteAllBytes(@"D:\Projects\Amber\AmberIsland\assets\tilesets\test.aits", dataWriter.ToArray());
 
-    using var containerStream = File.Create(@"D:\Projects\Amber\AmberIsland\assets\tileset.aifc");
+    using var containerStream = File.Create(@"D:\Projects\Amber\AmberIsland\assets\tileset.aic");
     FileContainer.Write(containerStream, new() { { 1u, dataWriter.ToArray() } });
 #endif
 }
