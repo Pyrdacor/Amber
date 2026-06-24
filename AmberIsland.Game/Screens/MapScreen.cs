@@ -10,11 +10,11 @@ internal class MapScreen : Screen
 {
 	const int WalkTicksPerStep = 2;
     const int RunTicksPerStep = 1;
-    const int TilesPerRow = 8;
-	const int TileRows = 8;
 	const int TileWidth = 16;
 	const int TileHeight = 16;
-	const int OffsetX = 0;
+    const int TilesPerRow = Game.VirtualScreenWidth / TileWidth;
+    const int TileRows = Game.VirtualScreenHeight / TileHeight;
+    const int OffsetX = 0;
 	const int OffsetY = 0;
 	const int RenderOrderOffset = TileHeight / 4;
 	const int MinScrollX = TilesPerRow / 2;
@@ -409,12 +409,18 @@ internal class MapScreen : Screen
 	public override void KeyDown(Key key, KeyModifiers keyModifiers)
 	{
 		UpdateMovement();
+
+		if (key == Key.Space && game?.Player.CurrentState == Player.State.Walking)
+			game.Player.CurrentState = Player.State.Running;
 	}
 
 	public override void KeyUp(Key key, KeyModifiers keyModifiers)
 	{
 		UpdateMovement();
-	}
+
+        if (key == Key.Space && game?.Player.CurrentState == Player.State.Running)
+            game.Player.CurrentState = Player.State.Walking;
+    }
 
 	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
@@ -450,11 +456,14 @@ internal class MapScreen : Screen
 
 	private void FillMap(int scrollOffsetX, int scrollOffsetY, bool force = false)
 	{
-        for (int y = 0; y < TileRows; y++)
+        int tilesPerRow = Math.Min(TilesPerRow, (int)map!.Width);
+		int tileRows = Math.Min(TileRows, (int)map!.Height);
+
+        for (int y = 0; y < tileRows; y++)
         {
-            for (int x = 0; x < TilesPerRow; x++)
+            for (int x = 0; x < tilesPerRow; x++)
             {
-                int gridIndex = x + y * TilesPerRow;
+                int gridIndex = x + y * tilesPerRow;
                 int index = (x + scrollOffsetX) + (y + scrollOffsetY) * map!.Width;
                 var backgroundTileIndex = map.BackgroundLayer[index];
                 var objectTileIndex = map.ObjectLayer[index];

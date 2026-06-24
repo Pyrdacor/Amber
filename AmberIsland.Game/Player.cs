@@ -14,6 +14,7 @@ internal class Player
         Running
     }
 
+    // TODO: diagonal speed is higher (sqrt(2) * speed instead of 1 * speed)
     private const int TicksPerAnimationFrame = 6;
     private readonly Game game;
     private readonly ISequencedSprite sprite;
