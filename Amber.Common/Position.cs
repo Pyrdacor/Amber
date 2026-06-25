@@ -18,7 +18,7 @@ public readonly struct Position : IEquatable<Position>
 		Y = other.Y;
 	}
 
-	public Position(FloatPosition other)
+	public Position(Vector other)
 	{
 		X = MathUtil.Round(other.X);
 		Y = MathUtil.Round(other.Y);
@@ -55,13 +55,15 @@ public readonly struct Position : IEquatable<Position>
 		return !(left == right);
 	}
 
-	public static Position operator +(Position left, Position right) => new(left.X + right.X, left.Y + right.Y);
+	public static Position operator +(Position position, Position right) => new(position.X + right.X, position.Y + right.Y);
 
     public static Position operator -(Position left, Position right) => new(left.X - right.X, left.Y - right.Y);
 
     public static Position operator *(int factor, Position position) => new(factor * position.X, factor * position.Y);
 
     public static Position operator *(Position position, int factor) => new(factor * position.X, factor * position.Y);
+
+    public static Position operator +(Position position, Size size) => new(position.X + size.Width, position.Y + size.Height);
 
     public override readonly string ToString() => $"({X}, {Y})";
 
@@ -72,70 +74,3 @@ public readonly struct Position : IEquatable<Position>
     }
 }
 
-public readonly struct FloatPosition : IEquatable<FloatPosition>
-{
-	public readonly float X;
-	public readonly float Y;
-
-	public FloatPosition()
-	{
-
-	}
-
-	public FloatPosition(FloatPosition other)
-	{
-		X = other.X;
-		Y = other.Y;
-	}
-
-	public FloatPosition(Position other)
-	{
-		X = other.X;
-		Y = other.Y;
-	}
-
-	public FloatPosition(float x, float y)
-	{
-		X = x;
-		Y = y;
-	}
-
-	public bool Equals(FloatPosition other)
-	{
-		return X == other.X && Y == other.Y;
-	}
-
-	public override bool Equals(object? obj)
-	{
-		return obj is FloatPosition position && Equals(position);
-	}
-
-	public override int GetHashCode()
-	{
-		return HashCode.Combine(X, Y);
-	}
-
-	public static bool operator ==(FloatPosition left, FloatPosition right)
-	{
-		return left.Equals(right);
-	}
-
-	public static bool operator !=(FloatPosition left, FloatPosition right)
-	{
-		return !(left == right);
-	}
-
-    public static FloatPosition operator +(FloatPosition left, FloatPosition right) => new(left.X + right.X, left.Y + right.Y);
-
-    public static FloatPosition operator -(FloatPosition left, FloatPosition right) => new(left.X - right.X, left.Y - right.Y);
-
-    public override readonly string ToString() => $"({X:0.00}, {Y:0.00})";
-
-    public void Deconstruct(out float x, out float y)
-    {
-        x = X;
-        y = Y;
-    }
-}
-
-public delegate FloatPosition PositionTransformation(FloatPosition position);

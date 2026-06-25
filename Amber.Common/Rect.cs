@@ -49,7 +49,23 @@ public readonly struct Rect : IEquatable<Rect>
 			   position.Y >= Top && position.Y < Bottom;
 	}
 
-	public Rect Clip(Rect rect)
+    public bool Overlaps(Rect rect)
+    {
+		var ul1 = Position;
+		var lr1 = Position + Size;
+		var ul2 = rect.Position;
+		var lr2 = rect.Position + rect.Size;
+
+		if (ul1.X > lr2.X || ul2.X > lr1.X)
+			return false;
+
+        if (ul1.Y > lr2.Y || ul2.Y > lr1.Y)
+            return false;
+
+        return true;
+    }
+
+    public Rect Clip(Rect rect)
 	{
 		return FromBoundaries
 		(
@@ -68,7 +84,7 @@ public readonly struct Rect : IEquatable<Rect>
 		size = new(MathUtil.Limit(0, right - position.X, size.Width), MathUtil.Limit(0, bottom - position.Y, size.Height));
 	}
 
-	public void Clip(ref FloatPosition position, ref FloatSize size)
+	public void Clip(ref Vector position, ref FloatSize size)
 	{
 		float right = position.X + size.Width;
 		float bottom = position.Y + size.Height;
@@ -76,7 +92,7 @@ public readonly struct Rect : IEquatable<Rect>
 		size = new(MathUtil.Limit(0, right - position.X, size.Width), MathUtil.Limit(0, bottom - position.Y, size.Height));
 	}
 
-	public void Clip(ref FloatPosition position, ref Size size)
+	public void Clip(ref Vector position, ref Size size)
 	{
 		float right = position.X + size.Width;
 		float bottom = position.Y + size.Height;

@@ -49,7 +49,7 @@ internal abstract class Screen
 		// default: empty
 	}
 
-	public virtual void Update(Game game, long elapsedTicks)
+    public virtual void Update(Game game, long elapsedTicks)
 	{
 		// default: empty
 	}

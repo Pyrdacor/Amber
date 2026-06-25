@@ -10,8 +10,8 @@ internal class MapScreen : Screen
 {
 	const int WalkTicksPerStep = 2;
     const int RunTicksPerStep = 1;
-	const int TileWidth = 16;
-	const int TileHeight = 16;
+	internal const int TileWidth = 16;
+    internal const int TileHeight = 16;
     const int TilesPerRow = Game.VirtualScreenWidth / TileWidth;
     const int TileRows = Game.VirtualScreenHeight / TileHeight;
     const int OffsetX = 0;
@@ -19,6 +19,7 @@ internal class MapScreen : Screen
 	const int RenderOrderOffset = TileHeight / 4;
 	const int MinScrollX = TilesPerRow / 2;
 	const int MinScrollY = TileRows / 2 + 1;
+	internal static readonly double DiagonalDistance = Math.Sqrt(2);
 	Game? game;
 	Map? map;
 	Tileset? tileset;
@@ -46,7 +47,7 @@ internal class MapScreen : Screen
     //IRenderText? mapNameText;
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
-	//public IMap2D Map => map!;
+	public Map Map => map!;
 
     internal void MapChanged()
 	{
@@ -162,10 +163,17 @@ internal class MapScreen : Screen
 
 		game.Player.Update(game.GameTicks);
 
-		foreach (var monster in activeMonsters)
-			monster.Update(elapsedTicks);
+        int tilesPerRow = Math.Min(TilesPerRow, (int)map!.Width);
+        int tileRows = Math.Min(TileRows, (int)map!.Height);
+        var mapArea = new Rect(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight, tilesPerRow * TileWidth, tileRows * TileHeight);
 
-		currentTicks += elapsedTicks;
+		foreach (var monster in activeMonsters)
+		{
+			monster.Update(elapsedTicks);
+			monster.Render(mapArea);
+		}
+
+        currentTicks += elapsedTicks;
 
 		if (moveX != 0 || moveY != 0)
 		{

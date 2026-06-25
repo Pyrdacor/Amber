@@ -8,14 +8,22 @@ namespace AmberIsland.Game;
 
 internal class ActiveMonster
 {
+    const int MoveRange = 4; // in tiles (each direction is 1 tile) // TODO: Make it a monster property
+    const long MinDecisionDelay = 2 * Game.TicksPerSecond; // TODO: Make it a monster property
+    const long MaxDecisionDelay = 5 * Game.TicksPerSecond; // TODO: Make it a monster property
+    const int LowHpDivisor = 8; // below MaxHP / LowHpDivisor is treated as "low hp" (only works if MaxHP >= 2 * LowHpDivisor) // TODO: Make it a monster property
+
     private readonly Game game;
     private readonly MapScreen mapScreen;
     private readonly uint monsterIndex;
     // TODO: conditions
     private uint currentHitPoints = 0;
-    private Position currentPosition = Position.Zero;
+    private Amber.Common.Vector currentPosition = Amber.Common.Vector.Zero;
+    private Amber.Common.Vector currentMoveDirection = Amber.Common.Vector.Zero;
+    private Position? targetPosition = null;
     private Direction direction = Direction.Down;
     private MonsterState currentState = MonsterState.Idle;
+    private long nextDecisionTicks = 0;
     private long lastMoveTicks = 0;
     private long lastAttackTicks = 0;
     private long lastAnimationTicks = 0;
@@ -23,12 +31,48 @@ internal class ActiveMonster
     private readonly ISequencedSprite sprite;
     private readonly Dictionary<MonsterState, Animation> animations = [];
 
+    private MonsterState CurrentState
+    {
+        get => currentState;
+        set
+        {
+            if (currentState == value)
+                return;
+
+            currentState = value;
+
+            if (currentState == MonsterState.Idle)
+                SetupNextDecision();
+            else if (currentState == MonsterState.Walking)
+            {
+                lastMoveTicks = 0;
+
+                currentMoveDirection = (new Vector(targetPosition ?? Position.Zero) - currentPosition).Normalized();
+
+                if (Math.Abs(currentMoveDirection.X) > Math.Abs(currentMoveDirection.Y))
+                {
+                    if (currentMoveDirection.X < 0)
+                        direction = Direction.Left;
+                    else
+                        direction = Direction.Right;
+                }
+                else
+                {
+                    if (currentMoveDirection.Y < 0)
+                        direction = Direction.Up;
+                    else
+                        direction = Direction.Down;
+                }
+            }
+        }
+    }
+
     public ActiveMonster(Game game, MapScreen mapScreen, uint monsterIndex, Position position, Direction direction)
     {
         this.game = game;
         this.mapScreen = mapScreen;
         this.monsterIndex = monsterIndex;
-        currentPosition = position;
+        currentPosition = new(position);
 
         animations = game.GameData.GetMonsterAnimations(monsterIndex);
 
@@ -89,12 +133,29 @@ internal class ActiveMonster
 
     private Animation GetAnimation() => GetAnimation(currentState);
 
+    /// <summary>
+    /// mapArea is the visible pixel area of the map.
+    /// </summary>
+    public void Render(Rect mapArea)
+    {
+        var position = currentPosition.Round();
+
+        sprite.Position = position - mapArea.Position;
+        sprite.Visible = mapArea.Overlaps(new Rect(position, sprite.Size));
+    }
+
     public void Update(long elapsedTicks)
     {
         monsterTicks += elapsedTicks;
 
         if (lastAnimationTicks == 0)
             lastAnimationTicks = monsterTicks;
+
+        if (lastMoveTicks == 0)
+            lastMoveTicks = monsterTicks;
+
+        if (nextDecisionTicks == 0)
+            SetupNextDecision();
 
         if (sprite.FrameIndices.Length > 1)
         {
@@ -116,29 +177,258 @@ internal class ActiveMonster
         switch (currentState)
         {
             case MonsterState.Idle:
-                return;
+                HandleIdleState();
+                break;
             case MonsterState.Walking:
-            {
-                var monster = GetMonsterData();
-                long moveTicks = monsterTicks - lastMoveTicks;
-                double moveTickMinutes = Game.TicksToMinutes(moveTicks);
-                int movedPixels = MathUtil.Floor(moveTickMinutes * monster.MoveSpeed);
-                // TODO: adjust lastMoveTicks properly
+                HandleWalkingState();
+                break;
+            case MonsterState.Chasing:
+                HandleChasingState();
+                break;
+            case MonsterState.Fleeing:
+                HandleFleeingState();
+                break;
+            case MonsterState.Sleeping:
+                HandleSleepingState();
+                break;
+            case MonsterState.Attacking:
+                HandleAttackingState();
+                break;
+            case MonsterState.Casting:
+                HandleCastingState();
+                break;
+            case MonsterState.ReceivingDamage:
+                HandleReceivingDamageState();
+                break;
+            case MonsterState.Die:
+                HandleDieState();
+                break;
+            case MonsterState.Summon:
+                HandleSummonState();
+                break;
+        }        
+    }
 
-                if (movedPixels > 0)
+    public void PlayerAttacks(Player player)
+    {
+        bool isDamaged = false;
+
+        // TODO ...
+
+        if (isDamaged)
+        {
+            // Note: This automatically ends the sleeping or fleeing state
+            CurrentState = MonsterState.ReceivingDamage;
+        }
+    }
+
+    private bool CheckLowHpBehavior(Monster monster)
+    {
+        if (monster.MonsterLowHpBehavior != MonsterLowHpBehavior.Normal && currentHitPoints < monster.HitPoints / LowHpDivisor)
+        {
+            // TODO
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IsAggressive(Monster monster) => currentState.IsAggressive() || monster.MonsterBehavior is MonsterBehavior.Aggressive or MonsterBehavior.StationaryAggressive;
+
+    private void SetupNextDecision() => nextDecisionTicks = monsterTicks + Game.Random((int)MinDecisionDelay, (int)MaxDecisionDelay);
+
+    private void HandleIdleState()
+    {
+        var monster = GetMonsterData();
+
+        if (CheckLowHpBehavior(monster))
+            return;
+
+        bool aggressive = IsAggressive(monster);
+
+        if (!aggressive && monsterTicks < nextDecisionTicks)
+            return;
+
+        switch (monster.MonsterBehavior)
+        {
+            case MonsterBehavior.Passive:
+                if (monsterTicks < nextDecisionTicks)
+                    return;
+                targetPosition = FindNearbyRandomSpot();
+                if (targetPosition != null)
+                    CurrentState = MonsterState.Walking;
+                break;
+            case MonsterBehavior.Aggressive:
+                if (IsPlayerInAttackRange())
+                    CurrentState = MonsterState.Attacking;
+                else if (IsPlayerInSightRange())
+                    CurrentState = MonsterState.Chasing;
+                else
                 {
-                    // TODO
+                    if (monsterTicks < nextDecisionTicks)
+                        return;
+
+                    targetPosition = FindNearbyRandomSpot();
+                    if (targetPosition != null)
+                        CurrentState = MonsterState.Walking;
+                }
+                break;
+            case MonsterBehavior.StationaryPassive:
+                // Do nothing
+                break;
+            case MonsterBehavior.StationaryAggressive:
+                if (IsPlayerInAttackRange())
+                    CurrentState = MonsterState.Attacking;
+                break;
+        }
+    }
+
+    private void HandleWalkingState()
+    {
+        if (targetPosition == null)
+        {
+            // No target
+            CurrentState = MonsterState.Idle;
+            return;
+        }
+
+        Vector diff = new Vector(targetPosition ?? Position.Zero) - currentPosition;
+
+        if (diff.X == 0 && diff.Y == 0)
+        {
+            // Already there
+            CurrentState = MonsterState.Idle;
+            return;
+        }
+
+        var monster = GetMonsterData();
+        long moveTicks = monsterTicks - lastMoveTicks;
+        double moveTickMinutes = Game.TicksToMinutes(moveTicks);
+        float movedPixels = Math.Min((float)(moveTickMinutes * monster.MoveSpeed), diff.Length());
+
+        if (movedPixels > 0)
+        {
+            currentPosition += movedPixels * currentMoveDirection;
+
+            if (new Position(MathUtil.Round(currentPosition.X), MathUtil.Round(currentPosition.Y)) == targetPosition)
+            {
+                // Done
+                lastMoveTicks = monsterTicks;
+                CurrentState = MonsterState.Idle;
+            }
+            else
+            {
+                var moveTime = movedPixels / monster.MoveSpeed;
+                moveTicks -= Game.MinutesToTicks(moveTime);
+                lastMoveTicks = monsterTicks + moveTicks;
+            }
+        }
+    }
+
+    private void HandleChasingState()
+    {
+        // TODO
+    }
+
+    private void HandleReceivingDamageState()
+    {
+        // TODO
+    }
+
+    private void HandleFleeingState()
+    {
+        // TODO
+    }
+    
+    private void HandleSleepingState()
+    {
+        // Do nothing
+    }
+    
+    private void HandleAttackingState()
+    {
+        long attackTicks = monsterTicks - lastAttackTicks;
+        // TODO ...
+    }
+
+    private void HandleCastingState()
+    {
+        // TODO
+    }
+
+    private void HandleDieState()
+    {
+        // TODO
+    }
+
+    private void HandleSummonState()
+    {
+        // TODO
+    }
+
+    private bool IsTileBlocking(Map map, int x, int y)
+    {
+        // TODO
+        return false;
+    }
+
+    private Position? FindNearbyRandomSpot()
+    {
+        var map = mapScreen.Map;
+
+        int tileColumn = (MathUtil.Round(currentPosition.X) + sprite.Size.Width / 2) / MapScreen.TileWidth;
+        int tileRow = (MathUtil.Round(currentPosition.Y) + sprite.Size.Height / 2) / MapScreen.TileHeight;
+        int prevTileColumn = tileColumn;
+        int prevTileRow = tileRow;
+
+        void NextRandomSpot(ref int x, ref int y)
+        {
+            int dx = Game.Random(0, 2) - 1;
+            int dy = Game.Random(0, 2) - 1;
+
+            if (IsTileBlocking(map, x + dx, y + dy))
+            {
+                if (dx != 0 && !IsTileBlocking(map, x, y + dy))
+                {
+                    y += dy;
+                    return;
                 }
 
-                break;
+                if (dy != 0 && !IsTileBlocking(map, x + dy, y))
+                {
+                    x += dx;
+                    return;
+                }
             }
-            case MonsterState.Attacking:
+            else
             {
-                long attackTicks = monsterTicks - lastAttackTicks;
-                // TODO ...
-                break;
+                x += dx;
+                y += dy;
             }
-            // TODO ...
-        }        
+        }
+
+        for (int i = 0; i < MoveRange; i++)
+            NextRandomSpot(ref tileColumn, ref tileRow);
+
+        if (tileColumn == prevTileColumn && tileRow == prevTileRow)
+            return null;
+
+        return new Position(tileColumn * MapScreen.TileWidth + MapScreen.TileWidth / 2, tileRow * MapScreen.TileHeight + MapScreen.TileHeight / 2);
+    }
+
+    private bool IsPlayerInSightRange()
+    {
+        return false; // TODO
+    }
+
+    private bool IsPlayerInAttackRange()
+    {
+        return false; // TODO
+    }
+
+    private void Move()
+    {
+        currentPosition += currentMoveDirection;
     }
 }

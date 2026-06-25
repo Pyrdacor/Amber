@@ -4,7 +4,7 @@ namespace AmberIsland.Game;
 
 public partial class Game
 {
-    const long TicksPerSecond = 60;
+    internal const long TicksPerSecond = 60;
     const long DefaultFadeTime = 1000;
     double totalTime = 0.0;
     long lastGameTicks = 0;
@@ -42,7 +42,7 @@ public partial class Game
 
     public void Render(double delta)
     {
-
+        
     }
 
     public void Update(double delta)

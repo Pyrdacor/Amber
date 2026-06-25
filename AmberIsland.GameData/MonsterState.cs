@@ -11,5 +11,16 @@ public enum MonsterState
     Casting,
     ReceivingDamage,
     Die,
-    Spawn,
+    Summon,
+}
+
+public static class MonsterStateExtensions
+{
+    public static bool IsAggressive(this MonsterState state) => state switch
+    {
+        MonsterState.Chasing => true,
+        MonsterState.Attacking => true,
+        MonsterState.Casting => true,
+        _ => false
+    };
 }

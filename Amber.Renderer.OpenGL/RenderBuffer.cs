@@ -137,7 +137,7 @@ internal class RenderBuffer : IDisposable
         PositionTransformation? positionTransformation,
         SizeTransformation? sizeTransformation)
     {
-        var position = new FloatPosition(coloredRect.Position);
+        var position = new Amber.Common.Vector(coloredRect.Position);
         var size = new FloatSize(coloredRect.Size);
 
         if (positionTransformation != null)
@@ -175,7 +175,7 @@ internal class RenderBuffer : IDisposable
     public int GetDrawIndex(ISprite sprite, PositionTransformation? positionTransformation,
         SizeTransformation? sizeTransformation, byte? textColorIndex = null)
     {
-        var position = new FloatPosition(sprite.Position);
+        var position = new Amber.Common.Vector(sprite.Position);
         var spriteSize = new Size(sprite.Size);
         var textureOffset = new Position(sprite.TextureOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
@@ -437,7 +437,7 @@ internal class RenderBuffer : IDisposable
     public void UpdatePosition(int index, ISizedDrawable drawable,
         PositionTransformation? positionTransformation, SizeTransformation? sizeTransformation)
     {
-		var position = new FloatPosition(drawable.Position);
+		var position = new Amber.Common.Vector(drawable.Position);
         var size = new FloatSize(drawable.Size);
 
 		drawable.ClipRect?.Clip(ref position, ref size);
@@ -524,7 +524,7 @@ internal class RenderBuffer : IDisposable
 		if (textureOffsetBuffer == null)
             return;
 
-        var position = new FloatPosition(sprite.Position);
+        var position = new Amber.Common.Vector(sprite.Position);
         var spriteSize = new Size(sprite.Size);
         var textureOffset = new Position(sprite.TextureOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
