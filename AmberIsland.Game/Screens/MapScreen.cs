@@ -28,7 +28,7 @@ internal class MapScreen : Screen
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
     readonly Dictionary<int, IAnimatedSprite> objects = [];
     readonly Dictionary<int, IAnimatedSprite> overlay = [];
-	readonly List<ActiveMonster> activeMonsters = [];
+	readonly List<MapActor> mapActors = [];
 	int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
@@ -167,10 +167,9 @@ internal class MapScreen : Screen
         int tileRows = Math.Min(TileRows, (int)map!.Height);
         var mapArea = new Rect(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight, tilesPerRow * TileWidth, tileRows * TileHeight);
 
-		foreach (var monster in activeMonsters)
+		foreach (var mapActor in mapActors)
 		{
-			monster.Update(elapsedTicks);
-			monster.Render(mapArea);
+			mapActor.Update(mapArea, elapsedTicks);
 		}
 
         currentTicks += elapsedTicks;
@@ -772,6 +771,6 @@ internal class MapScreen : Screen
 
 	private void SpawnMonster(Position position, Direction direction, uint monsterIndex)
 	{
-		activeMonsters.Add(new(game!, this, monsterIndex, position, direction));
+		mapActors.Add(new MapMonster(game!, this, monsterIndex, position, direction));
 	}
 }

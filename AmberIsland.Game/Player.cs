@@ -68,6 +68,8 @@ internal class Player
         }
     }
 
+    public Size Size => sprite.Size;
+
     public Rect CollisionArea => new(Position.X + 4, Position.Y + 1, sprite.Size.Width - 8, 15);
 
     static Player()

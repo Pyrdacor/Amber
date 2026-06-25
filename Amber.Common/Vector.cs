@@ -63,6 +63,8 @@ public readonly struct Vector : IEquatable<Vector>
 
     public static Vector operator *(Vector vector, float factor) => new(factor * vector.X, factor * vector.Y);
 
+    public static Vector operator +(Vector vector, Size size) => new(vector.X + size.Width, vector.Y + size.Height);
+
     public override readonly string ToString() => $"({X:0.00}, {Y:0.00})";
 
     public void Deconstruct(out float x, out float y)
@@ -86,6 +88,9 @@ public readonly struct Vector : IEquatable<Vector>
 	public Vector Normalized()
 	{
 		var inverseLength = InverseLength();
+
+		if (float.IsInfinity(inverseLength))
+			return new(0, 0);
 
 		return new(X * inverseLength, Y * inverseLength);
 	}

@@ -2,6 +2,8 @@
 
 public readonly struct Size : IEquatable<Size>
 {
+	public static readonly Size Zero = new(0, 0);
+
 	public readonly int Width;
 	public readonly int Height;
 	public bool Empty => Width <= 0 || Height <= 0;
