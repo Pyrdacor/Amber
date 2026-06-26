@@ -14,7 +14,7 @@ internal class MapMonster : MapActor
     // TODO: conditions
     private uint currentHitPoints = 0;
     private Position? targetPosition = null;
-    private Direction spriteDirection = AmberIsland.GameData.Direction.Down;
+    private float remainingTargetDistance = 0.0f;
     private MonsterState currentState = MonsterState.Idle;
     private long nextDecisionTicks = 0;
     private long lastMoveTicks = 0;
@@ -44,22 +44,8 @@ internal class MapMonster : MapActor
                 if (direction.Length() == 0)
                 {
                     targetPosition = null;
+                    remainingTargetDistance = 0.0f;
                     return;
-                }
-
-                if (Math.Abs(direction.X) > Math.Abs(direction.Y))
-                {
-                    if (direction.X < 0)
-                        CurrentDirection = GameData.Direction.Left;
-                    else
-                        CurrentDirection = GameData.Direction.Right;
-                }
-                else
-                {
-                    if (direction.Y < 0)
-                        CurrentDirection = GameData.Direction.Up;
-                    else
-                        CurrentDirection = GameData.Direction.Down;
                 }
             }
         }
@@ -90,27 +76,6 @@ internal class MapMonster : MapActor
         Visible = true;
     }
 
-    public Direction CurrentDirection
-    {
-        get => spriteDirection;
-        set
-        {
-            if (spriteDirection == value)
-                return;
-
-            int directionDiff = value - spriteDirection;
-
-            spriteDirection = value;
-            lastAnimationTicks = 0;
-
-            var animation = GetAnimation();
-            var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
-            sprite.MirrorX = animation.DirectionOffset == null && (spriteDirection == GameData.Direction.Left || spriteDirection == GameData.Direction.Up);
-            sprite.FrameOrigin = newOrigin;
-            sprite.CurrentFrameIndex = 0;
-        }
-    }
-
     private Monster GetMonsterData() => game.GameData.GetMonster(monsterIndex);
 
     private Animation GetAnimation(MonsterState state)
@@ -132,36 +97,51 @@ internal class MapMonster : MapActor
 
     private Animation GetAnimation() => GetAnimation(currentState);
 
-    private protected override void VisibilityChanged()
+    private protected override void VisibilityChanged(bool oldVisibility, bool newVisibility)
     {
-        base.VisibilityChanged();
+        base.VisibilityChanged(oldVisibility, newVisibility);
 
         sprite.Visible = Visible && VisibleOnMap;
     }
 
-    private protected override void MapVisibilityChanged()
+    private protected override void MapVisibilityChanged(bool oldMapVisibility, bool newMapVisibility)
     {
-        base.MapVisibilityChanged();
+        base.MapVisibilityChanged(oldMapVisibility, newMapVisibility);
 
         sprite.Visible = Visible && VisibleOnMap;
     }
 
-    private protected override void MapOffsetChanged()
+    private protected override void MapOffsetChanged(Position oldMapOffset, Position newMapOffset)
     {
-        base.MapOffsetChanged();
+        base.MapOffsetChanged(oldMapOffset, newMapOffset);
 
         sprite.Position = Position.Round() - MapOffset;
     }
 
-    private protected override void PositionChanged()
+    private protected override void PositionChanged(Vector oldPosition, Vector newPosition, Size oldSize, Size newSize)
     {
-        base.PositionChanged();
+        base.PositionChanged(oldPosition, newPosition, oldSize, newSize);
 
         if (sprite == null)
             return;
 
         sprite.Position = Position.Round() - MapOffset;
         sprite.Size = Size;
+    }
+
+    private protected override void VisualDirectionChanged(Direction oldDirection, Direction newDirection)
+    {
+        base.VisualDirectionChanged(oldDirection, newDirection);
+
+        int directionDiff = newDirection - oldDirection;
+
+        lastAnimationTicks = 0;
+
+        var animation = GetAnimation();
+        var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
+        sprite.MirrorX = animation.DirectionOffset == null && (newDirection == GameData.Direction.Left || newDirection == GameData.Direction.Up);
+        sprite.FrameOrigin = newOrigin;
+        sprite.CurrentFrameIndex = 0;
     }
 
     private protected override void UpdateActor(long elapsedTicks)
@@ -281,7 +261,7 @@ internal class MapMonster : MapActor
         if (!aggressive && monsterTicks < nextDecisionTicks)
             return;
 
-        bool canMove = monster.Flags.CanMove();
+        bool canMove = monster.MoveRange != 0 && monster.Flags.CanMove();
 
         if (aggressive)
         {
@@ -311,7 +291,11 @@ internal class MapMonster : MapActor
             targetPosition = FindNearbyRandomSpot(monster.MoveRange);
 
             if (targetPosition != null)
+            {
+                var diff = new Vector(targetPosition ?? Amber.Common.Position.Zero) - Center;
+                remainingTargetDistance = diff.Length();
                 CurrentState = MonsterState.Walking;
+            }
         }
     }
 
@@ -336,16 +320,19 @@ internal class MapMonster : MapActor
         var monster = GetMonsterData();
         long moveTicks = monsterTicks - lastMoveTicks;
         double moveTickMinutes = Game.TicksToMinutes(moveTicks);
-        float movedPixels = Math.Min((float)(moveTickMinutes * monster.MoveSpeed), diff.Length());
+        float movedPixels = Math.Min((float)(moveTickMinutes * monster.MoveSpeed), remainingTargetDistance);
 
         if (!float.IsNaN(movedPixels) && movedPixels > 0)
         {
             Move(movedPixels);
+            remainingTargetDistance -= movedPixels;
             var (centerX, centerY) = Center;
 
-            if (new Position(MathUtil.Round(centerX), MathUtil.Round(centerY)) == targetPosition)
+            if (remainingTargetDistance <= 0.0f)
             {
                 // Done
+                targetPosition = null;
+                remainingTargetDistance = 0.0f;
                 lastMoveTicks = monsterTicks;
                 CurrentState = MonsterState.Idle;
             }
@@ -360,13 +347,12 @@ internal class MapMonster : MapActor
 
     private void HandleChasingState()
     {
-        var (playerX, playerY) = game.Player.Position;
-        var (playerWidth, playerHeight) = game.Player.Size;
-
         if (targetPosition == null)
         {
-            targetPosition = new(playerX + playerWidth / 2, playerY + playerHeight / 2);
-            Direction = (new Vector(targetPosition ?? Amber.Common.Position.Zero) - Center).Normalized();
+            targetPosition = game.Player.Center.Round();
+            var diff = new Vector(targetPosition ?? Amber.Common.Position.Zero) - Center;
+            remainingTargetDistance = diff.Length();
+            Direction = diff.Normalized();
         }
             
         HandleWalkingState();
@@ -410,32 +396,6 @@ internal class MapMonster : MapActor
     private void HandleSummonState()
     {
         // TODO
-    }
-
-    private bool IsTileBlocking(Map map, int x, int y)
-    {
-        // TODO
-        return false;
-    }
-
-    private Position GetCurrentTile()
-    {
-        var (positionX, positionY) = Position;
-        int x = (MathUtil.Round(positionX) + sprite.Size.Width / 2) / MapScreen.TileWidth;
-        int y = (MathUtil.Round(positionY) + sprite.Size.Height / 2) / MapScreen.TileHeight;
-
-        return new(x, y);
-    }
-
-    private Position GetPlayerTile()
-    {
-        var playerPosition = game.Player.Position;
-        var playerSize = game.Player.Size;
-
-        int x = (playerPosition.X + playerSize.Width / 2) / MapScreen.TileWidth;
-        int y = (playerPosition.Y + playerSize.Height / 2) / MapScreen.TileHeight;
-
-        return new(x, y);
     }
 
     private float GetDistanceToPlayer()

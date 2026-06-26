@@ -43,6 +43,7 @@ public static class MonsterFlagsExtensions
     }
 }
 
+// TODO: Add collision area to monster data
 public readonly record struct Monster
 (
     // Byte-sized

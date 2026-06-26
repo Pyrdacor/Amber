@@ -65,6 +65,7 @@ internal class MapScreen : Screen
 		map = game.GameData.GetMap(1);
 		tileset = game.GameData.GetTileset(1);
 		FillMap(0, 0, true);
+		mapActors.Add(game.Player);
 		SpawnMonster(new Position(100, 100), Direction.Down, 1);
     }
 
@@ -161,8 +162,6 @@ internal class MapScreen : Screen
 		if (elapsedTicks == 0)
 			return;
 
-		game.Player.Update(game.GameTicks);
-
         int tilesPerRow = Math.Min(TilesPerRow, (int)map!.Width);
         int tileRows = Math.Min(TileRows, (int)map!.Height);
         var mapArea = new Rect(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight, tilesPerRow * TileWidth, tileRows * TileHeight);
@@ -188,8 +187,6 @@ internal class MapScreen : Screen
 					{
 						if (game.Player.CurrentState != Player.State.Running)
 							game.Player.CurrentState = Player.State.Walking;
-                        game.Player.Position = game.State.PlayerPosition;
-                        game.Player.CurrentDirection = game.State.PlayerDirection;
                         moved = true;
 						moveTickCounter -= ticksPerStep;
 					}
@@ -213,44 +210,31 @@ internal class MapScreen : Screen
 
 	private bool MovePlayer(int x, int y)
 	{
+		if (game == null)
+			return false;
+
 		additionalMoveRequested = false;
-		var oldPosition = game!.State.PlayerPosition;
-		int newX = MathUtil.Limit(0, oldPosition.X + x, /*map!.Width - 1*/int.MaxValue);
-		int newY = MathUtil.Limit(0, oldPosition.Y + y, /*map.Height - 1*/int.MaxValue);
+		var moveOffset = new Position(x, y);
+        var oldPosition = game.Player.GetCurrentTile();
+		var (newX, newY) = game.Player.GetTileForPositionOffset(moveOffset);
 
-		bool TileBlocksMovement(int x, int y)
-		{
-			/*var targetTile = map!.Tiles[x + y * map.Width];
-
-			// TODO: use priority bit in flags
-			return BlocksMovement(targetTile.Underlay) || BlocksMovement(targetTile.Overlay);*/
-			return false;
-		}
-
-		bool BlocksMovement(int tileIndex)
-		{
-			/*if (tileIndex == 0)
-				return false;
-
-			var flags = GetTileInfo(tileIndex).Flags;
-
-			return flags.HasFlag(TileFlags.BlockAllMovement) || !flags.HasFlag((TileFlags)(1 << (8 + (int)game!.State.TravelType)));*/
-			return false;
-		}
+		bool TileBlocksMovement(int x, int y) => game.IsTileBlocking(map!, x, y, ActorType.Player, game.Player.TravelType);
 
 		if (TileBlocksMovement(newX, newY))
 		{
 			if (newY != oldPosition.Y && !TileBlocksMovement(oldPosition.X, newY))
 			{
 				// only move in y direction
-				game.State.PlayerPosition = new(oldPosition.X, newY);
+				game.Player.Direction = new Vector(0, y);
+				game.Player.Move(1.0f);
 				return true;
 			}
 			else if (newX != oldPosition.X && !TileBlocksMovement(newX, oldPosition.Y))
 			{
-				// only move in x direction
-				game.State.PlayerPosition = new(newX, oldPosition.Y);
-				return true;
+                // only move in x direction
+                game.Player.Direction = new Vector(x, 0);
+                game.Player.Move(1.0f);
+                return true;
 			}
 			else
 			{
@@ -259,10 +243,11 @@ internal class MapScreen : Screen
 			}
 		}
 
-		// Can move
-		game.State.PlayerPosition = new(newX, newY);
+        // Can move
+        game.Player.Direction = new Vector(x, y);
+        game.Player.Move(1.0f);
 
-		return true;
+        return true;
 	}
 
 	private void AfterMove()
@@ -345,8 +330,7 @@ internal class MapScreen : Screen
 				{
                     if (game.Player.CurrentState != Player.State.Running)
                         game.Player.CurrentState = Player.State.Walking;
-					game.Player.Position = game.State.PlayerPosition;
-					game.Player.CurrentDirection = game.State.PlayerDirection;
+
 					AfterMove();
 				}
 				moveTickCounter = 0;
@@ -400,8 +384,6 @@ internal class MapScreen : Screen
 			if (MovePlayer(moveX, moveY))
 			{
                 game.Player.CurrentState = game.IsKeyDown(Key.Space) ? Player.State.Running : Player.State.Walking;
-                game.Player.Position = game.State.PlayerPosition;
-				game.Player.CurrentDirection = game.State.PlayerDirection;
 				lastMoveStartTicks = currentTicks;
 				moveTickCounter = -ticksPerStep;
 
@@ -773,4 +755,6 @@ internal class MapScreen : Screen
 	{
 		mapActors.Add(new MapMonster(game!, this, monsterIndex, position, direction));
 	}
+
+	private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
 }

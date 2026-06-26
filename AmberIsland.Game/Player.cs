@@ -5,7 +5,7 @@ using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
 
-internal class Player
+internal class Player : MapActor
 {
     public enum State
     {
@@ -21,7 +21,7 @@ internal class Player
     private readonly ISequencedSprite outfitSprite;
     private static readonly Dictionary<State, Animation> animations = [];
     private State state = State.Idle;
-    private Direction direction = Direction.Down;
+    private long playerTicks = 0;
     private long lastAnimationTicks = 0;
 
     public State CurrentState
@@ -38,39 +38,8 @@ internal class Player
         }
     }
 
-    public Direction CurrentDirection
-    {
-        get => direction;
-        set
-        {
-            if (direction == value)
-                return;
-
-            int directionDiff = value - direction;
-
-            direction = value;
-            lastAnimationTicks = 0;
-
-            var animation = GetAnimation();
-            var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Position.Zero);
-            outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
-            outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
-        }
-    }
-
-    public Position Position
-    {
-        get => sprite.Position;
-        set
-        {
-            sprite.Position = value;
-            outfitSprite.Position = value;
-        }
-    }
-
-    public Size Size => sprite.Size;
-
-    public Rect CollisionArea => new(Position.X + 4, Position.Y + 1, sprite.Size.Width - 8, 15);
+    // TODO: Avoid magic numbers
+    public override Rect CollisionArea => new(Area.Position.X + 4, Area.Position.Y + 1, sprite.Size.Width - 8, 15);
 
     static Player()
     {
@@ -98,18 +67,15 @@ internal class Player
         });
     }
 
-    public Player(Game game)
+    public Player(Game game) : base(game, ActorType.Player)
     {
         this.game = game;
 
         var layer = game.GetRenderLayer(Layer.Player);
 
-        var animation = GetAnimation();
         sprite = layer.SpriteFactory!.CreateSequenced();
-        sprite.Position = new(0, 0);
-        sprite.Size = new(24, 20);
         sprite.PaletteIndex = 0;
-        sprite.Visible = true;
+        sprite.Visible = false;
 
         layer = game.GetRenderLayer(Layer.Outfit);
 
@@ -120,6 +86,10 @@ internal class Player
         outfitSprite.Visible = sprite.Visible;
 
         SetFrameIndicesAndOrigin(resetFrameIndex: true);
+
+        Position = new(0, 0);
+        Size = new(24, 20);
+        Visible = true;
     }
 
     private Animation GetAnimation()
@@ -127,14 +97,18 @@ internal class Player
         return animations[state];
     }
 
-    public void Update(long ticks)
+    private protected override void UpdateActor(long elapsedTicks)
     {
+        base.UpdateActor(elapsedTicks);
+
+        playerTicks += elapsedTicks;
+
         if (lastAnimationTicks == 0)
-            lastAnimationTicks = ticks;
+            lastAnimationTicks = playerTicks;
 
         if (sprite.FrameIndices.Length > 1)
         {
-            long elapsed = ticks - lastAnimationTicks;
+            long elapsed = playerTicks - lastAnimationTicks;
 
             while (elapsed >= TicksPerAnimationFrame)
             {
@@ -143,7 +117,7 @@ internal class Player
                 elapsed -= TicksPerAnimationFrame;
             }
 
-            lastAnimationTicks = ticks - elapsed;
+            lastAnimationTicks = playerTicks - elapsed;
         }
     }
 
@@ -154,11 +128,63 @@ internal class Player
 
     private void SetFrameIndicesAndOrigin(bool resetFrameIndex)
     {
-        sprite.SetFrameIndicesAndOrigin(GetAnimation, direction, resetFrameIndex);
+        sprite.SetFrameIndicesAndOrigin(GetAnimation, VisualDirection, resetFrameIndex);
 
         outfitSprite.TextureSize = sprite.TextureSize;
         outfitSprite.FrameOrigin = sprite.FrameOrigin;
         outfitSprite.FrameIndices = sprite.FrameIndices;
         outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+    }
+
+    private protected override void PositionChanged(Vector oldPosition, Vector newPosition, Size oldSize, Size newSize)
+    {
+        base.PositionChanged(oldPosition, newPosition, oldSize, newSize);
+
+        if (sprite == null)
+            return;
+
+        var position = Position.Round();
+
+        outfitSprite.Position = sprite.Position = position - MapOffset;
+        outfitSprite.Size = sprite.Size = Size;
+
+        game.State.PlayerPosition = position;
+    }
+
+    private protected override void VisualDirectionChanged(Direction oldDirection, Direction newDirection)
+    {
+        base.VisualDirectionChanged(oldDirection, newDirection);
+
+        int directionDiff = newDirection - oldDirection;
+
+        lastAnimationTicks = 0;
+
+        var animation = GetAnimation();
+        var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
+        outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
+        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
+
+        game.State.PlayerDirection = VisualDirection;
+    }
+
+    private protected override void VisibilityChanged(bool oldVisibility, bool newVisibility)
+    {
+        base.VisibilityChanged(oldVisibility, newVisibility);
+
+        outfitSprite.Visible = sprite.Visible = Visible && VisibleOnMap;
+    }
+
+    private protected override void MapVisibilityChanged(bool oldMapVisibility, bool newMapVisibility)
+    {
+        base.MapVisibilityChanged(oldMapVisibility, newMapVisibility);
+
+        outfitSprite.Visible = sprite.Visible = Visible && VisibleOnMap;
+    }
+
+    private protected override void MapOffsetChanged(Position oldMapOffset, Position newMapOffset)
+    {
+        base.MapOffsetChanged(oldMapOffset, newMapOffset);
+
+        outfitSprite.Position = sprite.Position = Position.Round() - MapOffset;
     }
 }

@@ -15,7 +15,7 @@ partial class Game
 
         if (foregroundTileIndex != 0)
         {
-            tile = gameData.GetTileset(map.ForegroundTilesetIndex)?.Tiles[foregroundTileIndex];
+            tile = gameData.GetTileset(map.ForegroundTilesetIndex)?.Tiles[foregroundTileIndex - 1];
 
             if (tile != null)
             {
@@ -29,7 +29,7 @@ partial class Game
 
         if (objectTileIndex != 0)
         {
-            tile = gameData.GetTileset(map.ObjectTilesetIndex)?.Tiles[objectTileIndex];
+            tile = gameData.GetTileset(map.ObjectTilesetIndex)?.Tiles[objectTileIndex - 1];
 
             if (tile != null)
             {
@@ -41,7 +41,7 @@ partial class Game
             }
         }
 
-        tile = gameData.GetTileset(map.BackgroundTilesetIndex)?.Tiles[backgroundTileIndex];
+        tile = gameData.GetTileset(map.BackgroundTilesetIndex)?.Tiles[backgroundTileIndex - 1];
 
         return tile ?? default;
     }
