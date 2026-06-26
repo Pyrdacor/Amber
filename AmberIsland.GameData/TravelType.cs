@@ -1,6 +1,6 @@
 ﻿namespace AmberIsland.GameData;
 
-public enum TravelType
+public enum TravelType : byte
 {
     Walk, // Includes running, creeping, etc
     Swim,

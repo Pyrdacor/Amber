@@ -7,11 +7,13 @@ public enum TileFlags : byte
 {
     None                    = 0,
     WaveAnimation           = 1 << 0, // If set animation frames go back and forth instead of cycle
-    IgnorePlayerBlocking    = 1 << 1, // If set, BlockedTravel is ignored for the player
+    IgnorePlayerBlocking    = 1 << 1, // If set, BlockedTravel is ignored for the player (also used for dropped items cause player must reach them)
     IgnoreMonsterBlocking   = 1 << 2, // If set, BlockedTravel is ignored for all monsters
     IgnoreNPCBlocking       = 1 << 3, // If set, BlockedTravel is ignored for all NPCs
-    BlocksSight             = 1 << 4, // Enemies cannot see you behind it
-    RandomAnimationStart    = 1 << 5, // Animation starts randomly and pauses after one cycle (or 1 back and forth for wave animations)
+    IgnoreObjectBlocking    = 1 << 4, // If set, BlockedTravel is ignored for all map objects (like moved blocks)
+    BlocksSight             = 1 << 5, // Enemies cannot see you behind it
+    RandomAnimationStart    = 1 << 6, // Animation starts randomly and pauses after one cycle (or 1 back and forth for wave animations)
+    UseLowerLayerFlags      = 1 << 7, // If set, uses the flags of the layers below. If there is none below, still use it.
 }
 
 public enum TileType : byte

@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
 
@@ -11,7 +12,7 @@ public enum ActorType
     Object
 }
 
-internal class MapActor(ActorType actorType)
+internal class MapActor(Game game, ActorType actorType)
 {
     private Vector position = Vector.Zero;
     private Size size = Size.Zero;
@@ -21,6 +22,7 @@ internal class MapActor(ActorType actorType)
     private Position mapOffset = Amber.Common.Position.Zero;
     private bool visibleOnMap = false;
     private bool visible = false;
+    private TravelType travelType = TravelType.Walk;
 
     public ActorType Type => actorType;
 
@@ -110,6 +112,19 @@ internal class MapActor(ActorType actorType)
         }
     }
 
+    public TravelType TravelType
+    {
+        get => travelType;
+        private set
+        {
+            if (travelType != value)
+            {
+                travelType = value;
+                TravelTypeChanged();
+            }
+        }
+    }
+
     private protected virtual void PositionChanged()
     {
 
@@ -135,6 +150,11 @@ internal class MapActor(ActorType actorType)
 
     }
 
+    private protected virtual void TravelTypeChanged()
+    {
+
+    }
+
     private protected virtual void UpdateActor(long elapsedTicks)
     {
 
@@ -154,4 +174,6 @@ internal class MapActor(ActorType actorType)
     {
         Position += amount * Direction;
     }
+
+    protected bool IsTileBlocking(Map map, int x, int y) => game.IsTileBlocking(map, x, y, Type, TravelType);
 }

@@ -2,26 +2,6 @@
 
 namespace AmberIsland.GameData;
 
-public enum MonsterBehavior : byte
-{
-    /// <summary>
-    /// Monster only attacks if it was hit by the player.
-    /// </summary>
-    Passive,
-    /// <summary>
-    /// Monster immediately chases the player if he is in vision range.
-    /// </summary>
-    Aggressive,
-    /// <summary>
-    /// Like passive, but cannot move.
-    /// </summary>
-    StationaryPassive,
-    /// <summary>
-    /// Like Aggressive, but cannot move.
-    /// </summary>
-    StationaryAggressive,
-}
-
 public enum MonsterLowHpBehavior : byte
 {
     /// <summary>
@@ -42,65 +22,120 @@ public enum MonsterLowHpBehavior : byte
     Spawn,
 }
 
+[Flags]
+public enum MonsterFlags : byte
+{
+    /// <summary>
+    /// If set, the monster immediately chases the player if he is in vision range.
+    /// If not, the monster only attacks if it was hit by the player.
+    /// </summary>
+    Aggressive  = 1 << 0,
+    CanWalk     = 1 << 1,
+    CanSwim     = 1 << 2,
+    CanFly      = 1 << 3,
+}
+
+public static class MonsterFlagsExtensions
+{
+    public static bool CanMove(this MonsterFlags flags)
+    {
+        return ((byte)flags & 0xe) != 0;
+    }
+}
+
 public readonly record struct Monster
 (
+    // Byte-sized
     Race Race,
     Element Element,
-    MonsterBehavior MonsterBehavior,
-    MonsterLowHpBehavior MonsterLowHpBehavior,
+    MonsterFlags Flags,
+    MonsterLowHpBehavior LowHpBehavior,
+    byte PhysicalDamageReduction, // %
+    byte MagicDamageReduction, // %
+    byte AttackRange, // As a radius in tiles
+    byte VisionRange, // As a radius in tiles
+    byte MoveRange, // In tiles (but each direction step counts as 1 tile)
+    byte LowHitpointDivisor, // hitpoints below MaxHP / LowHitpointDivisor are considered as "low health" for MonsterLowHpBehavior
+    // Word-sized
+    ushort BossMonsterIndex, // 0 = none
+    ushort MinionMonsterIndex, // 0 = none
+    ushort MoveSpeed, // Pixels per (real) minute (0 or 0.0167 to 1092.25 pixel/s)
+    ushort AttackSpeed, // Swings per (real) minute (0 or 0.0167 to 1092.25 swings/s)
+    ushort MinDecisionDelay, // Minimum time in milliseconds before the next decision is evaluated (in idle state)
+    ushort MaxDecisionDelay, // Maximum time in milliseconds before the next decision is evaluated (in idle state)
+                             // Dword-sized
     uint HitPoints,
     uint MinAttackDamage,
     uint MaxAttackDamage,
     uint MinMagicDamage,
     uint MaxMagicDamage,
     uint PhysicalDefense,
-    uint MagicDefense,
-    byte PhysicalDamageReduction, // %
-    byte MagicDamageReduction, // %
-    byte AttackRange,
-    byte VisionRange,
+    uint MagicDefense,    
     uint Hit,
     uint Dodge,
-    uint Experience,
-    ushort BossMonsterIndex, // 0 = none
-    ushort MinionMonsterIndex, // 0 = none
-    ushort MoveSpeed, // Pixels per (real) minute (0 or 0.0167 to 1092.25 pixel/s)
-    ushort AttackSpeed // Swings per (real) minute (0 or 0.0167 to 1092.25 swings/s)
+    uint Experience
     // TODO: spells
 )
 {
     public void Write(IDataWriter writer)
     {
+        // Byte-sized
         writer.Write((byte)Race);
         writer.Write((byte)Element);
-        writer.Write((byte)MonsterBehavior);
-        writer.Write((byte)MonsterLowHpBehavior);
+        writer.Write((byte)Flags);
+        writer.Write((byte)LowHpBehavior);
+        writer.Write(PhysicalDamageReduction);
+        writer.Write(MagicDamageReduction);
+        writer.Write(AttackRange);
+        writer.Write(VisionRange);
+        writer.Write(MoveRange);
+        writer.Write(LowHitpointDivisor);
+
+        // Word-sized
+        writer.Write(BossMonsterIndex);
+        writer.Write(MinionMonsterIndex);
+        writer.Write(MoveSpeed);
+        writer.Write(AttackSpeed);
+        writer.Write(MinDecisionDelay);
+        writer.Write(MaxDecisionDelay);
+
+        // Dword-sized
         writer.Write(HitPoints);        
         writer.Write(MinAttackDamage);
         writer.Write(MaxAttackDamage);
         writer.Write(MinMagicDamage);
         writer.Write(MaxMagicDamage);
         writer.Write(PhysicalDefense);
-        writer.Write(MagicDefense);
-        writer.Write(PhysicalDamageReduction);
-        writer.Write(MagicDamageReduction);
-        writer.Write(AttackRange);
-        writer.Write(VisionRange);
+        writer.Write(MagicDefense);        
         writer.Write(Hit);
         writer.Write(Dodge);
         writer.Write(Experience);
-        writer.Write(BossMonsterIndex);
-        writer.Write(MinionMonsterIndex);
-        writer.Write(MoveSpeed);
-        writer.Write(AttackSpeed);
+        
     }
 
     public static Monster Read(IDataReader reader)
     {
+        // Byte-sized
         var race = (Race)reader.ReadByte();
         var element = (Element)reader.ReadByte();
-        var behavior = (MonsterBehavior)reader.ReadByte();
+        var flags = (MonsterFlags)reader.ReadByte();
         var lowHpBehavior = (MonsterLowHpBehavior)reader.ReadByte();
+        var physicalDamageReduction = reader.ReadByte();
+        var magicDamageReduction = reader.ReadByte();
+        var attackRange = reader.ReadByte();
+        var visionRange = reader.ReadByte();
+        var moveRange = reader.ReadByte();
+        var lowHitpointDivisor = reader.ReadByte();
+
+        // Word-sized
+        var bossMonsterIndex = reader.ReadWord();
+        var minionMonsterIndex = reader.ReadWord();
+        var moveSpeed = reader.ReadWord();
+        var attackSpeed = reader.ReadWord();
+        var minDecisionDelay = reader.ReadWord();
+        var maxDecisionDelay = reader.ReadWord();
+
+        // Dword-sized
         var hitPoints = reader.ReadDword();
         var minAttackDamage = reader.ReadDword();
         var maxAttackDamage = reader.ReadDword();
@@ -108,20 +143,41 @@ public readonly record struct Monster
         var maxMagicDamage = reader.ReadDword();
         var physicalDefense = reader.ReadDword();
         var magicDefense = reader.ReadDword();
-        var physicalDamageReduction = reader.ReadByte();
-        var magicDamageReduction = reader.ReadByte();
-        var attackRange = reader.ReadByte();
-        var visionRange = reader.ReadByte();
         var hit = reader.ReadDword();
         var dodge = reader.ReadDword();
         var exp = reader.ReadDword();
-        var bossMonsterIndex = reader.ReadWord();
-        var minionMonsterIndex = reader.ReadWord();
-        var moveSpeed = reader.ReadWord();
-        var attackSpeed = reader.ReadWord();
 
-        return new(race, element, behavior, lowHpBehavior, hitPoints, minAttackDamage, maxAttackDamage,
-            minMagicDamage, maxMagicDamage, physicalDefense, magicDefense, physicalDamageReduction, magicDamageReduction,
-            attackRange, visionRange, hit, dodge, exp, bossMonsterIndex, minionMonsterIndex, moveSpeed, attackSpeed);
+        return new
+        (
+            // Byte-sized
+            race,
+            element,
+            flags,
+            lowHpBehavior,
+            physicalDamageReduction,
+            magicDamageReduction,
+            attackRange, 
+            visionRange,
+            moveRange,
+            lowHitpointDivisor,
+            // Word-sized
+            bossMonsterIndex, 
+            minionMonsterIndex,
+            moveSpeed,
+            attackSpeed,
+            minDecisionDelay,
+            maxDecisionDelay,
+            // Dword-sized
+            hitPoints,
+            minAttackDamage,
+            maxAttackDamage,
+            minMagicDamage,
+            maxMagicDamage,
+            physicalDefense,
+            magicDefense,
+            hit,
+            dodge,
+            exp
+        );
     }
 }

@@ -8,11 +8,6 @@ namespace AmberIsland.Game;
 
 internal class MapMonster : MapActor
 {
-    const int MoveRange = 4; // in tiles (each direction is 1 tile) // TODO: Make it a monster property
-    const long MinDecisionDelay = 2 * Game.TicksPerSecond; // TODO: Make it a monster property
-    const long MaxDecisionDelay = 5 * Game.TicksPerSecond; // TODO: Make it a monster property
-    const int LowHpDivisor = 8; // below MaxHP / LowHpDivisor is treated as "low hp" (only works if MaxHP >= 2 * LowHpDivisor) // TODO: Make it a monster property
-
     private readonly Game game;
     private readonly MapScreen mapScreen;
     private readonly uint monsterIndex;
@@ -71,7 +66,7 @@ internal class MapMonster : MapActor
     }
 
     public MapMonster(Game game, MapScreen mapScreen, uint monsterIndex, Position position, Direction direction)
-        : base(ActorType.Monster)
+        : base(game, ActorType.Monster)
     {
         this.game = game;
         this.mapScreen = mapScreen;
@@ -251,7 +246,9 @@ internal class MapMonster : MapActor
 
     private bool CheckLowHpBehavior(Monster monster)
     {
-        if (monster.MonsterLowHpBehavior != MonsterLowHpBehavior.Normal && currentHitPoints < monster.HitPoints / LowHpDivisor)
+        uint GetLowHitPoints() => monster.LowHitpointDivisor == 0 ? 2 : Math.Max(2, monster.HitPoints / monster.LowHitpointDivisor);
+
+        if (monster.LowHpBehavior != MonsterLowHpBehavior.Normal && currentHitPoints < GetLowHitPoints())
         {
             // TODO
 
@@ -261,9 +258,16 @@ internal class MapMonster : MapActor
         return false;
     }
 
-    private bool IsAggressive(Monster monster) => currentState.IsAggressive() || monster.MonsterBehavior is MonsterBehavior.Aggressive or MonsterBehavior.StationaryAggressive;
+    private bool IsAggressive(Monster monster) => currentState.IsAggressive() || monster.Flags.HasFlag(MonsterFlags.Aggressive);
 
-    private void SetupNextDecision() => nextDecisionTicks = monsterTicks + Game.Random((int)MinDecisionDelay, (int)MaxDecisionDelay);
+    private void SetupNextDecision()
+    {
+        var monster = GetMonsterData();
+        var minDecisionDelay = Game.SecondsToTicks(0.001 * monster.MinDecisionDelay);
+        var maxDecisionDelay = Game.SecondsToTicks(0.001 * monster.MaxDecisionDelay);
+
+        nextDecisionTicks = monsterTicks + Game.Random((int)minDecisionDelay, (int)maxDecisionDelay);
+    }
 
     private void HandleIdleState()
     {
@@ -277,37 +281,37 @@ internal class MapMonster : MapActor
         if (!aggressive && monsterTicks < nextDecisionTicks)
             return;
 
-        switch (monster.MonsterBehavior)
-        {
-            case MonsterBehavior.Passive:
-                if (monsterTicks < nextDecisionTicks)
-                    return;
-                targetPosition = FindNearbyRandomSpot();
-                if (targetPosition != null)
-                    CurrentState = MonsterState.Walking;
-                break;
-            case MonsterBehavior.Aggressive:
-                if (IsPlayerInAttackRange())
-                    CurrentState = MonsterState.Attacking;
-                else if (IsPlayerInSightRange())
-                    CurrentState = MonsterState.Chasing;
-                else
-                {
-                    if (monsterTicks < nextDecisionTicks)
-                        return;
+        bool canMove = monster.Flags.CanMove();
 
-                    targetPosition = FindNearbyRandomSpot();
-                    if (targetPosition != null)
-                        CurrentState = MonsterState.Walking;
+        if (aggressive)
+        {
+            if (IsPlayerInAttackRange())
+            {
+                CurrentState = MonsterState.Attacking;
+            }
+            else if (canMove)
+            {
+                if (IsPlayerInSightRange())
+                {
+                    CurrentState = MonsterState.Chasing;
                 }
-                break;
-            case MonsterBehavior.StationaryPassive:
-                // Do nothing
-                break;
-            case MonsterBehavior.StationaryAggressive:
-                if (IsPlayerInAttackRange())
-                    CurrentState = MonsterState.Attacking;
-                break;
+                else if (monsterTicks >= nextDecisionTicks)
+                {
+                    FindRandomMoveSpot();
+                }
+            }
+        }
+        else if (canMove && monsterTicks >= nextDecisionTicks)
+        {
+            FindRandomMoveSpot();
+        }
+
+        void FindRandomMoveSpot()
+        {
+            targetPosition = FindNearbyRandomSpot(monster.MoveRange);
+
+            if (targetPosition != null)
+                CurrentState = MonsterState.Walking;
         }
     }
 
@@ -442,8 +446,11 @@ internal class MapMonster : MapActor
         return (playerCenter - Center).Length() / MapScreen.TileWidth;
     }
 
-    private Position? FindNearbyRandomSpot()
+    private Position? FindNearbyRandomSpot(ushort moveRange)
     {
+        if (moveRange == 0)
+            return null;
+
         var map = mapScreen.Map;
 
         var (tileColumn, tileRow) = GetCurrentTile();
@@ -476,7 +483,7 @@ internal class MapMonster : MapActor
             }
         }
 
-        for (int i = 0; i < MoveRange; i++)
+        for (int i = 0; i < moveRange; i++)
             NextRandomSpot(ref tileColumn, ref tileRow);
 
         if (tileColumn == prevTileColumn && tileRow == prevTileRow)
