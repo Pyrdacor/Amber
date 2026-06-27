@@ -75,9 +75,9 @@ public record Map
     ushort BackgroundTilesetIndex,
     ushort ObjectTilesetIndex,
     ushort ForegroundTilesetIndex,
-    byte[] BackgroundLayer,
-    byte[] ObjectLayer,
-    byte[] ForegroundLayer,
+    ushort[] BackgroundLayer,
+    ushort[] ObjectLayer,
+    ushort[] ForegroundLayer,
     MapEventTrigger[] EventTriggers,
     MapEventCondition[] EventConditions,
     MapEventAction[] EventActions,
@@ -96,9 +96,12 @@ public record Map
         uncompressedWriter.Write(ObjectTilesetIndex);
         uncompressedWriter.Write(ForegroundTilesetIndex);
 
-        uncompressedWriter.Write(BackgroundLayer);
-        uncompressedWriter.Write(ObjectLayer);
-        uncompressedWriter.Write(ForegroundLayer);
+        foreach (var tile in BackgroundLayer)
+            uncompressedWriter.Write(tile);
+        foreach (var tile in ObjectLayer)
+            uncompressedWriter.Write(tile);
+        foreach (var tile in ForegroundLayer)
+            uncompressedWriter.Write(tile);
 
         uncompressedWriter.Write((ushort)EventTriggers.Length);
         uncompressedWriter.Write((ushort)EventConditions.Length);
@@ -139,9 +142,15 @@ public record Map
         ushort foregroundTilesetIndex = reader.ReadWord();
 
         int tileCount = width * height;
-        var backgroundLayer = reader.ReadBytes(tileCount);
-        var objectLayer = reader.ReadBytes(tileCount);
-        var foregroundLayer = reader.ReadBytes(tileCount);
+        var backgroundLayer = new ushort[tileCount];
+        var objectLayer = new ushort[tileCount];
+        var foregroundLayer = new ushort[tileCount];
+        for (int i = 0; i < tileCount; i++)
+            backgroundLayer[i] = reader.ReadWord();
+        for (int i = 0; i < tileCount; i++)
+            objectLayer[i] = reader.ReadWord();
+        for (int i = 0; i < tileCount; i++)
+            foregroundLayer[i] = reader.ReadWord();
 
         int numEventTriggers = reader.ReadWord();
         int numEventConditions = reader.ReadWord();

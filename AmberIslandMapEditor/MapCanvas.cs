@@ -15,7 +15,7 @@ internal sealed class MapCanvas : Control
 {
     public const int LayerCount = 3;
 
-    private byte[][] layers = [[], [], []];
+    private ushort[][] layers = [[], [], []];
     private readonly LayerTileset?[] tilesets = new LayerTileset?[LayerCount];
     private readonly ushort[] tilesetIndices = [1, 1, 1];
     private readonly bool[] visible = [true, true, true];
@@ -42,6 +42,7 @@ internal sealed class MapCanvas : Control
     public int ActiveLayer { get; set; }
     public MapTool Tool { get; set; } = MapTool.Pen;
     public int SelectedTile { get; set; }
+    public int TilesetTilesPerRow { get; set; } = 32;
     public bool ShowGrid { get; set; } = true;
 
     /// <summary>Raised once tiles have actually changed (mark document dirty).</summary>
@@ -86,7 +87,7 @@ internal sealed class MapCanvas : Control
     {
         MapWidth = width;
         MapHeight = height;
-        layers = [new byte[width * height], new byte[width * height], new byte[width * height]];
+        layers = [new ushort[width * height], new ushort[width * height], new ushort[width * height]];
         tilesetIndices[0] = tilesetIndices[1] = tilesetIndices[2] = 1;
         eventTriggers = [];
         eventConditions = [];
@@ -104,9 +105,9 @@ internal sealed class MapCanvas : Control
         MapHeight = map.Height;
         layers =
         [
-            (byte[])map.BackgroundLayer.Clone(),
-            (byte[])map.ObjectLayer.Clone(),
-            (byte[])map.ForegroundLayer.Clone()
+            (ushort[])map.BackgroundLayer.Clone(),
+            (ushort[])map.ObjectLayer.Clone(),
+            (ushort[])map.ForegroundLayer.Clone()
         ];
         tilesetIndices[0] = map.BackgroundTilesetIndex;
         tilesetIndices[1] = map.ObjectTilesetIndex;
@@ -150,7 +151,7 @@ internal sealed class MapCanvas : Control
 
     public void SetTilesetIndex(int layer, ushort value) => tilesetIndices[layer] = value;
 
-    public byte GetTileValue(int layer, int x, int y) => layers[layer][y * MapWidth + x];
+    public ushort GetTileValue(int layer, int x, int y) => layers[layer][y * MapWidth + x];
 
     private void UpdateSize() => Size = new Size(MapWidth * TileSizePx, MapHeight * TileSizePx);
 
@@ -342,7 +343,7 @@ internal sealed class MapCanvas : Control
         int i = y * MapWidth + x;
         if (data[i] == value)
             return;
-        data[i] = (byte)value;
+        data[i] = (ushort)value;
         strokeChanged = true;
         int ts = TileSizePx;
         Invalidate(new Rectangle(x * ts, y * ts, ts, ts));
@@ -358,15 +359,13 @@ internal sealed class MapCanvas : Control
     private void StampBlock(Point cell, bool consecutive)
     {
         var (bw, bh) = BlockSize(Tool);
-        int n = 0;
         for (int dy = 0; dy < bh; dy++)
         {
             for (int dx = 0; dx < bw; dx++)
             {
                 int x = cell.X + dx;
                 int y = cell.Y + dy;
-                int value = consecutive ? ClampTileValue(SelectedTile + n) : SelectedTile;
-                n++;
+                int value = consecutive ? ClampTileValue(SelectedTile + dx + dy * TilesetTilesPerRow) : SelectedTile;
                 if (InBounds(x, y))
                     SetTile(ActiveLayer, x, y, value);
             }
@@ -381,7 +380,7 @@ internal sealed class MapCanvas : Control
         {
             if (data[i] != value)
             {
-                data[i] = (byte)value;
+                data[i] = (ushort)value;
                 changed = true;
             }
         }
@@ -412,7 +411,7 @@ internal sealed class MapCanvas : Control
             if (data[i] != target)
                 continue;
 
-            data[i] = (byte)value;
+            data[i] = (ushort)value;
             stack.Push(new Point(p.X + 1, p.Y));
             stack.Push(new Point(p.X - 1, p.Y));
             stack.Push(new Point(p.X, p.Y + 1));

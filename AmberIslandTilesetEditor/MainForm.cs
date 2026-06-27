@@ -37,7 +37,7 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
-        Width = 1180;
+        Width = 1320;
         Height = 820;
         StartPosition = FormStartPosition.CenterScreen;
 
@@ -135,7 +135,7 @@ internal sealed class MainForm : Form
 
     private Control BuildTileListColumn()
     {
-        var panel = new Panel { Dock = DockStyle.Right, Width = 290, Padding = new Padding(8) };
+        var panel = new Panel { Dock = DockStyle.Right, Width = 400, Padding = new Padding(8) };
 
         var header = new FlowLayoutPanel
         {
@@ -147,9 +147,12 @@ internal sealed class MainForm : Form
         header.Controls.Add(Bold("Tiles"));
         var addButton = new Button { Text = "Add", AutoSize = true, Margin = new Padding(16, 2, 4, 0) };
         addButton.Click += (_, _) => OnAddTile();
+        var addAllButton = new Button { Text = "Add all", AutoSize = true, Margin = new Padding(0, 2, 4, 0) };
+        addAllButton.Click += (_, _) => OnAddAllTiles();
         var removeButton = new Button { Text = "Remove", AutoSize = true, Margin = new Padding(0, 2, 0, 0) };
         removeButton.Click += (_, _) => OnRemoveTile();
         header.Controls.Add(addButton);
+        header.Controls.Add(addAllButton);
         header.Controls.Add(removeButton);
 
         tileListHost.Controls.Add(tileList);
@@ -311,6 +314,25 @@ internal sealed class MainForm : Form
     private void OnAddTile()
     {
         tiles.Add(new Tile(TileType.Grass, TileFlags.None, 1, 0, 0));
+        selectedIndex = tiles.Count - 1;
+        tileList.SetData(tiles, atlas);
+        tileList.SelectedIndex = selectedIndex;
+        PopulateControls();
+        MarkDirty();
+    }
+
+    private void OnAddAllTiles()
+    {
+        if (atlas == null)
+        {
+            MessageBox.Show(this, "Load an atlas first.", "Add all",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        for (int i = 0; i < atlas.FrameCount; i++)
+            tiles.Add(new Tile(TileType.Grass, TileFlags.None, 1, 0, (ushort)i));
+
         selectedIndex = tiles.Count - 1;
         tileList.SetData(tiles, atlas);
         tileList.SelectedIndex = selectedIndex;

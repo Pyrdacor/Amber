@@ -20,6 +20,9 @@ internal sealed class MainForm : Form
 
     private readonly int[] selectedPerLayer = new int[MapCanvas.LayerCount];
 
+    private readonly CheckBox eraserCheck = new() { Text = "Eraser", Appearance = Appearance.Button, AutoSize = true, Margin = new Padding(0, 2, 8, 0) };
+    private readonly NumericUpDown tilesPerRowInput = new() { Minimum = 1, Maximum = 512, Value = 32, Width = 60 };
+
     private readonly List<(ToolStripButton Button, MapTool Tool)> toolButtons = [];
     private readonly List<(ToolStripButton Button, MapZoom Zoom)> zoomButtons = [];
 
@@ -43,17 +46,19 @@ internal sealed class MainForm : Form
         var menu = BuildMenu();
         var toolStrip = BuildToolStrip();
         var sidePanel = BuildSidePanel();
+        var tilesetPanel = BuildTilesetPanel();
         var statusStrip = new StatusStrip();
         statusStrip.Items.Add(statusCell);
         statusStrip.Items.Add(statusInfo);
 
         mapHost.Controls.Add(canvas);
 
-        Controls.Add(mapHost);
-        Controls.Add(sidePanel);
-        Controls.Add(statusStrip);
-        Controls.Add(toolStrip);
-        Controls.Add(menu);
+        Controls.Add(mapHost);        // Fill
+        Controls.Add(tilesetPanel);   // Bottom (above status)
+        Controls.Add(sidePanel);      // Left
+        Controls.Add(statusStrip);    // Bottom
+        Controls.Add(toolStrip);      // Top
+        Controls.Add(menu);           // Top
         MainMenuStrip = menu;
 
         WireEvents();
@@ -139,9 +144,9 @@ internal sealed class MainForm : Form
 
     private Panel BuildSidePanel()
     {
-        var panel = new Panel { Dock = DockStyle.Left, Width = 300, Padding = new Padding(8) };
+        var panel = new Panel { Dock = DockStyle.Left, Width = 260, Padding = new Padding(8) };
 
-        var top = new FlowLayoutPanel
+        var flow = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
             FlowDirection = FlowDirection.TopDown,
@@ -150,7 +155,7 @@ internal sealed class MainForm : Form
             AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
 
-        top.Controls.Add(Bold("Layers"));
+        flow.Controls.Add(Bold("Layers"));
 
         for (int i = 0; i < MapCanvas.LayerCount; i++)
         {
@@ -165,10 +170,12 @@ internal sealed class MainForm : Form
             };
 
             var radio = new RadioButton { Text = LayerNames[i], AutoSize = true, Checked = i == 0, Width = 150 };
-            radio.CheckedChanged += (_, _) =>
+            radio.Click += (_, _) =>
             {
-                if (radio.Checked)
-                    SyncActiveLayer();
+                for (int j = 0; j < layerRadios.Length; j++)
+                    if (layerRadios[j] != null)
+                        layerRadios[j].Checked = layerRadios[j] == radio;
+                SyncActiveLayer();
             };
             layerRadios[i] = radio;
 
@@ -178,33 +185,47 @@ internal sealed class MainForm : Form
 
             row.Controls.Add(radio);
             row.Controls.Add(visible);
-            top.Controls.Add(row);
+            flow.Controls.Add(row);
         }
 
         var loadButton = new Button { Text = "Load tileset for active layer…", AutoSize = true, Margin = new Padding(0, 8, 0, 4) };
         loadButton.Click += (_, _) => OnLoadTileset();
-        top.Controls.Add(loadButton);
+        flow.Controls.Add(loadButton);
 
         var indexRow = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoSize = true };
         indexRow.Controls.Add(new Label { Text = "Tileset index", AutoSize = true, Margin = new Padding(0, 6, 6, 0) });
         indexRow.Controls.Add(tilesetIndexInput);
-        top.Controls.Add(indexRow);
+        flow.Controls.Add(indexRow);
 
-        top.Controls.Add(tilesetInfoLabel);
-        top.Controls.Add(Bold("Tiles"));
+        flow.Controls.Add(tilesetInfoLabel);
 
-        var tilesetHeader = new Label
+        panel.Controls.Add(flow);
+        return panel;
+    }
+
+    private Panel BuildTilesetPanel()
+    {
+        var panel = new Panel { Dock = DockStyle.Bottom, Height = 200, Padding = new Padding(4) };
+
+        var bar = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = 2,
-            Margin = new Padding(0)
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Padding = new Padding(2)
         };
+
+        bar.Controls.Add(Bold("Tiles"));
+        bar.Controls.Add(eraserCheck);
+        bar.Controls.Add(new Label { Text = "Tiles per row:", AutoSize = true, Margin = new Padding(8, 6, 4, 0) });
+        bar.Controls.Add(tilesPerRowInput);
 
         tilesetHost.Controls.Add(tilesetView);
 
-        panel.Controls.Add(tilesetHost);
-        panel.Controls.Add(tilesetHeader);
-        panel.Controls.Add(top);
+        panel.Controls.Add(tilesetHost); // Fill
+        panel.Controls.Add(bar);         // Top
         return panel;
     }
 
@@ -230,6 +251,7 @@ internal sealed class MainForm : Form
         {
             selectedPerLayer[canvas.ActiveLayer] = value;
             tilesetView.SelectedValue = value;
+            eraserCheck.Checked = value == 0;
         };
         canvas.HoverChanged += UpdateHoverStatus;
 
@@ -237,12 +259,24 @@ internal sealed class MainForm : Form
         {
             selectedPerLayer[canvas.ActiveLayer] = value;
             canvas.SelectedTile = value;
+            eraserCheck.Checked = false;
         };
 
-        tilesetHost.Resize += (_, _) =>
+        eraserCheck.CheckedChanged += (_, _) =>
         {
-            tilesetView.Width = tilesetHost.ClientSize.Width;
-            tilesetView.Relayout();
+            if (eraserCheck.Checked)
+            {
+                selectedPerLayer[canvas.ActiveLayer] = 0;
+                canvas.SelectedTile = 0;
+                tilesetView.SelectedValue = 0;
+            }
+        };
+
+        tilesPerRowInput.ValueChanged += (_, _) =>
+        {
+            int tpr = (int)tilesPerRowInput.Value;
+            tilesetView.TilesPerRow = tpr;
+            canvas.TilesetTilesPerRow = tpr;
         };
 
         tilesetIndexInput.ValueChanged += (_, _) =>
@@ -280,9 +314,9 @@ internal sealed class MainForm : Form
         int selected = selectedPerLayer[active];
         canvas.SelectedTile = selected;
 
-        tilesetView.Width = tilesetHost.ClientSize.Width;
         tilesetView.SetTileset(canvas.GetLayerTileset(active));
         tilesetView.SelectedValue = selected;
+        eraserCheck.Checked = selected == 0;
 
         suppressIndexEvent = true;
         tilesetIndexInput.Value = canvas.GetTilesetIndex(active);
@@ -347,7 +381,6 @@ internal sealed class MainForm : Form
             lastTilesetPath = tilesetPath;
             lastAtlasPath = atlasPath;
 
-            tilesetView.Width = tilesetHost.ClientSize.Width;
             tilesetView.SetTileset(tileset);
             if (selectedPerLayer[canvas.ActiveLayer] > tileset.TileCount)
             {

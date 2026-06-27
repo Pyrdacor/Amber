@@ -1,9 +1,13 @@
+using System.Drawing.Drawing2D;
+
 namespace AmberIslandMapEditor;
 
 /// <summary>
-/// Shows the active layer's tileset as a grid of selectable tiles (cell 0 is the
-/// "no tile" eraser). The selected tile is highlighted. Width is driven by the
-/// host panel; height grows to fit so the host can scroll vertically.
+/// A single-select grid of tiles. Each cell shows a 32×32 preview.
+/// The grid has a fixed number of columns (<see cref="TilesPerRow"/>);
+/// width and height are computed from that. The host scroll-panel handles
+/// scrolling when the view is larger than the visible area.
+/// Tile values are 1-based (0 = no tile / eraser, handled externally).
 /// </summary>
 internal sealed class TilesetView : Control
 {
@@ -11,6 +15,7 @@ internal sealed class TilesetView : Control
 
     private LayerTileset? tileset;
     private int selected;
+    private int tilesPerRow = 32;
 
     public event Action<int>? SelectedChanged;
 
@@ -18,6 +23,17 @@ internal sealed class TilesetView : Control
     {
         DoubleBuffered = true;
         BackColor = Color.FromArgb(48, 48, 52);
+    }
+
+    public int TilesPerRow
+    {
+        get => tilesPerRow;
+        set
+        {
+            tilesPerRow = Math.Max(1, value);
+            Relayout();
+            Invalidate();
+        }
     }
 
     public void SetTileset(LayerTileset? value)
@@ -41,68 +57,53 @@ internal sealed class TilesetView : Control
         }
     }
 
-    private int Columns => Math.Max(1, Width / Cell);
-
-    private int CellCount => (tileset?.TileCount ?? 0) + 1; // +1 for the "no tile" cell
+    private int TileCount => tileset?.TileCount ?? 0;
 
     public void Relayout()
     {
-        int rows = (CellCount + Columns - 1) / Columns;
+        Width = tilesPerRow * Cell;
+        int rows = TileCount > 0 ? (TileCount + tilesPerRow - 1) / tilesPerRow : 1;
         Height = Math.Max(rows * Cell, Cell);
     }
 
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        Relayout();
         Invalidate();
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
-        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
 
-        int cols = Columns;
-        for (int value = 0; value < CellCount; value++)
+        int cols = tilesPerRow;
+        var clip = e.ClipRectangle;
+        int firstRow = Math.Max(0, clip.Top / Cell);
+        int lastRow = clip.Bottom / Cell;
+
+        for (int r = firstRow; r <= lastRow; r++)
         {
-            int c = value % cols;
-            int r = value / cols;
-            var rect = new Rectangle(c * Cell, r * Cell, Cell, Cell);
-            var inner = new Rectangle(rect.X + 1, rect.Y + 1, Cell - 3, Cell - 3);
+            for (int c = 0; c < cols; c++)
+            {
+                int index = r * cols + c;
+                if (index >= TileCount)
+                    return;
 
-            if (value == 0)
-            {
-                // "No tile" eraser cell: checkerboard so it reads as transparent.
-                DrawChecker(g, inner);
-            }
-            else
-            {
+                int value = index + 1;
+                var rect = new Rectangle(c * Cell, r * Cell, Cell, Cell);
+                var inner = new Rectangle(rect.X + 1, rect.Y + 1, Cell - 3, Cell - 3);
+
                 var src = tileset?.GetTileSourceRect(value);
                 if (src != null)
                     g.DrawImage(tileset!.Atlas, inner, src.Value, GraphicsUnit.Pixel);
-            }
 
-            if (value == selected)
-            {
-                using var pen = new Pen(Color.Yellow, 2);
-                g.DrawRectangle(pen, rect.X + 1, rect.Y + 1, Cell - 3, Cell - 3);
-            }
-        }
-    }
-
-    private static void DrawChecker(Graphics g, Rectangle r)
-    {
-        const int s = 8;
-        using var light = new SolidBrush(Color.FromArgb(110, 110, 116));
-        using var dark = new SolidBrush(Color.FromArgb(80, 80, 86));
-        for (int y = 0; y < r.Height; y += s)
-        {
-            for (int x = 0; x < r.Width; x += s)
-            {
-                var brush = ((x / s + y / s) % 2 == 0) ? light : dark;
-                g.FillRectangle(brush, r.X + x, r.Y + y, Math.Min(s, r.Width - x), Math.Min(s, r.Height - y));
+                if (value == selected)
+                {
+                    using var pen = new Pen(Color.Yellow, 2);
+                    g.DrawRectangle(pen, rect.X + 1, rect.Y + 1, Cell - 3, Cell - 3);
+                }
             }
         }
     }
@@ -110,15 +111,16 @@ internal sealed class TilesetView : Control
     protected override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
-        int cols = Columns;
+        int cols = tilesPerRow;
         int c = e.X / Cell;
         int r = e.Y / Cell;
         if (c < 0 || c >= cols)
             return;
-        int value = r * cols + c;
-        if (value < 0 || value >= CellCount)
+        int index = r * cols + c;
+        if (index < 0 || index >= TileCount)
             return;
 
+        int value = index + 1;
         selected = value;
         Invalidate();
         SelectedChanged?.Invoke(value);
