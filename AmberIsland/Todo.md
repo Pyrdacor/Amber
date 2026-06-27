@@ -1,2 +1,1 @@
-﻿- Projectiles are shot to wrong location
-- Implement items, savegames and use values for the player instead of dummy values
+﻿- Implement items, savegames and use values for the player instead of dummy values

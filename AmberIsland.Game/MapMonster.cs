@@ -376,6 +376,8 @@ internal class MapMonster : CombatMapActor
         {
             if (CanAttack())
             {
+                Direction = (game.Player.Center - Center).Normalized();
+
                 if (monster.ProjectileIndex != 0 && monster.ProjectileEmitDelay != 0xffff)
                 {
                     if (monster.ProjectileEmitDelay == 0)
@@ -418,6 +420,10 @@ internal class MapMonster : CombatMapActor
                 {
                     FindRandomMoveSpot();
                 }
+            }
+            else if (IsPlayerInAttackRange() || IsPlayerInSightRange())
+            {
+                Direction = (game.Player.Center - Center).Normalized();
             }
         }
         else if (canMove && monsterTicks >= nextDecisionTicks)
@@ -521,9 +527,10 @@ internal class MapMonster : CombatMapActor
 
         if (monster.ProjectileIndex != 0)
         {
-            var direction = (game.Player.Position - Position).Normalized();
+            var sourcePosition = Position + new Vector(RelativeProjectileSourcePosition);
+            var direction = (game.Player.Center - sourcePosition).Normalized();
             Direction = direction;
-            mapScreen.SpawnProjectile(this, Position.Round() + RelativeProjectileSourcePosition, direction, 1);
+            mapScreen.SpawnProjectile(this, sourcePosition.Round(), direction, 1);
         }
         else
         {
