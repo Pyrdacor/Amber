@@ -71,7 +71,7 @@ public interface ILayer
 	int Index { get; }
 	bool Visible { get; set; }
 	LayerType Type { get; }
-	LayerConfig Config { get; }
+	LayerConfig Config { get; set; }
 	IColoredRectFactory? ColoredRectFactory { get; }
 	ISpriteFactory? SpriteFactory { get; }
 

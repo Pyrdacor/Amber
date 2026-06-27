@@ -1,5 +1,6 @@
 ﻿using Amber.Common;
 using Amber.IO.Common.Serialization;
+using Amber.IO.FileFormats.Serialization;
 
 namespace AmberIsland.GameData;
 
@@ -95,7 +96,12 @@ public readonly record struct MapSpriteAtlas
 
     public void Write(IDataWriter writer)
     {
-        Atlas.Write(writer);
+        var atlasWriter = new DataWriter();
+        Atlas.Write(atlasWriter);
+
+        writer.Write((uint)atlasWriter.Size);
+        writer.Write(atlasWriter.ToArray());
+
         writer.Write((ushort)Sprites.Count);
 
         foreach (var spriteEntry in Sprites)
@@ -114,7 +120,8 @@ public readonly record struct MapSpriteAtlas
 
     public static MapSpriteAtlas Read(IDataReader reader)
     {
-        var atlas = Sprite.Read(reader);
+        var atlasDataSize = reader.ReadDword();
+        var atlas = Sprite.Read(new DataReader(reader.ReadBytes((int)atlasDataSize)));
         int spriteCount = reader.ReadWord();
         var sprites = new Dictionary<uint, MapSprite>(spriteCount);
 

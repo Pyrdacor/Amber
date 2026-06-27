@@ -13,7 +13,7 @@ public interface IRenderer
 	void AddLayer(ILayer layer);
 	void RemoveLayer(ILayer layer);
 
-	Size Size { get; }
+    Size Size { get; }
 	IReadOnlyList<ILayer> Layers { get; }
 	ILayerFactory LayerFactory { get; }
 	ITextureFactory TextureFactory { get; }

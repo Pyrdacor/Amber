@@ -67,12 +67,14 @@ internal class MapMonster : MapActor
         sprite.TextureSize = new(animation.FrameSize.Width, animation.FrameSize.Height);
         sprite.MirrorX = animation.DirectionOffset == null && (direction == GameData.Direction.Left || direction == GameData.Direction.Up);
         sprite.BaseLineOffset = 0; // TODO
+        sprite.PaletteIndex = (byte)mapScreen.GetMonsterPaletteIndices(monsterIndex)[monster.PaletteIndex];
         sprite.Visible = false;
 
         sprite.SetFrameIndicesAndOrigin(GetAnimation, monsterIndex, direction, resetFrameIndex: true);
+        var scaleFactor = monster.ScaleFactor == 0 ? 16 : monster.ScaleFactor;
 
         Position = new(position);
-        Size = new(animation.FrameSize.Width / 2, animation.FrameSize.Height / 2); // TODO: store as a monster value
+        Size = new(MathUtil.Round(scaleFactor * animation.FrameSize.Width / 16.0f), MathUtil.Round(scaleFactor * animation.FrameSize.Height / 16.0f));
         Visible = true;
     }
 

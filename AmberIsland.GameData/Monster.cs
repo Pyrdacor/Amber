@@ -57,6 +57,8 @@ public readonly record struct Monster
     byte VisionRange, // As a radius in tiles
     byte MoveRange, // In tiles (but each direction step counts as 1 tile)
     byte LowHitpointDivisor, // hitpoints below MaxHP / LowHitpointDivisor are considered as "low health" for MonsterLowHpBehavior
+    byte PaletteIndex, // 0-based index inside the monster sprite palettes (mostly 0 or a very low integer)
+    byte ScaleFactor, // 4.4 float which means 0x08 is 0.5 and 0x10 is 1.0 (which means ScaleFactor * Width / 16 gives the render width)
     // Word-sized
     ushort BossMonsterIndex, // 0 = none
     ushort MinionMonsterIndex, // 0 = none
@@ -91,6 +93,8 @@ public readonly record struct Monster
         writer.Write(VisionRange);
         writer.Write(MoveRange);
         writer.Write(LowHitpointDivisor);
+        writer.Write(PaletteIndex);
+        writer.Write(ScaleFactor);
 
         // Word-sized
         writer.Write(BossMonsterIndex);
@@ -127,6 +131,8 @@ public readonly record struct Monster
         var visionRange = reader.ReadByte();
         var moveRange = reader.ReadByte();
         var lowHitpointDivisor = reader.ReadByte();
+        var paletteIndex = reader.ReadByte();
+        var scaleFactor = reader.ReadByte();
 
         // Word-sized
         var bossMonsterIndex = reader.ReadWord();
@@ -161,6 +167,8 @@ public readonly record struct Monster
             visionRange,
             moveRange,
             lowHitpointDivisor,
+            paletteIndex,
+            scaleFactor,
             // Word-sized
             bossMonsterIndex, 
             minionMonsterIndex,

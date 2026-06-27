@@ -1,4 +1,5 @@
-﻿using Amber.Common;
+﻿using System.Reflection.Metadata.Ecma335;
+using Amber.Common;
 using Amber.Renderer.Common;
 using AmberIsland.Game;
 using AmberIsland.Game.UI;
@@ -22,6 +23,7 @@ internal class MapScreen : Screen
 	internal static readonly double DiagonalDistance = Math.Sqrt(2);
 	Game? game;
 	Map? map;
+	uint mapIndex = 0;
 	Tileset? tileset;
 	//WorldMap? worldMap;
 	//ITileset[]? tilesets;
@@ -44,7 +46,8 @@ internal class MapScreen : Screen
 	byte palette = 0;
 	long delayedMoveActionIndex = -1;
 	bool mouseDown = false;
-    //IRenderText? mapNameText;
+	//IRenderText? mapNameText;
+	Dictionary<uint, uint[]> monsterPaletteIndices = [];
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
 	public Map Map => map!;
@@ -52,9 +55,21 @@ internal class MapScreen : Screen
     internal void MapChanged()
 	{
 		//LoadMap(game!.State.MapIndex);
-        ShowMapName();
-        AfterMove();
-	}
+        //ShowMapName();
+        //AfterMove();
+
+        var monsterSprites = game!.GameData.GetMonsterAtlasSprites(mapIndex);
+        var (monsterAtlas, monsterPalette) = game.CreateGraphicAtlasAndPalette(monsterSprites);
+
+		var layer = game.GetRenderLayer(Layer.Monsters);
+		layer.Config = layer.Config with
+		{
+			Texture = monsterAtlas,
+			Palette = monsterPalette
+        };
+
+		monsterPaletteIndices = monsterSprites.Sprites.ToDictionary(sprite => sprite.Key, sprite => sprite.Value.PaletteIndices);
+    }
 
 	public override void Init(Game game)
 	{
@@ -62,8 +77,10 @@ internal class MapScreen : Screen
 		//tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
 
 		// TODO
-		map = game.GameData.GetMap(1);
+		mapIndex = 1;
+        map = game.GameData.GetMap(mapIndex);
 		tileset = game.GameData.GetTileset(1);
+		MapChanged();
 		FillMap(0, 0, true);
 		mapActors.Add(game.Player);
 		SpawnMonster(new Position(100, 100), Direction.Down, 1);
@@ -758,4 +775,6 @@ internal class MapScreen : Screen
 	}
 
 	private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
+
+	internal uint[] GetMonsterPaletteIndices(uint monsterIndex) => monsterPaletteIndices[monsterIndex];
 }

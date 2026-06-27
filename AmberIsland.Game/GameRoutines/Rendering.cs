@@ -81,8 +81,8 @@ partial class Game
         });*/
 
         // Monsters
-        var monsterSprites = gameData.GetMonsterAtlasSprites();
-        var (monsterAtlas, monsterPalette) = CreateGraphicAtlasAndPalette(monsterSprite, null, new(64, 64));
+        var monsterSprites = gameData.GetMonsterAtlasSprites(1);
+        var (monsterAtlas, monsterPalette) = CreateGraphicAtlasAndPalette(monsterSprites); // TODO: we must be able to change it on map change later!
 
         AddLayer(LayerType.Texture2D, new()
         {
@@ -211,58 +211,28 @@ partial class Game
         return (atlas, Renderer.TextureFactory.Create(paletteGraphic));
     }
 
-    private (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(Dictionary<uint, Sprite> spritesById, PaletteRgb? palette, Size? tileSize)
+    internal (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(MapSpriteAtlas mapSpriteAtlas)
     {
-        if (spritesById.Any(sprite => sprite.Value.Colors.Length == 0))
-        {
-            if (palette == null)
-                throw new InvalidOperationException("Sprite has no embedded palette and no palette was given.");
+		var atlas = mapSpriteAtlas.Atlas;
+        var atlasGraphic = new Graphic(atlas.Width, atlas.Height, atlas.ColorIndices, GraphicFormat.PaletteIndices);
+		var areas = mapSpriteAtlas.Sprites.ToDictionary(sprite => (int)sprite.Key, sprite => new Rect(sprite.Value.Position, sprite.Value.Size));
+        var textureAtlas = Renderer.TextureFactory.CreateAtlas(areas, atlasGraphic);
 
-            // TODO ...
-            throw new NotImplementedException();
-        }
-        else
-        {
-			// TODO: Improve atlas packing later
-			var maxWidth = spritesById.Max(sprite => sprite.Value.Width);
-			var height = spritesById.Sum(sprite => sprite.Value.Height);
-			var paletteColors = spritesById.SelectMany(sprite => sprite.Value.Colors).Distinct().ToArray();
-            var atlasGraphic = new Graphic(maxWidth, height, sprite.ColorIndices, GraphicFormat.PaletteIndices);
-            ITextureAtlas atlas;
+        int paletteWidth = 1 + mapSpriteAtlas.Palettes.Max(palette => palette.Colors.Length);
+        int paletteHeight = mapSpriteAtlas.Palettes.Length;
+        var paletteData = new byte[paletteWidth * paletteHeight * 4];
+		int offset = 0;
 
-            if (tileSize == null || tileSize.Value.Empty)
-                atlas = Renderer.TextureFactory.CreateAtlas(new() { { 0, atlasGraphic } });
-            else
-            {
-                int tileWidth = tileSize.Value.Width;
-                int tileHeight = tileSize.Value.Height;
-                int tilesPerRow = sprite.Width / tileWidth;
-                int tileRows = sprite.Height / tileHeight;
-                var areas = new Dictionary<int, Rect>(tileRows * tilesPerRow);
-                int index = 0;
+		foreach (var palette in mapSpriteAtlas.Palettes)
+		{
+			var paletteBytes = palette.ToBytes();
+            Buffer.BlockCopy(paletteBytes, 0, paletteData, offset, paletteBytes.Length);
+			offset += paletteWidth * 4;
+		}
 
-                for (int y = 0; y < tilesPerRow; y++)
-                {
-                    for (int x = 0; x < tileRows; x++)
-                    {
-                        areas.Add(index++, new(x * tileWidth, y * tileHeight, tileWidth, tileHeight));
-                    }
-                }
+        var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
 
-                atlas = Renderer.TextureFactory.CreateAtlas(areas, atlasGraphic);
-            }
-
-            int paletteWidth = 1 + sprite.Colors.Length;
-            int paletteHeight = 1;
-            var paletteData = new byte[paletteWidth * paletteHeight * 4];
-
-            var embeddedPalette = new PaletteRgb(sprite.Colors);
-            Buffer.BlockCopy(embeddedPalette.ToBytes(), 0, paletteData, 0, paletteWidth * 4);
-
-            var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
-
-            return (atlas, Renderer.TextureFactory.Create(paletteGraphic));
-        }
+        return (textureAtlas, Renderer.TextureFactory.Create(paletteGraphic));
     }
 
     internal ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];

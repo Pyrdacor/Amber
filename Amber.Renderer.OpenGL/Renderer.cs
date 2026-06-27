@@ -120,7 +120,7 @@ namespace Amber.Renderer.OpenGL
 			layers.Remove(layer);
 		}
 
-		public void Dispose()
+        public void Dispose()
 		{
 			if (disposed)
 				return;

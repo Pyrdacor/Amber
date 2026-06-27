@@ -20,7 +20,7 @@ public sealed class GameData
     private readonly AssetCache<Sprite> tilesetGraphicCache;
     private readonly AssetCache<Tileset> tilesetDataCache;
     private readonly AssetCache<Map> mapDataCache;
-    private readonly AssetCache<Sprite> monsterGraphicCache;
+    private readonly AssetCache<MapSpriteAtlas> monsterGraphicCache;
     private readonly AssetCache<Monster> monsterDataCache;
     private readonly AssetCache<FileContainer> monsterAnimationCache;
 
@@ -36,7 +36,7 @@ public sealed class GameData
         tilesetGraphicCache = new(Full("tileatlas.aic"), TileGraphicCacheSize, Sprite.Read);
         tilesetDataCache = new(Full("tileset.aic"), TileDataCacheSize, Tileset.Read);
         mapDataCache = new(Full("map.aic"), MapDataCacheSize, Map.Read);
-        monsterGraphicCache = new(Full("mon_atlas.aic"), MonsterGraphicCacheSize, Sprite.Read);
+        monsterGraphicCache = new(Full("mon_atlas.aic"), MonsterGraphicCacheSize, MapSpriteAtlas.Read);
         monsterDataCache = new(Full("mon_data.aic"), MonsterDataCacheSize, Monster.Read);
         monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, FileContainer.Read);
 
@@ -76,7 +76,7 @@ public sealed class GameData
 
     public Map? GetMap(uint index) => mapDataCache.LoadAsset(index);
 
-    public Dictionary<uint, Sprite> GetMonsterAtlasSprites() => monsterGraphicCache.LoadAllAssets();
+    public MapSpriteAtlas GetMonsterAtlasSprites(uint mapIndex) => monsterGraphicCache.LoadAsset(mapIndex);
 
     public Monster GetMonster(uint index) => monsterDataCache.LoadAsset(index);
 

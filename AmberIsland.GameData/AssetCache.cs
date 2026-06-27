@@ -133,6 +133,7 @@ internal class AssetCache<T> : IAssetCache<T> where T : notnull
         return result;
     }
 
+    // TODO: Most likely not needed anymore as we pre-pack atlases.
     /// <summary>
     /// Note: This will bypass the cache entirely.
     /// 

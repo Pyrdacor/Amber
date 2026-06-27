@@ -46,7 +46,7 @@ internal class Layer : ILayer, IDisposable
 
     public LayerType Type {  get; }
 
-    public LayerConfig Config { get; }
+    public LayerConfig Config { get; set; }
 
 	public int Index { get; }
 
