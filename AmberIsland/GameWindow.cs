@@ -58,8 +58,8 @@ namespace AmberIsland
 
 		MousePosition WindowToVirtualScreen(MousePosition position)
         {
-            float x = position.X * 320.0f / Width;
-			float y = position.Y * 200.0f / Height;
+            float x = position.X * Game.Game.VirtualScreenWidth / Width;
+			float y = position.Y * Game.Game.VirtualScreenHeight / Height;
 
             return new MousePosition(x, y);
 		}
@@ -142,7 +142,7 @@ namespace AmberIsland
             var platform = Window.GetWindowPlatform(false);
 
             window.Monitor = platform!.GetMainMonitor();
-            window.Size = new WindowDimension(320 * 4, 200 * 4);
+            window.Size = new WindowDimension(Game.Game.VirtualScreenWidth * 2, Game.Game.VirtualScreenHeight * 2);
 
             var gl = GL.GetApi(GLContext);
             gl.Viewport(new System.Drawing.Size(window.FramebufferSize.X, window.FramebufferSize.Y));
@@ -152,7 +152,7 @@ namespace AmberIsland
 
             window.Center();
 
-            renderer = new(this, new Size(Width, Height), new Size(320, 200));
+            renderer = new(this, new Size(Width, Height), new Size(Game.Game.VirtualScreenWidth, Game.Game.VirtualScreenHeight));
 
 			//var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
 

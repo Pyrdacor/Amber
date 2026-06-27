@@ -51,6 +51,41 @@ internal class MapMonster : MapActor
         }
     }
 
+    private protected override uint ScaleFactor
+    {
+        get
+        {
+            var monster = GetMonsterData();
+            return monster.ScaleFactor == 0 ? 16u : monster.ScaleFactor;
+        }
+    }
+
+    private protected override Position RelativeCenter
+    {
+        get
+        {
+            var monster = GetMonsterData();
+            var baseValue = base.RelativeCenter;
+            var centerX = monster.CenterX == ushort.MaxValue ? baseValue.X : ScaleRoundCoordinate(monster.CenterX);
+            var centerY = monster.CenterY == ushort.MaxValue ? baseValue.Y : ScaleRoundCoordinate(monster.CenterY);
+
+            return new(sprite.MirrorX ? Size.Width - centerX : centerX, centerY);
+        }
+    }
+
+    private Position RelativeProjectileSourcePosition
+    {
+        get
+        {
+            var monster = GetMonsterData();
+            var baseValue = RelativeCenter;
+            var sourceX = monster.ProjectileSourceX == ushort.MaxValue ? baseValue.X : ScaleRoundCoordinate(monster.ProjectileSourceX);
+            var sourceY = monster.ProjectileSourceY == ushort.MaxValue ? baseValue.Y : ScaleRoundCoordinate(monster.ProjectileSourceY);
+
+            return new(sourceX, sourceY);
+        }
+    }
+
     public MapMonster(Game game, MapScreen mapScreen, uint monsterIndex, Position position, Direction direction)
         : base(game, ActorType.Monster)
     {
@@ -65,16 +100,18 @@ internal class MapMonster : MapActor
         var animation = GetAnimation();
         sprite = layer.SpriteFactory!.CreateSequenced();
         sprite.TextureSize = new(animation.FrameSize.Width, animation.FrameSize.Height);
-        sprite.MirrorX = animation.DirectionOffset == null && (direction == GameData.Direction.Left || direction == GameData.Direction.Up);
         sprite.BaseLineOffset = 0; // TODO
         sprite.PaletteIndex = (byte)mapScreen.GetMonsterPaletteIndices(monsterIndex)[monster.PaletteIndex];
         sprite.Visible = false;
 
-        sprite.SetFrameIndicesAndOrigin(GetAnimation, monsterIndex, direction, resetFrameIndex: true);
-        var scaleFactor = monster.ScaleFactor == 0 ? 16 : monster.ScaleFactor;
+        var scaleFactor = TotalScaleFactor;
 
-        Position = new(position);
-        Size = new(MathUtil.Round(scaleFactor * animation.FrameSize.Width / 16.0f), MathUtil.Round(scaleFactor * animation.FrameSize.Height / 16.0f));
+        Size = new(MathUtil.Round(scaleFactor * animation.FrameSize.Width), MathUtil.Round(scaleFactor * animation.FrameSize.Height));
+        Position = new Vector(position - RelativeCenter);
+        VisualDirection = direction;
+
+        sprite.SetFrameIndicesAndOrigin(GetAnimation, monsterIndex, direction, resetFrameIndex: true);
+
         Visible = true;
     }
 
@@ -141,9 +178,36 @@ internal class MapMonster : MapActor
 
         var animation = GetAnimation();
         var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
-        sprite.MirrorX = animation.DirectionOffset == null && (newDirection == GameData.Direction.Left || newDirection == GameData.Direction.Up);
         sprite.FrameOrigin = newOrigin;
         sprite.CurrentFrameIndex = 0;
+
+        CheckSpriteMirroring();
+    }
+
+    private protected override void DirectionChanged(Vector oldDirection, Vector newDirection)
+    {
+        base.DirectionChanged(oldDirection, newDirection);
+
+        CheckSpriteMirroring();
+    }
+
+    private void CheckSpriteMirroring()
+    {
+        var animation = GetAnimation();
+        bool wasMirrored = sprite.MirrorX;
+        bool mirrorX = animation.DirectionOffset == null && (Direction.X < 0 || Direction.X == 0 && Direction.Y < 0);
+
+        if (mirrorX != wasMirrored)
+        {
+            var relativeCenterX = RelativeCenter.X;
+            var centerX = Center.X;
+            float newX = mirrorX
+                ? centerX - Size.Width + relativeCenterX
+                : centerX - Size.Width + relativeCenterX;
+
+            sprite.MirrorX = mirrorX;
+            Position = new(newX, Position.Y);
+        }
     }
 
     private protected override void UpdateActor(long elapsedTicks)
@@ -380,8 +444,25 @@ internal class MapMonster : MapActor
     
     private void HandleAttackingState()
     {
-        CurrentState = MonsterState.Idle;// TODO: REMOVE
         long attackTicks = monsterTicks - lastAttackTicks;
+        double attackDelay = Game.TicksToMinutes(attackTicks);
+
+        var monster = GetMonsterData();
+
+        if (monster.AttackSpeed * attackDelay < 1)
+            return;
+
+        lastAttackTicks = monsterTicks;
+
+        // TODO
+        if (monster.MoveSpeed == 0)
+        {
+            var direction = (game.Player.Position - Position).Normalized();
+            Direction = direction;
+            mapScreen.SpawnProjectile(this, Center.Round(), direction, 1);
+        }
+
+        CurrentState = MonsterState.Idle;// TODO: REMOVE
         // TODO ...
     }
 

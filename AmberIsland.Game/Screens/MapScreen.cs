@@ -11,8 +11,8 @@ internal class MapScreen : Screen
 {
 	const int WalkTicksPerStep = 2;
     const int RunTicksPerStep = 1;
-	internal const int TileWidth = 16;
-    internal const int TileHeight = 16;
+	internal const int TileWidth = 32;
+    internal const int TileHeight = 32;
     const int TilesPerRow = Game.VirtualScreenWidth / TileWidth;
     const int TileRows = Game.VirtualScreenHeight / TileHeight;
     const int OffsetX = 0;
@@ -34,7 +34,7 @@ internal class MapScreen : Screen
 	int lastScrollX = -1;
 	int lastScrollY = -1;
 	int tileGraphicOffset = 0;
-	int ticksPerStep = WalkTicksPerStep;
+	int moveTicksPerStep = WalkTicksPerStep;
 
 	int moveX = 0;
 	int moveY = 0;
@@ -195,7 +195,7 @@ internal class MapScreen : Screen
         int tileRows = Math.Min(TileRows, (int)map!.Height);
         var mapArea = new Rect(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight, tilesPerRow * TileWidth, tileRows * TileHeight);
 
-		foreach (var mapActor in mapActors)
+		foreach (var mapActor in mapActors.ToArray())
 		{
 			mapActor.Update(mapArea, elapsedTicks);
 		}
@@ -206,18 +206,24 @@ internal class MapScreen : Screen
 		{
 			moveTickCounter += elapsedTicks;
 
-			if (ticksPerStep > 0 && moveTickCounter >= ticksPerStep)
+			if (moveTicksPerStep > 0 && moveTickCounter >= moveTicksPerStep)
 			{
 				bool moved = false;
+				uint moveSpeedCounter = game.Player.MoveSpeed;
 
-				while (moveTickCounter >= ticksPerStep)
+				while (moveTickCounter >= moveTicksPerStep)
 				{
 					if (MovePlayer(moveX, moveY))
 					{
 						if (game.Player.CurrentState != Player.State.Running)
 							game.Player.CurrentState = Player.State.Walking;
                         moved = true;
-						moveTickCounter -= ticksPerStep;
+
+						if (--moveSpeedCounter == 0)
+						{
+							moveSpeedCounter = game.Player.MoveSpeed;
+							moveTickCounter -= moveTicksPerStep;
+						}
 					}
 					else
 					{
@@ -348,7 +354,7 @@ internal class MapScreen : Screen
 
 		if (additionalMoveRequested && !left && !right && !up && !down)
 		{
-			long timeTillNextMove = Math.Max(0, ticksPerStep - (currentTicks - lastMoveStartTicks));
+			long timeTillNextMove = Math.Max(0, moveTicksPerStep - (currentTicks - lastMoveStartTicks));
 			int x = moveX;
 			int y = moveY;
 			game.DeleteDelayedActions(delayedMoveActionIndex);
@@ -368,7 +374,7 @@ internal class MapScreen : Screen
 		}
 		else if (!additionalMoveRequested)
 		{
-			additionalMoveRequested = (currentTicks - lastMoveStartTicks) < ticksPerStep;
+			additionalMoveRequested = (currentTicks - lastMoveStartTicks) < moveTicksPerStep;
 		}
 
 		bool wasMovingBefore = moveX != 0 || moveY != 0 || additionalMoveRequested;
@@ -405,7 +411,7 @@ internal class MapScreen : Screen
 
 		if (moveX != 0 || moveY != 0)
 		{
-			ticksPerStep = game.IsKeyDown(Key.Space) ? RunTicksPerStep : WalkTicksPerStep;
+			moveTicksPerStep = game.IsKeyDown(Key.Space) ? RunTicksPerStep : WalkTicksPerStep;
 		}
 
         if (!wasMovingBefore && (moveX != 0 || moveY != 0))
@@ -414,7 +420,7 @@ internal class MapScreen : Screen
 			{
                 game.Player.CurrentState = game.IsKeyDown(Key.Space) ? Player.State.Running : Player.State.Walking;
 				lastMoveStartTicks = currentTicks;
-				moveTickCounter = -ticksPerStep;
+				moveTickCounter = -moveTicksPerStep;
 
 				AfterMove();					
 			}
@@ -636,6 +642,7 @@ internal class MapScreen : Screen
 			tileSprite = renderLayer.SpriteFactory!.CreateAnimated();
 			tileSprite.Position = new(x, y);
 			tileSprite.Size = new(TileWidth, TileHeight);
+			tileSprite.TextureSize = new(16, 16);
 			tileSprite.Opaque = mapLayer == underlay;
 			mapLayer.Add(gridIndex, tileSprite);
 		}
@@ -780,12 +787,22 @@ internal class MapScreen : Screen
 		RequestButtonGridPaletteUpdate();
 	}*/
 
-	private void SpawnMonster(Position position, Direction direction, uint monsterIndex)
+	internal void SpawnMonster(Position position, Direction direction, uint monsterIndex)
 	{
 		mapActors.Add(new MapMonster(game!, this, monsterIndex, position, direction));
 	}
 
-	private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
+    internal void SpawnProjectile(MapActor source, Position position, Vector direction, uint projectileIndex)
+    {
+        mapActors.Add(new MapProjectile(game!, this, source, projectileIndex, position, direction));
+    }
+
+	internal void RemoveActor(MapActor actor)
+	{
+		mapActors.Remove(actor);
+	}
+
+    private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
 
 	internal uint[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
     internal uint[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];

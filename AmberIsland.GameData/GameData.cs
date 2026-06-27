@@ -49,8 +49,8 @@ public sealed class GameData
         monsterDataCache = new(Full("mon_data.aic"), MonsterDataCacheSize, Monster.Read);
         monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, FileContainer.Read);
         projectileGraphicCache = new(Full("proj_atlas.aic"), ProjectileGraphicCacheSize, MapSpriteAtlas.Read);
-        projectileDataCache = new(Full("mon_data.aic"), ProjectileDataCacheSize, Projectile.Read);
-        projectileAnimationCache = new(Full("mon_anim.aic"), ProjectileAnimationCacheSize, FileContainer.Read);
+        projectileDataCache = new(Full("proj_data.aic"), ProjectileDataCacheSize, Projectile.Read);
+        projectileAnimationCache = new(Full("proj_anim.aic"), ProjectileAnimationCacheSize, FileContainer.Read);
         // TODO ...
     }
 

@@ -60,6 +60,10 @@ public readonly record struct Monster
     byte PaletteIndex, // 0-based index inside the monster sprite palettes (mostly 0 or a very low integer)
     byte ScaleFactor, // 4.4 float which means 0x08 is 0.5 and 0x10 is 1.0 (which means ScaleFactor * Width / 16 gives the render width)
     // Word-sized
+    ushort CenterX, // In relation to the original frame width
+    ushort CenterY, // In relation to the original frame height
+    ushort ProjectileSourceX, // In relation to the original frame width
+    ushort ProjectileSourceY, // In relation to the original frame height
     ushort BossMonsterIndex, // 0 = none
     ushort MinionMonsterIndex, // 0 = none
     ushort MoveSpeed, // Pixels per (real) minute (0 or 0.0167 to 1092.25 pixel/s)
@@ -97,6 +101,10 @@ public readonly record struct Monster
         writer.Write(ScaleFactor);
 
         // Word-sized
+        writer.Write(CenterX);
+        writer.Write(CenterY);
+        writer.Write(ProjectileSourceX);
+        writer.Write(ProjectileSourceY);
         writer.Write(BossMonsterIndex);
         writer.Write(MinionMonsterIndex);
         writer.Write(MoveSpeed);
@@ -135,6 +143,10 @@ public readonly record struct Monster
         var scaleFactor = reader.ReadByte();
 
         // Word-sized
+        var centerX = reader.ReadWord();
+        var centerY = reader.ReadWord();
+        var projectileSourceX = reader.ReadWord();
+        var projectileSourceY = reader.ReadWord();
         var bossMonsterIndex = reader.ReadWord();
         var minionMonsterIndex = reader.ReadWord();
         var moveSpeed = reader.ReadWord();
@@ -170,6 +182,10 @@ public readonly record struct Monster
             paletteIndex,
             scaleFactor,
             // Word-sized
+            centerX,
+            centerY,
+            projectileSourceX,
+            projectileSourceY,
             bossMonsterIndex, 
             minionMonsterIndex,
             moveSpeed,

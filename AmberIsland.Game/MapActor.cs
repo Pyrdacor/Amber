@@ -16,6 +16,7 @@ public enum ActorType
 
 internal class MapActor(Game game, ActorType actorType)
 {
+    private const float ScaleCompensationFactor = 1.0f / 16.0f;
     private Vector position = Vector.Zero;
     private Size size = Size.Zero;
     private Vector center = Vector.Zero;
@@ -29,6 +30,10 @@ internal class MapActor(Game game, ActorType actorType)
 
     public ActorType Type => actorType;
 
+    private protected virtual Position RelativeCenter => new(size.Width / 2, size.Height / 2);
+    private protected virtual uint ScaleFactor => 16;
+    private protected float TotalScaleFactor => ScaleCompensationFactor * ScaleFactor;
+
     public Vector Position
     {
         get => position;
@@ -38,7 +43,7 @@ internal class MapActor(Game game, ActorType actorType)
             {
                 var old = position;
                 position = value;
-                center = position + size;
+                center = position + new Vector(RelativeCenter);
                 area = new(position.Round(), size);
                 PositionChanged(old, position, size, size);
             }
@@ -54,7 +59,7 @@ internal class MapActor(Game game, ActorType actorType)
             {
                 var old = size;
                 size = value;
-                center = position + size;
+                center = position + new Vector(RelativeCenter);
                 area = new(area.Position, size);
                 PositionChanged(position, position, old, size);
             }
@@ -76,22 +81,28 @@ internal class MapActor(Game game, ActorType actorType)
             {
                 var old = direction;
                 direction = value;
-                DirectionChanged(old, direction);
+
+                var oldVisualDirection = visualDirection;
 
                 if (Math.Abs(direction.X) > Math.Abs(direction.Y))
                 {
                     if (direction.X < 0)
-                        VisualDirection = GameData.Direction.Left;
+                        visualDirection = GameData.Direction.Left;
                     else
-                        VisualDirection = GameData.Direction.Right;
+                        visualDirection = GameData.Direction.Right;
                 }
                 else
                 {
                     if (direction.Y < 0)
-                        VisualDirection = GameData.Direction.Up;
+                        visualDirection = GameData.Direction.Up;
                     else
-                        VisualDirection = GameData.Direction.Down;
+                        visualDirection = GameData.Direction.Down;
                 }
+
+                DirectionChanged(old, direction);
+
+                if (oldVisualDirection != visualDirection)
+                    VisualDirectionChanged(oldVisualDirection, visualDirection);
             }
         }
     }
@@ -105,9 +116,10 @@ internal class MapActor(Game game, ActorType actorType)
             {
                 var old = visualDirection;
                 visualDirection = value;
-                VisualDirectionChanged(old, visualDirection);
 
-                Direction = visualDirection switch
+                var oldDirection = direction;
+
+                direction = visualDirection switch
                 {
                     GameData.Direction.Down => new(0, 1),
                     GameData.Direction.Up => new(0, -1),
@@ -115,6 +127,11 @@ internal class MapActor(Game game, ActorType actorType)
                     GameData.Direction.Left => new(-1, 0),
                     _ => new(0, 0)
                 };
+
+                VisualDirectionChanged(old, visualDirection);
+
+                if (oldDirection != direction)
+                    DirectionChanged(oldDirection, direction);
             }
         }
     }
@@ -249,4 +266,12 @@ internal class MapActor(Game game, ActorType actorType)
 
         return new(x, y);
     }
+
+    private protected float ScaleCoordinate(float coordinate) => TotalScaleFactor * coordinate;
+
+    private protected Vector ScaleVector(Vector vector) => TotalScaleFactor * vector;
+
+    private protected int ScaleRoundCoordinate(float coordinate) => MathUtil.Round(TotalScaleFactor * coordinate);
+
+    private protected Position ScaleRoundVector(Vector vector) => (TotalScaleFactor * vector).Round();
 }

@@ -30,8 +30,8 @@ public enum Layer
 
 partial class Game
 {
-	internal const int VirtualScreenWidth = 320;
-	internal const int VirtualScreenHeight = 200;
+	public const int VirtualScreenWidth = 640;
+    public const int VirtualScreenHeight = 400;
 
 	IColoredRect? fadeArea;
 	Color fadeColor = Color.Black;

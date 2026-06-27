@@ -45,7 +45,7 @@ internal class MapProjectile : MapActor
         animations = game.GameData.GetProjectileAnimations(projectileIndex);
 
         var projectile = GetProjectileData();
-        var layer = game.GetRenderLayer(Layer.Monsters);
+        var layer = game.GetRenderLayer(Layer.Projectiles);
         var animation = GetAnimation();
         sprite = layer.SpriteFactory!.CreateSequenced();
         sprite.TextureSize = new(animation.FrameSize.Width, animation.FrameSize.Height);
@@ -59,9 +59,11 @@ internal class MapProjectile : MapActor
 
         sprite.SetFrameIndicesAndOrigin(GetAnimation, projectileIndex, VisualDirection, resetFrameIndex: true);
 
-        Position = new(position);
         Size = new(MathUtil.Round(scaleFactor * animation.FrameSize.Width / 16.0f), MathUtil.Round(scaleFactor * animation.FrameSize.Height / 16.0f));
+        Position = new(position - new Position(Size.Width / 2, Size.Height / 2));
         Visible = true;
+
+        remainingTargetDistance = MaxTravelDistance(projectile);
 
         CheckChasing(projectile);
     }
@@ -84,6 +86,8 @@ internal class MapProjectile : MapActor
     }
 
     private Animation GetAnimation() => GetAnimation(currentState);
+
+    private float MaxTravelDistance(Projectile projectile) => projectile.MaxTravelDistance * MapScreen.TileWidth;
 
     private protected override void VisibilityChanged(bool oldVisibility, bool newVisibility)
     {
@@ -127,9 +131,17 @@ internal class MapProjectile : MapActor
 
         var animation = GetAnimation();
         var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
-        sprite.MirrorX = animation.DirectionOffset == null && (newDirection == GameData.Direction.Left || newDirection == GameData.Direction.Up);
+        sprite.MirrorX = animation.DirectionOffset == null && (Direction.X < 0 || Direction.X == 0 && Direction.Y < 0);
         sprite.FrameOrigin = newOrigin;
         sprite.CurrentFrameIndex = 0;
+    }
+
+    private protected override void DirectionChanged(Vector oldDirection, Vector newDirection)
+    {
+        base.DirectionChanged(oldDirection, newDirection);
+
+        var animation = GetAnimation();
+        sprite.MirrorX = animation.DirectionOffset == null && (Direction.X < 0 || Direction.X == 0 && Direction.Y < 0);
     }
 
     private protected override void UpdateActor(long elapsedTicks)
@@ -194,7 +206,6 @@ internal class MapProjectile : MapActor
             Move(movedPixels);
             remainingTargetDistance -= movedPixels;
             travelledDistance += movedPixels;
-            var (centerX, centerY) = Center;
 
             if (remainingTargetDistance <= 0.0f)
             {
@@ -202,7 +213,7 @@ internal class MapProjectile : MapActor
                 remainingTargetDistance = 0.0f;
                 lastMoveTicks = projectileTicks;
 
-                if (travelledDistance >= projectile.MaxTravelDistance)
+                if (travelledDistance >= MaxTravelDistance(projectile))
                 {
                     if (projectile.Flags.HasFlag(ProjectileFlags.ExplodeOnImpact))
                         CurrentState = ProjectileState.Exploding;
@@ -213,7 +224,7 @@ internal class MapProjectile : MapActor
                 }
 
                 if (!CheckChasing(projectile))
-                    remainingTargetDistance = projectile.MaxTravelDistance - travelledDistance;
+                    remainingTargetDistance = MaxTravelDistance(projectile) - travelledDistance;
             }
             else
             {
@@ -226,11 +237,12 @@ internal class MapProjectile : MapActor
 
     private bool CheckForCollision(Projectile projectile)
     {
+        return false;
         if (source.Type == ActorType.Player)
         {
             // TODO: Check collision with monsters and other stuff (based on flags)
         }
-        else if (GetDistanceToPlayer() < projectile.CollisionRadius) // TODO: include player's collision radius?
+        else if (GetDistanceToPlayer() * MapScreen.TileWidth < projectile.CollisionRadius) // TODO: include player's collision radius?
         {
             if (projectile.Flags.HasFlag(ProjectileFlags.ExplodeOnImpact))
                 CurrentState = ProjectileState.Exploding;
@@ -262,7 +274,7 @@ internal class MapProjectile : MapActor
         // Then we might chase again if needed.
         var projectile = GetProjectileData();
         Direction = (game.Player.Center - Center).Normalized();
-        remainingTargetDistance = Math.Min(MapScreen.TileWidth, projectile.MaxTravelDistance - travelledDistance);
+        remainingTargetDistance = Math.Min(MapScreen.TileWidth, MaxTravelDistance(projectile) - travelledDistance);
         CurrentState = ProjectileState.Flying;
     }
 
@@ -273,7 +285,9 @@ internal class MapProjectile : MapActor
 
     private void HandleDieState()
     {
-        // TODO
+        // TODO: play animation if exists
+        Visible = false;
+        mapScreen.RemoveActor(this);
     }
 
     private float GetDistanceToPlayer()
@@ -285,7 +299,7 @@ internal class MapProjectile : MapActor
     {
         var projectile = GetProjectileData();
 
-        if (GetDistanceToPlayer() <= projectile.VisionRange)
+        if (GetDistanceToPlayer() * MapScreen.TileWidth <= projectile.VisionRange)
             return true; // TODO: blocked sight
 
         return false;

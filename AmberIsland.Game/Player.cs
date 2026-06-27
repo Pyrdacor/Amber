@@ -24,6 +24,8 @@ internal class Player : MapActor
     private long playerTicks = 0;
     private long lastAnimationTicks = 0;
 
+    public uint MoveSpeed { get; set; } = 2; // TODO
+
     public State CurrentState
     {
         get => state;
@@ -80,15 +82,13 @@ internal class Player : MapActor
         layer = game.GetRenderLayer(Layer.Outfit);
 
         outfitSprite = layer.SpriteFactory!.CreateSequenced();
-        outfitSprite.Position = sprite.Position;
-        outfitSprite.Size = sprite.Size;
         outfitSprite.PaletteIndex = 0;
         outfitSprite.Visible = sprite.Visible;
 
         SetFrameIndicesAndOrigin(resetFrameIndex: true);
 
         Position = new(0, 0);
-        Size = new(24, 20);
+        Size = new(72, 60);
         Visible = true;
     }
 
