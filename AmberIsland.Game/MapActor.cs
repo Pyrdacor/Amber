@@ -14,7 +14,7 @@ public enum ActorType
     Projectile
 }
 
-internal class MapActor(Game game, ActorType actorType)
+internal abstract class MapActor(Game game, ActorType actorType)
 {
     private const float ScaleCompensationFactor = 1.0f / 16.0f;
     private Vector position = Vector.Zero;

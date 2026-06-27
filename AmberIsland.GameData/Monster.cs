@@ -64,6 +64,7 @@ public readonly record struct Monster
     ushort CenterY, // In relation to the original frame height
     ushort ProjectileSourceX, // In relation to the original frame width
     ushort ProjectileSourceY, // In relation to the original frame height
+    ushort ProjectileIndex, // 0 = none, if given shoots the projectile towards the player when attacking
     ushort BossMonsterIndex, // 0 = none
     ushort MinionMonsterIndex, // 0 = none
     ushort MoveSpeed, // Pixels per (real) minute (0 or 0.0167 to 1092.25 pixel/s)
@@ -105,6 +106,7 @@ public readonly record struct Monster
         writer.Write(CenterY);
         writer.Write(ProjectileSourceX);
         writer.Write(ProjectileSourceY);
+        writer.Write(ProjectileIndex);
         writer.Write(BossMonsterIndex);
         writer.Write(MinionMonsterIndex);
         writer.Write(MoveSpeed);
@@ -147,6 +149,7 @@ public readonly record struct Monster
         var centerY = reader.ReadWord();
         var projectileSourceX = reader.ReadWord();
         var projectileSourceY = reader.ReadWord();
+        var projectileIndex = reader.ReadWord();
         var bossMonsterIndex = reader.ReadWord();
         var minionMonsterIndex = reader.ReadWord();
         var moveSpeed = reader.ReadWord();
@@ -186,6 +189,7 @@ public readonly record struct Monster
             centerY,
             projectileSourceX,
             projectileSourceY,
+            projectileIndex,
             bossMonsterIndex, 
             minionMonsterIndex,
             moveSpeed,

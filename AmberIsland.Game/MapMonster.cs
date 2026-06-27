@@ -16,10 +16,12 @@ internal class MapMonster : MapActor
     private Position? targetPosition = null;
     private float remainingTargetDistance = 0.0f;
     private MonsterState currentState = MonsterState.Idle;
+    private Monster? monster;
     private long nextDecisionTicks = 0;
     private long lastMoveTicks = 0;
     private long lastAttackTicks = 0;
     private long lastAnimationTicks = 0;
+    private long playAnimationStartTicks = 0;
     private long monsterTicks = 0;
     private readonly ISequencedSprite sprite;
     private readonly Dictionary<MonsterState, Animation> animations = [];
@@ -33,6 +35,7 @@ internal class MapMonster : MapActor
                 return;
 
             currentState = value;
+            lastAnimationTicks = 0;
 
             if (currentState == MonsterState.Idle)
                 SetupNextDecision();
@@ -115,7 +118,7 @@ internal class MapMonster : MapActor
         Visible = true;
     }
 
-    private Monster GetMonsterData() => game.GameData.GetMonster(monsterIndex);
+    private Monster GetMonsterData() => monster ??= game.GameData.GetMonster(monsterIndex);
 
     private Animation GetAnimation(MonsterState state)
     {
@@ -130,6 +133,13 @@ internal class MapMonster : MapActor
             MonsterState.Fleeing => GetAnimation(MonsterState.Walking),
             MonsterState.Attacking => GetAnimation(MonsterState.Walking),
             MonsterState.Casting => GetAnimation(MonsterState.Attacking),
+            // These play animation states always fall back to real states
+            // which have valid animation data.
+            MonsterState.PlayAttackAnimation => GetAnimation(MonsterState.Attacking),
+            MonsterState.PlayCastAnimation => GetAnimation(MonsterState.Casting),
+            MonsterState.PlayHurtAnimation => GetAnimation(MonsterState.ReceivingDamage),
+            MonsterState.PlayDieAnimation => GetAnimation(MonsterState.Die),
+            MonsterState.PlaySummonAnimation => GetAnimation(MonsterState.Summon),
             _ => GetAnimation(MonsterState.Idle)
         };
     }
@@ -174,12 +184,9 @@ internal class MapMonster : MapActor
 
         int directionDiff = newDirection - oldDirection;
 
-        lastAnimationTicks = 0;
-
         var animation = GetAnimation();
         var newOrigin = sprite.FrameOrigin + directionDiff * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
         sprite.FrameOrigin = newOrigin;
-        sprite.CurrentFrameIndex = 0;
 
         CheckSpriteMirroring();
     }
@@ -274,6 +281,10 @@ internal class MapMonster : MapActor
             case MonsterState.Summon:
                 HandleSummonState();
                 break;
+            default:
+                // These should be animation play states
+                HandlePlayAnimationState();
+                break;
         }        
     }
 
@@ -331,9 +342,22 @@ internal class MapMonster : MapActor
 
         if (aggressive)
         {
-            if (IsPlayerInAttackRange())
+            if (CanAttack())
             {
-                CurrentState = MonsterState.Attacking;
+                if (animations.TryGetValue(MonsterState.Attacking, out var animation))
+                {
+                    double animationDuration = animation.DurationInMinutes();
+                    // Attack delay only starts counting after the animation has finished
+                    lastAttackTicks = monsterTicks + Game.MinutesToTicks(animationDuration);
+                    playAnimationStartTicks = monsterTicks;
+                    CurrentState = MonsterState.PlayAttackAnimation;
+                }
+                else
+                {
+                    // No animation, attack directly
+                    CurrentState = MonsterState.Attacking;
+                    lastAttackTicks = monsterTicks;
+                }
             }
             else if (canMove)
             {
@@ -444,26 +468,21 @@ internal class MapMonster : MapActor
     
     private void HandleAttackingState()
     {
-        long attackTicks = monsterTicks - lastAttackTicks;
-        double attackDelay = Game.TicksToMinutes(attackTicks);
-
         var monster = GetMonsterData();
 
-        if (monster.AttackSpeed * attackDelay < 1)
-            return;
-
-        lastAttackTicks = monsterTicks;
-
-        // TODO
-        if (monster.MoveSpeed == 0)
+        if (monster.ProjectileIndex != 0)
         {
             var direction = (game.Player.Position - Position).Normalized();
             Direction = direction;
             mapScreen.SpawnProjectile(this, Center.Round(), direction, 1);
         }
+        else
+        {
+            // Deal damage
+            //var damage = Game.Random(monster.MinAttackDamage, monster.MaxAttackDamage);
+        }
 
-        CurrentState = MonsterState.Idle;// TODO: REMOVE
-        // TODO ...
+        CurrentState = MonsterState.Idle;
     }
 
     private void HandleCastingState()
@@ -479,6 +498,26 @@ internal class MapMonster : MapActor
     private void HandleSummonState()
     {
         // TODO
+    }
+
+    private void HandlePlayAnimationState()
+    {
+        var animation = GetAnimation();
+        var elapsedAnimationTicks = monsterTicks - playAnimationStartTicks;
+        var animationDuration = animation.FrameIndices.Length / animation.FramesPerMinute;
+
+        if (elapsedAnimationTicks >= Game.MinutesToTicks(animationDuration))
+        {
+            CurrentState = CurrentState switch
+            {
+                MonsterState.PlayAttackAnimation => MonsterState.Attacking,
+                MonsterState.PlayCastAnimation => MonsterState.Casting,
+                MonsterState.PlayHurtAnimation => MonsterState.ReceivingDamage,
+                MonsterState.PlayDieAnimation => MonsterState.Die,
+                MonsterState.PlaySummonAnimation => MonsterState.Summon,
+                _ => MonsterState.Idle,// Should not happen, but better safe than sorry :)
+            };
+        }
     }
 
     private float GetDistanceToPlayer()
@@ -550,5 +589,19 @@ internal class MapMonster : MapActor
             return true; // TODO: blocked sight
 
         return false;
+    }
+
+    private bool CanAttack()
+    {
+        if (!IsPlayerInAttackRange())
+            return false;
+
+        // TODO: later check conditions/ailments
+
+        long attackTicks = monsterTicks - lastAttackTicks;
+        double attackDelay = Game.TicksToMinutes(attackTicks);
+        var monster = GetMonsterData();
+
+        return monster.AttackSpeed * attackDelay >= 1;
     }
 }

@@ -54,3 +54,11 @@ public readonly record struct Animation
         return new Animation(new Size(width, height), frameIndices, framesPerMinute, directionOffset);
     }
 }
+
+public static class AnimationExtensions
+{
+    public static double DurationInMinutes(this Animation animation)
+    {
+        return (double)animation.FrameIndices.Length / animation.FramesPerMinute;
+    }
+}
