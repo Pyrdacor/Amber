@@ -47,6 +47,7 @@ public static class MonsterFlagsExtensions
 public readonly record struct Monster
 (
     // Byte-sized
+    byte Level,
     Race Race,
     Element Element,
     MonsterFlags Flags,
@@ -88,6 +89,7 @@ public readonly record struct Monster
     public void Write(IDataWriter writer)
     {
         // Byte-sized
+        writer.Write(Level);
         writer.Write((byte)Race);
         writer.Write((byte)Element);
         writer.Write((byte)Flags);
@@ -131,6 +133,7 @@ public readonly record struct Monster
     public static Monster Read(IDataReader reader)
     {
         // Byte-sized
+        var level = reader.ReadByte();
         var race = (Race)reader.ReadByte();
         var element = (Element)reader.ReadByte();
         var flags = (MonsterFlags)reader.ReadByte();
@@ -172,6 +175,7 @@ public readonly record struct Monster
         return new
         (
             // Byte-sized
+            level,
             race,
             element,
             flags,

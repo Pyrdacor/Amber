@@ -6,7 +6,7 @@ using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
 
-internal class MapMonster : MapActor
+internal class MapMonster : CombatMapActor
 {
     private readonly Game game;
     private readonly MapScreen mapScreen;
@@ -88,6 +88,20 @@ internal class MapMonster : MapActor
             return new(sourceX, sourceY);
         }
     }
+
+    private protected override uint TotalPhysicalMinDamage => GetMonsterData().MinAttackDamage;
+    private protected override uint TotalPhysicalMaxDamage => GetMonsterData().MaxAttackDamage;
+    private protected override uint TotalMagicalMinDamage => GetMonsterData().MinMagicDamage;
+    private protected override uint TotalMagicalMaxDamage => GetMonsterData().MaxMagicDamage;
+    private protected override uint TotalPhysicalDefense => GetMonsterData().PhysicalDefense;
+    private protected override uint TotalMagicalDefense => GetMonsterData().MagicDefense;
+    private protected override uint TotalPhysicalDamageReduction => GetMonsterData().PhysicalDamageReduction;
+    private protected override uint TotalMagicalDamageReduction => GetMonsterData().MagicDamageReduction;
+    private protected override uint TotalHit => GetMonsterData().Hit;
+    private protected override uint TotalDodge => GetMonsterData().Dodge;
+    private protected override uint Level => GetMonsterData().Level;
+    private protected override Element AttackElement => GetMonsterData().Element;
+    private protected override Element DefendElement => GetMonsterData().Element;
 
     public MapMonster(Game game, MapScreen mapScreen, uint monsterIndex, Position position, Direction direction)
         : base(game, ActorType.Monster)
@@ -478,8 +492,30 @@ internal class MapMonster : MapActor
         }
         else
         {
-            // Deal damage
-            //var damage = Game.Random(monster.MinAttackDamage, monster.MaxAttackDamage);
+            // TODO: REMOVE
+            string monsterName = monsterIndex == 1 ? "Bat" : "Dragon";
+
+            if (!TestHit(game.Player))
+            {
+                // TODO: Show "Missed"
+                Console.WriteLine($"{monsterName} misses");
+            }
+            else
+            {
+                // Deal damage
+                var damage = CalculcatePhysicalDamage(game.Player);
+
+                if (damage == 0)
+                {
+                    // TODO: Show "No dmg"
+                    Console.WriteLine($"{monsterName} does not deal damage");
+                }
+                else
+                {
+                    // TODO: Hurt player and show the damage
+                    Console.WriteLine($"{monsterName} deals {damage} damage");
+                }
+            }
         }
 
         CurrentState = MonsterState.Idle;

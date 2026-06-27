@@ -5,7 +5,7 @@ using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
 
-internal class Player : MapActor
+internal class Player : CombatMapActor
 {
     public enum State
     {
@@ -42,6 +42,20 @@ internal class Player : MapActor
 
     // TODO: Avoid magic numbers
     public override Rect CollisionArea => new(Area.Position.X + 4, Area.Position.Y + 1, sprite.Size.Width - 8, 15);
+
+    private protected override uint TotalPhysicalMinDamage => 0; // TODO
+    private protected override uint TotalPhysicalMaxDamage => 3; // TODO
+    private protected override uint TotalMagicalMinDamage => 0; // TODO
+    private protected override uint TotalMagicalMaxDamage => 0; // TODO
+    private protected override uint TotalPhysicalDefense => 0; // TODO
+    private protected override uint TotalMagicalDefense => 0; // TODO
+    private protected override uint TotalPhysicalDamageReduction => 0; // TODO
+    private protected override uint TotalMagicalDamageReduction => 0; // TODO
+    private protected override uint TotalHit => 0; // TODO
+    private protected override uint TotalDodge => 0; // TODO
+    private protected override uint Level => 1; // TODO
+    private protected override Element AttackElement => Element.None; // TODO
+    private protected override Element DefendElement => Element.None; // TODO
 
     static Player()
     {

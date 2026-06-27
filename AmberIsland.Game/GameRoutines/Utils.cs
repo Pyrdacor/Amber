@@ -14,8 +14,10 @@ partial class Game
 	internal static int Random(int min, int max) => random.Next(min, max);
 	internal static int Random(int max) => Random(0, max);
 	internal static bool Random() => Random(0, 1) == 1;
+    internal static bool TestChance(int chance) => chance >= 100 || chance > Random(99);
+    internal static bool TestChance(uint chance) => chance >= 100 || chance > Random(99);
 
-	internal long AddDelayedAction(long delayInTicks, Action action)
+    internal long AddDelayedAction(long delayInTicks, Action action)
 	{
 		timedActions.Push(gameTicks + delayInTicks, new(++lastTimedActionKey, action));
 		return lastTimedActionKey;
