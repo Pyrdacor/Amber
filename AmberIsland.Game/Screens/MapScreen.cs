@@ -94,7 +94,7 @@ internal class MapScreen : Screen
 		MapChanged();
 		FillMap(0, 0, true);
 		mapActors.Add(game.Player);
-		SpawnMonster(new Position(100, 100), Direction.Down, 1);
+		//SpawnMonster(new Position(100, 100), Direction.Down, 1);
         SpawnMonster(new Position(120, 40), Direction.Left, 2);
     }
 

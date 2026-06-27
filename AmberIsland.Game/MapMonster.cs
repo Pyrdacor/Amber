@@ -31,11 +31,20 @@ internal class MapMonster : CombatMapActor
         get => currentState;
         set
         {
+            var lastState = currentState;
+
             if (currentState == value)
                 return;
 
             currentState = value;
-            lastAnimationTicks = 0;
+
+            var animation = GetAnimation();
+
+            if (animation != GetAnimation(lastState))
+            {
+                lastAnimationTicks = 0;
+                sprite.SetFrameIndicesAndOrigin(GetAnimation, monsterIndex, VisualDirection, resetFrameIndex: true);
+            }
 
             if (currentState == MonsterState.Idle)
                 SetupNextDecision();
@@ -540,7 +549,7 @@ internal class MapMonster : CombatMapActor
     {
         var animation = GetAnimation();
         var elapsedAnimationTicks = monsterTicks - playAnimationStartTicks;
-        var animationDuration = animation.FrameIndices.Length / animation.FramesPerMinute;
+        var animationDuration = animation.DurationInMinutes();
 
         if (elapsedAnimationTicks >= Game.MinutesToTicks(animationDuration))
         {
