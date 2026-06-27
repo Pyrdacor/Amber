@@ -10,7 +10,8 @@ public enum ActorType
     Monster,
     NPC,
     Item,
-    Object
+    Object,
+    Projectile
 }
 
 internal class MapActor(Game game, ActorType actorType)

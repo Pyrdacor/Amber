@@ -5,12 +5,18 @@ namespace AmberIsland.GameData;
 
 public sealed class GameData
 {
+    // Tileset-based (multiple tilesets per map possible)
     const int TileGraphicCacheSize = 10;
     const int TileDataCacheSize = 10;
+    // Map-based
     const int MapDataCacheSize = 4;
-    const int MonsterGraphicCacheSize = 20; // We might have several monsters on the same map (adjust if needed)
-    const int MonsterDataCacheSize = 20;
-    const int MonsterAnimationCacheSize = 20;
+    const int MonsterGraphicCacheSize = 4; // Those are per map!
+    const int ProjectileGraphicCacheSize = 4; // And those
+    // Actor-based
+    const int MonsterDataCacheSize = 32;
+    const int MonsterAnimationCacheSize = 32;
+    const int ProjectileDataCacheSize = 32;
+    const int ProjectileAnimationCacheSize = 32;
 
     // Non-cached assets
     private readonly SpriteWithPalettes playerGraphic;
@@ -23,6 +29,9 @@ public sealed class GameData
     private readonly AssetCache<MapSpriteAtlas> monsterGraphicCache;
     private readonly AssetCache<Monster> monsterDataCache;
     private readonly AssetCache<FileContainer> monsterAnimationCache;
+    private readonly AssetCache<MapSpriteAtlas> projectileGraphicCache;
+    private readonly AssetCache<Projectile> projectileDataCache;
+    private readonly AssetCache<FileContainer> projectileAnimationCache;
 
     public GameData(string path)
     {
@@ -39,7 +48,9 @@ public sealed class GameData
         monsterGraphicCache = new(Full("mon_atlas.aic"), MonsterGraphicCacheSize, MapSpriteAtlas.Read);
         monsterDataCache = new(Full("mon_data.aic"), MonsterDataCacheSize, Monster.Read);
         monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, FileContainer.Read);
-
+        projectileGraphicCache = new(Full("proj_atlas.aic"), ProjectileGraphicCacheSize, MapSpriteAtlas.Read);
+        projectileDataCache = new(Full("mon_data.aic"), ProjectileDataCacheSize, Projectile.Read);
+        projectileAnimationCache = new(Full("mon_anim.aic"), ProjectileAnimationCacheSize, FileContainer.Read);
         // TODO ...
     }
 
@@ -86,6 +97,23 @@ public sealed class GameData
             .GetAllFileReaders()
             .ToDictionary(
                 file => (MonsterState)(file.Key - 1),
+                file =>
+                {
+                    file.Value.Position = 0;
+                    return Animation.Read(file.Value);
+                }) ?? [];
+    }
+
+    public MapSpriteAtlas GetProjectileAtlasSprites(uint mapIndex) => projectileGraphicCache.LoadAsset(mapIndex);
+
+    public Projectile GetProjectile(uint index) => projectileDataCache.LoadAsset(index);
+
+    public Dictionary<ProjectileState, Animation> GetProjectileAnimations(uint index)
+    {
+        return projectileAnimationCache.LoadAsset(index)?
+            .GetAllFileReaders()
+            .ToDictionary(
+                file => (ProjectileState)(file.Key - 1),
                 file =>
                 {
                     file.Value.Position = 0;

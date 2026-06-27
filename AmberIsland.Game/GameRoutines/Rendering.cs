@@ -15,13 +15,14 @@ public enum Layer
     Monsters,
     Player,
 	Outfit,
-	/*Capes,
+    /*Capes,
 	FaceAssets,
 	Hair,
 	Hats,
 	PrimaryTool,
 	SecondaryTool,*/
-	MapForeground,
+    Projectiles,
+    MapForeground,
 	/*UI,
 	TopMost = UI*/
 	TopMost = MapForeground
@@ -82,7 +83,7 @@ partial class Game
 
         // Monsters
         var monsterSprites = gameData.GetMonsterAtlasSprites(1);
-        var (monsterAtlas, monsterPalette) = CreateGraphicAtlasAndPalette(monsterSprites); // TODO: we must be able to change it on map change later!
+        var (monsterAtlas, monsterPalette) = CreateGraphicAtlasAndPalette(monsterSprites);
 
         AddLayer(LayerType.Texture2D, new()
         {
@@ -117,6 +118,19 @@ partial class Game
             LayerFeatures = LayerFeatures.Transparency,
             Texture = outfitAtlas,
             Palette = outfitPalette
+        });
+
+        // Projectiles
+        var projectileSprites = gameData.GetProjectileAtlasSprites(1);
+        var (projectileAtlas, projectilePalette) = CreateGraphicAtlasAndPalette(projectileSprites);
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.45f,
+            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = projectileAtlas,
+            Palette = projectilePalette
         });
 
         // MapForeground

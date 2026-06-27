@@ -402,10 +402,7 @@ internal class MapMonster : MapActor
 
     private float GetDistanceToPlayer()
     {
-        var playerSize = game.Player.Size;
-        var playerCenter = new Vector(game.Player.Position) + 0.5f * new Vector(playerSize.Width, playerSize.Height);
-
-        return (playerCenter - Center).Length() / MapScreen.TileWidth;
+        return (game.Player.Center - Center).Length() / MapScreen.TileWidth;
     }
 
     private Position? FindNearbyRandomSpot(ushort moveRange)

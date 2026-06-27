@@ -47,7 +47,7 @@ internal class MapScreen : Screen
 	long delayedMoveActionIndex = -1;
 	bool mouseDown = false;
 	//IRenderText? mapNameText;
-	Dictionary<uint, uint[]> monsterPaletteIndices = [];
+	Dictionary<ActorType, Dictionary<uint, uint[]>> actorPaletteIndices = [];
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
 	public Map Map => map!;
@@ -68,7 +68,18 @@ internal class MapScreen : Screen
 			Palette = monsterPalette
         };
 
-		monsterPaletteIndices = monsterSprites.Sprites.ToDictionary(sprite => sprite.Key, sprite => sprite.Value.PaletteIndices);
+        var projectileSprites = game!.GameData.GetProjectileAtlasSprites(mapIndex);
+        var (projectileAtlas, projectilePalette) = game.CreateGraphicAtlasAndPalette(projectileSprites);
+
+        layer = game.GetRenderLayer(Layer.Projectiles);
+        layer.Config = layer.Config with
+        {
+            Texture = projectileAtlas,
+            Palette = projectilePalette
+        };
+
+        actorPaletteIndices[ActorType.Monster] = monsterSprites.Sprites.ToDictionary(sprite => sprite.Key, sprite => sprite.Value.PaletteIndices);
+        actorPaletteIndices[ActorType.Projectile] = projectileSprites.Sprites.ToDictionary(sprite => sprite.Key, sprite => sprite.Value.PaletteIndices);
     }
 
 	public override void Init(Game game)
@@ -776,5 +787,6 @@ internal class MapScreen : Screen
 
 	private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
 
-	internal uint[] GetMonsterPaletteIndices(uint monsterIndex) => monsterPaletteIndices[monsterIndex];
+	internal uint[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
+    internal uint[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];
 }
