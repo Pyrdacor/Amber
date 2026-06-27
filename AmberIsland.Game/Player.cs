@@ -128,7 +128,7 @@ internal class Player : MapActor
 
     private void SetFrameIndicesAndOrigin(bool resetFrameIndex)
     {
-        sprite.SetFrameIndicesAndOrigin(GetAnimation, VisualDirection, resetFrameIndex);
+        sprite.SetFrameIndicesAndOrigin(GetAnimation, 1u, VisualDirection, resetFrameIndex);
 
         outfitSprite.TextureSize = sprite.TextureSize;
         outfitSprite.FrameOrigin = sprite.FrameOrigin;

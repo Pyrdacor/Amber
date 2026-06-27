@@ -64,15 +64,15 @@ internal class MapMonster : MapActor
         var layer = game.GetRenderLayer(Layer.Monsters);
         var animation = GetAnimation();
         sprite = layer.SpriteFactory!.CreateSequenced();
-        sprite.TextureSize = new(64, 64);
-        sprite.MirrorX = direction == GameData.Direction.Left || direction == GameData.Direction.Up; // TODO
+        sprite.TextureSize = new(animation.FrameSize.Width, animation.FrameSize.Height);
+        sprite.MirrorX = animation.DirectionOffset == null && (direction == GameData.Direction.Left || direction == GameData.Direction.Up);
         sprite.BaseLineOffset = 0; // TODO
         sprite.Visible = false;
 
-        sprite.SetFrameIndicesAndOrigin(GetAnimation, direction, resetFrameIndex: true);
+        sprite.SetFrameIndicesAndOrigin(GetAnimation, monsterIndex, direction, resetFrameIndex: true);
 
         Position = new(position);
-        Size = new(32, 32);
+        Size = new(animation.FrameSize.Width / 2, animation.FrameSize.Height / 2); // TODO: store as a monster value
         Visible = true;
     }
 
@@ -354,7 +354,7 @@ internal class MapMonster : MapActor
             remainingTargetDistance = diff.Length();
             Direction = diff.Normalized();
         }
-            
+
         HandleWalkingState();
 
         if (!IsPlayerInSightRange())

@@ -145,13 +145,13 @@ internal class TextureAtlas : Texture, ITextureAtlas
 		}
 	}
 
-	readonly Dictionary<int, Position> textureOffsets = [];
+	readonly Dictionary<int, Rect> textureAreas = [];
 
-	public TextureAtlas(State state, Dictionary<int, Position> offsets, IGraphic atlasGraphic, int numMipMapLevels = 0)
+    public TextureAtlas(State state, Dictionary<int, Rect> areas, IGraphic atlasGraphic, int numMipMapLevels = 0)
 		: base(state)
 	{
         Size = new(atlasGraphic.Width, atlasGraphic.Height);
-		textureOffsets = new(offsets);
+        textureAreas = new(areas);
 
         Create(atlasGraphic.Format, atlasGraphic.GetData(), numMipMapLevels);
     }
@@ -242,7 +242,7 @@ internal class TextureAtlas : Texture, ITextureAtlas
 					if (yOffset + texture.Height > height)
 						height = yOffset + (uint)texture.Height;
 
-					textureOffsets.Add(textureIndex, new Position((int)xOffset, (int)yOffset));
+					textureAreas.Add(textureIndex, new Rect((int)xOffset, (int)yOffset, texture.Width, texture.Height));
 
 					xOffset += (uint)texture.Width;
 
@@ -256,7 +256,7 @@ internal class TextureAtlas : Texture, ITextureAtlas
 
 					height = yOffset + (uint)texture.Height;
 
-					textureOffsets.Add(textureIndex, new Position((int)xOffset, (int)yOffset));
+                    textureAreas.Add(textureIndex, new Rect((int)xOffset, (int)yOffset, texture.Width, texture.Height));
 
 					xOffset += (uint)texture.Width;
 
@@ -276,17 +276,21 @@ internal class TextureAtlas : Texture, ITextureAtlas
 		Size = new((int)width, (int)height);
 		var atlasGraphic = new Graphic(Size.Width, Size.Height, graphicFormat);
 
-		foreach (var offset in textureOffsets)
+		foreach (var area in textureAreas)
 		{
-			var subGraphic = graphics[offset.Key];
+			var subGraphic = graphics[area.Key];
 
-			atlasGraphic.AddOverlay(offset.Value.X, offset.Value.Y, subGraphic);
+			atlasGraphic.AddOverlay(area.Value.Position.X, area.Value.Position.Y, subGraphic);
 		}
 
 		Create(graphicFormat, atlasGraphic.GetData(), numMipMapLevels);
 	}
 
-	public Position GetOffset(int index) => textureOffsets[index];
+	public Position GetOffset(int index) => textureAreas[index].Position;
+
+    public Size GetSize(int index) => textureAreas[index].Size;
+
+	public Rect GetArea(int index) => textureAreas[index];
 }
 
 internal class TextureFactory(State state) : ITextureFactory
@@ -301,8 +305,8 @@ internal class TextureFactory(State state) : ITextureFactory
         return new TextureAtlas(state, graphics, numMipMapLevels);
     }
 
-    public ITextureAtlas CreateAtlas(Dictionary<int, Position> offsets, IGraphic atlasGraphic, int numMipMapLevels = 0)
+    public ITextureAtlas CreateAtlas(Dictionary<int, Rect> areas, IGraphic atlasGraphic, int numMipMapLevels = 0)
 	{
-        return new TextureAtlas(state, offsets, atlasGraphic, numMipMapLevels);
+        return new TextureAtlas(state, areas, atlasGraphic, numMipMapLevels);
     }
 }

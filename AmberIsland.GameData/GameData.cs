@@ -76,7 +76,7 @@ public sealed class GameData
 
     public Map? GetMap(uint index) => mapDataCache.LoadAsset(index);
 
-    public Sprite GetMonsterAtlasSprite(uint index) => monsterGraphicCache.LoadAsset(index);
+    public Dictionary<uint, Sprite> GetMonsterAtlasSprites() => monsterGraphicCache.LoadAllAssets();
 
     public Monster GetMonster(uint index) => monsterDataCache.LoadAsset(index);
 

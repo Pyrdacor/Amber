@@ -64,7 +64,7 @@ public readonly record struct Monster
     ushort AttackSpeed, // Swings per (real) minute (0 or 0.0167 to 1092.25 swings/s)
     ushort MinDecisionDelay, // Minimum time in milliseconds before the next decision is evaluated (in idle state)
     ushort MaxDecisionDelay, // Maximum time in milliseconds before the next decision is evaluated (in idle state)
-                             // Dword-sized
+    // Dword-sized
     uint HitPoints,
     uint MinAttackDamage,
     uint MaxAttackDamage,

@@ -113,6 +113,9 @@ Each is provided by its own container:
 
 "monatlas.aic" contains all monster graphic atlasses
 which are combined into one large atlas per map.
+To reuse the same atlas for different maps, the file
+index is its own index and maps reference the monster
+atlas index.
 
 "mondata.aic" contains all monster data files.
 

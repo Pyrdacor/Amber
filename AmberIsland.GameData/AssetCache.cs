@@ -12,7 +12,6 @@ public interface IAssetCache<T> where T : notnull
 internal class AssetCache<T> : IAssetCache<T> where T : notnull
 {
     private readonly string? containerPath = null;
-    private readonly Func<uint[], Dictionary<uint, IDataReader>> fileLoader;
     private readonly int maxCacheEntries;
     private readonly Func<IDataReader, T> assetLoader;
     private readonly Dictionary<uint, LinkedListNode<(uint Index, T Asset)>> cacheMap;
@@ -21,16 +20,6 @@ internal class AssetCache<T> : IAssetCache<T> where T : notnull
     public AssetCache(string containerPath, int maxCacheEntries, Func<IDataReader, T> assetLoader)
     {
         this.containerPath = containerPath;
-        this.maxCacheEntries = maxCacheEntries;
-        this.assetLoader = assetLoader;
-        cacheMap = new(maxCacheEntries);
-
-        fileLoader = LoadFilesFromContainer;
-    }
-
-    private protected AssetCache(Func<uint[], Dictionary<uint, IDataReader>> fileLoader, int maxCacheEntries, Func<IDataReader, T> assetLoader)
-    {
-        this.fileLoader = fileLoader;
         this.maxCacheEntries = maxCacheEntries;
         this.assetLoader = assetLoader;
         cacheMap = new(maxCacheEntries);
@@ -54,6 +43,13 @@ internal class AssetCache<T> : IAssetCache<T> where T : notnull
         return result;
     }
 
+    private Dictionary<uint, IDataReader> LoadAllFilesFromContainer()
+    {
+        using var stream = File.OpenRead(containerPath!);
+
+        return FileContainer.StreamAllFiles(stream);
+    }
+
     public T? LoadAsset(uint fileIndex)
     {
         if (cacheMap.TryGetValue(fileIndex, out var node))
@@ -64,7 +60,7 @@ internal class AssetCache<T> : IAssetCache<T> where T : notnull
             return node.Value.Asset;
         }
 
-        var files = fileLoader([fileIndex]);
+        var files = LoadFilesFromContainer([fileIndex]);
 
         if (files == null || files.Count == 0)
             return default;
@@ -111,7 +107,7 @@ internal class AssetCache<T> : IAssetCache<T> where T : notnull
         if (indices.Count == 0)
             return result;
 
-        var files = fileLoader([.. indices]);
+        var files = LoadFilesFromContainer([.. indices]);
 
         foreach (var file in files)
         {
@@ -135,5 +131,18 @@ internal class AssetCache<T> : IAssetCache<T> where T : notnull
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Note: This will bypass the cache entirely.
+    /// 
+    /// Use this only for one-time asset loading like sprites
+    /// for a graphic atlas.
+    /// </summary>
+    public Dictionary<uint, T> LoadAllAssets()
+    {
+        var files = LoadAllFilesFromContainer();
+
+        return files.ToDictionary(file => file.Key, file => assetLoader(file.Value));
     }
 }
