@@ -1,3 +1,2 @@
 ﻿- Projectiles are shot to wrong location
-- Use the relative source location when shooting projectiles from monsters
 - Implement items, savegames and use values for the player instead of dummy values

@@ -523,7 +523,7 @@ internal class MapMonster : CombatMapActor
         {
             var direction = (game.Player.Position - Position).Normalized();
             Direction = direction;
-            mapScreen.SpawnProjectile(this, Center.Round(), direction, 1);
+            mapScreen.SpawnProjectile(this, Position.Round() + RelativeProjectileSourcePosition, direction, 1);
         }
         else
         {
