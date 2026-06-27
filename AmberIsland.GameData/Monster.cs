@@ -61,11 +61,12 @@ public readonly record struct Monster
     byte PaletteIndex, // 0-based index inside the monster sprite palettes (mostly 0 or a very low integer)
     byte ScaleFactor, // 4.4 float which means 0x08 is 0.5 and 0x10 is 1.0 (which means ScaleFactor * Width / 16 gives the render width)
     // Word-sized
-    ushort CenterX, // In relation to the original frame width
-    ushort CenterY, // In relation to the original frame height
-    ushort ProjectileSourceX, // In relation to the original frame width
-    ushort ProjectileSourceY, // In relation to the original frame height
+    ushort CenterX, // In relation to the original frame width (0xffff = half width)
+    ushort CenterY, // In relation to the original frame height (0xffff = half height)
+    ushort ProjectileSourceX, // In relation to the original frame width (0xffff = use center X)
+    ushort ProjectileSourceY, // In relation to the original frame height (0xffff = use center Y)
     ushort ProjectileIndex, // 0 = none, if given shoots the projectile towards the player when attacking
+    ushort ProjectileEmitDelay, // If projectiles are shot, this overrides the time before the projectile is emitted (usually the attack animation duration is used, 0xffff means use the animation duration, value is in milliseconds)
     ushort BossMonsterIndex, // 0 = none
     ushort MinionMonsterIndex, // 0 = none
     ushort MoveSpeed, // Pixels per (real) minute (0 or 0.0167 to 1092.25 pixel/s)
@@ -109,6 +110,7 @@ public readonly record struct Monster
         writer.Write(ProjectileSourceX);
         writer.Write(ProjectileSourceY);
         writer.Write(ProjectileIndex);
+        writer.Write(ProjectileEmitDelay);
         writer.Write(BossMonsterIndex);
         writer.Write(MinionMonsterIndex);
         writer.Write(MoveSpeed);
@@ -153,6 +155,7 @@ public readonly record struct Monster
         var projectileSourceX = reader.ReadWord();
         var projectileSourceY = reader.ReadWord();
         var projectileIndex = reader.ReadWord();
+        var projectileEmitDelay = reader.ReadWord();
         var bossMonsterIndex = reader.ReadWord();
         var minionMonsterIndex = reader.ReadWord();
         var moveSpeed = reader.ReadWord();
@@ -194,6 +197,7 @@ public readonly record struct Monster
             projectileSourceX,
             projectileSourceY,
             projectileIndex,
+            projectileEmitDelay,
             bossMonsterIndex, 
             minionMonsterIndex,
             moveSpeed,

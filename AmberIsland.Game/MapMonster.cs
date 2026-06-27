@@ -22,6 +22,8 @@ internal class MapMonster : CombatMapActor
     private long lastAttackTicks = 0;
     private long lastAnimationTicks = 0;
     private long playAnimationStartTicks = 0;
+    private long playAnimationDurationInTicks = 0;
+    private bool playAnimationTriggeredNextStateAlready = false;
     private long monsterTicks = 0;
     private readonly ISequencedSprite sprite;
     private readonly Dictionary<MonsterState, Animation> animations = [];
@@ -47,7 +49,9 @@ internal class MapMonster : CombatMapActor
             }
 
             if (currentState == MonsterState.Idle)
+            {
                 SetupNextDecision();
+            }
             else if (currentState == MonsterState.Walking || currentState == MonsterState.Chasing || currentState == MonsterState.Fleeing)
             {
                 lastMoveTicks = 0;
@@ -240,38 +244,8 @@ internal class MapMonster : CombatMapActor
         }
     }
 
-    private protected override void UpdateActor(long elapsedTicks)
+    private void RunStateHandler()
     {
-        base.UpdateActor(elapsedTicks);
-
-        monsterTicks += elapsedTicks;
-
-        if (lastAnimationTicks == 0)
-            lastAnimationTicks = monsterTicks;
-
-        if (lastMoveTicks == 0)
-            lastMoveTicks = monsterTicks;
-
-        if (nextDecisionTicks == 0)
-            SetupNextDecision();
-
-        if (sprite.FrameIndices.Length > 1)
-        {
-            long elapsed = monsterTicks - lastAnimationTicks;
-
-            if (elapsed > 0)
-            {
-                double elapsedMinutes = Game.TicksToMinutes(elapsed);
-                double framesPerMinute = GetAnimation().FramesPerMinute;
-                int elapsedFrames = MathUtil.Floor(framesPerMinute * elapsedMinutes);
-
-                sprite.CurrentFrameIndex += elapsedFrames;
-                elapsed -= Game.MinutesToTicks(elapsedFrames / framesPerMinute);
-
-                lastAnimationTicks = monsterTicks - elapsed;
-            }
-        }
-
         switch (currentState)
         {
             case MonsterState.Idle:
@@ -308,7 +282,42 @@ internal class MapMonster : CombatMapActor
                 // These should be animation play states
                 HandlePlayAnimationState();
                 break;
-        }        
+        }
+    }
+
+    private protected override void UpdateActor(long elapsedTicks)
+    {
+        base.UpdateActor(elapsedTicks);
+
+        monsterTicks += elapsedTicks;
+
+        if (lastAnimationTicks == 0)
+            lastAnimationTicks = monsterTicks;
+
+        if (lastMoveTicks == 0)
+            lastMoveTicks = monsterTicks;
+
+        if (nextDecisionTicks == 0)
+            SetupNextDecision();
+
+        if (sprite.FrameIndices.Length > 1)
+        {
+            long elapsed = monsterTicks - lastAnimationTicks;
+
+            if (elapsed > 0)
+            {
+                double elapsedMinutes = Game.TicksToMinutes(elapsed);
+                double framesPerMinute = GetAnimation().FramesPerMinute;
+                int elapsedFrames = MathUtil.Floor(framesPerMinute * elapsedMinutes);
+
+                sprite.CurrentFrameIndex += elapsedFrames;
+                elapsed -= Game.MinutesToTicks(elapsedFrames / framesPerMinute);
+
+                lastAnimationTicks = monsterTicks - elapsed;
+            }
+        }
+
+        RunStateHandler();      
     }
 
     public void PlayerAttacks(Player player)
@@ -367,11 +376,28 @@ internal class MapMonster : CombatMapActor
         {
             if (CanAttack())
             {
-                if (animations.TryGetValue(MonsterState.Attacking, out var animation))
+                if (monster.ProjectileIndex != 0 && monster.ProjectileEmitDelay != 0xffff)
+                {
+                    if (monster.ProjectileEmitDelay == 0)
+                    {
+                        CurrentState = MonsterState.Attacking;
+                        lastAttackTicks = monsterTicks;
+                    }
+                    else if (animations.TryGetValue(MonsterState.Attacking, out var animation))
+                    {
+                        double animationDuration = animation.DurationInMinutes();
+                        playAnimationDurationInTicks = Game.SecondsToTicks(monster.ProjectileEmitDelay / 1000.0);
+                        lastAttackTicks = monsterTicks + Game.MinutesToTicks(animationDuration);
+                        playAnimationStartTicks = monsterTicks;
+                        CurrentState = MonsterState.PlayAttackAnimation;
+                    }
+                }
+                else if (animations.TryGetValue(MonsterState.Attacking, out var animation))
                 {
                     double animationDuration = animation.DurationInMinutes();
+                    playAnimationDurationInTicks = Game.MinutesToTicks(animationDuration);
                     // Attack delay only starts counting after the animation has finished
-                    lastAttackTicks = monsterTicks + Game.MinutesToTicks(animationDuration);
+                    lastAttackTicks = monsterTicks + playAnimationDurationInTicks;
                     playAnimationStartTicks = monsterTicks;
                     CurrentState = MonsterState.PlayAttackAnimation;
                 }
@@ -547,21 +573,53 @@ internal class MapMonster : CombatMapActor
 
     private void HandlePlayAnimationState()
     {
-        var animation = GetAnimation();
-        var elapsedAnimationTicks = monsterTicks - playAnimationStartTicks;
-        var animationDuration = animation.DurationInMinutes();
-
-        if (elapsedAnimationTicks >= Game.MinutesToTicks(animationDuration))
+        void EndState()
         {
-            CurrentState = CurrentState switch
+            playAnimationDurationInTicks = 0;
+            playAnimationStartTicks = 0;
+            playAnimationTriggeredNextStateAlready = false;
+        }
+
+        var elapsedAnimationTicks = monsterTicks - playAnimationStartTicks;
+
+        if (elapsedAnimationTicks >= playAnimationDurationInTicks)
+        {
+            var fullAnimationDuration = Game.MinutesToTicks(GetAnimation().DurationInMinutes());
+
+            if (elapsedAnimationTicks >= fullAnimationDuration)
             {
-                MonsterState.PlayAttackAnimation => MonsterState.Attacking,
-                MonsterState.PlayCastAnimation => MonsterState.Casting,
-                MonsterState.PlayHurtAnimation => MonsterState.ReceivingDamage,
-                MonsterState.PlayDieAnimation => MonsterState.Die,
-                MonsterState.PlaySummonAnimation => MonsterState.Summon,
-                _ => MonsterState.Idle,// Should not happen, but better safe than sorry :)
-            };
+                if (playAnimationTriggeredNextStateAlready)
+                    CurrentState = MonsterState.Idle;
+                else
+                    SetNextState();
+
+                EndState();
+            }
+            else if (!playAnimationTriggeredNextStateAlready)
+            {
+                playAnimationTriggeredNextStateAlready = true;
+
+                // Trigger the next state's action but keep the animation rolling.
+                var oldState = CurrentState;
+                var timeRemaining = fullAnimationDuration - playAnimationDurationInTicks;
+                SetNextState();
+                RunStateHandler();
+                CurrentState = oldState;
+                playAnimationDurationInTicks = timeRemaining;
+            }
+
+            void SetNextState()
+            {
+                CurrentState = CurrentState switch
+                {
+                    MonsterState.PlayAttackAnimation => MonsterState.Attacking,
+                    MonsterState.PlayCastAnimation => MonsterState.Casting,
+                    MonsterState.PlayHurtAnimation => MonsterState.ReceivingDamage,
+                    MonsterState.PlayDieAnimation => MonsterState.Die,
+                    MonsterState.PlaySummonAnimation => MonsterState.Summon,
+                    _ => MonsterState.Idle, // Should not happen, but better safe than sorry :)
+                };
+            }
         }
     }
 
