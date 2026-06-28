@@ -10,3 +10,6 @@
 @"monsters/{0}_animations.aic" <- "monsters/animations/{0}/*.aianim"
 "mon_anim.aic" <- "monsters/*_animations.aic"
 "mon_mss.aic" <- "monsters/mss/*.aimss"
+"map.aic" <- "maps/*.aimap"
+"tileset.aic" <- "tilesets/*.aitileset"
+"tileatlas.aic" <- "tilesets/*.aispr"

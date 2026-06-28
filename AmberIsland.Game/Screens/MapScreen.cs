@@ -47,7 +47,7 @@ internal class MapScreen : Screen
 	long delayedMoveActionIndex = -1;
 	bool mouseDown = false;
 	//IRenderText? mapNameText;
-	Dictionary<ActorType, Dictionary<uint, uint[]>> actorPaletteIndices = [];
+	Dictionary<ActorType, Dictionary<uint, byte[]>> actorPaletteIndices = [];
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
 	public Map Map => map!;
@@ -489,7 +489,7 @@ internal class MapScreen : Screen
             {
                 int gridIndex = x + y * tilesPerRow;
                 int index = (x + scrollOffsetX) + (y + scrollOffsetY) * map!.Width;
-                var backgroundTileIndex = map.BackgroundLayer[index];
+				var backgroundTileIndex = map.BackgroundLayer[index];
                 var objectTileIndex = map.ObjectLayer[index];
                 var foregroundTileIndex = map.ForegroundLayer[index];
 
@@ -502,7 +502,7 @@ internal class MapScreen : Screen
                     underlaySprite.Visible = false;
                 }
 
-                if (foregroundTileIndex != 0)
+                if (objectTileIndex != 0)
                 {
                     CreateTileSprite(Layer.Objects, objects, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, objectTileIndex, 2 * RenderOrderOffset);
                 }
@@ -660,7 +660,7 @@ internal class MapScreen : Screen
 
 	private Tile GetTile(int index)
 	{
-		return tileset!.Tiles[index - 1];
+		return tileset!.Tiles[index];
 	}
 
 	/*private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
@@ -804,6 +804,6 @@ internal class MapScreen : Screen
 
     private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
 
-	internal uint[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
-    internal uint[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];
+	internal byte[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
+    internal byte[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];
 }

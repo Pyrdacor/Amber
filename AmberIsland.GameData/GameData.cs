@@ -45,13 +45,24 @@ public sealed class GameData
         tilesetGraphicCache = new(Full("tileatlas.aic"), TileGraphicCacheSize, Sprite.Read);
         tilesetDataCache = new(Full("tileset.aic"), TileDataCacheSize, Tileset.Read);
         mapDataCache = new(Full("map.aic"), MapDataCacheSize, Map.Read);
-        monsterGraphicCache = new(Full("mon_atlas.aic"), MonsterGraphicCacheSize, MapSpriteAtlas.Read);
+        monsterGraphicCache = new(Full("mon_mss.aic"), MonsterGraphicCacheSize, reader => ReadMapSpriteAtlas(reader, Full("mon_sprites.aic")));
         monsterDataCache = new(Full("mon_data.aic"), MonsterDataCacheSize, Monster.Read);
         monsterAnimationCache = new(Full("mon_anim.aic"), MonsterAnimationCacheSize, FileContainer.Read);
         projectileGraphicCache = new(Full("proj_atlas.aic"), ProjectileGraphicCacheSize, MapSpriteAtlas.Read);
         projectileDataCache = new(Full("proj_data.aic"), ProjectileDataCacheSize, Projectile.Read);
         projectileAnimationCache = new(Full("proj_anim.aic"), ProjectileAnimationCacheSize, FileContainer.Read);
         // TODO ...
+    }
+
+    private static MapSpriteAtlas ReadMapSpriteAtlas(IDataReader spriteSheetReader, string spriteContainerPath)
+    {
+        var spriteSheet = SpriteSheet.Read(spriteSheetReader);
+        using var stream = File.OpenRead(spriteContainerPath);
+
+        var spriteFiles = FileContainer.ReadFiles(stream, spriteSheet.Entries.Select(entry => entry.SpriteIndex).ToArray());
+        var sprites = spriteFiles.ToDictionary(file => file.Key, file => Sprite.Read(new DataReader(file.Value)));
+        
+        return MapSpriteAtlas.FromSpriteSheet(spriteSheet, sprites);
     }
 
     private static T? ReadSingleContainerFile<T>(string containerPath, uint index, Func<IDataReader, T> assetLoader)

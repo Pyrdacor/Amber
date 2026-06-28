@@ -15,7 +15,7 @@ public readonly record struct MapSprite
 (
     Position Position,
     Size Size,
-    params uint[] PaletteIndices
+    params byte[] PaletteIndices
 )
 {
     public void Write(IDataWriter writer)
@@ -27,7 +27,7 @@ public readonly record struct MapSprite
         writer.Write((byte)PaletteIndices.Length);
 
         foreach (var paletteIndex in PaletteIndices)
-            writer.Write((byte)paletteIndex);
+            writer.Write(paletteIndex);
     }
 
     public static MapSprite Read(IDataReader reader)
@@ -37,7 +37,7 @@ public readonly record struct MapSprite
         ushort width = reader.ReadWord();
         ushort height = reader.ReadWord();
         int paletteIndexCount = reader.ReadByte();
-        var paletteIndices = new uint[paletteIndexCount];
+        var paletteIndices = new byte[paletteIndexCount];
 
         for (int i = 0; i < paletteIndexCount; i++)
             paletteIndices[i] = reader.ReadByte();
@@ -58,6 +58,41 @@ public readonly record struct MapSpriteAtlas
     params PaletteRgb[] Palettes
 )
 {
+    public static MapSpriteAtlas FromSpriteSheet(SpriteSheet spriteSheet, Dictionary<uint, Sprite> sprites)
+    {
+        var mapSprites = new Dictionary<uint, MapSprite>(sprites.Count);
+        var palettes = spriteSheet.Palettes;
+        int x = 0;
+        int y = 0;
+        ushort width = sprites.Max(sprite => sprite.Value.Width);
+        ushort height = (ushort)sprites.Sum(sprite => sprite.Value.Height);
+        var colorIndices = new byte[width * height];
+
+        foreach (var spriteEntry in spriteSheet.Entries)
+        {
+            var (index, paletteIndices) = spriteEntry;
+            var sprite = sprites[index];
+
+            mapSprites.Add(index, new MapSprite
+            (
+                Position: new(x, y),
+                Size: new(sprite.Width, sprite.Height),
+                paletteIndices
+            ));
+
+            for (int sy = 0; sy < sprite.Height; sy++)
+            {
+                Buffer.BlockCopy(sprite.ColorIndices, sy * sprite.Width, colorIndices, (y + sy) * width, sprite.Width);
+            }
+
+            y += sprite.Height;
+        }
+
+        var atlas = new Sprite(width, height, [], colorIndices);
+
+        return new MapSpriteAtlas(atlas, mapSprites, palettes);
+    }
+
     public static MapSpriteAtlas FromSprites(Dictionary<uint, Sprite> sprites)
     {
         var mapSprites = new Dictionary<uint, MapSprite>(sprites.Count);
@@ -67,7 +102,7 @@ public readonly record struct MapSpriteAtlas
         ushort width = sprites.Max(sprite  => sprite.Value.Width);
         ushort height = (ushort)sprites.Sum(sprite => sprite.Value.Height);
         var colorIndices = new byte[width * height];
-        uint paletteIndex = 0;
+        byte paletteIndex = 0;
 
         foreach (var spriteEntry in sprites)
         {
