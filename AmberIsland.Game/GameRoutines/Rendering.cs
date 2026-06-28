@@ -179,9 +179,9 @@ partial class Game
                 var areas = new Dictionary<int, Rect>(tileRows * tilesPerRow);
 				int index = 0;
 
-                for (int y = 0; y < tilesPerRow; y++)
+                for (int y = 0; y < tileRows; y++)
 				{
-					for (int x = 0; x < tileRows; x++)
+					for (int x = 0; x < tilesPerRow; x++)
 					{
 						areas.Add(index++, new(x * tileWidth, y * tileHeight, tileWidth, tileHeight));
                     }

@@ -660,7 +660,7 @@ internal class MapScreen : Screen
 
 	private Tile GetTile(int index)
 	{
-		return tileset!.Tiles[index];
+		return tileset!.Tiles[index - 1];
 	}
 
 	/*private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[game!.State.TravelType] : CityTicksPerStep;
