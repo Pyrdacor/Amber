@@ -1,0 +1,3 @@
+# Container
+"mon_data.aic" <- "monsters/data/*.aid"
+"mon_sprites.aic" <- "monsters/sprites/*.aispr"

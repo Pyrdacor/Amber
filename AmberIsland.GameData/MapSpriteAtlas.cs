@@ -5,7 +5,7 @@ using Amber.IO.FileFormats.Serialization;
 namespace AmberIsland.GameData;
 
 /// <summary>
-/// Each map sprite contains all frames for a specifc map
+/// Each map sprite contains all frames for a specific map
 /// objects like monster, NPC, item or object.
 /// </summary>
 /// <param name="Position">Position of the sprite texture inside the atlas</param>
