@@ -68,7 +68,7 @@ internal class Texture2DShader : BaseShader, IPaletteShader
                         discard;
                 }}
 
-                if (varMaskColorIndex < {PaletteSizeName} - 0.5f)
+                if (varMaskColorIndex < {PaletteSizeName} - 0.5f && varMaskColorIndex < 254.5f)
                     pixelColor = texture({PaletteName}, vec2((varMaskColorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName}));
             }}
             else
