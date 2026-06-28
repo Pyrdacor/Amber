@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AmberIslandAssetBuilder": {
+      "commandName": "Project",
+      "commandLineArgs": " \"D:\\Projects\\Amber\\AmberIsland\\build-assets.aib\" \"D:\\Projects\\Amber\\AmberIsland\\assets\""
+    }
+  }
+}

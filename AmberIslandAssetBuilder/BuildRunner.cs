@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace AmberIslandAssetBuilder;
 
 sealed class BuildContext(string assetsDir)
@@ -18,7 +20,8 @@ sealed class BuildRunner
 
     public void Run(BuildContext context, List<BuildOperation> operations)
     {
-        var sorted = SortByDependency(operations);
+        var expanded = ExpandAllPlaceholders(context, operations);
+        var sorted = SortByDependency(expanded);
 
         foreach (var op in sorted)
         {
@@ -51,6 +54,88 @@ sealed class BuildRunner
         }
     }
 
+    static List<BuildOperation> ExpandAllPlaceholders(BuildContext context, List<BuildOperation> operations)
+    {
+        var result = new List<BuildOperation>();
+
+        foreach (var op in operations)
+        {
+            if (!op.InputPath.Contains("{0}"))
+            {
+                result.Add(op);
+                continue;
+            }
+
+            var concrete = ExpandPlaceholder(context, op);
+
+            if (concrete.Count == 0)
+                Console.Error.WriteLine($"  Warning: no matches for placeholder pattern '{op.InputPath}'");
+
+            result.AddRange(concrete);
+        }
+
+        return result;
+    }
+
+    static List<BuildOperation> ExpandPlaceholder(BuildContext context, BuildOperation operation)
+    {
+        string inputPath = operation.InputPath.Replace('\\', '/');
+        string[] segments = inputPath.Split('/');
+
+        int phSegIdx = Array.FindIndex(segments, s => s.Contains("{0}"));
+        if (phSegIdx < 0)
+            return [operation];
+
+        string baseDir = phSegIdx > 0
+            ? string.Join('/', segments[..phSegIdx])
+            : ".";
+        string fullBaseDir = context.ResolvePath(baseDir);
+
+        if (!Directory.Exists(fullBaseDir))
+            return [];
+
+        string segPattern = segments[phSegIdx].Replace("{0}", "*");
+        bool matchDirs = phSegIdx < segments.Length - 1;
+
+        string[] matches = matchDirs
+            ? Directory.GetDirectories(fullBaseDir, segPattern)
+            : Directory.GetFiles(fullBaseDir, segPattern);
+
+        var result = new List<BuildOperation>();
+
+        foreach (var match in matches.OrderBy(m => m, StringComparer.OrdinalIgnoreCase))
+        {
+            string matchName = Path.GetFileName(match);
+            string? value = ExtractPlaceholderValue(matchName, segments[phSegIdx]);
+
+            if (value is null)
+                continue;
+
+            result.Add(operation with
+            {
+                InputPath = operation.InputPath.Replace("{0}", value),
+                OutputPath = operation.OutputPath.Replace("{0}", value)
+            });
+        }
+
+        return result;
+    }
+
+    static string? ExtractPlaceholderValue(string actual, string template)
+    {
+        int phIdx = template.IndexOf("{0}");
+        string prefix = template[..phIdx];
+        string suffix = template[(phIdx + 3)..];
+
+        if (prefix.Length > 0 && !actual.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return null;
+        if (suffix.Length > 0 && !actual.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        int endIdx = actual.Length - suffix.Length;
+        return actual[prefix.Length..endIdx];
+    }
+
     static List<BuildOperation> SortByDependency(List<BuildOperation> operations)
     {
         var byOutput = new Dictionary<string, BuildOperation>(StringComparer.OrdinalIgnoreCase);
@@ -66,7 +151,17 @@ sealed class BuildRunner
                 return;
 
             if (byOutput.TryGetValue(op.InputPath, out var dep))
+            {
                 Visit(dep);
+            }
+            else if (op.InputPath.Contains('*') || op.InputPath.Contains('?'))
+            {
+                foreach (var entry in byOutput)
+                {
+                    if (GlobMatches(op.InputPath, entry.Key))
+                        Visit(entry.Value);
+                }
+            }
 
             sorted.Add(op);
         }
@@ -75,5 +170,13 @@ sealed class BuildRunner
             Visit(op);
 
         return sorted;
+    }
+
+    static bool GlobMatches(string pattern, string path)
+    {
+        pattern = pattern.Replace('\\', '/');
+        path = path.Replace('\\', '/');
+        string regex = "^" + Regex.Escape(pattern).Replace("\\*", "[^/]*").Replace("\\?", "[^/]") + "$";
+        return Regex.IsMatch(path, regex, RegexOptions.IgnoreCase);
     }
 }

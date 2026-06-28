@@ -88,14 +88,23 @@ static void HandleContainer(BuildContext context, BuildOperation operation)
         throw new InvalidOperationException($"No files match: {operation.InputPath}");
 
     var files = new Dictionary<uint, byte[]>();
+    bool autoIndex = !uint.TryParse(
+        Path.GetFileNameWithoutExtension(matchingFiles[0]).Split('_')[0], out _);
 
+    uint nextIndex = 1;
     foreach (var filePath in matchingFiles)
     {
-        string name = Path.GetFileNameWithoutExtension(filePath);
-        string indexStr = name.Split('_')[0];
-
-        if (!uint.TryParse(indexStr, out uint index))
-            throw new FormatException($"Cannot parse file index from '{Path.GetFileName(filePath)}'. Expected format: 001_name.ext");
+        uint index;
+        if (autoIndex)
+        {
+            index = nextIndex++;
+        }
+        else
+        {
+            string indexStr = Path.GetFileNameWithoutExtension(filePath).Split('_')[0];
+            if (!uint.TryParse(indexStr, out index))
+                throw new FormatException($"Cannot parse file index from '{Path.GetFileName(filePath)}'. Expected format: 001_name.ext");
+        }
 
         files[index] = File.ReadAllBytes(filePath);
     }

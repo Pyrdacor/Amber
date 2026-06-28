@@ -1,3 +1,12 @@
+// Build map sprite sheets
+# MapSpriteSheet
+// Monsters
+@"monsters/mss/001_mon.aimss" <- "mon_sprites.aic"[1,2], {1:0,2:0}
+
+// Build file containers (last)
 # Container
 "mon_data.aic" <- "monsters/data/*.aid"
 "mon_sprites.aic" <- "monsters/sprites/*.aispr"
+@"monsters/{0}_animations.aic" <- "monsters/animations/{0}/*.aianim"
+"mon_anim.aic" <- "monsters/*_animations.aic"
+"mon_mss.aic" <- "monsters/mss/*.aimss"
