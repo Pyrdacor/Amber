@@ -1,1 +1,2 @@
-﻿- Implement items, savegames and use values for the player instead of dummy values
+﻿- Generate player/outfit sprites via the build script
+- Implement items, savegames and use values for the player instead of dummy values

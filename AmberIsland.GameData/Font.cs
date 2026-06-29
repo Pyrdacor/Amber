@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Amber.IO.Common.Serialization;
+using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
 
 namespace AmberIsland.GameData;
@@ -75,7 +76,11 @@ public readonly record struct Font
 {
     public void Write(IDataWriter writer)
     {
-        Atlas.Write(writer);
+        var atlasWriter = new DataWriter();
+        Atlas.Write(atlasWriter);
+
+        writer.Write((uint)atlasWriter.Size);
+        writer.Write(atlasWriter.ToArray());
         writer.Write(GlyphWidth);
         writer.Write(GlyphHeight);
 
@@ -87,7 +92,8 @@ public readonly record struct Font
 
     public static Font Read(IDataReader reader)
     {
-        var atlas = Sprite.Read(reader);
+        var atlasDataSize = reader.ReadDword();
+        var atlas = Sprite.Read(new DataReader(reader.ReadBytes((int)atlasDataSize)));
         var glyphWidth = reader.ReadByte();
         var glyphHeight = reader.ReadByte();
         var glyphCount = reader.ReadWord();

@@ -69,9 +69,61 @@ sealed class BuildRunner
             var concrete = ExpandPlaceholder(context, op);
 
             if (concrete.Count == 0)
+                concrete = ExpandPlaceholderFromOutputs(op, result);
+
+            if (concrete.Count == 0)
                 Console.Error.WriteLine($"  Warning: no matches for placeholder pattern '{op.InputPath}'");
 
             result.AddRange(concrete);
+        }
+
+        return result;
+    }
+
+    static List<BuildOperation> ExpandPlaceholderFromOutputs(BuildOperation operation, List<BuildOperation> expandedOps)
+    {
+        string inputPath = operation.InputPath.Replace('\\', '/');
+        string[] segments = inputPath.Split('/');
+        int phSegIdx = Array.FindIndex(segments, s => s.Contains("{0}"));
+        if (phSegIdx < 0)
+            return [];
+
+        string segTemplate = segments[phSegIdx];
+        string prefix = phSegIdx > 0 ? string.Join('/', segments[..phSegIdx]) + "/" : "";
+        string suffix = phSegIdx < segments.Length - 1
+            ? "/" + string.Join('/', segments[(phSegIdx + 1)..])
+            : "";
+
+        var result = new List<BuildOperation>();
+        var seenValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var prevOp in expandedOps)
+        {
+            string output = prevOp.OutputPath.Replace('\\', '/');
+
+            if (prefix.Length > 0 && !output.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (suffix.Length > 0 && !output.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            string candidate = output;
+            if (prefix.Length > 0)
+                candidate = candidate[prefix.Length..];
+            if (suffix.Length > 0)
+                candidate = candidate[..^suffix.Length];
+
+            if (candidate.Contains('/'))
+                continue;
+
+            string? value = ExtractPlaceholderValue(candidate, segTemplate);
+            if (value != null && seenValues.Add(value))
+            {
+                result.Add(operation with
+                {
+                    InputPath = operation.InputPath.Replace("{0}", value),
+                    OutputPath = operation.OutputPath.Replace("{0}", value)
+                });
+            }
         }
 
         return result;

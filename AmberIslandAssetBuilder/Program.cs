@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
 using AmberIslandAssetBuilder;
@@ -225,7 +224,7 @@ static void HandleFont(BuildContext context, BuildOperation operation)
     }
 
     var atlas = Sprite.Read(new DataReader(File.ReadAllBytes(sourcePath)));
-    var metrics = JsonSerializer.Deserialize<FontMetrics>(File.ReadAllText(metricPath))!;
+    var metrics = JsonSerializer.Deserialize<FontMetrics>(File.ReadAllText(metricPath), jsonSerializerOptions)!;
     var glyphs = new FontGlyph[metrics.Characters.Length];
 
     for (int i = 0; i < metrics.Characters.Length; i++)
@@ -363,4 +362,9 @@ file record FontMetrics
     public int CellWidth { get; set; }
     public int CellHeight { get; set; }
     public FontCharacter[] Characters { get; set; } = [];
+}
+
+partial class Program
+{
+    static readonly JsonSerializerOptions jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 }
