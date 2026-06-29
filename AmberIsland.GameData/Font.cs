@@ -1,11 +1,10 @@
 ﻿using System.Text;
 using Amber.IO.Common.Serialization;
 using Amber.IO.FileFormats.Serialization;
-using AmberIsland.GameData;
 
 namespace AmberIsland.GameData;
 
-public enum FontIndex
+public enum FontIndex : uint
 {
     DamageFont = 1,
     // TODO ...
@@ -71,6 +70,7 @@ public readonly record struct Font
     Sprite Atlas,
     byte GlyphWidth,
     byte GlyphHeight,
+    // NOTE: Glyphs must be in the same order as their character value in UTF-8!
     FontGlyph[] Glyphs
 )
 {

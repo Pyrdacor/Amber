@@ -21,6 +21,7 @@ internal class MapScreen : Screen
 	const int MinScrollX = TilesPerRow / 2;
 	const int MinScrollY = TileRows / 2 + 1;
 	internal static readonly double DiagonalDistance = Math.Sqrt(2);
+	DamageTextManager? damageTextManager;
 	Game? game;
 	Map? map;
 	uint mapIndex = 0;
@@ -31,8 +32,8 @@ internal class MapScreen : Screen
     readonly Dictionary<int, IAnimatedSprite> objects = [];
     readonly Dictionary<int, IAnimatedSprite> overlay = [];
 	readonly List<MapActor> mapActors = [];
-	int lastScrollX = -1;
-	int lastScrollY = -1;
+	int lastScrollX = 0;
+	int lastScrollY = 0;
 	int tileGraphicOffset = 0;
 	int moveTicksPerStep = WalkTicksPerStep;
 
@@ -51,6 +52,8 @@ internal class MapScreen : Screen
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
 	public Map Map => map!;
+
+	private Position MapOffset => new(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight);
 
     internal void MapChanged()
 	{
@@ -85,17 +88,18 @@ internal class MapScreen : Screen
 	public override void Init(Game game)
 	{
 		this.game = game;
-		//tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
+        damageTextManager = new(game);
+        //tilesets = [game.AssetProvider.TilesetLoader.LoadTileset(1), game.AssetProvider.TilesetLoader.LoadTileset(2)];
 
-		// TODO
-		mapIndex = 1;
+        // TODO
+        mapIndex = 1;
         map = game.GameData.GetMap(mapIndex);
 		tileset = game.GameData.GetTileset(1);
 		MapChanged();
 		FillMap(0, 0, true);
 		mapActors.Add(game.Player);
-		//SpawnMonster(new Position(100, 100), Direction.Down, 1);
-        SpawnMonster(new Position(120, 40), Direction.Left, 2);
+		SpawnMonster(new Position(100, 100), Direction.Down, 1);
+        //SpawnMonster(new Position(120, 40), Direction.Left, 2);
     }
 
 	public override void ScreenPushed(Game game, Screen screen)
@@ -188,12 +192,15 @@ internal class MapScreen : Screen
 		if (game.Paused || !game.InputEnabled)
 			ResetMovement();
 
-		if (elapsedTicks == 0)
+		if (elapsedTicks == 0) // This includes game.Paused already
 			return;
+
+		damageTextManager?.Update(elapsedTicks);
 
         int tilesPerRow = Math.Min(TilesPerRow, (int)map!.Width);
         int tileRows = Math.Min(TileRows, (int)map!.Height);
-        var mapArea = new Rect(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight, tilesPerRow * TileWidth, tileRows * TileHeight);
+		var mapOffset = MapOffset;
+        var mapArea = new Rect(mapOffset.X, mapOffset.Y, tilesPerRow * TileWidth, tileRows * TileHeight);
 
 		foreach (var mapActor in mapActors.ToArray())
 		{
@@ -806,4 +813,12 @@ internal class MapScreen : Screen
 
 	internal byte[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
     internal byte[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];
+
+	internal void ShowDamageText(MapActor source, string text)
+	{
+		var area = source.Area;
+		var position = new Position(area.Center.X, area.Top) - MapOffset;
+
+		damageTextManager?.Spawn(position, text);
+	}
 }

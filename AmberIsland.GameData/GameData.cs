@@ -22,6 +22,7 @@ public sealed class GameData
     private readonly SpriteWithPalettes playerGraphic;
     private readonly Dictionary<uint, SpriteWithPalettes> outfitGraphics;
     private readonly Dictionary<uint, Font> fonts;
+    private readonly PaletteRgb textPalette;
 
     // Cached assets
     private readonly AssetCache<Sprite> tilesetGraphicCache;
@@ -42,6 +43,7 @@ public sealed class GameData
         playerGraphic = ReadSingleContainerFile(Full("player.aic"), 1, SpriteWithPalettes.Read);
         outfitGraphics = ReadAllContainerFiles(Full("outfit.aic"), SpriteWithPalettes.Read);
         fonts = ReadAllContainerFiles(Full("fonts.aic"), Font.Read);
+        textPalette = PaletteRgb.Read(new DataReader(File.ReadAllBytes(Full("text_palette.aipal"))));
 
         // Cached
         tilesetGraphicCache = new(Full("tileatlas.aic"), TileGraphicCacheSize, Sprite.Read);
@@ -93,6 +95,8 @@ public sealed class GameData
     public SpriteWithPalettes GetOutfitSprite(uint index) => outfitGraphics.GetValueOrDefault(index);
 
     public Dictionary<uint, Font> GetFonts() => fonts;
+
+    public PaletteRgb GetTextPalette() => textPalette;
 
 
     // Cached assets

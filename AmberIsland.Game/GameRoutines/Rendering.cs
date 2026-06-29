@@ -147,7 +147,8 @@ partial class Game
 
         // MapFont
         var fonts = gameData.GetFonts();
-        var (fontAtlas, fontPalette) = CreateGraphicAtlasAndPalette(fonts);
+        var fontAtlas = CreateFontGraphicAtlas(fonts);
+		var textPalette = CreatePaletteTexture(gameData.GetTextPalette());
 
         AddLayer(LayerType.Texture2D, new()
         {
@@ -155,7 +156,7 @@ partial class Game
             RenderTarget = LayerRenderTarget.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency | LayerFeatures.Alpha | LayerFeatures.DisplayLayers,
             Texture = fontAtlas,
-            Palette = fontPalette
+            Palette = textPalette
         });
 
         // UI
@@ -223,21 +224,7 @@ partial class Game
 		var atlasGraphic = new Graphic(sprite.Width, sprite.Height, sprite.ColorIndices, GraphicFormat.PaletteIndices);
 		var atlas = Renderer.TextureFactory.CreateAtlas(new() { { 1, atlasGraphic } });
 
-		int paletteWidth = 1 + sprite.Palettes[0].Colors.Length;
-		int paletteHeight = sprite.Palettes.Length;
-        var paletteData = new byte[paletteWidth * paletteHeight * 4];
-		int index = 0;
-
-		for (int y = 0; y < sprite.Palettes.Length; y++)
-		{
-			var palette = sprite.Palettes[y];
-			Buffer.BlockCopy(palette.ToBytes() , 0, paletteData, index, paletteWidth * 4);
-			index += paletteWidth * 4;
-		}
-
-        var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
-
-        return (atlas, Renderer.TextureFactory.Create(paletteGraphic));
+        return (atlas, CreatePaletteTexture(sprite.Palettes));
     }
 
     internal (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(MapSpriteAtlas mapSpriteAtlas)
@@ -261,10 +248,28 @@ partial class Game
 
         var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
 
-        return (textureAtlas, Renderer.TextureFactory.Create(paletteGraphic));
+        return (textureAtlas, CreatePaletteTexture(mapSpriteAtlas.Palettes));
+    }
+    internal ITexture CreatePaletteTexture(params PaletteRgb[] palettes)
+    {
+        int paletteWidth = 1 + palettes.Max(palette => palette.Colors.Length);
+        int paletteHeight = palettes.Length;
+        var paletteData = new byte[paletteWidth * paletteHeight * 4];
+		int offset = 0;
+
+		foreach (var palette in palettes)
+		{
+			var paletteBytes = palette.ToBytes();
+            Buffer.BlockCopy(paletteBytes, 0, paletteData, offset, paletteBytes.Length);
+			offset += paletteWidth * 4;
+		}
+
+        var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
+
+        return Renderer.TextureFactory.Create(paletteGraphic);
     }
 
-    private (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(Dictionary<uint, Font> fonts)
+    private ITextureAtlas CreateFontGraphicAtlas(Dictionary<uint, Font> fonts)
     {
 		// TODO: Better packing later
 		int x = 0;
@@ -299,13 +304,7 @@ partial class Game
         var atlasGraphic = new Graphic(width, height, colorIndices, GraphicFormat.PaletteIndices);
         var atlas = Renderer.TextureFactory.CreateAtlas(areas, atlasGraphic);
 
-        int paletteWidth = 2;
-        int paletteHeight = 1;
-		byte[] paletteData = [0,0,0,0, 0xff,0xff,0xff,0xff];
-
-        var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
-
-        return (atlas, Renderer.TextureFactory.Create(paletteGraphic));
+        return atlas;
     }
 
     internal ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];
@@ -351,7 +350,7 @@ partial class Game
 			drawable.Visible = false;
 	}
 
-    internal static void Destroy(IRenderText? text)
+    internal static void Destroy(RenderText? text)
     {
 		if (text != null)
 			text.Visible = false;

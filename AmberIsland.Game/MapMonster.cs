@@ -539,8 +539,7 @@ internal class MapMonster : CombatMapActor
 
             if (!TestHit(game.Player))
             {
-                // TODO: Show "Missed"
-                Console.WriteLine($"{monsterName} misses");
+                mapScreen.ShowDamageText(game.Player, "Miss");
             }
             else
             {
@@ -549,13 +548,12 @@ internal class MapMonster : CombatMapActor
 
                 if (damage == 0)
                 {
-                    // TODO: Show "No dmg"
-                    Console.WriteLine($"{monsterName} does not deal damage");
+                    mapScreen.ShowDamageText(game.Player, "0");
                 }
                 else
                 {
                     // TODO: Hurt player and show the damage
-                    Console.WriteLine($"{monsterName} deals {damage} damage");
+                    mapScreen.ShowDamageText(game.Player, damage.ToString());
                 }
             }
         }

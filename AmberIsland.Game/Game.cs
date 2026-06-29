@@ -51,12 +51,14 @@ public partial class Game
         gameTicks = (long)Math.Round(totalTime * TicksPerSecond);
 
         // Execute timed actions which are ready.
-        var readyTimedAction = timedActions.Pop(gameTicks);
-
-        if (readyTimedAction != null)
+        while (true)
         {
+            var readyTimedAction = timedActions.Pop(gameTicks);
+
+            if (readyTimedAction == null)
+                break;
+
             readyTimedAction.Action();
-            return;
         }
 
         long elapsed = Paused ? 0 : gameTicks - lastGameTicks;

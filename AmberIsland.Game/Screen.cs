@@ -99,7 +99,7 @@ internal abstract class Screen
         }
     }
 
-    protected static void ShowTexts(IEnumerable<IRenderText?> texts, bool show = true)
+    protected static void ShowTexts(IEnumerable<RenderText?> texts, bool show = true)
     {
         foreach (var text in texts)
         {
@@ -110,13 +110,7 @@ internal abstract class Screen
 
 	protected static void DeleteSprites(IEnumerable<ISprite?> sprites) => ShowSprites(sprites, false);
 
-    protected static void DeleteTexts(IEnumerable<IRenderText?> texts)
-    {
-        foreach (var text in texts)
-        {
-			text?.Delete();
-        }
-    }
+    protected static void DeleteTexts(IEnumerable<RenderText?> texts) => ShowTexts(texts, false);
     #endregion
 }
 
