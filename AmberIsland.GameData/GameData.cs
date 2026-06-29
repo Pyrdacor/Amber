@@ -21,6 +21,7 @@ public sealed class GameData
     // Non-cached assets
     private readonly SpriteWithPalettes playerGraphic;
     private readonly Dictionary<uint, SpriteWithPalettes> outfitGraphics;
+    private readonly Dictionary<uint, Font> fonts;
 
     // Cached assets
     private readonly AssetCache<Sprite> tilesetGraphicCache;
@@ -40,6 +41,7 @@ public sealed class GameData
         // Non-cached
         playerGraphic = ReadSingleContainerFile(Full("player.aic"), 1, SpriteWithPalettes.Read);
         outfitGraphics = ReadAllContainerFiles(Full("outfit.aic"), SpriteWithPalettes.Read);
+        fonts = ReadAllContainerFiles(Full("fonts.aic"), Font.Read);
 
         // Cached
         tilesetGraphicCache = new(Full("tileatlas.aic"), TileGraphicCacheSize, Sprite.Read);
@@ -89,6 +91,8 @@ public sealed class GameData
     public SpriteWithPalettes GetPlayerSprite() => playerGraphic;
 
     public SpriteWithPalettes GetOutfitSprite(uint index) => outfitGraphics.GetValueOrDefault(index);
+
+    public Dictionary<uint, Font> GetFonts() => fonts;
 
 
     // Cached assets

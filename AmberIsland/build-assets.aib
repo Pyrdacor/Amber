@@ -3,6 +3,14 @@
 // Monsters
 @"monsters/mss/001_mon.aimss" <- "mon_sprites.aic"[1,2], {1:0,2:0}
 
+// Build font sprites
+# Sprite
+@"fonts/{0}.aispr" <- "fonts/{0}.png"
+
+// Build fonts
+# Font
+@"fonts/{0}.aifont" <- "fonts/{0}.aispr"
+
 // Build file containers (last)
 # Container
 "mon_data.aic" <- "monsters/data/*.aid"
@@ -13,3 +21,4 @@
 "map.aic" <- "maps/*.aimap"
 "tileset.aic" <- "tilesets/*.aitileset"
 "tileatlas.aic" <- "tilesets/*.aispr"
+"fonts.aic" <- "fonts/*.aifont"

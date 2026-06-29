@@ -1,6 +1,14 @@
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
 using AmberIslandAssetBuilder;
+using Font = AmberIsland.GameData.Font;
+
+#pragma warning disable CA1416 // Validate platform compatibility
 
 if (args.Length < 2)
 {
@@ -44,9 +52,10 @@ var context = new BuildContext(assetsDir);
 var runner = new BuildRunner();
 
 // ---- Register handlers ----
-// Add new handlers here by calling runner.RegisterHandler("OperationType", MyHandler).
 runner.RegisterHandler("Container", HandleContainer);
 runner.RegisterHandler("MapSpriteSheet", HandleMapSpriteSheet);
+runner.RegisterHandler("Sprite", HandleSprite);
+runner.RegisterHandler("Font", HandleFont);
 
 try
 {
@@ -184,7 +193,111 @@ static void HandleMapSpriteSheet(BuildContext context, BuildOperation operation)
     Console.WriteLine($"  SpriteSheet: {operation.OutputPath}  ({entries.Count} sprites, {uniquePalettes.Count} palettes)");
 }
 
+// ---- Sprite: select PNG ----
+
+static void HandleSprite(BuildContext context, BuildOperation operation)
+{
+    string sourcePath = context.ResolvePath(operation.InputPath);
+    using var image = (Bitmap)Image.FromFile(sourcePath);
+    var sprite = BuildSprite(image);
+
+    var writer = new DataWriter();
+    sprite.Write(writer);
+
+    string outputPath = context.ResolvePath(operation.OutputPath);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+    File.WriteAllBytes(outputPath, writer.ToArray());
+
+    Console.WriteLine($"  Sprite: {operation.OutputPath}  ({sprite.Width}x{sprite.Height}, {sprite.ColorIndices.Length} color indices, {sprite.Colors.Length} colors)");
+}
+
+// ---- Font: select font atlas + metrics ----
+
+static void HandleFont(BuildContext context, BuildOperation operation)
+{
+    string sourcePath = context.ResolvePath(operation.InputPath);
+    string metricPath = Path.Combine(Path.GetDirectoryName(sourcePath) ?? "", Path.GetFileNameWithoutExtension(sourcePath) + ".json");
+
+    if (!File.Exists(metricPath))
+    {
+        Console.Error.WriteLine($"    Error: font metrics file \"{metricPath}\" not found, skipping.");
+        return;
+    }
+
+    var atlas = Sprite.Read(new DataReader(File.ReadAllBytes(sourcePath)));
+    var metrics = JsonSerializer.Deserialize<FontMetrics>(File.ReadAllText(metricPath))!;
+    var glyphs = new FontGlyph[metrics.Characters.Length];
+
+    for (int i = 0; i < metrics.Characters.Length; i++)
+    {
+        var character = metrics.Characters[i];
+        var glyph = new FontGlyph(new(character.Character[0]), (byte)character.PixelWidth, (byte)character.AdvanceWidth);
+
+        glyphs[i] = glyph;
+    }
+
+    var font = new Font(atlas, (byte)metrics.CellWidth, (byte)metrics.CellHeight, glyphs);
+    var writer = new DataWriter();
+    font.Write(writer);
+
+    string outputPath = context.ResolvePath(operation.OutputPath);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+    File.WriteAllBytes(outputPath, writer.ToArray());
+
+    Console.WriteLine($"  Font: {operation.OutputPath}  ({glyphs.Length} glyphs, {atlas.Width}x{atlas.Height} atlas)");
+}
+
 // ---- Helpers ----
+
+static Sprite BuildSprite(Bitmap bitmap)
+{
+    int width = bitmap.Width;
+    int height = bitmap.Height;
+
+    var data = bitmap.LockBits(new Rectangle(0, 0, width, height),
+        ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+    var bgra = new byte[width * height * 4];
+    Marshal.Copy(data.Scan0, bgra, 0, bgra.Length);
+    bitmap.UnlockBits(data);
+
+    var colors = new List<ColorRgb>();
+    var colorIndices = new byte[width * height];
+    int offset = 0;
+
+    for (int i = 0; i < colorIndices.Length; i++)
+    {
+        byte b = bgra[offset];
+        byte g = bgra[offset + 1];
+        byte r = bgra[offset + 2];
+        byte a = bgra[offset + 3];
+        offset += 4;
+
+        if (a == 0)
+        {
+            colorIndices[i] = 0;
+            continue;
+        }
+
+        var color = new ColorRgb(r, g, b);
+        int index = colors.IndexOf(color);
+
+        if (index == -1)
+        {
+            if (colors.Count >= 255)
+                throw new InvalidOperationException(
+                    "The image uses more than 255 distinct colors and cannot be stored as a palette sprite.");
+
+            colors.Add(color);
+            colorIndices[i] = (byte)colors.Count; // 1-based
+        }
+        else
+        {
+            colorIndices[i] = (byte)(1 + index);
+        }
+    }
+
+    return new Sprite((ushort)width, (ushort)height, colors.ToArray(), colorIndices);
+}
 
 static PaletteRgb[] ReadPalettes(byte[] data)
 {
@@ -235,4 +348,19 @@ static bool PalettesEqual(PaletteRgb a, PaletteRgb b)
             return false;
     }
     return true;
+}
+
+file record FontMetrics
+{
+    public record FontCharacter
+    {
+        public string Character { get; set; } = "";
+        public int AdvanceWidth { get; set; }
+        public int PixelWidth { get; set; }
+    }
+
+    public int CharCount { get; set; }
+    public int CellWidth { get; set; }
+    public int CellHeight { get; set; }
+    public FontCharacter[] Characters { get; set; } = [];
 }

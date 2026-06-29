@@ -23,9 +23,11 @@ public enum Layer
 	SecondaryTool,*/
     Projectiles,
     MapForeground,
-	/*UI,
-	TopMost = UI*/
-	TopMost = MapForeground
+	MapFont,
+    /*UI,
+	UIFont,
+	TopMost = UIFont*/
+    TopMost = MapForeground
 }
 
 partial class Game
@@ -143,6 +145,19 @@ partial class Game
             Palette = tilesetPalette
         });
 
+        // MapFont
+        var fonts = gameData.GetFonts();
+        var (fontAtlas, fontPalette) = CreateGraphicAtlasAndPalette(fonts);
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.6f,
+            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency | LayerFeatures.Alpha | LayerFeatures.DisplayLayers,
+            Texture = fontAtlas,
+            Palette = fontPalette
+        });
+
         // UI
         /*AddLayer(LayerType.Texture2D, new()
         {
@@ -247,6 +262,50 @@ partial class Game
         var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
 
         return (textureAtlas, Renderer.TextureFactory.Create(paletteGraphic));
+    }
+
+    private (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(Dictionary<uint, Font> fonts)
+    {
+		// TODO: Better packing later
+		int x = 0;
+		int y = 0;
+		int width = 0;
+		var areas = new Dictionary<int, Rect>(fonts.Count);
+
+		foreach (var font in fonts.OrderBy(font => font.Key))
+		{
+			areas.Add((int)font.Key, new(x, y, font.Value.Atlas.Width, font.Value.Atlas.Height));
+
+            if (font.Value.Atlas.Width > width)
+				width = font.Value.Atlas.Width;
+
+			y += font.Value.Atlas.Height;
+		}
+
+		int height = y;
+		byte[] colorIndices = new byte[width * height];
+		y = 0;
+
+        foreach (var font in fonts.OrderBy(font => font.Key))
+        {
+			int atlasWidth = font.Value.Atlas.Width;
+
+            for (int ay = 0; ay < font.Value.Atlas.Height; ay++)
+			{
+				Buffer.BlockCopy(font.Value.Atlas.ColorIndices, ay * atlasWidth, colorIndices, y++ * width, atlasWidth);
+			}
+        }
+
+        var atlasGraphic = new Graphic(width, height, colorIndices, GraphicFormat.PaletteIndices);
+        var atlas = Renderer.TextureFactory.CreateAtlas(areas, atlasGraphic);
+
+        int paletteWidth = 2;
+        int paletteHeight = 1;
+		byte[] paletteData = [0,0,0,0, 0xff,0xff,0xff,0xff];
+
+        var paletteGraphic = new Graphic(paletteWidth, paletteHeight, paletteData, GraphicFormat.RGBA);
+
+        return (atlas, Renderer.TextureFactory.Create(paletteGraphic));
     }
 
     internal ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];
