@@ -1,7 +1,7 @@
 ﻿/*
  * Rendererer.cs - Implementation of a OpenGL renderer
  *
- * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
+ * Copyright (C) 2024-2026  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
  * This file is part of Amber.
  *
@@ -21,7 +21,6 @@
 
 using System.Numerics;
 using Amber.Common;
-using Amber.Renderer;
 using Amber.Renderer.Common;
 
 namespace Amber.Renderer.OpenGL
@@ -34,9 +33,11 @@ namespace Amber.Renderer.OpenGL
 		readonly TextureFactory textureFactory;
 		readonly Camera3D camera;
 		readonly List<ILayer> layers = [];
+		readonly Size virtualSize;
 
         public Renderer(IContextProvider contextProvider, Size size, Size virtualSize)
         {
+			this.virtualSize = virtualSize;
             state = new(contextProvider);
 			layerFactory = new(state);
 			textureFactory = new(state);
@@ -55,14 +56,14 @@ namespace Amber.Renderer.OpenGL
 			state.Gl.BlendEquationSeparate(BlendEquationModeEXT.FuncAdd, BlendEquationModeEXT.FuncAdd);
 			state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.Zero);
 
-			state.ProjectionMatrix2D = Matrix4.CreateOrtho2D(0, virtualSize.Width, 0, virtualSize.Height, 0, 1);
+            state.VirtualProjectionMatrix2D = Matrix4.CreateOrtho2D(0, virtualSize.Width, 0, virtualSize.Height, 0, 1);
 
             camera = new Camera3D(position: new Vector3(5, 5, 0));
 
             Resize(size);
         }
 
-		public Size Size => throw new NotImplementedException();
+		public Size Size { get; private set; }
 
 		public IReadOnlyList<ILayer> Layers => layers.Cast<ILayer>().ToList().AsReadOnly();
 
@@ -80,34 +81,54 @@ namespace Amber.Renderer.OpenGL
 
 		public void Resize(Size size)
 		{
-			state.ProjectionMatrix3D = Matrix4.CreatePerspective(60.0f, (float)size.Width / size.Height, 0.1f, 1000.0f);
+			Size = size;
+
+            state.WindowProjectionMatrix2D = Matrix4.CreateOrtho2D(0, size.Width, 0, size.Height, 0, 1);
+            state.ProjectionMatrix3D = Matrix4.CreatePerspective(60.0f, (float)size.Width / size.Height, 0.1f, 1000.0f);
 
 			state.ClearMatrices();
 			state.PushModelViewMatrix(Matrix4.Identity);
-			state.PushProjectionMatrix(state.ProjectionMatrix2D);
+			state.PushProjectionMatrix(state.VirtualProjectionMatrix2D);
 
-			state.Gl.Viewport(0, 0, (uint)size.Width, (uint)size.Height);
+            // TODO: viewport offset
+            state.Gl.Viewport(0, 0, (uint)size.Width, (uint)size.Height);
 		}
 
 		public Position ToScreen(Position position)
 		{
-			throw new NotImplementedException();
+			// TODO: viewport offset
+
+			float factorX = (float)Size.Width / virtualSize.Width;
+			float factorY = (float)Size.Height / virtualSize.Height;
+
+			return new(MathUtil.Round(factorX * position.X), MathUtil.Round(factorY * position.Y));
 		}
 
 		public Size ToScreen(Size size)
 		{
-			throw new NotImplementedException();
-		}
+            float factorX = (float)Size.Width / virtualSize.Width;
+            float factorY = (float)Size.Height / virtualSize.Height;
+
+            return new(MathUtil.Round(factorX * size.Width), MathUtil.Round(factorY * size.Height));
+        }
 
 		public Position FromScreen(Position position)
 		{
-			throw new NotImplementedException();
-		}
+            // TODO: viewport offset
+
+            float factorX = (float)virtualSize.Width / Size.Width;
+            float factorY = (float)virtualSize.Height / Size.Height;
+
+            return new(MathUtil.Round(factorX * position.X), MathUtil.Round(factorY * position.Y));
+        }
 
 		public Size FromScreen(Size size)
 		{
-			throw new NotImplementedException();
-		}
+            float factorX = (float)virtualSize.Width / Size.Width;
+            float factorY = (float)virtualSize.Height / Size.Height;
+
+            return new(MathUtil.Round(factorX * size.Width), MathUtil.Round(factorY * size.Height));
+        }
 
 		public void AddLayer(ILayer layer)
 		{

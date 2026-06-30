@@ -2,6 +2,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
+using Font = System.Drawing.Font;
 
 namespace AmberIslandSpriteViewer;
 

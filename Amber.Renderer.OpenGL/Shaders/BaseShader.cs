@@ -21,6 +21,7 @@
 
 namespace Amber.Renderer.OpenGL.Shaders;
 
+using Amber.Renderer.Common;
 using Amber.Renderer.OpenGL.Buffers;
 using static Shader;
 
@@ -55,7 +56,7 @@ internal abstract class BaseShader : IShader
 
 	public abstract Dictionary<BufferPurpose, IBuffer> SetupBuffers(VertexArrayObject vertexArrayObject);
 
-	public void UpdateMatrices(State state)
+	public void UpdateMatrices(State state, LayerRenderTarget2D renderTarget2D)
 	{
 		switch (Projection)
 		{
@@ -66,7 +67,9 @@ internal abstract class BaseShader : IShader
 				// TODO
 				break;
 			default:
-				state.RestoreProjectionMatrix(state.ProjectionMatrix2D);
+				state.RestoreProjectionMatrix(renderTarget2D == LayerRenderTarget2D.Window
+					? state.WindowProjectionMatrix2D
+					: state.VirtualProjectionMatrix2D);
 				break;
 		}
 

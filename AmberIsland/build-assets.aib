@@ -4,7 +4,7 @@
 @"monsters/mss/001_mon.aimss" <- "mon_sprites.aic"[1,2], {1:0,2:0}
 
 // Build font sprites
-# Sprite
+# FontSprite
 @"fonts/{0}.aispr" <- "fonts/{0}.png"
 
 // Build fonts

@@ -32,10 +32,9 @@ public enum LayerType
 	// TODO ...
 }
 
-public enum LayerRenderTarget
+public enum LayerRenderTarget2D
 {
 	VirtualScreen2D,
-	Map3D,
 	Window,
 }
 
@@ -60,7 +59,7 @@ public static class LayerTypeExtensions
 public readonly struct LayerConfig
 {
 	public float BaseZ { get; init; }
-	public LayerRenderTarget RenderTarget { get; init; }
+	public LayerRenderTarget2D RenderTarget2D { get; init; }
 	public LayerFeatures LayerFeatures { get; init; }
 	public ITextureAtlas? Texture { get; init; }
 	public ITexture? Palette { get; init; }

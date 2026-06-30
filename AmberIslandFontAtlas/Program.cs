@@ -7,12 +7,13 @@ using System.Text.Json;
 
 if (args.Length < 3)
 {
-	Console.WriteLine("Usage: AmberIslandFontAtlas <fontPath> <fontSize> <outputPng> [outputMetrics]");
+	Console.WriteLine("Usage: AmberIslandFontAtlas <fontPath> <fontSize> <outputPng> [outputMetrics] [glyphGap]");
 	Console.WriteLine();
 	Console.WriteLine("  fontPath      Path to a TTF or OTF font file");
 	Console.WriteLine("  fontSize      Font size in pixels");
 	Console.WriteLine("  outputPng     Output PNG atlas path");
 	Console.WriteLine("  outputMetrics Output metrics JSON path (default: same as outputPng with .json)");
+	Console.WriteLine("  glyphGap      Minimum gap in pixels between two glyphs in a row (default: 1)");
 	return;
 }
 
@@ -20,6 +21,7 @@ string fontPath = args[0];
 int fontSize = int.Parse(args[1]);
 string outputPng = args[2];
 string outputMetrics = args.Length > 3 ? args[3] : Path.ChangeExtension(outputPng, ".json");
+int minGap = args.Length > 4 ? int.Parse(args[4]) : 1;
 
 if (!File.Exists(fontPath))
 {
@@ -56,7 +58,7 @@ for (int i = 0; i < charCount; i++)
 	string s = c.ToString();
 
 	var measured = tempGraphics.MeasureString(s, font, 0, format);
-	advanceWidths[i] = (int)Math.Ceiling(measured.Width);
+	int measuredAdvance = (int)Math.Ceiling(measured.Width);
 	int measuredHeight = (int)Math.Ceiling(measured.Height);
 
 	tempGraphics.Clear(Color.Transparent);
@@ -64,6 +66,11 @@ for (int i = 0; i < charCount; i++)
 
 	int rightmost = ScanRightmostPixel(tempBitmap, tempSize, measuredHeight);
 	pixelWidths[i] = rightmost + 1;
+
+	// MeasureString's GenericTypographic advance is unreliable for slanted (italic) glyphs:
+	// it can come out smaller than the glyph's actual rendered ink width, which would make
+	// the next character's quad start before this one ends. Never advance less than the ink width.
+	advanceWidths[i] = minGap + Math.Max(measuredAdvance, pixelWidths[i]);
 
 	maxPixelWidth = Math.Max(maxPixelWidth, Math.Max(pixelWidths[i], advanceWidths[i]));
 	maxHeight = Math.Max(maxHeight, measuredHeight);

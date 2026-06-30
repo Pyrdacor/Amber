@@ -20,6 +20,7 @@
  */
 
 using System.Text.RegularExpressions;
+using Amber.Renderer.Common;
 
 namespace Amber.Renderer.OpenGL;
 
@@ -92,13 +93,14 @@ internal partial class State : IEquatable<State>
 	}
 
 	public GL Gl { get; }
-	public Matrix4 ProjectionMatrix2D { get; set; } = Matrix4.Identity;
+    public Matrix4 WindowProjectionMatrix2D { get; set; } = Matrix4.Identity;
+    public Matrix4 VirtualProjectionMatrix2D { get; set; } = Matrix4.Identity;
     public Matrix4 ProjectionMatrix3D { get; set; } = Matrix4.Identity;
     public Matrix4 FullScreenProjectionMatrix2D { get; set; } = Matrix4.Identity;
 	public Matrix4 CurrentProjectionMatrix => (projectionMatrixStack.Count == 0) ? Matrix4.Identity : projectionMatrixStack.Peek();
 	public Matrix4 CurrentModelViewMatrix => (modelViewMatrixStack.Count == 0) ? Matrix4.Identity : modelViewMatrixStack.Peek();
 
-	public void PushProjectionMatrix(Matrix4 matrix)
+    public void PushProjectionMatrix(Matrix4 matrix)
     {
         projectionMatrixStack.Push(matrix);
     }

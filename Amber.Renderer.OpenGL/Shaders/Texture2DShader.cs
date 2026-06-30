@@ -1,7 +1,7 @@
 ﻿/*
  * Texture2DShader.cs - Shader for textured 2D sprites
  *
- * Copyright (C) 2024  Robert Schneckenhaus <robert.schneckenhaus@web.de>
+ * Copyright (C) 2024-2026  Robert Schneckenhaus <robert.schneckenhaus@web.de>
  *
  * This file is part of Amber.
  *
@@ -52,24 +52,33 @@ internal class Texture2DShader : BaseShader, IPaletteShader
             if ({UsePaletteName} > 0.5f)
             {{
                 float colorIndex = texture({TextureName}, varTexCoord).r * 255.0f;
-                float transparentPixel = 0.0f;
-
-                if (abs(colorIndex - varTransparentColorIndex) < 0.5f)
-                    transparentPixel = 1.0f;
-                
-                if (transparentPixel >= 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
-                    discard;
-                else
-                {{
-                    if (colorIndex > {PaletteSizeName} - 0.5f)
-                        colorIndex = 0.0f;
-                    pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName}));
-                    if (pixelColor.a < 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
-                        discard;
-                }}
 
                 if (varMaskColorIndex < {PaletteSizeName} - 0.5f && varMaskColorIndex < 254.5f)
-                    pixelColor = texture({PaletteName}, vec2((varMaskColorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName}));
+                {{
+                    // In this case colorIndex is an alpha value 
+                    if (colorIndex == 0.0f)
+                        discard;
+
+                    pixelColor = vec4(texture({PaletteName}, vec2((varMaskColorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName})).rgb, colorIndex);
+                }}
+                else
+                {{
+                    float transparentPixel = 0.0f;
+
+                    if (abs(colorIndex - varTransparentColorIndex) < 0.5f)
+                        transparentPixel = 1.0f;
+                
+                    if (transparentPixel >= 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                        discard;
+                    else
+                    {{
+                        if (colorIndex > {PaletteSizeName} - 0.5f)
+                            colorIndex = 0.0f;
+                        pixelColor = texture({PaletteName}, vec2((colorIndex + 0.5f) / {PaletteSizeName}, (varPaletteIndex + 0.5f) / {PaletteCountName}));
+                        if (pixelColor.a < 0.5f && varNoTransparency < 0.5f && {AllowTransparencyName} >= 0.5f)
+                            discard;
+                    }}
+                }}
             }}
             else
             {{

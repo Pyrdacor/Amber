@@ -54,6 +54,7 @@ var runner = new BuildRunner();
 runner.RegisterHandler("Container", HandleContainer);
 runner.RegisterHandler("MapSpriteSheet", HandleMapSpriteSheet);
 runner.RegisterHandler("Sprite", HandleSprite);
+runner.RegisterHandler("FontSprite", HandleFontSprite);
 runner.RegisterHandler("Font", HandleFont);
 
 try
@@ -210,6 +211,26 @@ static void HandleSprite(BuildContext context, BuildOperation operation)
     Console.WriteLine($"  Sprite: {operation.OutputPath}  ({sprite.Width}x{sprite.Height}, {sprite.ColorIndices.Length} color indices, {sprite.Colors.Length} colors)");
 }
 
+// ---- FontSprite: select PNG ----
+
+static void HandleFontSprite(BuildContext context, BuildOperation operation)
+{
+    string sourcePath = context.ResolvePath(operation.InputPath);
+    using var image = (Bitmap)Image.FromFile(sourcePath);
+    var (alphaValues, width, height) = BuildFontSprite(image);
+
+    var writer = new DataWriter();
+    writer.Write((uint)width);
+    writer.Write((uint)height);
+    writer.Write(alphaValues);
+
+    string outputPath = context.ResolvePath(operation.OutputPath);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+    File.WriteAllBytes(outputPath, writer.ToArray());
+
+    Console.WriteLine($"  FontSprite: {operation.OutputPath}  ({width}x{height})");
+}
+
 // ---- Font: select font atlas + metrics ----
 
 static void HandleFont(BuildContext context, BuildOperation operation)
@@ -223,19 +244,22 @@ static void HandleFont(BuildContext context, BuildOperation operation)
         return;
     }
 
-    var atlas = Sprite.Read(new DataReader(File.ReadAllBytes(sourcePath)));
+    var reader = new DataReader(File.ReadAllBytes(sourcePath));
+    uint width = reader.ReadDword();
+    uint height = reader.ReadDword();
+    byte[] alphaValues = reader.ReadBytes((int)(width * height));
     var metrics = JsonSerializer.Deserialize<FontMetrics>(File.ReadAllText(metricPath), jsonSerializerOptions)!;
     var glyphs = new FontGlyph[metrics.Characters.Length];
 
     for (int i = 0; i < metrics.Characters.Length; i++)
     {
         var character = metrics.Characters[i];
-        var glyph = new FontGlyph(new(character.Character[0]), (byte)character.PixelWidth, (byte)character.AdvanceWidth);
+        var glyph = new FontGlyph(new(character.Character[0]), (byte)character.AdvanceWidth);
 
         glyphs[i] = glyph;
     }
 
-    var font = new Font(atlas, (byte)metrics.CellWidth, (byte)metrics.CellHeight, glyphs);
+    var font = new Font(width, height, alphaValues, (byte)metrics.CellWidth, (byte)metrics.CellHeight, glyphs);
     var writer = new DataWriter();
     font.Write(writer);
 
@@ -243,7 +267,7 @@ static void HandleFont(BuildContext context, BuildOperation operation)
     Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
     File.WriteAllBytes(outputPath, writer.ToArray());
 
-    Console.WriteLine($"  Font: {operation.OutputPath}  ({glyphs.Length} glyphs, {atlas.Width}x{atlas.Height} atlas)");
+    Console.WriteLine($"  Font: {operation.OutputPath}  ({glyphs.Length} glyphs, {width}x{height} atlas)");
 }
 
 // ---- Helpers ----
@@ -296,6 +320,38 @@ static Sprite BuildSprite(Bitmap bitmap)
     }
 
     return new Sprite((ushort)width, (ushort)height, colors.ToArray(), colorIndices);
+}
+
+static (byte[] AlphaValues, int Width, int Height) BuildFontSprite(Bitmap bitmap)
+{
+    int width = bitmap.Width;
+    int height = bitmap.Height;
+
+    var data = bitmap.LockBits(new Rectangle(0, 0, width, height),
+        ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+    byte[] alpha = new byte[width * height];
+
+    try
+    {
+        unsafe
+        {
+            for (int y = 0; y < height; y++)
+            {
+                byte* row = (byte*)data.Scan0 + y * data.Stride;
+
+                for (int x = 0; x < width; x++)
+                {
+                    alpha[y * width + x] = row[x * 4 + 3];
+                }
+            }
+        }
+    }
+    finally
+    {
+        bitmap.UnlockBits(data);
+    }
+
+    return (alpha, width, height);
 }
 
 static PaletteRgb[] ReadPalettes(byte[] data)
@@ -355,7 +411,6 @@ file record FontMetrics
     {
         public string Character { get; set; } = "";
         public int AdvanceWidth { get; set; }
-        public int PixelWidth { get; set; }
     }
 
     public int CharCount { get; set; }

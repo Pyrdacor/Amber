@@ -401,4 +401,4 @@ FodyWeavers.xsd
 # Repo files
 *.info
 *.uaem
-/AmberIsland/assets/stuff/Mana Seed readme.txt
+/AmberIsland/assets/**/stuff/

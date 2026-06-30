@@ -1,5 +1,6 @@
 using System.Drawing.Drawing2D;
 using AmberIsland.GameData;
+using Font = System.Drawing.Font;
 
 namespace AmberIslandTilesetEditor;
 

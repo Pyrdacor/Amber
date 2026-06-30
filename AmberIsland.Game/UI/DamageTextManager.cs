@@ -34,7 +34,7 @@ internal class DamageTextManager(Game game)
                 damageText.Text.DisplayLayer = (byte)(index++ * DisplayLayerGap);
         }
 
-        var newDamageText = new RenderText(game, FontIndex.DamageFont, text, position, TextAlignment.Center)
+        var newDamageText = new RenderText(game, FontIndex.DamageFont, text, 24, position, TextAlignment.Center)
         {
             DisplayLayer = (byte)(damageTexts.Count * DisplayLayerGap),
             Shadow = true,

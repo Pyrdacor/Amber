@@ -171,8 +171,8 @@ internal class Layer : ILayer, IDisposable
 
 		foreach (var shader in shaders)
 		{
-			shader.SetZ(Config.BaseZ);
-            shader.UpdateMatrices(state);
+            shader.SetZ(Config.BaseZ);
+            shader.UpdateMatrices(state, Config.RenderTarget2D);
 
 			if (shader is IPaletteShader paletteShader)
 			{

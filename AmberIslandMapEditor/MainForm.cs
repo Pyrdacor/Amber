@@ -1,5 +1,6 @@
 using Amber.IO.FileFormats.Serialization;
 using AmberIsland.GameData;
+using Font = System.Drawing.Font;
 
 namespace AmberIslandMapEditor;
 

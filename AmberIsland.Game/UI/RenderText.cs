@@ -38,7 +38,6 @@ public enum TextAlignment
 
 internal record FontGlyphInfo
 (
-    int Width,
     int Advance,
     Position TextureOffset // relative to the font's atlas
 );
@@ -76,12 +75,12 @@ internal class RenderText
 
             foreach (var glyph in font.Glyphs.OrderBy(glyph => glyph.Char.ToChar()))
             {
-                var glyphInfo = new FontGlyphInfo(glyph.Width, glyph.Advance, new(glyphX, glyphY));
+                var glyphInfo = new FontGlyphInfo(glyph.Advance, new(glyphX, glyphY));
 
                 glyphs.Add(glyph.Char.ToChar(), glyphInfo);
                 glyphX += font.GlyphWidth;
 
-                if (glyphX > font.Atlas.Width - font.GlyphWidth)
+                if (glyphX > font.AtlasWidth - font.GlyphWidth)
                 {
                     glyphX = 0;
                     glyphY += font.GlyphHeight;
@@ -100,6 +99,7 @@ internal class RenderText
     private List<ISprite> shadowSprites;
     private readonly Layer layer;
     private string text = "";
+    private int fontSize = 24;
     private bool visible = false;
     private byte displayLayer = 0;
     private byte alpha = 255;
@@ -212,8 +212,8 @@ internal class RenderText
 
             var diff = value - drawPosition;
             drawPosition = value;
-            glyphSprites.ForEach(glyphSprite => glyphSprite.Position += diff);
-            shadowSprites.ForEach(shadowSprite => shadowSprite.Position += diff);
+            glyphSprites.ForEach(glyphSprite => glyphSprite.Position = game.Renderer.ToScreen(game.Renderer.FromScreen(glyphSprite.Position) + diff));
+            shadowSprites.ForEach(shadowSprite => shadowSprite.Position = game.Renderer.ToScreen(game.Renderer.FromScreen(shadowSprite.Position) + diff));
         }
     }
 
@@ -265,26 +265,28 @@ internal class RenderText
         }
     }
 
-    public RenderText(Game game, FontIndex fontIndex, string text)
+    public RenderText(Game game, FontIndex fontIndex, string text, int fontSize)
     {
         if (fonts.Count == 0)
             RegisterFonts(game);
 
         this.game = game;
         this.text = text;
+        this.fontSize = fontSize;
         font = fonts[fontIndex];
         layer = fontLayers[fontIndex];
         glyphSprites = CreateGlyphSprites();
         shadowSprites = [];
     }
 
-    public RenderText(Game game, FontIndex fontIndex, string text, Position anchorPosition, TextAlignment textAlignment)
+    public RenderText(Game game, FontIndex fontIndex, string text, int fontSize, Position anchorPosition, TextAlignment textAlignment)
     {
         if (fonts.Count == 0)
             RegisterFonts(game);
 
         this.game = game;
         this.text = text;
+        this.fontSize = fontSize;
         font = fonts[fontIndex];
         layer = fontLayers[fontIndex];
         glyphSprites = CreateGlyphSprites();
@@ -308,8 +310,7 @@ internal class RenderText
                 ? spriteFactory.CreateWithAlpha()
                 : spriteFactory.Create();
 
-            //shadowSprite
-            shadowSprite.Position = glyphSprite.Position + shadowOffset;
+            shadowSprite.Position = game.Renderer.ToScreen(game.Renderer.FromScreen(glyphSprite.Position) + shadowOffset);
             shadowSprite.Size = glyphSprite.Size;
             shadowSprite.TextureSize = glyphSprite.TextureSize;
             shadowSprite.TextureOffset = glyphSprite.TextureOffset;
@@ -339,13 +340,14 @@ internal class RenderText
         var textureSize = new Size(font.GlyphTextureWidth, font.GlyphTextureHeight);
         int width = 0;
         var anchorPosition = AnchorPosition;
+        float sizeFactor = (float)fontSize / font.GlyphTextureHeight;
 
         foreach (var ch in text.TrimEnd())
         {
             if (ch == ' ')
-                x += font.Glyphs[ch].Advance;
+                x += MathUtil.Round(sizeFactor * font.Glyphs[ch].Advance);
             else if (ch == '\t')
-                x += TabSize * font.Glyphs[ch].Advance;
+                x += TabSize * MathUtil.Round(sizeFactor * font.Glyphs[ch].Advance);
             else if (ch == '\r')
                 continue;
             else if (ch == '\n')
@@ -354,7 +356,7 @@ internal class RenderText
                     width = x;
 
                 x = 0;
-                y += font.GlyphTextureHeight; // TODO: do we need a proper line height?
+                y += fontSize; // TODO: do we need a proper line height?
             }
             else if (font.Glyphs.TryGetValue(ch, out var glyph))
             {
@@ -362,8 +364,8 @@ internal class RenderText
                     ? spriteFactory.CreateWithAlpha()
                     : spriteFactory.Create();
 
-                glyphSprite.Position = drawPosition + new Position(x, y);
-                glyphSprite.Size = new(glyph.Width, font.GlyphTextureHeight); // TODO: do we need a proper glyph render height or use line height?
+                glyphSprite.Position = game.Renderer.ToScreen(drawPosition + new Position(x, y));
+                glyphSprite.Size = game.Renderer.ToScreen(new Size(MathUtil.Round(sizeFactor * font.GlyphTextureWidth), fontSize)); // TODO: do we need a proper glyph render height or use line height?
                 glyphSprite.TextureSize = textureSize;
                 glyphSprite.TextureOffset = font.TextureArea.Position + glyph.TextureOffset;
                 glyphSprite.DisplayLayer = (byte)Math.Min(255, displayLayer + 1);
@@ -375,7 +377,7 @@ internal class RenderText
                     alphaSprite.Alpha = alpha;
 
                 glyphSprites.Add(glyphSprite);
-                x += glyph.Advance;
+                x += MathUtil.Round(sizeFactor * glyph.Advance);
             }
         }
 

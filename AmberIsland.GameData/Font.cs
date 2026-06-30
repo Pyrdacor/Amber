@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Amber.IO.Common.Serialization;
+using Amber.IO.FileFormats.Compression;
 using Amber.IO.FileFormats.Serialization;
 
 namespace AmberIsland.GameData;
@@ -39,27 +40,23 @@ public readonly record struct Utf8Char
 public readonly record struct FontGlyph
 (
     Utf8Char Char,
-    byte Width,
     byte Advance    
 )
 {
     public void Write(IDataWriter writer)
     {
         Char.Write(writer);
-        writer.Write(Width);
         writer.Write(Advance);
     }
 
     public static FontGlyph Read(IDataReader reader)
     {
         var @char = Utf8Char.Read(reader);
-        var width = reader.ReadByte();
         var advance = reader.ReadByte();
 
         return new
         (
             @char,
-            width,
             advance
         );
     }
@@ -67,17 +64,22 @@ public readonly record struct FontGlyph
 
 public readonly record struct Font
 (
-    Sprite Atlas,
-    byte GlyphWidth,
-    byte GlyphHeight,
+    uint AtlasWidth,
+    uint AtlasHeight,
+    byte[] AtlasAlphaValues,
+    ushort GlyphWidth,
+    ushort GlyphHeight,
     // NOTE: Glyphs must be in the same order as their character value in UTF-8!
     FontGlyph[] Glyphs
 )
 {
     public void Write(IDataWriter writer)
     {
+        writer.Write(AtlasWidth);
+        writer.Write(AtlasHeight);
+
         var atlasWriter = new DataWriter();
-        Atlas.Write(atlasWriter);
+        atlasWriter.Write(Deflate.Compress(AtlasAlphaValues));
 
         writer.Write((uint)atlasWriter.Size);
         writer.Write(atlasWriter.ToArray());
@@ -92,10 +94,12 @@ public readonly record struct Font
 
     public static Font Read(IDataReader reader)
     {
+        var atlasWidth = reader.ReadDword();
+        var atlasHeight = reader.ReadDword();
         var atlasDataSize = reader.ReadDword();
-        var atlas = Sprite.Read(new DataReader(reader.ReadBytes((int)atlasDataSize)));
-        var glyphWidth = reader.ReadByte();
-        var glyphHeight = reader.ReadByte();
+        var atlasAlphaValues = Deflate.Decompress(reader.ReadBytes((int)atlasDataSize));
+        var glyphWidth = reader.ReadWord();
+        var glyphHeight = reader.ReadWord();
         var glyphCount = reader.ReadWord();
         var glyphs = new FontGlyph[glyphCount];
 
@@ -104,7 +108,9 @@ public readonly record struct Font
 
         return new
         (
-            atlas,
+            atlasWidth,
+            atlasHeight,
+            atlasAlphaValues,
             glyphWidth,
             glyphHeight,
             glyphs

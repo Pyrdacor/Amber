@@ -58,7 +58,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
 		{
             BaseZ = 0.2f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
 			Texture = tilesetAtlas,
 			Palette = tilesetPalette
@@ -68,7 +68,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.3f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
             Texture = tilesetAtlas,
             Palette = tilesetPalette
@@ -90,7 +90,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.3f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
             Texture = monsterAtlas,
             Palette = monsterPalette
@@ -103,7 +103,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
 		{
 			BaseZ = 0.3f,
-			RenderTarget = LayerRenderTarget.VirtualScreen2D,
+			RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
 			LayerFeatures = LayerFeatures.Transparency,
 			Texture = playerAtlas,
 			Palette = playerPalette
@@ -116,7 +116,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.4f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
             Texture = outfitAtlas,
             Palette = outfitPalette
@@ -129,7 +129,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.45f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
             Texture = projectileAtlas,
             Palette = projectilePalette
@@ -139,7 +139,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.5f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
             Texture = tilesetAtlas,
             Palette = tilesetPalette
@@ -153,7 +153,7 @@ partial class Game
         AddLayer(LayerType.Texture2D, new()
         {
             BaseZ = 0.6f,
-            RenderTarget = LayerRenderTarget.VirtualScreen2D,
+            RenderTarget2D = LayerRenderTarget2D.Window, // Higher resolution looks nicer
             LayerFeatures = LayerFeatures.Transparency | LayerFeatures.Alpha | LayerFeatures.DisplayLayers,
             Texture = fontAtlas,
             Palette = textPalette
@@ -279,12 +279,12 @@ partial class Game
 
 		foreach (var font in fonts.OrderBy(font => font.Key))
 		{
-			areas.Add((int)font.Key, new(x, y, font.Value.Atlas.Width, font.Value.Atlas.Height));
+			areas.Add((int)font.Key, new(x, y, (int)font.Value.AtlasWidth, (int)font.Value.AtlasHeight));
 
-            if (font.Value.Atlas.Width > width)
-				width = font.Value.Atlas.Width;
+            if (font.Value.AtlasWidth > width)
+				width = (int)font.Value.AtlasWidth;
 
-			y += font.Value.Atlas.Height;
+			y += (int)font.Value.AtlasHeight;
 		}
 
 		int height = y;
@@ -293,15 +293,15 @@ partial class Game
 
         foreach (var font in fonts.OrderBy(font => font.Key))
         {
-			int atlasWidth = font.Value.Atlas.Width;
+			int atlasWidth = (int)font.Value.AtlasWidth;
 
-            for (int ay = 0; ay < font.Value.Atlas.Height; ay++)
+            for (int ay = 0; ay < font.Value.AtlasHeight; ay++)
 			{
-				Buffer.BlockCopy(font.Value.Atlas.ColorIndices, ay * atlasWidth, colorIndices, y++ * width, atlasWidth);
+				Buffer.BlockCopy(font.Value.AtlasAlphaValues, ay * atlasWidth, colorIndices, y++ * width, atlasWidth);
 			}
         }
 
-        var atlasGraphic = new Graphic(width, height, colorIndices, GraphicFormat.PaletteIndices);
+        var atlasGraphic = new Graphic(width, height, colorIndices, GraphicFormat.Alpha);
         var atlas = Renderer.TextureFactory.CreateAtlas(areas, atlasGraphic);
 
         return atlas;

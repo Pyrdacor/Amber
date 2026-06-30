@@ -19,13 +19,15 @@
  * along with Amber. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Amber.Renderer.Common;
+
 namespace Amber.Renderer.OpenGL.Shaders;
 
 internal interface IShader
 {
 	void Use();
 
-	void UpdateMatrices(State state);
+	void UpdateMatrices(State state, LayerRenderTarget2D renderTarget2D);
 
 	ShaderProgram ShaderProgram { get; }
 }
