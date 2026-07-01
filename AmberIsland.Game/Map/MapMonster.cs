@@ -359,6 +359,43 @@ internal class MapMonster : CombatMapActor
         nextDecisionTicks = monsterTicks + Game.Random((int)minDecisionDelay, (int)maxDecisionDelay);
     }
 
+    private void AttemptAttacking(Monster monster)
+    {
+        Direction = (game.Player.Center - Center).Normalized();
+
+        if (monster.ProjectileIndex != 0 && monster.ProjectileEmitDelay != 0xffff)
+        {
+            if (monster.ProjectileEmitDelay == 0)
+            {
+                CurrentState = MonsterState.Attacking;
+                lastAttackTicks = monsterTicks;
+            }
+            else if (animations.TryGetValue(MonsterState.Attacking, out var animation))
+            {
+                double animationDuration = animation.DurationInMinutes();
+                playAnimationDurationInTicks = Game.SecondsToTicks(monster.ProjectileEmitDelay / 1000.0);
+                lastAttackTicks = monsterTicks + Game.MinutesToTicks(animationDuration);
+                playAnimationStartTicks = monsterTicks;
+                CurrentState = MonsterState.PlayAttackAnimation;
+            }
+        }
+        else if (animations.TryGetValue(MonsterState.Attacking, out var animation))
+        {
+            double animationDuration = animation.DurationInMinutes();
+            playAnimationDurationInTicks = Game.MinutesToTicks(animationDuration);
+            // Attack delay only starts counting after the animation has finished
+            lastAttackTicks = monsterTicks + playAnimationDurationInTicks;
+            playAnimationStartTicks = monsterTicks;
+            CurrentState = MonsterState.PlayAttackAnimation;
+        }
+        else
+        {
+            // No animation, attack directly
+            CurrentState = MonsterState.Attacking;
+            lastAttackTicks = monsterTicks;
+        }
+    }
+
     private void HandleIdleState()
     {
         var monster = GetMonsterData();
@@ -377,39 +414,7 @@ internal class MapMonster : CombatMapActor
         {
             if (CanAttack())
             {
-                Direction = (game.Player.Center - Center).Normalized();
-
-                if (monster.ProjectileIndex != 0 && monster.ProjectileEmitDelay != 0xffff)
-                {
-                    if (monster.ProjectileEmitDelay == 0)
-                    {
-                        CurrentState = MonsterState.Attacking;
-                        lastAttackTicks = monsterTicks;
-                    }
-                    else if (animations.TryGetValue(MonsterState.Attacking, out var animation))
-                    {
-                        double animationDuration = animation.DurationInMinutes();
-                        playAnimationDurationInTicks = Game.SecondsToTicks(monster.ProjectileEmitDelay / 1000.0);
-                        lastAttackTicks = monsterTicks + Game.MinutesToTicks(animationDuration);
-                        playAnimationStartTicks = monsterTicks;
-                        CurrentState = MonsterState.PlayAttackAnimation;
-                    }
-                }
-                else if (animations.TryGetValue(MonsterState.Attacking, out var animation))
-                {
-                    double animationDuration = animation.DurationInMinutes();
-                    playAnimationDurationInTicks = Game.MinutesToTicks(animationDuration);
-                    // Attack delay only starts counting after the animation has finished
-                    lastAttackTicks = monsterTicks + playAnimationDurationInTicks;
-                    playAnimationStartTicks = monsterTicks;
-                    CurrentState = MonsterState.PlayAttackAnimation;
-                }
-                else
-                {
-                    // No animation, attack directly
-                    CurrentState = MonsterState.Attacking;
-                    lastAttackTicks = monsterTicks;
-                }
+                AttemptAttacking(monster);
             }
             else if (canMove)
             {
@@ -505,6 +510,8 @@ internal class MapMonster : CombatMapActor
 
         if (!IsPlayerInSightRange())
             CurrentState = MonsterState.Idle;
+        else if (IsPlayerInAttackRange())
+            AttemptAttacking(GetMonsterData());
     }
 
     private void HandleReceivingDamageState()
