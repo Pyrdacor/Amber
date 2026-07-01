@@ -1,4 +1,5 @@
-﻿using AmberIsland.GameData;
+﻿using AmberIsland.Game.Map;
+using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
 

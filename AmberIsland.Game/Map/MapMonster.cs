@@ -1,13 +1,14 @@
 ﻿using Amber.Common;
 using Amber.Renderer.Common;
 using AmberIsland.Game.Extensions;
-using AmberIsland.Game.Screens;
+using AmberIsland.Game.UI;
 using AmberIsland.GameData;
 
-namespace AmberIsland.Game;
+namespace AmberIsland.Game.Map;
 
 internal class MapMonster : CombatMapActor
 {
+    const TextColor DamagePlayerTextColor = TextColor.RedishOrange;
     private readonly Game game;
     private readonly MapScreen mapScreen;
     private readonly uint monsterIndex;
@@ -534,12 +535,9 @@ internal class MapMonster : CombatMapActor
         }
         else
         {
-            // TODO: REMOVE
-            string monsterName = monsterIndex == 1 ? "Bat" : "Dragon";
-
             if (!TestHit(game.Player))
             {
-                mapScreen.ShowDamageText(game.Player, "Miss");
+                mapScreen.ShowDamageText(game.Player, "Miss", DamagePlayerTextColor);
             }
             else
             {
@@ -548,12 +546,12 @@ internal class MapMonster : CombatMapActor
 
                 if (damage == 0)
                 {
-                    mapScreen.ShowDamageText(game.Player, "0");
+                    mapScreen.ShowDamageText(game.Player, "0", DamagePlayerTextColor);
                 }
                 else
                 {
                     // TODO: Hurt player and show the damage
-                    mapScreen.ShowDamageText(game.Player, damage.ToString());
+                    mapScreen.ShowDamageText(game.Player, damage.ToString(), DamagePlayerTextColor);
                 }
             }
         }

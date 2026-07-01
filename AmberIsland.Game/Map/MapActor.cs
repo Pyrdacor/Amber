@@ -1,8 +1,7 @@
 ﻿using Amber.Common;
-using AmberIsland.Game.Screens;
 using AmberIsland.GameData;
 
-namespace AmberIsland.Game;
+namespace AmberIsland.Game.Map;
 
 public enum ActorType
 {
@@ -245,7 +244,7 @@ internal abstract class MapActor(Game game, ActorType actorType)
         Position += amount * Direction;
     }
 
-    protected bool IsTileBlocking(Map map, int x, int y) => game.IsTileBlocking(map, x, y, Type, TravelType);
+    protected bool IsTileBlocking(GameData.Map map, int x, int y) => game.IsTileBlocking(map, x, y, Type, TravelType);
 
     public Position GetCurrentTile()
     {

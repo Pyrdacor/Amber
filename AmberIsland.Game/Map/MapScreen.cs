@@ -1,11 +1,9 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Amber.Common;
+﻿using Amber.Common;
 using Amber.Renderer.Common;
-using AmberIsland.Game;
 using AmberIsland.Game.UI;
 using AmberIsland.GameData;
 
-namespace AmberIsland.Game.Screens;
+namespace AmberIsland.Game.Map;
 
 internal class MapScreen : Screen
 {
@@ -23,7 +21,7 @@ internal class MapScreen : Screen
 	internal static readonly double DiagonalDistance = Math.Sqrt(2);
 	DamageTextManager? damageTextManager;
 	Game? game;
-	Map? map;
+	GameData.Map? map;
 	uint mapIndex = 0;
 	Tileset? tileset;
 	//WorldMap? worldMap;
@@ -51,7 +49,7 @@ internal class MapScreen : Screen
 	Dictionary<ActorType, Dictionary<uint, byte[]>> actorPaletteIndices = [];
 
     public override ScreenType Type { get; } = ScreenType.Map2D;
-	public Map Map => map!;
+	public GameData.Map Map => map!;
 
 	private Position MapOffset => new(OffsetX + lastScrollX * TileWidth, OffsetX + lastScrollY * TileHeight);
 
@@ -814,11 +812,11 @@ internal class MapScreen : Screen
 	internal byte[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
     internal byte[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];
 
-	internal void ShowDamageText(MapActor source, string text)
+	internal void ShowDamageText(MapActor source, string text, TextColor color)
 	{
 		var area = source.Area;
 		var position = new Position(area.Center.X, area.Top) - MapOffset;
 
-		damageTextManager?.Spawn(position, text);
+		damageTextManager?.Spawn(position, text, color);
 	}
 }

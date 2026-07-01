@@ -1,10 +1,9 @@
 ﻿using Amber.Common;
 using Amber.Renderer.Common;
 using AmberIsland.Game.Extensions;
-using AmberIsland.Game.Screens;
 using AmberIsland.GameData;
 
-namespace AmberIsland.Game;
+namespace AmberIsland.Game.Map;
 
 internal class MapProjectile : MapActor
 {

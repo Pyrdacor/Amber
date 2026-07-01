@@ -1,6 +1,7 @@
 ﻿using Amber.Common;
 using Amber.Renderer.Common;
 using AmberIsland.Game.Extensions;
+using AmberIsland.Game.Map;
 using AmberIsland.GameData;
 
 namespace AmberIsland.Game;

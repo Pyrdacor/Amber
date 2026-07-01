@@ -15,15 +15,15 @@ internal class DamageTextManager(Game game)
 
     private const int MaxTexts = 20;
     private const int DisplayLayerGap = 255 / MaxTexts;
-    private const long TicksPerRaisePixel = 1;
-    private const int FadeBeginRaiseAmount = 20;
+    private const double TicksPerRaisePixel = 0.75;
+    private const int FadeBeginRaiseAmount = 12;
     private const int DeleteRaiseAmount = 30;
     private const int FadeDurationDivisor = DeleteRaiseAmount - FadeBeginRaiseAmount;
     private readonly Queue<TextWithRaiseAmount> damageTexts = [];
     private long updateTicks = 0;
     private long lastRaisedTicks = 0;
 
-    public void Spawn(Position position, string text)
+    public void Spawn(Position position, string text, TextColor color)
     {
         if (damageTexts.Count == MaxTexts)
         {
@@ -38,7 +38,8 @@ internal class DamageTextManager(Game game)
         {
             DisplayLayer = (byte)(damageTexts.Count * DisplayLayerGap),
             Shadow = true,
-            Visible = true
+            Visible = true,
+            Color = color
         };
 
         damageTexts.Enqueue(new() { Text = newDamageText });
@@ -55,8 +56,8 @@ internal class DamageTextManager(Game game)
 
         if (diff > TicksPerRaisePixel)
         {
-            int amount = (int)(diff / TicksPerRaisePixel);
-            lastRaisedTicks += amount * TicksPerRaisePixel;
+            int amount = MathUtil.Round(diff / TicksPerRaisePixel);
+            lastRaisedTicks += (long)Math.Round(amount * TicksPerRaisePixel);
 
             foreach (var damageText in damageTexts.ToArray())
             {
@@ -71,7 +72,7 @@ internal class DamageTextManager(Game game)
                 
                 if (damageText.RaiseAmount >= FadeBeginRaiseAmount)
                 {
-                    float fadeFactor = FadeDurationDivisor <= 0 ? 0 : (damageText.RaiseAmount - FadeBeginRaiseAmount) / FadeDurationDivisor;
+                    float fadeFactor = FadeDurationDivisor <= 0 ? 0 : (float)(damageText.RaiseAmount - FadeBeginRaiseAmount) / FadeDurationDivisor;
                     byte alpha = (byte)Math.Clamp(255 - MathUtil.Round(fadeFactor * 255), 0, 255);
                     damageText.Text.Alpha = alpha;
                 }

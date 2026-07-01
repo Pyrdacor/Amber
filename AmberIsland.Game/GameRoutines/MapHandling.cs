@@ -1,10 +1,11 @@
-﻿using AmberIsland.GameData;
+﻿using AmberIsland.Game.Map;
+using AmberIsland.GameData;
 
 namespace AmberIsland.Game;
 
 partial class Game
 {
-    public Tile GetTileInfo(Map map, int x, int y)
+    public Tile GetTileInfo(GameData.Map map, int x, int y)
     {
         int mapTileIndex = x + y * map.Width;
         Tile? tile;
@@ -46,7 +47,7 @@ partial class Game
         return tile ?? default;
     }
 
-    public bool IsTileBlocking(Map map, int x, int y, ActorType actorType, TravelType travelType)
+    public bool IsTileBlocking(GameData.Map map, int x, int y, ActorType actorType, TravelType travelType)
     {
         const byte allowAllTravel = 0x00;
         const byte blockAllTravel = 0xff;

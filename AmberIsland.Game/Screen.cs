@@ -1,7 +1,6 @@
 ﻿using Amber.Common;
-using Amber.Renderer;
 using Amber.Renderer.Common;
-using AmberIsland.Game.Screens;
+using AmberIsland.Game.Map;
 using AmberIsland.Game.UI;
 
 namespace AmberIsland.Game;
