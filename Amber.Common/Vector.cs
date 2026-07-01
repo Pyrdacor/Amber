@@ -65,6 +65,8 @@ public readonly struct Vector : IEquatable<Vector>
 
     public static Vector operator +(Vector vector, Size size) => new(vector.X + size.Width, vector.Y + size.Height);
 
+    public static Vector operator /(Vector vector, float factor) => new(vector.X / factor, vector.Y / factor);
+
     public override readonly string ToString() => $"({X:0.00}, {Y:0.00})";
 
     public void Deconstruct(out float x, out float y)

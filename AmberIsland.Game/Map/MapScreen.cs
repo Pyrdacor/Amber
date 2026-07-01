@@ -22,6 +22,8 @@ internal class MapScreen : Screen
 	DamageTextManager? damageTextManager;
 	Game? game;
 	GameData.Map? map;
+	PathFinder? pathfinder;
+	PathFollower? pathFollower;
 	uint mapIndex = 0;
 	Tileset? tileset;
 	//WorldMap? worldMap;
@@ -91,8 +93,9 @@ internal class MapScreen : Screen
 
         // TODO
         mapIndex = 1;
-        map = game.GameData.GetMap(mapIndex);
-		tileset = game.GameData.GetTileset(1);
+        map = game.GameData.GetMap(mapIndex)!;
+        pathfinder = new(map.Width, map.Height, pos => !game.IsTileBlocking(map, pos.X, pos.Y, ActorType.Player, game.Player.TravelType));
+        tileset = game.GameData.GetTileset(1);
 		MapChanged();
 		FillMap(0, 0, true);
 		mapActors.Add(game.Player);
@@ -183,7 +186,8 @@ internal class MapScreen : Screen
 		mouseDown = false;
 		game!.DeleteDelayedActions(delayedMoveActionIndex);
 		game.Player.CurrentState = Player.State.Idle;
-	}
+		pathFollower = null;
+    }
 
 	public override void Update(Game game, long elapsedTicks)
 	{
@@ -207,7 +211,22 @@ internal class MapScreen : Screen
 
         currentTicks += elapsedTicks;
 
-		if (moveX != 0 || moveY != 0)
+        if (pathFollower?.Finished == true)
+		{
+			ResetMovement();
+			pathFollower = null;
+		}
+        else if (pathFollower?.Finished == false)
+		{
+            if (game.Player.CurrentState != Player.State.Running)
+                game.Player.CurrentState = Player.State.Walking;
+
+            pathFollower.Speed = game.Player.CurrentState == Player.State.Running ? 1.0f / (float)Game.TicksToSeconds(RunTicksPerStep) : 1.0f / (float)Game.TicksToSeconds(WalkTicksPerStep);
+            Vector direction = game.Player.Direction;
+            game.Player.Center = pathFollower.Update(game.Player.Center, (float)Game.TicksToSeconds(elapsedTicks), ref direction);
+			game.Player.Direction = direction;
+        }
+		else if (moveX != 0 || moveY != 0)
 		{
 			moveTickCounter += elapsedTicks;
 
@@ -304,6 +323,8 @@ internal class MapScreen : Screen
 
 	private void UpdateMovement()
 	{
+		return; // TODO
+
 		bool left = game!.IsKeyDown(Key.Left) || game.IsKeyDown('A');
 		bool right = game.IsKeyDown(Key.Right) || game.IsKeyDown('D');
 		bool up = game.IsKeyDown(Key.Up) || game.IsKeyDown('W');
@@ -453,6 +474,9 @@ internal class MapScreen : Screen
 
 	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
+		if (game == null)
+			return;
+
 		if (buttons == MouseButtons.Left)
 		{
 			mouseDown = true;
@@ -460,15 +484,35 @@ internal class MapScreen : Screen
 
 			if (mapArea.Contains(position))
 			{
-				/*if (game!.Cursor.CursorType == CursorType.Zzz)
-					game.Time.Tick();*/				
+				// TODO: Check for item pickup		
+				// TODO: Check for attack
 
-				return;
+				// Move
+				var startTile = game.Player.GetCurrentTile();
+				var targetTile = new Position((position.X - OffsetX) / TileWidth, (position.Y - OffsetY) / TileHeight);
+                var tilePath = pathfinder?.FindPath(startTile, targetTile);
+
+				if (tilePath?.Count is > 0)
+				{
+					ResetMovement();
+
+                    game.Player.CurrentState = game.IsKeyDown(Key.Space) ? Player.State.Running : Player.State.Walking;
+
+                    pathFollower = new(tilePath, TileWidth, TileHeight, 1.0f / (float)Game.TicksToSeconds(WalkTicksPerStep), new Position(position.X - OffsetX, position.Y - OffsetY));
+                }
+
+                return;
 			}
 
-			base.MouseDown(position, buttons, keyModifiers);
+			
         }
-	}
+		else if (buttons == MouseButtons.Right)
+		{
+			ResetMovement();
+		}
+
+        base.MouseDown(position, buttons, keyModifiers);
+    }
 
 	public override void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{

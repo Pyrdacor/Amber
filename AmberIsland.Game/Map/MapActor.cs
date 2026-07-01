@@ -65,7 +65,11 @@ internal abstract class MapActor(Game game, ActorType actorType)
         }
     }
 
-    public Vector Center => center;
+    public Vector Center
+    {
+        get => center;
+        set => Position = value - new Vector(RelativeCenter);
+    }
 
     public Rect Area => area;
 
