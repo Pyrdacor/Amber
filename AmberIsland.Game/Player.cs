@@ -17,8 +17,8 @@ internal class Player : CombatMapActor
 
     // TODO: diagonal speed is higher (sqrt(2) * speed instead of 1 * speed)
     private const int TicksPerAnimationFrame = 6;
-    private const float WalkSpeed = 30.0f;
-    private const float RunSpeed = 60.0f;
+    private const float WalkSpeed = 60.0f;
+    private const float RunSpeed = 120.0f;
     private readonly Game game;
     private readonly ISequencedSprite sprite;
     private readonly ISequencedSprite outfitSprite;
