@@ -17,6 +17,8 @@ internal class Player : CombatMapActor
 
     // TODO: diagonal speed is higher (sqrt(2) * speed instead of 1 * speed)
     private const int TicksPerAnimationFrame = 6;
+    private const float WalkSpeed = 30.0f;
+    private const float RunSpeed = 60.0f;
     private readonly Game game;
     private readonly ISequencedSprite sprite;
     private readonly ISequencedSprite outfitSprite;
@@ -24,8 +26,7 @@ internal class Player : CombatMapActor
     private State state = State.Idle;
     private long playerTicks = 0;
     private long lastAnimationTicks = 0;
-
-    public uint MoveSpeed { get; set; } = 2; // TODO
+    private float moveSpeed = WalkSpeed;
 
     public State CurrentState
     {
@@ -38,8 +39,17 @@ internal class Player : CombatMapActor
             state = value;
             lastAnimationTicks = 0;
             InitAnimation();
+
+            moveSpeed = state switch
+            {
+                State.Walking => WalkSpeed,
+                State.Running => RunSpeed,
+                _ => 0.0f
+            };
         }
     }
+
+    public float MoveSpeed => moveSpeed;
 
     // TODO: Avoid magic numbers
     public override Rect CollisionArea => new(Area.Position.X + 4, Area.Position.Y + 1, sprite.Size.Width - 8, 15);

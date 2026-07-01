@@ -77,6 +77,85 @@ public enum TileType : byte
     Ladder, // Also vines, rocks and stuff
 }
 
+public static class TileTypeExtensions
+{
+    public static bool IsWater(this TileType tileType) => tileType is TileType.ShallowWater or TileType.DeepWater or TileType.ShallowIceWater or TileType.DeepIceWater;
+    public static bool IsLava(this TileType tileType) => tileType is TileType.ShallowLava or TileType.DeepLava;
+    public static bool IsIce(this TileType tileType) => tileType is TileType.Ice or TileType.ShallowIceWater or TileType.DeepIceWater;
+    public static bool IsHot(this TileType tileType) => tileType is TileType.HotSand or TileType.ShallowLava or TileType.DeepLava;
+    public static bool IsCold(this TileType tileType) => tileType is TileType.Snow or TileType.ShallowIceWater or TileType.DeepIceWater;
+    public static float SpeedFactor(this TileType tileType, Direction direction) => tileType switch
+    {
+        TileType.Stone => 1.1f,
+        TileType.Wood => 1.1f,
+        TileType.Earth => 1.1f,
+        TileType.ShallowWater => 0.8f,
+        TileType.DeepWater => 0.6f,
+        TileType.Mud => 0.7f,
+        TileType.Swamp => 0.7f,
+        TileType.Sand => 0.9f,
+        TileType.HotSand => 0.6f,
+        TileType.QuickSand => 0.5f,
+        TileType.Cobweb => 0.5f,
+        TileType.Ladder => 0.6f,
+        TileType.Snow => 0.8f,
+        TileType.ShallowLava => 0.5f,
+        TileType.DeepLava => 0.3f,
+        TileType.ShallowIceWater => 0.8f,
+        TileType.DeepIceWater => 0.6f,
+        TileType.Ice => 1.2f,
+        TileType.WaterFlowLeft => direction switch
+        {
+            Direction.Left => 1.5f,
+            Direction.Right => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WaterFlowRight => direction switch
+        {
+            Direction.Right => 1.5f,
+            Direction.Left => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WaterFlowUp => direction switch
+        {
+            Direction.Up => 1.5f,
+            Direction.Down => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WaterFlowDown => direction switch
+        {
+            Direction.Down => 1.5f,
+            Direction.Up => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WindFlowLeft => direction switch
+        {
+            Direction.Left => 1.5f,
+            Direction.Right => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WindFlowRight => direction switch
+        {
+            Direction.Right => 1.5f,
+            Direction.Left => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WindFlowUp => direction switch
+        {
+            Direction.Up => 1.5f,
+            Direction.Down => 0.5f,
+            _ => 1.0f
+        },
+        TileType.WindFlowDown => direction switch
+        {
+            Direction.Down => 1.5f,
+            Direction.Up => 0.5f,
+            _ => 1.0f
+        },
+        _ => 1.0f
+    };
+}
+
 public readonly record struct Tile
 (
     TileType Type,

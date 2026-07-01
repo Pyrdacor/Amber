@@ -97,7 +97,7 @@ internal abstract class Buffer<T> : IBuffer, IDisposable
         }
         else
         {
-            buffer = EnsureBufferSize(buffer, (index + 1) * Dimension, out bool changed);
+            buffer = EnsureBufferSize(buffer, Math.Max(Size + Dimension, (index + 1) * Dimension), out bool changed);
 
             if (!reused)
             {
@@ -231,8 +231,8 @@ internal abstract class Buffer<T> : IBuffer, IDisposable
 
             if (buffer.Length < 0xffff) // double size up to 64K
                 Array.Resize(ref buffer, buffer.Length << 1);
-            else // increase by 1K after 64K reached
-                Array.Resize(ref buffer, buffer.Length + 1024);
+            else // increase by 4K after 64K reached
+                Array.Resize(ref buffer, buffer.Length + 4096);
         }
 
         return buffer;
