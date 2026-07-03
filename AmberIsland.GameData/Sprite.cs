@@ -52,12 +52,10 @@ public readonly record struct SpriteWithPalettes
         writer.Write(Width);
         writer.Write(Height);
         writer.Write((byte)Palettes.Length);
-        writer.Write((byte)Palettes.First().Colors.Length);
 
         foreach (var palette in Palettes)
         {
-            foreach (var color in palette.Colors)
-                color.Write(writer);
+            palette.Write(writer);
         }
 
         writer.Write(Deflate.Compress(ColorIndices));
@@ -69,17 +67,9 @@ public readonly record struct SpriteWithPalettes
         ushort height = reader.ReadWord();
         int paletteCount = reader.ReadByte();
         var palettes = new PaletteRgb[paletteCount];
-        int colorCount = reader.ReadByte();
 
         for (int i = 0; i < paletteCount; i++)
-        {
-            var colors = new ColorRgb[colorCount];
-
-            for (int c = 0; c < colorCount; c++)
-                colors[c] = ColorRgb.Read(reader);
-
-            palettes[i] = new PaletteRgb(colors);
-        }
+            palettes[i] = PaletteRgb.Read(reader);
 
         var indices = Deflate.Decompress(reader.ReadToEnd());
 

@@ -20,6 +20,7 @@ internal class MapScreen : Screen
 	GameData.Map? map;
 	PathFinder? pathfinder;
 	PathFollower? pathFollower;
+	MapMonster? targetMonster;
 	uint mapIndex = 0;
 	Tileset? tileset;
 	//WorldMap? worldMap;
@@ -34,6 +35,7 @@ internal class MapScreen : Screen
 	float terrainSpeedFactor = 1.0f;
     float buffSpeedFactor = 1.0f;
 
+	long lastPlayerAttackTicks = 0;
 	long currentTicks = 0;
 	bool screenPushPlayerWasVisible = false;
 	byte palette = 0;
@@ -169,11 +171,17 @@ internal class MapScreen : Screen
 
 	private void ResetMovement()
 	{
-		game!.Player.CurrentState = Player.State.Idle;
+		game!.Player.CurrentState = PlayerState.Idle;
 		pathFollower = null;
     }
 
-	public override void Update(Game game, long elapsedTicks)
+	private void StartAttacking()
+	{
+        ResetMovement();
+		game!.Player.CurrentState = PlayerState.SwingingForth; // TODO
+    }
+
+    public override void Update(Game game, long elapsedTicks)
 	{
 		if (game.Paused || !game.InputEnabled)
 			ResetMovement();
@@ -192,6 +200,18 @@ internal class MapScreen : Screen
 		{
 			mapActor.Update(mapArea, elapsedTicks);
 		}
+
+        if (targetMonster != null)
+        {
+            var targetTile = targetMonster.GetCurrentTile();
+            var distance = game.Player.GetCurrentTile().DistanceTo(targetTile);
+
+            if (distance <= game.Player.AttackRange)
+            {
+				// In attack range, so start attacking.
+				StartAttacking();
+            }
+        }
 
         currentTicks += elapsedTicks;
 
@@ -230,14 +250,14 @@ internal class MapScreen : Screen
 
 	public override void KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		if (key == Key.Space && game?.Player.CurrentState == Player.State.Walking)
-			game.Player.CurrentState = Player.State.Running;
+		if (key == Key.Space && game?.Player.CurrentState == PlayerState.Walking)
+			game.Player.CurrentState = PlayerState.Running;
 	}
 
 	public override void KeyUp(Key key, KeyModifiers keyModifiers)
 	{
-        if (key == Key.Space && game?.Player.CurrentState == Player.State.Running)
-            game.Player.CurrentState = Player.State.Walking;
+        if (key == Key.Space && game?.Player.CurrentState == PlayerState.Running)
+            game.Player.CurrentState = PlayerState.Walking;
     }
 
 	public override void MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
@@ -251,23 +271,20 @@ internal class MapScreen : Screen
 
 			if (mapArea.Contains(position))
 			{
-				// TODO: Check for item pickup		
-				// TODO: Check for attack
-
-				// Move
-				var startTile = game.Player.GetCurrentTile();
-				var targetTile = new Position((position.X - OffsetX + lastScrollX) / TileWidth, (position.Y - OffsetY + lastScrollY) / TileHeight);
-                var tilePath = pathfinder?.FindPath(startTile, targetTile);
-
-				if (tilePath?.Count is > 0)
+                // TODO: Check for item pickup		
+                // TODO: Check for attack
+				foreach (var monster in GetActorsOnScreen().OfType<MapMonster>())
 				{
-					ResetMovement();
-
-                    game.Player.CurrentState = game.IsKeyDown(Key.Space) ? Player.State.Running : Player.State.Walking;
-
-                    pathFollower = new(tilePath, TileWidth, TileHeight, PlayerMoveSpeed, new Position(position.X - OffsetX + lastScrollX, position.Y - OffsetY + lastScrollY));
+					if (monster.CollisionArea.Contains(position))
+                    {
+                        targetMonster = monster;
+                        break;
+                    }
                 }
 
+                // Move
+				var targetTile = new Position((position.X - OffsetX + lastScrollX) / TileWidth, (position.Y - OffsetY + lastScrollY) / TileHeight);
+                FindPathToTarget(targetTile, new Position(position.X - OffsetX + lastScrollX, position.Y - OffsetY + lastScrollY));
                 return;
 			}
         }
@@ -277,6 +294,21 @@ internal class MapScreen : Screen
 		}
 
         base.MouseDown(position, buttons, keyModifiers);
+    }
+
+	private void FindPathToTarget(Position targetTile, Position exactPosition)
+	{
+        var startTile = game!.Player.GetCurrentTile();
+        var tilePath = pathfinder?.FindPath(startTile, targetTile);
+
+        if (tilePath?.Count is > 0)
+        {
+            ResetMovement();
+
+            game.Player.CurrentState = game.IsKeyDown(Key.Space) ? PlayerState.Running : PlayerState.Walking;
+
+            pathFollower = new(tilePath, TileWidth, TileHeight, PlayerMoveSpeed, exactPosition);
+        }
     }
 
 	public override void MouseUp(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
@@ -522,7 +554,7 @@ internal class MapScreen : Screen
 
     private IEnumerable<MapActor> GetActorsOnScreen() => mapActors.Where(actor => actor.VisibleOnMap);
 
-	internal byte[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
+    internal byte[] GetMonsterPaletteIndices(uint monsterIndex) => actorPaletteIndices[ActorType.Monster][monsterIndex];
     internal byte[] GetProjectilePaletteIndices(uint projectileIndex) => actorPaletteIndices[ActorType.Projectile][projectileIndex];
 
 	internal void ShowDamageText(MapActor source, string text, TextColor color)
@@ -543,5 +575,22 @@ internal class MapScreen : Screen
 			FillMap((position.X - TilesPerRow / 2) * TileWidth, (position.Y - TileRows / 2) * TileHeight, true);
 
 		// TODO: map events
+
+		if (targetMonster != null)
+		{
+			var targetTile = targetMonster.GetCurrentTile();
+			var distance = game.Player.GetCurrentTile().DistanceTo(targetTile);
+
+			if (distance > game.Player.VisionRange)
+			{
+                // Lost sight of the monster, so stop chasing it.
+                targetMonster = null;
+			}
+            else if (distance > game.Player.AttackRange)
+			{
+				// Not in attack range, so chase the monster.
+				FindPathToTarget(targetTile, targetMonster.Center.Round());
+			}
+		}
     }
 }

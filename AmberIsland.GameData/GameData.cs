@@ -19,8 +19,8 @@ public sealed class GameData
     const int ProjectileAnimationCacheSize = 32;
 
     // Non-cached assets
-    private readonly SpriteWithPalettes playerGraphic;
-    private readonly Dictionary<uint, SpriteWithPalettes> outfitGraphics;
+    private readonly PlayerSpriteSheet playerGraphics;
+    private readonly PlayerSpriteSheet outfitGraphics;
     private readonly Dictionary<uint, Font> fonts;
     private readonly PaletteRgb textPalette;
 
@@ -40,8 +40,9 @@ public sealed class GameData
         string Full(string filename) => Path.Combine(path, filename);
 
         // Non-cached
-        playerGraphic = ReadSingleContainerFile(Full("player.aic"), 1, SpriteWithPalettes.Read);
-        outfitGraphics = ReadAllContainerFiles(Full("outfit.aic"), SpriteWithPalettes.Read);
+        var playerSheets = ReadAllContainerFiles(Full("player.aic"), PlayerSpriteSheet.Read);
+        playerGraphics = playerSheets[1];
+        outfitGraphics = playerSheets[2];
         fonts = ReadAllContainerFiles(Full("fonts.aic"), Font.Read);
         textPalette = PaletteRgb.Read(new DataReader(File.ReadAllBytes(Full("text_palette.aipal"))));
 
@@ -90,9 +91,9 @@ public sealed class GameData
     }
 
     // Non-cached assets
-    public SpriteWithPalettes GetPlayerSprite() => playerGraphic;
+    public PlayerSpriteSheet GetPlayerSpriteSheet() => playerGraphics;
 
-    public SpriteWithPalettes GetOutfitSprite(uint index) => outfitGraphics.GetValueOrDefault(index);
+    public PlayerSpriteSheet GetOutfitSpriteSheet() => outfitGraphics;
 
     public Dictionary<uint, Font> GetFonts() => fonts;
 

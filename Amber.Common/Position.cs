@@ -72,5 +72,13 @@ public readonly struct Position : IEquatable<Position>
 		x = X;
 		y = Y;
     }
+
+	public float DistanceTo(Position other)
+    {
+        var dx = other.X - X;
+        var dy = other.Y - Y;
+
+        return MathF.Sqrt(dx * dx + dy * dy);
+    }
 }
 

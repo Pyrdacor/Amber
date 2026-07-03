@@ -3,6 +3,7 @@ namespace AmberIslandAssetBuilder;
 // ---- Parsed types ----
 
 abstract record BuildArgument;
+record StringArgument(string Value) : BuildArgument;
 record IntListArgument(int[] Values) : BuildArgument;
 record IntMapArgument(Dictionary<int, int[]> Map) : BuildArgument;
 
@@ -100,8 +101,9 @@ static class BuildScriptParser
             }
             else if (line[pos] == '"')
             {
-                // future: string arguments
-                throw new FormatException("String arguments not yet supported.");
+                int close = line.IndexOf('"', pos + 1);
+                arguments.Add(new StringArgument(line[(pos + 1)..close]));
+                pos = close + 1;
             }
 
             SkipWhitespace(line, ref pos);

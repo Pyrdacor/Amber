@@ -86,6 +86,7 @@ public static class TileTypeExtensions
     public static bool IsCold(this TileType tileType) => tileType is TileType.Snow or TileType.ShallowIceWater or TileType.DeepIceWater;
     public static float SpeedFactor(this TileType tileType, Direction direction) => tileType switch
     {
+        // TODO
         TileType.Stone => 1.1f,
         TileType.Wood => 1.1f,
         TileType.Earth => 1.1f,

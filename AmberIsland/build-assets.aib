@@ -1,3 +1,44 @@
+# Sprite
+// Player base sprites
+@"player/sprites/0_{0}_player.aispr" <- "character_base/char_a_p1/{0}.png"
+@"player/sprites/1_{0}_player.aispr" <- "character_base/char_a_pONE1/{0}.png"
+@"player/sprites/2_{0}_player.aispr" <- "character_base/char_a_pONE2/{0}.png"
+@"player/sprites/3_{0}_player.aispr" <- "character_base/char_a_pONE3/{0}.png"
+// Outfit sprites
+@"player/sprites/0_{0}_outfit.aispr" <- "character_base/char_a_p1/1out/{0}.png"
+@"player/sprites/1_{0}_outfit.aispr" <- "character_base/char_a_pONE1/1out/{0}.png"
+@"player/sprites/2_{0}_outfit.aispr" <- "character_base/char_a_pONE2/1out/{0}.png"
+@"player/sprites/3_{0}_outfit.aispr" <- "character_base/char_a_pONE3/1out/{0}.png"
+// TODO
+
+# PlayerSpriteSheetDefinition
+// "State", {SpriteFilePrefix, OffsetXInFrames, OffsetYInFrames, FrameIndices ...}
+@"player/def/player_idle.aipssd" <- "Idle", [0, 0, 0, 0]
+@"player/def/player_pushing.aipssd" <- "Pushing", [0, 1, 0, 0-1]
+@"player/def/player_pulling.aipssd" <- "Pulling", [0, 3, 0, 0-1]
+@"player/def/player_jumping.aipssd" <- "Jumping", [0, 5, 0, 0-2]
+@"player/def/player_walking.aipssd" <- "Walking", [0, 0, 4, 0-5]
+@"player/def/player_running.aipssd" <- "Running", [0, 0, 4, 0-1, 6, 3-4, 7]
+@"player/def/player_dodging.aipssd" <- "Dodging", [1, 4, 0, 0]
+@"player/def/player_receivingdamage.aipssd" <- "ReceivingDamage", [1, 5, 0, 0]
+@"player/def/player_die.aipssd" <- "Die", [1, 6, 0, 0-1]
+@"player/def/player_idlewithweapon.aipssd" <- "IdleWithWeapon", [2, 0, 0, 0-3]
+@"player/def/player_blocking.aipssd" <- "Blocking", [2, 0, 4, 0]
+@"player/def/player_jumpingforward.aipssd" <- "JumpingForward", [2, 2, 4, 0]
+@"player/def/player_swingingforth.aipssd" <- "SwingingForth", [3, 0, 0, 0-3]
+@"player/def/player_swingingback.aipssd" <- "SwingingBack", [3, 4, 0, 0-3]
+@"player/def/player_stabbing.aipssd" <- "Stabbing", [3, 0, 4, 0-3]
+@"player/def/player_shieldattacking.aipssd" <- "ShieldAttacking", [3, 4, 4, 0-3]
+
+# MergePlayerSpriteSheetDefinitions
+@"player/player_ssd.aipssd" <- "player/def/player_*.aipssd"
+
+# PlayerSpriteSheet
+// Args: Sprites, SpriteSheetDefinition, [FrameWidth, FrameHeight]
+@"player/pss/001_player.aipss" <- "player/sprites/*_player.aispr", "player/player_ssd.aipssd", [64, 64]
+@"player/pss/002_outfit.aipss" <- "player/sprites/*_outfit.aispr", "player/player_ssd.aipssd", [64, 64]
+// TODO...
+
 // Build map sprite sheets
 # MapSpriteSheet
 // Monsters
@@ -22,3 +63,4 @@
 "tileset.aic" <- "tilesets/*.aitileset"
 "tileatlas.aic" <- "tilesets/*.aispr"
 "fonts.aic" <- "fonts/*.aifont"
+"player.aic" <- "player/pss/*.aipss"

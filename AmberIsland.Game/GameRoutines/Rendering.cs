@@ -97,8 +97,8 @@ partial class Game
         });
 
         // Player
-        var playerSprite = gameData.GetPlayerSprite();
-		var (playerAtlas, playerPalette) = CreateGraphicAtlasAndPalette(playerSprite);
+        var playerSpriteSheet = gameData.GetPlayerSpriteSheet();
+		var (playerAtlas, playerPalette) = CreateGraphicAtlasAndPalette(playerSpriteSheet);
 
         AddLayer(LayerType.Texture2D, new()
 		{
@@ -110,8 +110,8 @@ partial class Game
         });
 
         // Outfit
-        var outfitSprite = gameData.GetOutfitSprite(1);
-        var (outfitAtlas, outfitPalette) = CreateGraphicAtlasAndPalette(outfitSprite);
+        var outfitSpriteSheet = gameData.GetOutfitSpriteSheet();
+        var (outfitAtlas, outfitPalette) = CreateGraphicAtlasAndPalette(outfitSpriteSheet);
 
         AddLayer(LayerType.Texture2D, new()
         {
@@ -227,6 +227,25 @@ partial class Game
         return (atlas, CreatePaletteTexture(sprite.Palettes));
     }
 
+    internal (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(PlayerSpriteSheet playerSpriteSheet)
+    {
+        var atlas = playerSpriteSheet.Atlas;
+        var atlasGraphic = new Graphic(atlas.Width, atlas.Height, atlas.ColorIndices, GraphicFormat.PaletteIndices);
+		var areas = new Dictionary<int, Rect>(playerSpriteSheet.StateSprites.Length);
+		var frameSize = PlayerStateSprites.FrameSize;
+
+        foreach (var stateSprites in playerSpriteSheet.StateSprites)
+		{
+            var spriteArea = new Rect(stateSprites.OffsetX, stateSprites.OffsetY,
+                (1 + stateSprites.FrameIndices.Max()) * frameSize.Width, frameSize.Height);
+            areas.Add((int)stateSprites.State, spriteArea);
+        }
+
+        var textureAtlas = Renderer.TextureFactory.CreateAtlas(areas, atlasGraphic);
+
+        return (textureAtlas, CreatePaletteTexture(playerSpriteSheet.Atlas.Palettes));
+    }
+
     internal (ITextureAtlas Atlas, ITexture Palette) CreateGraphicAtlasAndPalette(MapSpriteAtlas mapSpriteAtlas)
     {
 		var atlas = mapSpriteAtlas.Atlas;
@@ -250,6 +269,7 @@ partial class Game
 
         return (textureAtlas, CreatePaletteTexture(mapSpriteAtlas.Palettes));
     }
+
     internal ITexture CreatePaletteTexture(params PaletteRgb[] palettes)
     {
         int paletteWidth = 1 + palettes.Max(palette => palette.Colors.Length);

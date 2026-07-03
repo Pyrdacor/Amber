@@ -56,6 +56,9 @@ runner.RegisterHandler("MapSpriteSheet", HandleMapSpriteSheet);
 runner.RegisterHandler("Sprite", HandleSprite);
 runner.RegisterHandler("FontSprite", HandleFontSprite);
 runner.RegisterHandler("Font", HandleFont);
+runner.RegisterHandler("PlayerSpriteSheetDefinition", HandlePlayerSpriteSheetDefinition);
+runner.RegisterHandler("MergePlayerSpriteSheetDefinitions", HandleMergePlayerSpriteSheetDefinitions);
+runner.RegisterHandler("PlayerSpriteSheet", HandlePlayerSpriteSheet);
 
 try
 {
@@ -270,6 +273,196 @@ static void HandleFont(BuildContext context, BuildOperation operation)
     Console.WriteLine($"  Font: {operation.OutputPath}  ({glyphs.Length} glyphs, {width}x{height} atlas)");
 }
 
+// ---- PlayerSpriteSheetDefinition: create player sprite sheet definition ----
+
+static void HandlePlayerSpriteSheetDefinition(BuildContext context, BuildOperation operation)
+{
+    string outputPath = context.ResolvePath(operation.OutputPath);
+    var playerState = Enum.Parse<PlayerState>(operation.InputPath);
+
+    var definition = new PlayerSpriteSheetDefinition();
+
+    if (operation.Arguments.Length >= 1 && operation.Arguments[0] is IntListArgument intList)
+    {
+        var stateSprites = new PlayerStateSprites(
+            playerState,
+            (ushort)intList.Values[1], // OffsetXInFrames
+            (ushort)intList.Values[2], // OffsetYInFrames
+            intList.Values.Skip(3).Select(i => (byte)i).ToArray(), // FrameIndices
+            [] // PossiblePaletteIndices (not used here, added later)
+        );
+        definition.StateSprites = [stateSprites];
+        definition.FilePrefixes = [intList.Values[0]]; // FilePrefix
+    }
+    else
+    {
+        Console.Error.WriteLine($"    Error: missing or invalid sprite sheet definition values.");
+        Console.Error.WriteLine($"           Provide: [FilePrefix, OffsetXInFrames, OffsetYInFrames, FrameIndices...].");
+        return;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+    File.WriteAllText(outputPath, JsonSerializer.Serialize(definition, jsonSerializerOptions));
+    Console.WriteLine($"  PlayerSpriteSheetDefinition: {operation.OutputPath}  ({definition.StateSprites.Length} state sprites)");
+}
+
+// ---- MergePlayerSpriteSheetDefinitions: merge player sprite sheet definitions into one ----
+
+static void HandleMergePlayerSpriteSheetDefinitions(BuildContext context, BuildOperation operation)
+{
+    string sourcePath = context.ResolvePath(operation.InputPath);
+    string sourceDirectory = Path.GetDirectoryName(sourcePath) ?? ".";
+    string pattern = Path.GetFileName(sourcePath);
+    var files = Directory.GetFiles(sourceDirectory, pattern)
+        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    var mergedDefinition = new PlayerSpriteSheetDefinition();
+
+    foreach (var file in files)
+    {
+        var definition = JsonSerializer.Deserialize<PlayerSpriteSheetDefinition>(File.ReadAllText(file), jsonSerializerOptions)!;
+        mergedDefinition.StateSprites = mergedDefinition.StateSprites
+            .Concat(definition.StateSprites)
+            .ToArray();
+        mergedDefinition.FilePrefixes = mergedDefinition.FilePrefixes
+            .Concat(definition.FilePrefixes)
+            .ToArray();
+    }
+
+    string outputPath = context.ResolvePath(operation.OutputPath);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+    File.WriteAllText(outputPath, JsonSerializer.Serialize(mergedDefinition, jsonSerializerOptions));
+    Console.WriteLine($"  MergePlayerSpriteSheetDefinitions: {operation.OutputPath}  ({mergedDefinition.StateSprites.Length} state sprites)");
+}
+
+// ---- PlayerSpriteSheet: select sprite sheet ----
+
+static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operation)
+{
+    string sourcePath = context.ResolvePath(operation.InputPath);
+    string sourceDirectory = Path.GetDirectoryName(sourcePath) ?? ".";
+    string pattern = Path.GetFileName(sourcePath);
+    var files = Directory.GetFiles(sourceDirectory, pattern)
+        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    if (operation.Arguments.Length >= 2 && operation.Arguments[0] is StringArgument defFilePath && operation.Arguments[1] is IntListArgument frameSize)
+    {
+        var defFileFullPath = context.ResolvePath(defFilePath.Value);
+
+        if (!File.Exists(defFileFullPath))
+        {
+            Console.Error.WriteLine($"    Error: definition file \"{defFilePath.Value}\" not found.");
+            return;
+        }
+
+        var sprites = new Dictionary<string, (Sprite Sprite, int Y)>();
+        var palettes = new HashSet<PaletteRgb>();
+        var usedPalettes = new Dictionary<PlayerStateSpriteVariant, HashSet<PaletteRgb>>();
+        var stateSprites = new List<PlayerStateSprites>();
+        int y = 0;
+
+        foreach (var file in files)
+        {
+            // Example: char_a_p1_1out_boxr_v01.png
+            // Becomes: 0_char_a_p1_1out_boxr_v01_outfit.aispr
+            // The prefix is "0", the variant identifier is "boxr".
+            // See PlayerStateSpriteVariant
+            var fileParts = Path.GetFileNameWithoutExtension(file).Split('_');
+            string prefixStr = fileParts[0];
+            string variantIdentifier = fileParts[^3];
+
+            if (!PlayerStateSprites.VariantFileIdentifiers.TryGetValue(variantIdentifier, out var variant))
+            {
+                Console.Error.WriteLine($"    Error: Variant '{variantIdentifier}' is not known.");
+                return;
+            }
+            
+            var sprite = Sprite.Read(new DataReader(File.ReadAllBytes(file)));
+
+            if (!sprites.ContainsKey(prefixStr))
+            {
+                sprites[prefixStr] = (sprite, y);
+                y += sprite.Height;
+            }
+
+            var palette = new PaletteRgb(sprite.Colors);
+
+            palettes.Add(palette);
+
+            if (!usedPalettes.TryGetValue(variant, out var usedPaletteSet))
+            {
+                usedPalettes[variant] = [palette];
+            }
+            else
+            {
+                usedPaletteSet.Add(palette);
+            }
+        }
+
+        var paletteList = palettes.ToList();
+        var usedPalettesByVariant = usedPalettes.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Select(palette => (byte)paletteList.IndexOf(palette)).ToArray());
+        var definition = JsonSerializer.Deserialize<PlayerSpriteSheetDefinition>(File.ReadAllText(defFileFullPath), jsonSerializerOptions)!;
+        int frameHeight = frameSize.Values[1];
+
+        foreach (var prefix in sprites.Keys)
+        {
+            int prefixNumber = int.Parse(prefix);
+            var sprite = sprites[prefix];
+
+            for (int i = 0; i < definition.StateSprites.Length; i++)
+            {
+                var stateSprite = definition.StateSprites[i];
+
+                if (definition.FilePrefixes[i] == prefixNumber)
+                {
+                    stateSprites.Add(stateSprite with { OffsetY = (ushort)(sprite.Y / frameHeight + stateSprite.OffsetY), PossiblePaletteIndices = usedPalettesByVariant });
+                }
+            }
+        }
+
+        string outputPath = context.ResolvePath(operation.OutputPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+        int atlasWidth = sprites.Values.Max(s => s.Sprite.Width);
+        int atlasHeight = sprites.Values.Sum(s => s.Sprite.Height);
+        var atlasColorIndices = new byte[atlasWidth * atlasHeight];
+
+        // Build atlas data
+        foreach (var sprite in sprites)
+        {
+            int offsetY = sprite.Value.Y;
+
+            for (y = 0; y < sprite.Value.Sprite.Height; y++)
+            {
+                Buffer.BlockCopy
+                (
+                    src: sprite.Value.Sprite.ColorIndices,
+                    srcOffset: y * sprite.Value.Sprite.Width,
+                    dst: atlasColorIndices,
+                    dstOffset: (offsetY + y) * atlasWidth,
+                    count: sprite.Value.Sprite.Width
+                );
+            }
+        }
+
+        var atlas = new SpriteWithPalettes((ushort)atlasWidth, (ushort)atlasHeight, paletteList.ToArray(), atlasColorIndices);
+        var playerSpriteSheet = new PlayerSpriteSheet(stateSprites.ToArray(), atlas);
+        var writer = new DataWriter();
+        playerSpriteSheet.Write(writer);
+        File.WriteAllBytes(outputPath, writer.ToArray());
+
+        Console.WriteLine($"  PlayerSpriteSheet: {operation.OutputPath}  ({atlas.Width}x{atlas.Height}, {atlas.ColorIndices.Length} color indices, {atlas.Palettes.Length} palettes)");
+    }
+    else
+    {
+        Console.Error.WriteLine($"    Error: missing or invalid definition file path or frame size.");
+        Console.Error.WriteLine($"           Provide: \"DefinitionFilePath\", [FrameWidth, FrameHeight].");
+        return;
+    }
+}
+
 // ---- Helpers ----
 
 static Sprite BuildSprite(Bitmap bitmap)
@@ -403,6 +596,12 @@ static bool PalettesEqual(PaletteRgb a, PaletteRgb b)
             return false;
     }
     return true;
+}
+
+file record PlayerSpriteSheetDefinition
+{
+    public PlayerStateSprites[] StateSprites { get; set; } = [];
+    public int[] FilePrefixes { get; set; } = [];
 }
 
 file record FontMetrics
