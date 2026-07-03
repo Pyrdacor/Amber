@@ -269,7 +269,16 @@ internal class Player : CombatMapActor
         void UpdateFrameOrigin(ISequencedSprite sprite, Dictionary<PlayerState, PlayerStateSprites> stateSprites, PlayerStateSpriteVariantType variantType)
         {
             sprite.FrameOrigin = newOrigin;
-            sprite.FrameOrigin += new Position(0, stateSprites[state].Variants[variantType].OffsetY);
+
+            if (stateSprites.TryGetValue(state, out var sprites))
+            {
+                sprite.FrameOrigin += new Position(0, sprites.Variants[variantType].OffsetY);
+                sprite.Visible = true;
+            }
+            else
+            {
+                sprite.Visible = false;
+            }
         }
     }
 
@@ -342,7 +351,17 @@ internal class Player : CombatMapActor
         void UpdateFrameInfo(ISequencedSprite sprite, Dictionary<PlayerState, PlayerStateSprites> stateSprites, PlayerStateSpriteVariantType variantType)
         {
             sprite.FrameOrigin = newOrigin;
-            sprite.FrameOrigin += new Position(0, stateSprites[state].Variants[variantType].OffsetY);
+
+            if (stateSprites.TryGetValue(state, out var sprites))
+            {
+                sprite.FrameOrigin += new Position(0, sprites.Variants[variantType].OffsetY);
+                sprite.Visible = true;
+            }
+            else
+            {
+                sprite.Visible = false;
+            }
+
             sprite.CurrentFrameIndex = this.sprite.CurrentFrameIndex;
         }
 

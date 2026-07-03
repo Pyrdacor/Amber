@@ -10,6 +10,24 @@
 @"player/sprites/2_{0}_outfit.aispr" <- "character_base/char_a_pONE2/1out/{0}.png"
 @"player/sprites/3_{0}_outfit.aispr" <- "character_base/char_a_pONE3/1out/{0}.png"
 // TODO
+// Hair sprites
+@"player/sprites/0_{0}_hair.aispr" <- "character_base/char_a_p1/4har/{0}.png"
+@"player/sprites/1_{0}_hair.aispr" <- "character_base/char_a_pONE1/4har/{0}.png"
+@"player/sprites/2_{0}_hair.aispr" <- "character_base/char_a_pONE2/4har/{0}.png"
+@"player/sprites/3_{0}_hair.aispr" <- "character_base/char_a_pONE3/4har/{0}.png"
+// Hat sprites
+@"player/sprites/0_{0}_hat.aispr" <- "character_base/char_a_p1/5hat/{0}.png"
+@"player/sprites/1_{0}_hat.aispr" <- "character_base/char_a_pONE1/5hat/{0}.png"
+@"player/sprites/2_{0}_hat.aispr" <- "character_base/char_a_pONE2/5hat/{0}.png"
+@"player/sprites/3_{0}_hat.aispr" <- "character_base/char_a_pONE3/5hat/{0}.png"
+// Primary tool sprites
+@"player/sprites/1_{0}_primarytool.aispr" <- "character_base/char_a_pONE1/6tla/{0}.png"
+@"player/sprites/2_{0}_primarytool.aispr" <- "character_base/char_a_pONE2/6tla/{0}.png"
+@"player/sprites/3_{0}_primarytool.aispr" <- "character_base/char_a_pONE3/6tla/{0}.png"
+// Secondary tool sprites
+@"player/sprites/1_{0}_secondarytool.aispr" <- "character_base/char_a_pONE1/7tlb/{0}.png"
+@"player/sprites/2_{0}_secondarytool.aispr" <- "character_base/char_a_pONE2/7tlb/{0}.png"
+@"player/sprites/3_{0}_secondarytool.aispr" <- "character_base/char_a_pONE3/7tlb/{0}.png"
 
 # PlayerSpriteSheetDefinition
 // "State", {SpriteFilePrefix, OffsetXInFrames, OffsetYInFrames, FrameIndices ...}
@@ -38,6 +56,10 @@
 @"player/pss/001_player.aipss" <- "player/sprites/*_player.aispr", "player/player_ssd.aipssd", [64, 64]
 @"player/pss/002_outfit.aipss" <- "player/sprites/*_outfit.aispr", "player/player_ssd.aipssd", [64, 64]
 // TODO...
+@"player/pss/005_hair.aipss" <- "player/sprites/*_hair.aispr", "player/player_ssd.aipssd", [64, 64]
+@"player/pss/006_hat.aipss" <- "player/sprites/*_hat.aispr", "player/player_ssd.aipssd", [64, 64]
+@"player/pss/007_primarytool.aipss" <- "player/sprites/*_primarytool.aispr", "player/player_ssd.aipssd", [64, 64]
+@"player/pss/008_secondarytool.aipss" <- "player/sprites/*_secondarytool.aispr", "player/player_ssd.aipssd", [64, 64]
 
 // Build map sprite sheets
 # MapSpriteSheet
