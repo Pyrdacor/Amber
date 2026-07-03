@@ -14,11 +14,29 @@ internal class Player : CombatMapActor
     private readonly Game game;
     private readonly ISequencedSprite sprite;
     private readonly ISequencedSprite outfitSprite;
+    //private readonly ISequencedSprite cloakSprite;
+    //private readonly ISequencedSprite faceAssetSprite;
+    private readonly ISequencedSprite hairSprite;
+    private readonly ISequencedSprite hatSprite;
+    private readonly ISequencedSprite primaryToolSprite;
+    private readonly ISequencedSprite secondaryToolSprite;
     private static readonly Dictionary<PlayerState, PlayerStateSprites> playerStateSprites = [];
     private static readonly Dictionary<PlayerState, PlayerStateSprites> outfitStateSprites = [];
+    //private static readonly Dictionary<PlayerState, PlayerStateSprites> cloakStateSprites = [];
+    //private static readonly Dictionary<PlayerState, PlayerStateSprites> faceAssetStateSprites = [];
+    private static readonly Dictionary<PlayerState, PlayerStateSprites> hairStateSprites = [];
+    private static readonly Dictionary<PlayerState, PlayerStateSprites> hatStateSprites = [];
+    private static readonly Dictionary<PlayerState, PlayerStateSprites> primaryToolStateSprites = [];
+    private static readonly Dictionary<PlayerState, PlayerStateSprites> secondaryToolStateSprites = [];
     private static readonly Dictionary<PlayerState, Animation> animations = [];
     private PlayerState state = PlayerState.Idle;
     private PlayerStateSpriteVariantType outfitVariant = PlayerStateSpriteVariantType.Outfit_Robe;
+    //private PlayerStateSpriteVariantType cloakVariant = PlayerStateSpriteVariantType.Cloak_Normal;
+    //private PlayerStateSpriteVariantType faceAssetVariant = PlayerStateSpriteVariantType.Face_Normal;
+    private PlayerStateSpriteVariantType hairVariant = PlayerStateSpriteVariantType.Hair_Bob;
+    private PlayerStateSpriteVariantType hatVariant = PlayerStateSpriteVariantType.Hat_Cap;
+    private PlayerStateSpriteVariantType primaryToolVariant = PlayerStateSpriteVariantType.PTool_Sword;
+    private PlayerStateSpriteVariantType secondaryToolVariant = PlayerStateSpriteVariantType.STool_WoodenShield;
     private long playerTicks = 0;
     private long lastAnimationTicks = 0;
     private long lastAttackTicks = 0;
@@ -90,11 +108,23 @@ internal class Player : CombatMapActor
         sprite.PaletteIndex = 0;
         sprite.Visible = false;
 
-        layer = game.GetRenderLayer(Layer.Outfit);
+        void CreateLayerSprite(Layer layer, out ISequencedSprite sprite)
+        {
+            var renderLayer = game.GetRenderLayer(layer);
 
-        outfitSprite = layer.SpriteFactory!.CreateSequenced();
-        outfitSprite.PaletteIndex = 0; // TODO: Allow changing outfit palettes
-        outfitSprite.Visible = sprite.Visible;
+            sprite = renderLayer.SpriteFactory!.CreateSequenced();
+            sprite.PaletteIndex = 0; // TODO: Allow changing palettes
+            sprite.Visible = this.sprite.Visible;
+        }
+
+        CreateLayerSprite(Layer.Outfit, out outfitSprite);
+        // TODO
+        //CreateLayerSprite(Layer.Cloak, out cloakSprite);
+        //CreateLayerSprite(Layer.FaceAsset, out faceAssetSprite);
+        CreateLayerSprite(Layer.Hair, out hairSprite);
+        CreateLayerSprite(Layer.Hats, out hatSprite);
+        CreateLayerSprite(Layer.PrimaryTool, out primaryToolSprite);
+        CreateLayerSprite(Layer.SecondaryTool, out secondaryToolSprite);
 
         InitAnimation();
 
@@ -110,6 +140,13 @@ internal class Player : CombatMapActor
 
         var playerSpriteSheet = game.GameData.GetPlayerSpriteSheet();
         var outfitSpriteSheet = game.GameData.GetOutfitSpriteSheet();
+        // TODO
+        //var cloakSpriteSheet = game.GameData.GetCloakSpriteSheet();
+        //var faceAssetSpriteSheet = game.GameData.GetFaceAssetSpriteSheet();
+        var hairSpriteSheet = game.GameData.GetHairSpriteSheet();
+        var hatSpriteSheet = game.GameData.GetHatSpriteSheet();
+        var primaryToolSpriteSheet = game.GameData.GetPrimaryToolSpriteSheet();
+        var secondaryToolSpriteSheet = game.GameData.GetSecondaryToolSpriteSheet();
         var frameSize = PlayerStateSprites.FrameSize;
 
         foreach (var stateSprite in playerSpriteSheet.StateSprites)
@@ -126,6 +163,37 @@ internal class Player : CombatMapActor
         foreach (var stateSprite in outfitSpriteSheet.StateSprites)
         {
             outfitStateSprites.Add(stateSprite.State, stateSprite);
+        }
+
+        // TODO
+        /*foreach (var stateSprite in cloakSpriteSheet.StateSprites)
+        {
+            cloakStateSprites.Add(stateSprite.State, stateSprite);
+        }
+
+        foreach (var stateSprite in faceAssetSpriteSheet.StateSprites)
+        {
+            faceAssetStateSprites.Add(stateSprite.State, stateSprite);
+        }*/
+
+        foreach (var stateSprite in hairSpriteSheet.StateSprites)
+        {
+            hairStateSprites.Add(stateSprite.State, stateSprite);
+        }
+
+        foreach (var stateSprite in hatSpriteSheet.StateSprites)
+        {
+            hatStateSprites.Add(stateSprite.State, stateSprite);
+        }
+
+        foreach (var stateSprite in primaryToolSpriteSheet.StateSprites)
+        {
+            primaryToolStateSprites.Add(stateSprite.State, stateSprite);
+        }
+
+        foreach (var stateSprite in secondaryToolSpriteSheet.StateSprites)
+        {
+            secondaryToolStateSprites.Add(stateSprite.State, stateSprite);
         }
     }
 
@@ -153,6 +221,12 @@ internal class Player : CombatMapActor
             {
                 sprite.CurrentFrameIndex += 1;
                 outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+                //cloakSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+                //faceAssetSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+                hairSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+                hatSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+                primaryToolSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+                secondaryToolSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
                 elapsed -= ticksPerAnimationFrame;
             }
 
@@ -181,18 +255,44 @@ internal class Player : CombatMapActor
         var frameSize = PlayerStateSprites.FrameSize;
         var origin = new Position(stateSprites.OffsetX * frameSize.Width, stateSprites.OffsetY * frameSize.Height);
         var newOrigin = origin + (int)VisualDirection * (GetAnimation().DirectionOffset ?? Amber.Common.Position.Zero);
-        outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
-        outfitSprite.FrameOrigin += new Position(0, outfitStateSprites[state].Variants[outfitVariant].OffsetY);
+        sprite.FrameOrigin = newOrigin;
+
+        UpdateFrameOrigin(outfitSprite, outfitStateSprites, outfitVariant);
+        // TODO
+        //UpdateFrameOrigin(cloakSprite, cloakStateSprites, cloakVariant);
+        //UpdateFrameOrigin(faceAssetSprite, faceAssetStateSprites, faceAssetVariant);
+        UpdateFrameOrigin(hairSprite, hairStateSprites, hairVariant);
+        UpdateFrameOrigin(hatSprite, hatStateSprites, hatVariant);
+        UpdateFrameOrigin(primaryToolSprite, primaryToolStateSprites, primaryToolVariant);
+        UpdateFrameOrigin(secondaryToolSprite, secondaryToolStateSprites, secondaryToolVariant);
+
+        void UpdateFrameOrigin(ISequencedSprite sprite, Dictionary<PlayerState, PlayerStateSprites> stateSprites, PlayerStateSpriteVariantType variantType)
+        {
+            sprite.FrameOrigin = newOrigin;
+            sprite.FrameOrigin += new Position(0, stateSprites[state].Variants[variantType].OffsetY);
+        }
     }
 
     private void SetFrameIndicesAndOrigin(bool resetFrameIndex)
     {
         sprite.SetFrameIndicesAndOrigin(GetAnimation, 1u, VisualDirection, resetFrameIndex);
 
-        outfitSprite.TextureSize = sprite.TextureSize;
-        outfitSprite.FrameOrigin = sprite.FrameOrigin;
-        outfitSprite.FrameIndices = sprite.FrameIndices;
-        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+        void CopySpriteData(ISequencedSprite sequencedSprite)
+        {
+            sequencedSprite.TextureSize = sprite.TextureSize;
+            sequencedSprite.FrameOrigin = sprite.FrameOrigin;
+            sequencedSprite.FrameIndices = sprite.FrameIndices;
+            sequencedSprite.CurrentFrameIndex = sprite.CurrentFrameIndex;
+        }
+
+        CopySpriteData(outfitSprite);
+        // TODO
+        //CopySpriteData(cloakSprite);
+        //CopySpriteData(faceAssetSprite);
+        CopySpriteData(hairSprite);
+        CopySpriteData(hatSprite);
+        CopySpriteData(primaryToolSprite);
+        CopySpriteData(secondaryToolSprite);
     }
 
     private protected override void PositionChanged(Vector oldPosition, Vector newPosition, Size oldSize, Size newSize)
@@ -204,8 +304,23 @@ internal class Player : CombatMapActor
 
         var position = Position.Round();
 
-        outfitSprite.Position = sprite.Position = position - MapOffset;
-        outfitSprite.Size = sprite.Size = Size;
+        sprite.Position = position - MapOffset;
+        sprite.Size = Size;
+
+        UpdateMetrics(outfitSprite);
+        // TODO
+        //UpdateMetrics(cloakSprite);
+        //UpdateMetrics(faceAssetSprite);
+        UpdateMetrics(hairSprite);
+        UpdateMetrics(hatSprite);
+        UpdateMetrics(primaryToolSprite);
+        UpdateMetrics(secondaryToolSprite);
+
+        void UpdateMetrics(ISequencedSprite sequencedSprite)
+        {
+            sequencedSprite.Position = sprite.Position;
+            sequencedSprite.Size = sprite.Size;
+        }
 
         game.State.PlayerPosition = position;
     }
@@ -221,9 +336,24 @@ internal class Player : CombatMapActor
         var frameSize = PlayerStateSprites.FrameSize;
         var origin = new Position(stateSprites.OffsetX * frameSize.Width, stateSprites.OffsetY * frameSize.Height);
         var newOrigin = origin + (int)newDirection * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
-        outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
-        outfitSprite.FrameOrigin += new Position(0, outfitStateSprites[state].Variants[outfitVariant].OffsetY);
-        outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
+        sprite.FrameOrigin = newOrigin;
+        sprite.CurrentFrameIndex = 0;
+
+        void UpdateFrameInfo(ISequencedSprite sprite, Dictionary<PlayerState, PlayerStateSprites> stateSprites, PlayerStateSpriteVariantType variantType)
+        {
+            sprite.FrameOrigin = newOrigin;
+            sprite.FrameOrigin += new Position(0, stateSprites[state].Variants[variantType].OffsetY);
+            sprite.CurrentFrameIndex = this.sprite.CurrentFrameIndex;
+        }
+
+        UpdateFrameInfo(outfitSprite, outfitStateSprites, outfitVariant);
+        // TODO
+        //UpdateFrameInfo(cloakSprite, cloakStateSprites, cloakVariant);
+        //UpdateFrameInfo(faceAssetSprite, faceAssetStateSprites, faceAssetVariant);
+        UpdateFrameInfo(hairSprite, hairStateSprites, hairVariant);
+        UpdateFrameInfo(hatSprite, hatStateSprites, hatVariant);
+        UpdateFrameInfo(primaryToolSprite, primaryToolStateSprites, primaryToolVariant);
+        UpdateFrameInfo(secondaryToolSprite, secondaryToolStateSprites, secondaryToolVariant);
 
         game.State.PlayerDirection = VisualDirection;
     }
@@ -232,20 +362,44 @@ internal class Player : CombatMapActor
     {
         base.VisibilityChanged(oldVisibility, newVisibility);
 
-        outfitSprite.Visible = sprite.Visible = Visible && VisibleOnMap;
+        sprite.Visible = Visible && VisibleOnMap;
+        outfitSprite.Visible = sprite.Visible;
+        // TODO
+        //cloakSprite.Visible = sprite.Visible;
+        //faceAssetSprite.Visible = sprite.Visible;
+        hairSprite.Visible = sprite.Visible;
+        hatSprite.Visible = sprite.Visible;
+        primaryToolSprite.Visible = sprite.Visible;
+        secondaryToolSprite.Visible = sprite.Visible;
     }
 
     private protected override void MapVisibilityChanged(bool oldMapVisibility, bool newMapVisibility)
     {
         base.MapVisibilityChanged(oldMapVisibility, newMapVisibility);
 
-        outfitSprite.Visible = sprite.Visible = Visible && VisibleOnMap;
+        sprite.Visible = Visible && VisibleOnMap;
+        outfitSprite.Visible = sprite.Visible;
+        // TODO
+        //cloakSprite.Visible = sprite.Visible;
+        //faceAssetSprite.Visible = sprite.Visible;
+        hairSprite.Visible = sprite.Visible;
+        hatSprite.Visible = sprite.Visible;
+        primaryToolSprite.Visible = sprite.Visible;
+        secondaryToolSprite.Visible = sprite.Visible;
     }
 
     private protected override void MapOffsetChanged(Position oldMapOffset, Position newMapOffset)
     {
         base.MapOffsetChanged(oldMapOffset, newMapOffset);
 
-        outfitSprite.Position = sprite.Position = Position.Round() - MapOffset;
+        sprite.Position = Position.Round() - MapOffset;
+        outfitSprite.Position = sprite.Position;
+        // TODO
+        //cloakSprite.Position = sprite.Position;
+        //faceAssetSprite.Position = sprite.Position;
+        hairSprite.Position = sprite.Position;
+        hatSprite.Position = sprite.Position;
+        primaryToolSprite.Position = sprite.Position;
+        secondaryToolSprite.Position = sprite.Position;
     }
 }

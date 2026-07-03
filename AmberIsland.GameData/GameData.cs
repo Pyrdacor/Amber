@@ -21,6 +21,13 @@ public sealed class GameData
     // Non-cached assets
     private readonly PlayerSpriteSheet playerGraphics;
     private readonly PlayerSpriteSheet outfitGraphics;
+    // TODO
+    //private readonly PlayerSpriteSheet cloakGraphics;
+    //private readonly PlayerSpriteSheet faceItemGraphics;
+    private readonly PlayerSpriteSheet hairGraphics;
+    private readonly PlayerSpriteSheet hatGraphics;
+    private readonly PlayerSpriteSheet primaryToolGraphics;
+    private readonly PlayerSpriteSheet secondaryToolGraphics;
     private readonly Dictionary<uint, Font> fonts;
     private readonly PaletteRgb textPalette;
 
@@ -43,6 +50,13 @@ public sealed class GameData
         var playerSheets = ReadAllContainerFiles(Full("player.aic"), PlayerSpriteSheet.Read);
         playerGraphics = playerSheets[1];
         outfitGraphics = playerSheets[2];
+        // TODO
+        //cloakGraphics = playerSheets[3];
+        //faceItemGraphics = playerSheets[4];
+        hairGraphics = playerSheets[5];
+        hatGraphics = playerSheets[6];
+        primaryToolGraphics = playerSheets[7];
+        secondaryToolGraphics = playerSheets[8];
         fonts = ReadAllContainerFiles(Full("fonts.aic"), Font.Read);
         textPalette = PaletteRgb.Read(new DataReader(File.ReadAllBytes(Full("text_palette.aipal"))));
 
@@ -92,8 +106,14 @@ public sealed class GameData
 
     // Non-cached assets
     public PlayerSpriteSheet GetPlayerSpriteSheet() => playerGraphics;
-
     public PlayerSpriteSheet GetOutfitSpriteSheet() => outfitGraphics;
+    // TODO
+    //public PlayerSpriteSheet GetCloakSpriteSheet() => cloakGraphics;
+    //public PlayerSpriteSheet GetFaceItemSpriteSheet() => faceItemGraphics;
+    public PlayerSpriteSheet GetHairSpriteSheet() => hairGraphics;
+    public PlayerSpriteSheet GetHatSpriteSheet() => hatGraphics;
+    public PlayerSpriteSheet GetPrimaryToolSpriteSheet() => primaryToolGraphics;
+    public PlayerSpriteSheet GetSecondaryToolSpriteSheet() => secondaryToolGraphics;
 
     public Dictionary<uint, Font> GetFonts() => fonts;
 

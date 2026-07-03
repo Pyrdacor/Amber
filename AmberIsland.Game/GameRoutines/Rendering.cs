@@ -16,11 +16,11 @@ public enum Layer
     Player,
 	Outfit,
     /*Capes,
-	FaceAssets,
+	FaceAssets,*/
 	Hair,
 	Hats,
 	PrimaryTool,
-	SecondaryTool,*/
+	SecondaryTool,
     Projectiles,
     MapForeground,
 	MapFont,
@@ -115,11 +115,63 @@ partial class Game
 
         AddLayer(LayerType.Texture2D, new()
         {
-            BaseZ = 0.4f,
+            BaseZ = 0.325f,
             RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
             LayerFeatures = LayerFeatures.Transparency,
             Texture = outfitAtlas,
             Palette = outfitPalette
+        });
+
+        // Hair
+        var hairSpriteSheet = gameData.GetHairSpriteSheet();
+        var (hairAtlas, hairPalette) = CreateGraphicAtlasAndPalette(hairSpriteSheet);
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.35f,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = hairAtlas,
+            Palette = hairPalette
+        });
+
+        // Hat
+        var hatSpriteSheet = gameData.GetHatSpriteSheet();
+        var (hatAtlas, hatPalette) = CreateGraphicAtlasAndPalette(hatSpriteSheet);
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.375f,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = hatAtlas,
+            Palette = hatPalette
+        });
+
+        // Primary Tool
+        var primaryToolSpriteSheet = gameData.GetPrimaryToolSpriteSheet();
+        var (primaryToolAtlas, primaryToolPalette) = CreateGraphicAtlasAndPalette(primaryToolSpriteSheet);
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.4f,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = primaryToolAtlas,
+            Palette = primaryToolPalette
+        });
+
+        // Secondary Tool
+        var secondaryToolSpriteSheet = gameData.GetSecondaryToolSpriteSheet();
+        var (secondaryToolAtlas, secondaryToolPalette) = CreateGraphicAtlasAndPalette(secondaryToolSpriteSheet);
+
+        AddLayer(LayerType.Texture2D, new()
+        {
+            BaseZ = 0.425f,
+            RenderTarget2D = LayerRenderTarget2D.VirtualScreen2D,
+            LayerFeatures = LayerFeatures.Transparency,
+            Texture = secondaryToolAtlas,
+            Palette = secondaryToolPalette
         });
 
         // Projectiles
