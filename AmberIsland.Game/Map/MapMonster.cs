@@ -321,17 +321,17 @@ internal class MapMonster : CombatMapActor
         RunStateHandler();      
     }
 
-    public void PlayerAttacks(Player player)
+    public void PlayerAttacks(Player player, uint damage)
     {
-        bool isDamaged = false;
-
-        // TODO ...
-
-        if (isDamaged)
+        if (damage > 0)
         {
             // Note: This automatically ends the sleeping or fleeing state
             CurrentState = MonsterState.ReceivingDamage;
         }
+
+        // TODO
+        if (CanMove())
+            CurrentState = MonsterState.Chasing;
     }
 
     private bool CheckLowHpBehavior(Monster monster)
@@ -408,7 +408,7 @@ internal class MapMonster : CombatMapActor
         if (!aggressive && monsterTicks < nextDecisionTicks)
             return;
 
-        bool canMove = monster.MoveRange != 0 && monster.Flags.CanMove();
+        bool canMove = CanMove();
 
         if (aggressive)
         {
@@ -716,5 +716,12 @@ internal class MapMonster : CombatMapActor
         var monster = GetMonsterData();
 
         return monster.AttackSpeed * attackDelay >= 1;
+    }
+
+    private bool CanMove()
+    {
+        var monster = GetMonsterData();
+
+        return monster.MoveRange != 0 && monster.Flags.CanMove(); // TODO: conditions like stun
     }
 }

@@ -1,4 +1,5 @@
-﻿using Amber.Common;
+﻿using System.Threading;
+using Amber.Common;
 using Amber.Renderer.Common;
 using AmberIsland.Game.UI;
 using AmberIsland.GameData;
@@ -142,9 +143,51 @@ internal class MapScreen : Screen
 		//LoadMap(game.State.MapIndex);
         ShowMapName();
 		EnterTile(game.Player.GetCurrentTile(), true);
+
+        game.Player.Attack += PlayerAttack;
 	}
 
-	private void SetLayout()
+    private void PlayerAttack()
+    {
+		if (targetMonster == null || game?.Player == null)
+			return;
+
+		// TODO: shoot projectile
+        if (false)
+        {
+            /*var sourcePosition = Position + new Vector(RelativeProjectileSourcePosition);
+            var direction = (game.Player.Center - sourcePosition).Normalized();
+            Direction = direction;
+            mapScreen.SpawnProjectile(this, sourcePosition.Round(), direction, 1);*/
+        }
+        else
+        {
+			const TextColor damageTextColor = TextColor.White;
+
+            if (!game.Player.TestHit(targetMonster))
+            {
+                ShowDamageText(targetMonster, "Miss", damageTextColor);
+            }
+            else
+            {
+                // Deal damage
+                var damage = game.Player.CalculcatePhysicalDamage(game.Player);
+
+                if (damage == 0)
+                {
+                    ShowDamageText(targetMonster, "0", damageTextColor);
+                }
+                else
+                {
+                    ShowDamageText(targetMonster, damage.ToString(), damageTextColor);
+                }
+
+                targetMonster.PlayerAttacks(game.Player, damage);
+            }
+        }
+    }
+
+    private void SetLayout()
 	{
         //game!.SetLayout(Layout.Map2D, palette);
     }
@@ -166,6 +209,8 @@ internal class MapScreen : Screen
 
         //mapNameText!.Delete();
 
+		game.Player.Attack -= PlayerAttack;
+
         base.Close(game);
 	}
 
@@ -177,8 +222,8 @@ internal class MapScreen : Screen
 
 	private void StartAttacking()
 	{
-        ResetMovement();
 		game!.Player.CurrentState = PlayerState.SwingingForth; // TODO
+        pathFollower = null;
     }
 
     public override void Update(Game game, long elapsedTicks)
@@ -271,9 +316,11 @@ internal class MapScreen : Screen
 
 			if (mapArea.Contains(position))
 			{
+				targetMonster = null;
+
                 // TODO: Check for item pickup		
                 // TODO: Check for attack
-				foreach (var monster in GetActorsOnScreen().OfType<MapMonster>())
+                foreach (var monster in GetActorsOnScreen().OfType<MapMonster>())
 				{
 					if (monster.CollisionArea.Contains(position))
                     {

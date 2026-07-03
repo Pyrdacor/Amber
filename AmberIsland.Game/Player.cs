@@ -9,8 +9,8 @@ namespace AmberIsland.Game;
 internal class Player : CombatMapActor
 {
     private const int TicksPerAnimationFrame = 6;
-    private const float WalkSpeed = 60.0f;
-    private const float RunSpeed = 120.0f;
+    private const float WalkSpeed = 90.0f;
+    private const float RunSpeed = 150.0f;
     private readonly Game game;
     private readonly ISequencedSprite sprite;
     private readonly ISequencedSprite outfitSprite;
@@ -167,9 +167,9 @@ internal class Player : CombatMapActor
                 Attack?.Invoke();
             }
 
-            sprite.CurrentFrameIndex = 0;
+            /*sprite.CurrentFrameIndex = 0;
             outfitSprite.CurrentFrameIndex = 0;
-            lastAnimationTicks = playerTicks;
+            lastAnimationTicks = playerTicks;*/
         }
     }
 
