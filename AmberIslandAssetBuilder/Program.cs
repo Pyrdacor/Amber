@@ -359,7 +359,7 @@ static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operati
 
         var sprites = new Dictionary<string, (Sprite Sprite, int Y)>();
         var palettes = new HashSet<PaletteRgb>();
-        var usedPalettes = new Dictionary<PlayerStateSpriteVariant, HashSet<PaletteRgb>>();
+        var usedPalettes = new Dictionary<string, HashSet<PaletteRgb>>();
         var stateSprites = new List<PlayerStateSprites>();
         int y = 0;
 
@@ -372,6 +372,7 @@ static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operati
             var fileParts = Path.GetFileNameWithoutExtension(file).Split('_');
             string prefixStr = fileParts[0];
             string variantIdentifier = fileParts[^3];
+            string key = prefixStr + "_" + variantIdentifier;
 
             if (!PlayerStateSprites.VariantFileIdentifiers.TryGetValue(variantIdentifier, out var variant))
             {
@@ -381,9 +382,9 @@ static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operati
             
             var sprite = Sprite.Read(new DataReader(File.ReadAllBytes(file)));
 
-            if (!sprites.ContainsKey(prefixStr))
+            if (!sprites.ContainsKey(key))
             {
-                sprites[prefixStr] = (sprite, y);
+                sprites[key] = (sprite, y);
                 y += sprite.Height;
             }
 
@@ -391,9 +392,9 @@ static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operati
 
             palettes.Add(palette);
 
-            if (!usedPalettes.TryGetValue(variant, out var usedPaletteSet))
+            if (!usedPalettes.TryGetValue(key, out var usedPaletteSet))
             {
-                usedPalettes[variant] = [palette];
+                usedPalettes[key] = [palette];
             }
             else
             {
@@ -402,14 +403,28 @@ static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operati
         }
 
         var paletteList = palettes.ToList();
-        var usedPalettesByVariant = usedPalettes.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Select(palette => (byte)paletteList.IndexOf(palette)).ToArray());
+        var variants = new Dictionary<string, PlayerStateSpriteVariant>(usedPalettes.Count);
+
+        foreach (var kvp in usedPalettes)
+        {
+            var variant = kvp.Key;
+            var offset = (ushort)sprites[kvp.Key].Y; ;
+            var paletteIndices = kvp.Value.Select(palette => (byte)paletteList.IndexOf(palette)).ToArray();
+            variants[kvp.Key] = new PlayerStateSpriteVariant(0, offset, paletteIndices);
+        }
+        
         var definition = JsonSerializer.Deserialize<PlayerSpriteSheetDefinition>(File.ReadAllText(defFileFullPath), jsonSerializerOptions)!;
         int frameHeight = frameSize.Values[1];
+        var groupedKeys = sprites.Keys.GroupBy(key => key.Split('_')[0]);
 
-        foreach (var prefix in sprites.Keys)
+        foreach (var keyGroup in groupedKeys)
         {
-            int prefixNumber = int.Parse(prefix);
-            var sprite = sprites[prefix];
+            var key = keyGroup.Key;
+            int prefixNumber = int.Parse(key);
+            var sprite = sprites[keyGroup.Order().First()];
+
+            var variantKeys = variants.Keys.Where(k => k.StartsWith(prefixNumber + "_")).ToList();
+            var matchingVariants = keyGroup.ToDictionary(k => PlayerStateSprites.VariantFileIdentifiers[k.Split('_')[1]], k => variants[k]);
 
             for (int i = 0; i < definition.StateSprites.Length; i++)
             {
@@ -417,7 +432,7 @@ static void HandlePlayerSpriteSheet(BuildContext context, BuildOperation operati
 
                 if (definition.FilePrefixes[i] == prefixNumber)
                 {
-                    stateSprites.Add(stateSprite with { OffsetY = (ushort)(sprite.Y / frameHeight + stateSprite.OffsetY), PossiblePaletteIndices = usedPalettesByVariant });
+                    stateSprites.Add(stateSprite with { OffsetY = (ushort)(sprite.Y / frameHeight + stateSprite.OffsetY), Variants = matchingVariants });
                 }
             }
         }

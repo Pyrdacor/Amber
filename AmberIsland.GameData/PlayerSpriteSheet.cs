@@ -3,7 +3,7 @@ using Amber.IO.Common.Serialization;
 
 namespace AmberIsland.GameData;
 
-public enum PlayerStateSpriteVariant
+public enum PlayerStateSpriteVariantType : byte
 {
     // Player
     Player_Normal = 0,
@@ -32,6 +32,36 @@ public enum PlayerStateSpriteVariant
     STool_PaladinShield,
 }
 
+public readonly record struct PlayerStateSpriteVariant
+(
+    ushort OffsetX, // Inside PlayerStateSprites (in frames!)
+    ushort OffsetY,
+    byte[] PossiblePaletteIndices // Inside the atlas sprite palettes
+)
+{
+    public void Write(IDataWriter writer)
+    {
+        writer.Write(OffsetX);
+        writer.Write(OffsetY);
+        writer.Write((byte)PossiblePaletteIndices.Length);
+        writer.Write(PossiblePaletteIndices);
+    }
+
+    public static PlayerStateSpriteVariant Read(IDataReader reader)
+    {
+        var offsetX = reader.ReadWord();
+        var offsetY = reader.ReadWord();
+        var possiblePaletteIndices = reader.ReadBytes(reader.ReadByte());
+
+        return new PlayerStateSpriteVariant
+        (
+            offsetX,
+            offsetY,
+            possiblePaletteIndices
+        );
+    }
+}
+
 public readonly record struct PlayerStateSprites
 (
     // Byte-sized
@@ -41,31 +71,31 @@ public readonly record struct PlayerStateSprites
     ushort OffsetY,
     // Collections
     byte[] FrameIndices, // Relative to OffsetX/Y
-    Dictionary<PlayerStateSpriteVariant, byte[]> PossiblePaletteIndices // Inside the atlas sprite palettes
+    Dictionary<PlayerStateSpriteVariantType, PlayerStateSpriteVariant> Variants
 )
 {
-    public static readonly Dictionary<string, PlayerStateSpriteVariant> VariantFileIdentifiers = new()
+    public static readonly Dictionary<string, PlayerStateSpriteVariantType> VariantFileIdentifiers = new()
     {
-        ["humn"] = PlayerStateSpriteVariant.Player_Normal,
+        ["humn"] = PlayerStateSpriteVariantType.Player_Normal,
         // Outfit
-        ["boxr"] = PlayerStateSpriteVariant.Outfit_Boxers,
-        ["undi"] = PlayerStateSpriteVariant.Outfit_Underwear,
-        ["fstr"] = PlayerStateSpriteVariant.Outfit_Armor,
-        ["pfpn"] = PlayerStateSpriteVariant.Outfit_Robe,
+        ["boxr"] = PlayerStateSpriteVariantType.Outfit_Boxers,
+        ["undi"] = PlayerStateSpriteVariantType.Outfit_Underwear,
+        ["fstr"] = PlayerStateSpriteVariantType.Outfit_Armor,
+        ["pfpn"] = PlayerStateSpriteVariantType.Outfit_Robe,
         // Hair
-        ["bob1"] = PlayerStateSpriteVariant.Hair_Bob,
-        ["dap1"] = PlayerStateSpriteVariant.Hair_Dapper,
+        ["bob1"] = PlayerStateSpriteVariantType.Hair_Bob,
+        ["dap1"] = PlayerStateSpriteVariantType.Hair_Dapper,
         // Hat
-        ["pfht"] = PlayerStateSpriteVariant.Hat_Cap,
-        ["pnty"] = PlayerStateSpriteVariant.Hat_Wizard,
+        ["pfht"] = PlayerStateSpriteVariantType.Hat_Cap,
+        ["pnty"] = PlayerStateSpriteVariantType.Hat_Wizard,
         // Primary tool
-        ["ax01"] = PlayerStateSpriteVariant.PTool_Axe,
-        ["mc01"] = PlayerStateSpriteVariant.PTool_Mace,
-        ["sw01"] = PlayerStateSpriteVariant.PTool_Sword,
+        ["ax01"] = PlayerStateSpriteVariantType.PTool_Axe,
+        ["mc01"] = PlayerStateSpriteVariantType.PTool_Mace,
+        ["sw01"] = PlayerStateSpriteVariantType.PTool_Sword,
         // Secondary tool
-        ["sh01"] = PlayerStateSpriteVariant.STool_WoodenShield,
-        ["sh02"] = PlayerStateSpriteVariant.STool_IronShield,
-        ["sh03"] = PlayerStateSpriteVariant.STool_PaladinShield,
+        ["sh01"] = PlayerStateSpriteVariantType.STool_WoodenShield,
+        ["sh02"] = PlayerStateSpriteVariantType.STool_IronShield,
+        ["sh03"] = PlayerStateSpriteVariantType.STool_PaladinShield,
     };
 
     // Note: FrameSize is fixed for all of them (64x64)
@@ -83,13 +113,12 @@ public readonly record struct PlayerStateSprites
         // Collections
         writer.Write((byte)FrameIndices.Length);
         writer.Write(FrameIndices);
-        writer.Write((byte)PossiblePaletteIndices.Count);
+        writer.Write((byte)Variants.Count);
 
-        foreach (var kvp in PossiblePaletteIndices.OrderBy(kvp => kvp.Key))
+        foreach (var kvp in Variants.OrderBy(kvp => kvp.Key))
         {
             writer.Write((byte)kvp.Key);
-            writer.Write((byte)kvp.Value.Length);
-            writer.Write(kvp.Value);
+            kvp.Value.Write(writer);
         }
     }
 
@@ -105,14 +134,13 @@ public readonly record struct PlayerStateSprites
         // Collections
         var frameCount = reader.ReadByte();
         var frameIndices = reader.ReadBytes(frameCount);
-        var possiblePaletteCount = reader.ReadByte();
-        var possiblePaletteIndices = new Dictionary<PlayerStateSpriteVariant, byte[]>(possiblePaletteCount);
+        var variantCount = reader.ReadByte();
+        var variants = new Dictionary<PlayerStateSpriteVariantType, PlayerStateSpriteVariant>(variantCount);
 
-        for (int i = 0; i < possiblePaletteCount; i++)
+        for (int i = 0; i < variantCount; i++)
         {
-            var variant = (PlayerStateSpriteVariant)reader.ReadByte();
-            var paletteIndices = reader.ReadBytes(reader.ReadByte());
-            possiblePaletteIndices.Add(variant, paletteIndices);
+            var variantType = (PlayerStateSpriteVariantType)reader.ReadByte();
+            variants.Add(variantType, PlayerStateSpriteVariant.Read(reader));
         }
 
         return new PlayerStateSprites
@@ -124,7 +152,7 @@ public readonly record struct PlayerStateSprites
             offsetY,
             // Collections
             frameIndices,
-            possiblePaletteIndices
+            variants
         );
     }
 }

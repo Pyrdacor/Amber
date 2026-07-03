@@ -2,3 +2,7 @@
 - Implement items, savegames and use values for the player instead of dummy values
 
 - Player animation while walking is blurred (most likely switching often between different animation frames?)
+
+
+
+- Running animation looked better before (more frames)

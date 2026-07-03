@@ -14,9 +14,11 @@ internal class Player : CombatMapActor
     private readonly Game game;
     private readonly ISequencedSprite sprite;
     private readonly ISequencedSprite outfitSprite;
-    private static readonly Dictionary<PlayerState, PlayerStateSprites> stateSprites = [];
+    private static readonly Dictionary<PlayerState, PlayerStateSprites> playerStateSprites = [];
+    private static readonly Dictionary<PlayerState, PlayerStateSprites> outfitStateSprites = [];
     private static readonly Dictionary<PlayerState, Animation> animations = [];
     private PlayerState state = PlayerState.Idle;
+    private PlayerStateSpriteVariantType outfitVariant = PlayerStateSpriteVariantType.Outfit_Robe;
     private long playerTicks = 0;
     private long lastAnimationTicks = 0;
     private long lastAttackTicks = 0;
@@ -58,7 +60,7 @@ internal class Player : CombatMapActor
 
     // TODO: Avoid magic numbers
     public override Rect CollisionArea => new(Area.Position.X + 4, Area.Position.Y + 1, sprite.Size.Width - 8, 15);
-    private PlayerStateSprites StateSprites => stateSprites[state];
+    private PlayerStateSprites StateSprites => playerStateSprites[state];
 
     private protected override uint TotalPhysicalMinDamage => 0; // TODO
     private protected override uint TotalPhysicalMaxDamage => 3; // TODO
@@ -91,10 +93,10 @@ internal class Player : CombatMapActor
         layer = game.GetRenderLayer(Layer.Outfit);
 
         outfitSprite = layer.SpriteFactory!.CreateSequenced();
-        outfitSprite.PaletteIndex = 0;
+        outfitSprite.PaletteIndex = 0; // TODO: Allow changing outfit palettes
         outfitSprite.Visible = sprite.Visible;
 
-        SetFrameIndicesAndOrigin(resetFrameIndex: true);
+        InitAnimation();
 
         Position = new(0, 0);
         Size = new(96, 96);
@@ -106,18 +108,24 @@ internal class Player : CombatMapActor
         if (animations.Count > 0)
             return;
 
-        var playerGraphics = game.GameData.GetPlayerSpriteSheet();
+        var playerSpriteSheet = game.GameData.GetPlayerSpriteSheet();
+        var outfitSpriteSheet = game.GameData.GetOutfitSpriteSheet();
         var frameSize = PlayerStateSprites.FrameSize;
 
-        foreach (var stateSprite in playerGraphics.StateSprites)
+        foreach (var stateSprite in playerSpriteSheet.StateSprites)
         {
-            stateSprites.Add(stateSprite.State, stateSprite);
+            playerStateSprites.Add(stateSprite.State, stateSprite);
             animations.Add(stateSprite.State, new()
             {
                 FrameSize = frameSize,
                 FrameIndices = stateSprite.FrameIndices.Select(i => (uint)i).ToArray(),
                 DirectionOffset = new(0, frameSize.Height),
             });
+        }
+
+        foreach (var stateSprite in outfitSpriteSheet.StateSprites)
+        {
+            outfitStateSprites.Add(stateSprite.State, stateSprite);
         }
     }
 
@@ -174,6 +182,7 @@ internal class Player : CombatMapActor
         var origin = new Position(stateSprites.OffsetX * frameSize.Width, stateSprites.OffsetY * frameSize.Height);
         var newOrigin = origin + (int)VisualDirection * (GetAnimation().DirectionOffset ?? Amber.Common.Position.Zero);
         outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
+        outfitSprite.FrameOrigin += new Position(0, outfitStateSprites[state].Variants[outfitVariant].OffsetY);
     }
 
     private void SetFrameIndicesAndOrigin(bool resetFrameIndex)
@@ -213,6 +222,7 @@ internal class Player : CombatMapActor
         var origin = new Position(stateSprites.OffsetX * frameSize.Width, stateSprites.OffsetY * frameSize.Height);
         var newOrigin = origin + (int)newDirection * (animation.DirectionOffset ?? Amber.Common.Position.Zero);
         outfitSprite.FrameOrigin = sprite.FrameOrigin = newOrigin;
+        outfitSprite.FrameOrigin += new Position(0, outfitStateSprites[state].Variants[outfitVariant].OffsetY);
         outfitSprite.CurrentFrameIndex = sprite.CurrentFrameIndex = 0;
 
         game.State.PlayerDirection = VisualDirection;
