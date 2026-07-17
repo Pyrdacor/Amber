@@ -1,0 +1,26 @@
+{
+  "Name": "Island",
+  "Noise": {
+    "Seed": 71190,
+    "Scale": 0.045,
+    "Octaves": 4,
+    "Persistence": 0.5,
+    "Lacunarity": 2.0,
+    "IslandFalloff": true,
+    "IslandFalloffStrength": 0.8
+  },
+  "TypeRanges": [
+    { "Type": "DeepWater", "Enabled": true, "MinHeight": 0.00, "MaxHeight": 0.15 },
+    { "Type": "ShallowWater", "Enabled": true, "MinHeight": 0.15, "MaxHeight": 0.25 },
+    { "Type": "Sand", "Enabled": true, "MinHeight": 0.25, "MaxHeight": 0.33 },
+    { "Type": "HotSand", "Enabled": false, "MinHeight": 0.33, "MaxHeight": 0.35 },
+    { "Type": "Mud", "Enabled": false, "MinHeight": 0.33, "MaxHeight": 0.35 },
+    { "Type": "Swamp", "Enabled": false, "MinHeight": 0.35, "MaxHeight": 0.37 },
+    { "Type": "Grass", "Enabled": true, "MinHeight": 0.35, "MaxHeight": 0.65 },
+    { "Type": "HighGrass", "Enabled": true, "MinHeight": 0.65, "MaxHeight": 0.75 },
+    { "Type": "Earth", "Enabled": true, "MinHeight": 0.75, "MaxHeight": 0.85 },
+    { "Type": "Stone", "Enabled": true, "MinHeight": 0.85, "MaxHeight": 0.95 },
+    { "Type": "Ice", "Enabled": false, "MinHeight": 0.95, "MaxHeight": 0.97 },
+    { "Type": "Snow", "Enabled": true, "MinHeight": 0.95, "MaxHeight": 1.00 }
+  ]
+}
