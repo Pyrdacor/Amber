@@ -17,7 +17,32 @@ namespace AmberIsland
 {
 	class GameWindow(string id = "MainWindow") : IContextProvider
     {
-        const string CharacterSpriteSheetPath = @"D:\Projects\Amber\AmberIsland\assets\character_base\char_a_p1\char_a_p1_0bas_humn_v00.png";
+        static readonly string AssetsPath = ResolveAssetsPath();
+        static readonly string CharacterSpriteSheetPath = Path.Combine(AssetsPath, "character_base", "char_a_p1", "char_a_p1_0bas_humn_v00.png");
+
+        /// <summary>
+        /// Locates the "assets" folder. When published, it is expected to sit next to the
+        /// executable. When running from a build output folder (assets are not copied there),
+        /// this walks up to the AmberIsland project folder and uses its assets folder instead.
+        /// </summary>
+        static string ResolveAssetsPath()
+        {
+            const string assetsFolderName = "assets";
+            const string projectFileName = "AmberIsland.csproj";
+
+            string published = Path.Combine(AppContext.BaseDirectory, assetsFolderName);
+
+            if (Directory.Exists(published))
+                return published;
+
+            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
+            {
+                if (File.Exists(Path.Combine(dir.FullName, projectFileName)))
+                    return Path.Combine(dir.FullName, assetsFolderName);
+            }
+
+            throw new DirectoryNotFoundException($"Could not locate the '{assetsFolderName}' folder.");
+        }
 
         string gameVersion = "AmberIsland";
         Renderer? renderer;
@@ -167,7 +192,7 @@ namespace AmberIsland
 			game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
                 paletteIndexProvider, paletteColorProvider, fontInfoProvider, QueryPressedKeys);*/
 
-            game = new Game.Game(new GameData.GameData(@"D:\Projects\Amber\AmberIsland\assets"), renderer, QueryPressedKeys);
+            game = new Game.Game(new GameData.GameData(AssetsPath), renderer, QueryPressedKeys);
         }
 
         void Window_Render(double delta)
