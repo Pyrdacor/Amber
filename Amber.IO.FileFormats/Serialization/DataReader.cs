@@ -208,6 +208,7 @@ public class DataReader : IDataReader
 
     public byte[] ReadBytes(int amount)
     {
+        CheckOutOfRange(amount);
         var data = new byte[amount];
         Buffer.BlockCopy(this.data, Position, data, 0, data.Length);
         Position += amount;
@@ -264,5 +265,5 @@ public class DataReader : IDataReader
             Position += 4 - Position % 4;
     }
 
-    public byte[] ToArray() => data;
+    public byte[] ToArray() => [..data];
 }

@@ -101,7 +101,7 @@ internal class Shader : IDisposable
 	internal static string GetFragmentShaderHeader(State state)
 	{
 #if GLES
-            string header = $"#version {state.GLSLVersionMajor}{state.GLSLVersionMinor:00} es\n";
+        string header = $"#version {state.GLSLVersionMajor}{state.GLSLVersionMinor:00} es\n";
 #else
 		string header = $"#version {state.GLSLVersionMajor}{state.GLSLVersionMinor}\n";
 #endif
@@ -120,7 +120,7 @@ internal class Shader : IDisposable
 	internal static string GetVertexShaderHeader(State state)
 	{
 #if GLES
-            return $"#version {state.GLSLVersionMajor}{state.GLSLVersionMinor:00} es\n\n";
+        return $"#version {state.GLSLVersionMajor}{state.GLSLVersionMinor:00} es\n\n";
 #else
 		return $"#version {state.GLSLVersionMajor}{state.GLSLVersionMinor}\n\n";
 #endif

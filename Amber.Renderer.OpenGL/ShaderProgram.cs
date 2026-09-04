@@ -30,6 +30,7 @@ internal class ShaderProgram : IDisposable
     Shader? fragmentShader = null;
     Shader? vertexShader = null;
     bool disposed = false;
+    readonly bool useNormalUniform = true;
 
     public uint ProgramIndex { get; private set; } = 0;
     public bool Loaded { get; private set; } = false;
@@ -39,6 +40,8 @@ internal class ShaderProgram : IDisposable
     public ShaderProgram(State state)
     {
         this.state = state;
+
+        useNormalUniform = state.OpenGLVersionMajor < 4 || (state.OpenGLVersionMajor == 4 && state.OpenGLVersionMinor < 1);
 
         Create();
     }
@@ -132,6 +135,9 @@ internal class ShaderProgram : IDisposable
 
     public void Use()
     {
+        if (ActiveProgram == this)
+            return;
+
         if (!Linked)
             throw new AmberException(ExceptionScope.Render, "Shader program was not linked.");
 
@@ -144,7 +150,7 @@ internal class ShaderProgram : IDisposable
         if (ActiveProgram != this)
             throw new AmberException(ExceptionScope.Render, "Shader program is not active.");
 
-        var location = GetLocation(name, true);
+        var location = GetLocation(name, attribute: true);
 
         buffer.Bind();
 
@@ -166,19 +172,17 @@ internal class ShaderProgram : IDisposable
         state.Gl.DisableVertexAttribArray(location);
     }
 
-    uint GetLocation(string name, bool preferAttribute = false)
+    uint GetLocation(string name, bool attribute = false)
     {
-        if (preferAttribute)
+        if (attribute)
             return (uint)state.Gl.GetAttribLocation(ProgramIndex, name);
 
         return (uint)state.Gl.GetUniformLocation(ProgramIndex, name);
     }
 
-    bool UseNormalUniform => state.OpenGLVersionMajor < 4 || (state.OpenGLVersionMajor == 4 && state.OpenGLVersionMinor < 1);
-
     void CallUniform(Action oldVersion, Action newVersion)
     {
-        if (UseNormalUniform)
+        if (useNormalUniform)
         {
             var activeProgram = ActiveProgram;
             Use();

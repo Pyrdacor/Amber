@@ -47,13 +47,12 @@ namespace Ambermoon.Renderer.OpenGL
 			state.Gl.Enable(EnableCap.DepthTest);
 			state.Gl.DepthRange(0.0f, 1.0f);
 			state.Gl.DepthFunc(DepthFunction.Lequal);
-            state.Gl.Disable(EnableCap.CullFace);
             state.Gl.Enable(EnableCap.CullFace);
             state.Gl.CullFace(GLEnum.Back);
             state.Gl.FrontFace(FrontFaceDirection.CW);
             state.Gl.Enable(EnableCap.Texture2D);
 
-			state.Gl.BlendEquationSeparate(BlendEquationModeEXT.FuncAdd, BlendEquationModeEXT.FuncAdd);
+			state.Gl.BlendEquation(BlendEquationModeEXT.FuncAdd);
 			state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.Zero);
 
 			state.ProjectionMatrix2D = Matrix4.CreateOrtho2D(0, virtualSize.Width, 0, virtualSize.Height, 0, 1);
@@ -65,7 +64,7 @@ namespace Ambermoon.Renderer.OpenGL
 
 		public Size Size => throw new NotImplementedException();
 
-		public IReadOnlyList<ILayer> Layers => layers.Cast<ILayer>().ToList().AsReadOnly();
+		public IReadOnlyList<ILayer> Layers => layers.AsReadOnly();
 
 		public ILayerFactory LayerFactory => layerFactory;
 
