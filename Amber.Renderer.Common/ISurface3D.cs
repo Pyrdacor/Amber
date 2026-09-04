@@ -35,7 +35,13 @@ public interface ISurface3D : IDrawable3D
 {
     SurfaceFace Face { get; set; }
     FloatSize Size { get; set; }
+    /// <summary>
+    /// Pixel offset of the surface's graphic within its texture (atlas).
+    /// </summary>
     Position TextureOffset { get; set; }
+	/// <summary>
+	/// Size of the surface's graphic within its texture, if different from <see cref="Size"/>.
+	/// </summary>
 	Size? TextureSize { get; set; }
 	/// <summary>
 	/// If 1, the whole surface is covered by the texture.

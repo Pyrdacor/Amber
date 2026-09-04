@@ -30,7 +30,13 @@ public interface IGraphic
     int Height { get; }
     GraphicFormat Format { get; }
 
+    /// <summary>
+    /// Raw pixel data, laid out according to <see cref="Format"/>.
+    /// </summary>
     byte[] GetData();
+    /// <summary>
+    /// Resolves the color of the pixel at the given coordinates (resolving the palette for <see cref="GraphicFormat.PaletteIndices"/>).
+    /// </summary>
     Color GetColorAt(int x, int y);
 }
 

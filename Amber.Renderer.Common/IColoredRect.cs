@@ -9,5 +9,8 @@ public interface IColoredRect : ILayeredDrawable, ISizedDrawable
 
 public interface IColoredRectFactory
 {
+	/// <summary>
+	/// Creates a plain colored rect.
+	/// </summary>
 	IColoredRect Create();
 }

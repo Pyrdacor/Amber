@@ -33,5 +33,9 @@ public interface ISizedDrawable : IDrawable2D
 
 public interface ILayeredDrawable : IDrawable2D
 {
+	/// <summary>
+	/// Manual draw-order value, used instead of the automatic Y-based ordering
+	/// for layers with <see cref="LayerFeatures.DisplayLayers"/>.
+	/// </summary>
 	byte DisplayLayer { get; set; }
 }
