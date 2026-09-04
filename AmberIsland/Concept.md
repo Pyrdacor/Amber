@@ -98,7 +98,7 @@ Events just store:
 # Names
 
 Names of maps, characters, items, etc are not stored in those object data.
-Instead they are provided in text/name containes with an id and text. This
+Instead they are provided in text/name containers with an id and text. This
 also makes translations much more easy.
 
 # Monsters
