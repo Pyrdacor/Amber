@@ -5,14 +5,17 @@ namespace Amberstar.Game.Events
 {
 	internal class DamageFieldEvent(IDamageFieldEvent @event, int eventIndex) : Event(@event, eventIndex), IDamageFieldEvent, ITextEvent
     {
-        public byte Damage { get; }
+        public byte Damage => @event.Damage;
 
-        public TargetGender TargetGender { get; }
+        public TargetGender TargetGender => @event.TargetGender;
 
         public byte TextIndex => @event.TextIndex;
 
         public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
+            if (trigger != EventTrigger.Move)
+                return false;
+
 			Gender? allowedGenders = TargetGender switch
 			{
 				TargetGender.Male => Gender.Male,
@@ -24,7 +27,7 @@ namespace Amberstar.Game.Events
 
             void DamageParty() => game.ForeachPartyMember(DamagePartyMember, null, true, allowedGenders);
 
-            if (TextIndex != 0)
+            if (this.HasText())
 				game.ShowText(DamageParty);
 			else
                 DamageParty();

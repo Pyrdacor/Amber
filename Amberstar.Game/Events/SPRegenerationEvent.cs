@@ -13,13 +13,16 @@ namespace Amberstar.Game.Events
 
         public override bool Handle(EventTrigger trigger, Game game, IMapEventProvider eventProvider)
 		{
+            if (trigger != EventTrigger.Move)
+                return false;
+
             ForeachPartyMemberAction regenerate = Fill
 				? partyMember => partyMember.FillSpellPoints()
 				: partyMember => partyMember.HealSpellPoints(Amount);
 
 			void Regenerate() => game.ForeachPartyMember(regenerate, true);
 
-            if (TextIndex != 0)
+            if (this.HasText())
 				game.ShowText(Regenerate);
 			else
 				Regenerate();

@@ -22,7 +22,7 @@ namespace Amberstar.Game.Events
 
 			void Teleport() => game.Teleport(X, Y, Direction, MapIndex, false);
 
-            if (TextIndex != 0)
+            if (this.HasText())
 				game.ShowText(Teleport);
 			else
 				Teleport();

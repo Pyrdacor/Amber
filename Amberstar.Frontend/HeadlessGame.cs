@@ -96,7 +96,16 @@ public sealed class HeadlessGame : IScenarioScriptHost, IDisposable
 				break;
 			}
 
-			Step();
+			try
+			{
+				Step();
+			}
+			catch (Exception ex)
+			{
+				// report the crash like a failed check, so all scripts can run
+				script.Abort($"the game crashed: {ex}", Game);
+				break;
+			}
 		}
 
 		(output ?? Console.WriteLine)(script.Summary);
