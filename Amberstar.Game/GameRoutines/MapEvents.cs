@@ -19,30 +19,35 @@ partial class Game
         { TrapType.Disease, (false, Condition.Diseased, Message.TrapSpores) },
     };
 
-    internal void SaveEvent(int eventIndex)
+    internal void SaveEvent(IEvent @event)
 	{
-		// Note: This assumes the event with index eventIndex is on the
-		// map of the current event provider or as a fallback on the same
-		// map as the player. Important for world maps and map transitions.
-		State.SaveEvent(EventHandler.CurrentEventMapIndex, eventIndex);
+		if (@event.SaveIndex == 0)
+			return;
+
+		// Note: This assumes the event is on the map of the current event
+		// provider or as a fallback on the same map as the player.
+		// Important for world maps and map transitions.
+		State.SetEventBit(EventHandler.CurrentEventMapIndex, @event.SaveIndex, true);
 	}
 
-	internal bool IsEventActive(IMap map, int eventIndex, IEvent @event)
+	internal bool IsEventActive(IMap map, IEvent @event)
 	{
 		// Note: Saved (inactive) chest events just mean "Chest is open now". The event is never removed.
 		// Note: Saved (inactive) door_exit events are still executed to trigger the exit event (mostly map exits).
 		if (@event is IChestEvent || @event is IDoorExitEvent)
 			return true;
 
-		return State.IsEventActive(map.Index, eventIndex);
+		return !IsEventSaved(map.Index, @event);
 	}
+
+	internal bool IsEventSaved(int mapIndex, IEvent @event) => @event.SaveIndex != 0 && State.IsEventBitSet(mapIndex, @event.SaveIndex);
 
 	internal bool IsCurrentEventSaved()
 	{
         if (EventHandler.CurrentEvent is not Event @event)
             return false;
 
-        return !State.IsEventActive(EventHandler.CurrentEventMapIndex, @event.Index);
+        return IsEventSaved(EventHandler.CurrentEventMapIndex, @event);
     }
 
 	public Size? GetMapSize(int mapIndex)

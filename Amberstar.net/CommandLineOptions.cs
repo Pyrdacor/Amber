@@ -9,7 +9,7 @@ internal sealed class CommandLineOptions
 	public string? ScriptPath { get; private set; }
 	public bool Headless { get; private set; }
 	public int? RandomSeed { get; private set; }
-	public double MaxScriptTime { get; private set; } = 600.0;
+	public double? MaxScriptTime { get; private set; }
 	public bool ShowHelp { get; private set; }
 
 	/// <summary>
@@ -87,6 +87,7 @@ internal sealed class CommandLineOptions
 		Console.WriteLine("  --headless         Run the script without a window as fast as possible.");
 		Console.WriteLine("  --seed <number>    Seed for random numbers (headless default: 0).");
 		Console.WriteLine("  --max-time <s>     Maximum game time in seconds for a headless script (default: 600).");
+		Console.WriteLine("                     Data, seed and maximum time can also be given by script directives.");
 		Console.WriteLine("  --help             Show this help.");
 		Console.WriteLine();
 		Console.WriteLine("The exit code is 1 if a script check failed or the script timed out.");

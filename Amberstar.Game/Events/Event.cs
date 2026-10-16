@@ -33,6 +33,8 @@ namespace Amberstar.Game.Events
 
 		public EventType Type => @event.Type;
 
+		public byte SaveIndex => @event.SaveIndex;
+
 		public bool SaveEvent => @event.SaveEvent;
 
 		public virtual bool AutoSave => true;

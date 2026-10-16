@@ -33,6 +33,7 @@ public static class Cheats
         AddCommand("teleport", Teleport, "Teleports to a new location", 1, "mapIndex", "x", "y", new("dir", "0: Up, 1: Right, 2: Down, 3: Left"));
         AddCommand("maps", Maps, "Shows all maps", 0, "partialMapNameOrIndex");
         AddCommand("where", Where, "Shows current location", 0);
+        AddCommand("events", Events, "Shows the events of a map with their positions and raw data", 0, "mapIndex");
         AddCommand("gold", Gold, "Gives gold", 1, "amount");
         AddCommand("food", Food, "Gives food", 1, "amount");
     }
@@ -235,6 +236,24 @@ public static class Cheats
         var mapName = game.GetMaps().FirstOrDefault(map => map.Index == mapIndex).Name;
 
         Console.WriteLine($"At {1 + position.X}, {1 + position.Y} looking {direction} on map {mapIndex:000} ({mapName})");
+    }
+
+    private static void Events(G game, string[] args)
+    {
+        int mapIndex = args.Length == 0 ? game.GetCurrentLocation().MapIndex : ParseNumber(args[0], -1);
+        var events = game.ScriptDescribeMapEvents(mapIndex);
+
+        if (events == null)
+        {
+            Console.WriteLine($"Map {mapIndex} does not exist. Use 'maps'");
+            return;
+        }
+
+        if (events.Count == 0)
+            Console.WriteLine($"Map {mapIndex} has no events.");
+
+        foreach (var description in events)
+            Console.WriteLine(description);
     }
 
     private static void Gold(G game, string[] args)

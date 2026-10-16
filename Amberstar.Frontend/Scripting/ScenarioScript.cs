@@ -17,6 +17,11 @@ using G = Game.Game;
 /// also check it if an expected value is given. Numeric values can be checked
 /// against the last printed value of the same thing with +n, -n, + or -.
 ///
+/// Directives at the beginning of a script (used by the command line and the tests):
+///   #! data &lt;path&gt;             game data, e.g. English/AmberfilesST (default German/AmberfilesST)
+///   #! seed &lt;number&gt;           seed for random numbers (default 0)
+///   #! maxtime &lt;seconds&gt;       maximum game time for headless runs (default 600)
+///
 /// Commands (one per line, # starts a comment):
 ///   wait &lt;ms&gt;                 wait some milliseconds of game time
 ///   waitidle [timeout ms]     wait until a map is shown and the player could move (default timeout 10000)
@@ -50,9 +55,12 @@ using G = Game.Game;
 ///   dir [direction]           print the party direction, optionally check it
 ///   screen [type]             print the active screen type, optionally check it
 ///   eventactive &lt;map&gt; &lt;event&gt; [0|1]
-///                             print if a map event (1-based) is still active, optionally check it
-///   seteventactive &lt;map&gt; &lt;event&gt; &lt;0|1&gt;
-///                             activate or deactivate a map event
+///                             print if a map event (1-based) would be executed, optionally check it
+///   eventbit &lt;map&gt; &lt;save index&gt; [0|1]
+///                             print an event bit (by the save index of an event, see the cheat 'events'),
+///                             optionally check it. A set bit disables all events with this save index.
+///   seteventbit &lt;map&gt; &lt;save index&gt; &lt;0|1&gt;
+///                             set or clear an event bit
 ///   questbit &lt;bit&gt; [0|1]      print a quest bit, optionally check it
 ///   setquestbit &lt;bit&gt; &lt;0|1&gt;   set or clear a quest bit
 ///   charactive &lt;map&gt; &lt;char&gt; [0|1]
@@ -113,17 +121,45 @@ public sealed class ScenarioScript
 			++lineNumber;
 			string command = line.Trim();
 
-			if (command.Length != 0 && !command.StartsWith('#'))
+			if (command.StartsWith("#!"))
+				ParseDirective(command[2..].Trim());
+			else if (command.Length != 0 && !command.StartsWith('#'))
 				commands.Enqueue((lineNumber, command));
 		}
 	}
 
 	public static ScenarioScript FromFile(string path, Action<string>? output = null) => new(File.ReadAllLines(path), output);
 
+	public string? DataPath { get; private set; }
+	public int? RandomSeed { get; private set; }
+	public double? MaxGameSeconds { get; private set; }
 	public int Checks { get; private set; } = 0;
 	public int Failures { get; private set; } = 0;
 	public bool Finished => exited || (commands.Count == 0 && wait == null && movement == null && time >= continueTime);
 	public string Summary => $"Script finished: {Checks - Failures} of {Checks} checks passed, {Failures} failed.";
+
+	void ParseDirective(string directive)
+	{
+		var parts = directive.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+		if (parts.Length != 2)
+			throw new FormatException($"invalid script directive '{directive}'");
+
+		switch (parts[0].ToLowerInvariant())
+		{
+			case "data":
+				DataPath = parts[1].Trim();
+				break;
+			case "seed":
+				RandomSeed = int.Parse(parts[1]);
+				break;
+			case "maxtime":
+				MaxGameSeconds = double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+				break;
+			default:
+				throw new FormatException($"unknown script directive '{parts[0]}'");
+		}
+	}
 
 	/// <summary>
 	/// Aborts the script with a failure, e.g. if it took too long.
@@ -337,10 +373,20 @@ public sealed class ScenarioScript
 				break;
 			}
 			case "eventactive":
-				CheckBool($"eventactive {Arg(0)} {Arg(1)}", game.ScriptIsEventActive(Arg(0), Arg(1)), OptionalBool(2));
+			{
+				var active = game.ScriptIsEventActive(Arg(0), Arg(1));
+
+				if (active == null)
+					Report(false, $"event {Arg(1)} of map {Arg(0)} does not exist");
+				else
+					CheckBool($"eventactive {Arg(0)} {Arg(1)}", active.Value, OptionalBool(2));
 				break;
-			case "seteventactive":
-				game.ScriptSetEventActive(Arg(0), Arg(1), ParseBool(args[2]));
+			}
+			case "eventbit":
+				CheckBool($"eventbit {Arg(0)} {Arg(1)}", game.ScriptGetEventBit(Arg(0), Arg(1)), OptionalBool(2));
+				break;
+			case "seteventbit":
+				game.ScriptSetEventBit(Arg(0), Arg(1), ParseBool(args[2]));
 				break;
 			case "questbit":
 				CheckBool($"questbit {Arg(0)}", game.ScriptIsQuestBitSet(Arg(0)), OptionalBool(1));

@@ -53,7 +53,9 @@ class Program
 
 	static int RunHeadless(CommandLineOptions options)
 	{
-		var dataPath = GameSetup.FindDataPath(options.DataPath);
+		var script = ScenarioScript.FromFile(options.ScriptPath!);
+		// command line options win over the script directives
+		var dataPath = GameSetup.FindDataPath(options.DataPath ?? script.DataPath);
 
 		if (dataPath == null)
 		{
@@ -61,8 +63,8 @@ class Program
 			return 1;
 		}
 
-		using var game = new HeadlessGame(dataPath, options.RandomSeed ?? 0);
-		var result = game.RunScript(ScenarioScript.FromFile(options.ScriptPath!), options.MaxScriptTime);
+		using var game = new HeadlessGame(dataPath, options.RandomSeed ?? script.RandomSeed ?? 0);
+		var result = game.RunScript(script, options.MaxScriptTime ?? script.MaxGameSeconds ?? 600.0);
 
 		return result.Success ? 0 : 1;
 	}

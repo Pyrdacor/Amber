@@ -43,7 +43,13 @@ internal abstract class Event(EventData eventData) : IEvent
 
 	public EventType Type => eventData.Type;
 
+	public byte SaveIndex => eventData.Save;
+
 	public virtual bool SaveEvent => eventData.Save != 0;
+
+	// raw data for debugging (e.g. the cheat 'events')
+	public override string ToString() =>
+		$"{Type} [{eventData.Byte1} {eventData.Byte2} {eventData.Byte3} {eventData.Byte4}, save {eventData.Save}, {eventData.Word6} {eventData.Word8}]";
 
 	public static unsafe Event ReadEvent(IDataReader reader)
 	{

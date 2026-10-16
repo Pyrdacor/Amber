@@ -21,7 +21,7 @@ internal class DoorScreen : LockedScreen<DoorEvent>
 
     protected override void Unlocked(Message message)
     {
-        Game.SaveEvent(LockedEvent.Index);
+        Game.SaveEvent(LockedEvent);
         ShowMessage(message, true, true);
     }
 

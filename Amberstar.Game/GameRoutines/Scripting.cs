@@ -140,9 +140,67 @@ partial class Game
 		return null;
 	}
 
-	public bool ScriptIsEventActive(int mapIndex, int eventIndex) => State.IsEventActive(mapIndex, eventIndex);
+	/// <summary>
+	/// Describes all events of a map with their 1-based index, active state,
+	/// 1-based positions and raw data.
+	/// </summary>
+	public List<string>? ScriptDescribeMapEvents(int mapIndex)
+	{
+		if (GetMapSize(mapIndex) == null)
+			return null;
 
-	public void ScriptSetEventActive(int mapIndex, int eventIndex, bool active) => State.SetEventActive(mapIndex, eventIndex, active);
+		var map = AssetProvider.MapLoader.LoadMap(mapIndex);
+		var eventTiles = map switch
+		{
+			IMap2D map2D => map2D.Tiles.Select(tile => tile.Event).ToArray(),
+			IMap3D map3D => map3D.Tiles.Select(tile => tile.Event).ToArray(),
+			_ => []
+		};
+		var descriptions = new List<string>();
+
+		for (int i = 0; i < map.Events.Count; i++)
+		{
+			int eventIndex = i + 1;
+			var positions = eventTiles
+				.Select((tileEvent, tileIndex) => (tileEvent, tileIndex))
+				.Where(tile => tile.tileEvent == eventIndex)
+				.Select(tile => $"{1 + tile.tileIndex % map.Width},{1 + tile.tileIndex / map.Width}")
+				.ToList();
+			string active = IsEventActive(map, map.Events[i]) ? "active" : "inactive";
+			string at = positions.Count == 0 ? "nowhere" : string.Join(" ", positions.Take(8)) + (positions.Count > 8 ? $" (+{positions.Count - 8})" : "");
+
+			descriptions.Add($"{eventIndex:000} {active,-8} {map.Events[i]} at {at}");
+		}
+
+		// the event list is filled up with empty events
+		while (descriptions.Count != 0 && descriptions[^1].EndsWith("[0 0 0 0, save 0, 0 0] at nowhere"))
+			descriptions.RemoveAt(descriptions.Count - 1);
+
+		return descriptions;
+	}
+
+	/// <summary>
+	/// Checks if a map event (1-based index) would be executed. Returns null if it doesn't exist.
+	/// </summary>
+	public bool? ScriptIsEventActive(int mapIndex, int eventIndex)
+	{
+		if (GetMapSize(mapIndex) == null)
+			return null;
+
+		var map = AssetProvider.MapLoader.LoadMap(mapIndex);
+
+		if (eventIndex < 1 || eventIndex > map.Events.Count)
+			return null;
+
+		return IsEventActive(map, map.Events[eventIndex - 1]);
+	}
+
+	/// <summary>
+	/// Gets an event bit by the save index of the events (not the event index).
+	/// </summary>
+	public bool ScriptGetEventBit(int mapIndex, int saveIndex) => State.IsEventBitSet(mapIndex, saveIndex);
+
+	public void ScriptSetEventBit(int mapIndex, int saveIndex, bool set) => State.SetEventBit(mapIndex, saveIndex, set);
 
 	public bool ScriptIsQuestBitSet(int bit) => State.IsQuestBitSet(bit);
 

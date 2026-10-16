@@ -18,7 +18,7 @@ namespace Amberstar.Game.Events
 
 			if (result && @event.SaveEvent && @event.AutoSave)
 			{
-				game.SaveEvent(@event.Index);
+				game.SaveEvent(@event);
             }
 
 			return result;

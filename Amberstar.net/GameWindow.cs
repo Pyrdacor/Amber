@@ -270,11 +270,16 @@ namespace Amberstar
 
             renderer = new(this, new Size(Width, Height), new Size(320, 200));
 
-            var dataPath = GameSetup.FindDataPath(options.DataPath)
+            if (options.ScriptPath != null)
+                scenarioScript = ScenarioScript.FromFile(options.ScriptPath);
+
+            var dataPath = GameSetup.FindDataPath(options.DataPath ?? scenarioScript?.DataPath)
                 ?? throw new DirectoryNotFoundException("Game data not found. Use '--data <path>' or the environment variable " + GameSetup.DataPathEnvironmentVariable + ".");
 
-            if (options.RandomSeed != null)
-                Game.Game.SetRandomSeed(options.RandomSeed.Value);
+            var randomSeed = options.RandomSeed ?? scenarioScript?.RandomSeed;
+
+            if (randomSeed != null)
+                Game.Game.SetRandomSeed(randomSeed.Value);
 
             var audioOuput = new AudioOutput();
             var configuration = new Configuration(); // TODO: load it later!
@@ -282,9 +287,6 @@ namespace Amberstar
             game = GameSetup.CreateGame(renderer, dataPath, audioOuput, configuration, QueryPressedKeys, SetMousePosition);
 
             game.QuitRequested += window.Close;
-
-            if (options.ScriptPath != null)
-                scenarioScript = ScenarioScript.FromFile(options.ScriptPath);
 
             StartCheatInputTask();
         }

@@ -25,7 +25,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
     {
         AfterWaitClickAction = ShowOpenChest;
 
-        Game.SaveEvent(LockedEvent.Index);
+        Game.SaveEvent(LockedEvent);
         ShowMessage(message, true);
     }
 

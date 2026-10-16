@@ -471,14 +471,12 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public void SetQuestBit(int bit, bool set = true) => SetBit(QuestBits, bit, set);
 
-    // NOTE: This assumes that eventIndex is 1-based!
-    static int BitFromMapEventIndex(int mapIndex, int eventIndex) => (mapIndex - 1) * 65 + eventIndex;
+    // NOTE: The save index is given by the event data (see IEvent.SaveIndex), it is not the event index!
+    static int BitFromMapEventIndex(int mapIndex, int saveIndex) => (mapIndex - 1) * 65 + saveIndex;
 
-	public bool IsEventActive(int mapIndex, int eventIndex) => !IsBitSet(EventBits, BitFromMapEventIndex(mapIndex, eventIndex));
+	public bool IsEventBitSet(int mapIndex, int saveIndex) => IsBitSet(EventBits, BitFromMapEventIndex(mapIndex, saveIndex));
 
-	public void SaveEvent(int mapIndex, int eventIndex) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, eventIndex), true);
-
-	public void SetEventActive(int mapIndex, int eventIndex, bool active) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, eventIndex), !active);
+	public void SetEventBit(int mapIndex, int saveIndex, bool set) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, saveIndex), set);
 
     // NOTE: This assumes that mapCharIndex is 1-based!
     static int BitFromMapCharIndex(int mapIndex, int mapCharIndex) => (mapIndex - 1) * 24 + mapCharIndex;

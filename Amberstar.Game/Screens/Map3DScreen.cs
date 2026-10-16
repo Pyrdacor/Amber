@@ -448,7 +448,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		// Check for events
 		var eventIndex = map!.Tiles[playerPosition.X + playerPosition.Y * map.Width].Event;
 
-		if (eventIndex != 0 && Game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
+		if (eventIndex != 0 && Game.IsEventActive(map, map.Events[eventIndex - 1]))
 		{
 			var @event = map.Events[eventIndex - 1];
             var mapEvent = Event.CreateEvent(@event, eventIndex);
@@ -849,7 +849,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 		int eventIndex = map.Tiles[x + y * map.Width].Event;
 
-		if (eventIndex == 0 || !Game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
+		if (eventIndex == 0 || !Game.IsEventActive(map, map.Events[eventIndex - 1]))
 			return false;
 
 		return Game.EventHandler.HandleEvent(trigger, Event.CreateEvent(map.Events[eventIndex - 1], eventIndex), map);
