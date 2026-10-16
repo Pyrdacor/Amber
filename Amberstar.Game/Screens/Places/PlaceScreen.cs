@@ -363,8 +363,16 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 			return true;
 		}
 
+		if (PlaceMouseDown(position, buttons))
+			return true;
+
 		return base.MouseDown(position, buttons, keyModifiers);
 	}
+
+	/// <summary>
+	/// Handles clicks of the specific place (e.g. on items or portraits).
+	/// </summary>
+	protected virtual bool PlaceMouseDown(Position position, MouseButtons buttons) => false;
 
 	internal class GiveGoldScreen : InputAmountScreen
 	{

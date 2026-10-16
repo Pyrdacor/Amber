@@ -1,0 +1,39 @@
+# The healer in Twinlake (map 67, 10,26) heals conditions of the patient (the active member).
+waittext
+dismissall
+setcondition 1 Poisoned 1
+setcondition 1 Blind 1
+cheat gold 2000
+teleport 67 10 26
+waitscreen Healer
+# --- without gold
+cleartexts
+slot 1
+textshown NICHT GENUG GOLD
+dismiss
+# --- heal the poison (first slot)
+button 6
+placegold
+slot 1
+waitscreen Confirmation
+yes
+condition 1 Poisoned 0
+condition 1 Blind 1
+placegold -
+# --- the blindness is in the first slot now
+slot 1
+waitscreen Confirmation
+yes
+condition 1 Blind 0
+# --- resurrection
+setcondition 1 Dead 1
+setvalue 1 hp 0
+portrait 1
+slot 1
+waitscreen Confirmation
+yes
+condition 1 Dead 0
+value 1 hp 1
+button 7
+button 2
+waitidle

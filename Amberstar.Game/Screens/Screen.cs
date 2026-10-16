@@ -43,6 +43,7 @@ public enum ScreenType
     Riddlemouth,
     // Place sub screens and places
     Inn,
+    Healer,
     TransportDealer,
     FoodDealer,
     PlaceGiveGold,
@@ -678,6 +679,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Conversation => new ConversationScreen(),
 			ScreenType.Place => new UnfinishedPlaceScreen(),
 			ScreenType.Inn => new InnScreen(),
+			ScreenType.Healer => new HealerScreen(),
 			ScreenType.TransportDealer => new TransportDealerScreen(),
 			ScreenType.FoodDealer => new FoodDealerScreen(),
 			ScreenType.PlaceGiveGold => new PlaceScreen.GiveGoldScreen(),

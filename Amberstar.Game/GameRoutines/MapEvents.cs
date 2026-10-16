@@ -213,6 +213,7 @@ partial class Game
 		var screenType = placeEvent.PlaceType switch
 		{
 			PlaceType.Inn => ScreenType.Inn,
+			PlaceType.Healer => ScreenType.Healer,
 			PlaceType.HorseDealer or PlaceType.RaftDealer or PlaceType.ShipDealer => ScreenType.TransportDealer,
 			PlaceType.FoodDealer => ScreenType.FoodDealer,
 			_ => ScreenType.Place

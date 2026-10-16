@@ -46,6 +46,7 @@ using G = Game.Game;
 ///                             print if a button is enabled, optionally check it
 ///   amount &lt;amount&gt;          enter an amount in the shown amount input window
 ///   portrait &lt;slot&gt;          click the portrait of a party member (e.g. to give gold)
+///   slot &lt;index&gt;             click one of the 12 item slots (1-based) of doors, chests or places
 ///   placegold [amount]        print the gold of the shown place, optionally check it
 ///   placefood [amount]        print the food of the shown food dealer, optionally check it
 ///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
@@ -328,6 +329,13 @@ public sealed class ScenarioScript
 				Click(game, new Position(16 + (Arg(0) - 1) * 48 + 16, 17), MouseButtons.Left);
 				continueTime = time + 1;
 				break;
+			case "slot":
+			{
+				int slot = Arg(0) - 1;
+				Click(game, new Position(16 + (slot % 6) * 32 + 8, 37 + 108 + (slot / 6) * 32 + 8), MouseButtons.Left);
+				continueTime = time + 1;
+				break;
+			}
 			case "placegold":
 			case "placefood":
 			{
