@@ -14,7 +14,7 @@ buttonenabled 3 0
 settime 8
 setvalue 1 maxhp 50
 setvalue 1 hp 1
-value 1 food 0
+setvalue 1 food 0
 hour
 cleartexts
 button 6

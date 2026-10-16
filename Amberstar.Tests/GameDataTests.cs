@@ -157,6 +157,30 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void PartyMemberRoundtrip(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+		var partyMembers = assetProvider.PersonLoader.GetPartyMemberCopies();
+
+		Assert.NotEmpty(partyMembers);
+
+		foreach (var (index, partyMember) in partyMembers)
+		{
+			var reader = assetProvider.GetAsset(new AssetIdentifier(AssetType.Person, index))!.GetReader();
+			reader.Position = 0;
+			var original = reader.ReadBytes(reader.Size);
+			var written = assetProvider.PersonLoader.WritePartyMember(partyMember);
+
+			Assert.True(original.SequenceEqual(written), $"Party member {index} ({partyMember.Name}) differs at offset 0x{original.Zip(written).TakeWhile(pair => pair.First == pair.Second).Count():x}.");
+
+			var copy = assetProvider.PersonLoader.ReadPartyMember(index, written);
+			Assert.Equal(partyMember.Name, copy.Name);
+			Assert.Equal(partyMember.TotalWeight, copy.TotalWeight);
+		}
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void InitialSavegameRoundtrip(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

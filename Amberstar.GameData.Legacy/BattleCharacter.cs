@@ -97,16 +97,17 @@ internal class BattleCharacter : Character, IBattleCharacter
         var bonusAntiMagic = reader.ReadWord();
         var bonusAge = reader.ReadWord();
         var bonusUnusedAttribute = reader.ReadWord();
-        var bonusAttack = reader.ReadByte();
-        var bonusParry = reader.ReadByte();
-        var bonusSwim = reader.ReadByte();
-        var bonusListen = reader.ReadByte();
-        var bonusFindTraps = reader.ReadByte();
-        var bonusDisarmTraps = reader.ReadByte();
-        var bonusPickLocks = reader.ReadByte();
-        var bonusSearch = reader.ReadByte();
-        var bonusReadMagic = reader.ReadByte();
-        var bonusUseMagic = reader.ReadByte();
+        // Note: The skill bonus values are words in contrast to the skill values.
+        var bonusAttack = reader.ReadWord();
+        var bonusParry = reader.ReadWord();
+        var bonusSwim = reader.ReadWord();
+        var bonusListen = reader.ReadWord();
+        var bonusFindTraps = reader.ReadWord();
+        var bonusDisarmTraps = reader.ReadWord();
+        var bonusPickLocks = reader.ReadWord();
+        var bonusSearch = reader.ReadWord();
+        var bonusReadMagic = reader.ReadWord();
+        var bonusUseMagic = reader.ReadWord();
 
         character.attributes[Attribute.Strength] = new(currentStrength, maxStrength, bonusStrength);
         character.attributes[Attribute.Intelligence] = new(currentIntelligence, maxIntelligence, bonusIntelligence);

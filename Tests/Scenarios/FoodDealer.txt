@@ -1,8 +1,9 @@
+# The hero starts with 50 gold.
 # Food dealer in Twinlake (map 67, 20,16): pool the gold, buy food and distribute it.
 waittext
 dismissall
 cheat gold 200
-value 1 gold 200
+value 1 gold 250
 value 1 food
 teleport 67 20 16
 waitscreen FoodDealer
@@ -10,7 +11,7 @@ placegold 0
 buttonenabled 3 0
 # --- pool the gold of the party
 button 6
-placegold 200
+placegold 250
 value 1 gold 0
 buttonenabled 3 1
 # --- buy 5 rations

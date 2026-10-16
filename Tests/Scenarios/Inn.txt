@@ -5,7 +5,7 @@ dismissall
 cheat gold 500
 setvalue 1 maxhp 50
 setvalue 1 hp 1
-value 1 food 0
+value 1 food 5
 teleport 71 18 29
 waitscreen Inn
 buttonenabled 3 0
@@ -26,7 +26,7 @@ dismiss
 textshown ERHÄLT 49 LP
 dismiss
 value 1 hp 50
-value 1 food 0
+value 1 food 5
 # --- the party leaves the inn
 button 2
 waitidle

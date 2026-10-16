@@ -1,3 +1,4 @@
+# The hero starts with 50 gold.
 # The gold pile of places (here the warrior guild in Twinlake, map 67, 28,18): pool the gold,
 # give some to a party member and leave the rest at the place.
 waittext
@@ -6,14 +7,14 @@ cheat gold 100
 teleport 67 28 18
 waitscreen Guild
 button 6
-placegold 100
+placegold 150
 value 1 gold 0
 # --- give 40 gold to the hero
 button 8
 waitscreen PlaceGiveGold
 amount 40
 portrait 1
-placegold 60
+placegold 110
 value 1 gold 40
 # --- leaving with gold left behind (the gold stays at the guild)
 button 2

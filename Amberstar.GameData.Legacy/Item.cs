@@ -120,11 +120,11 @@ internal class Item : IItem
         };
     }
 
+    // Note: The order must be the same as in ItemLoader.ReadItem.
     public void Write(IDataWriter dataWriter)
     {
-        dataWriter.Write((word)Index);
-        dataWriter.Write((byte)Type);
         dataWriter.Write((byte)GraphicIndex);
+        dataWriter.Write((byte)Type);
         dataWriter.Write((byte)UsedAmmoType);
         dataWriter.Write((byte)Genders);
         dataWriter.Write((byte)Hands);
@@ -156,6 +156,7 @@ internal class Item : IItem
         dataWriter.Write((word)UsableClasses);
         dataWriter.Write((word)BuyPrice);
         dataWriter.Write((word)Weight);
+        dataWriter.Write((word)Index);
         dataWriter.Write((word)NameIndex);
     }
 }

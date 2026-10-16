@@ -79,6 +79,9 @@ internal class Character : ICharacter
         character.race = race;
         character.@class = @class;
         character.name = name;
+        character.Level = Level;
+        character.Gold = Gold;
+        character.Food = Food;
 
         for (int i = 0; i < 9; i++)
             character.equipment[(EquipmentSlot)i] = new ItemSlot(equipment[(EquipmentSlot)i].Count, equipment[(EquipmentSlot)i].Item?.Clone());

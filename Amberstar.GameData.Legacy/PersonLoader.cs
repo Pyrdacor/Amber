@@ -49,6 +49,11 @@ namespace Amberstar.GameData.Legacy
             return persons.AsReadOnly();
         }
 
+        public byte[] WritePartyMember(IPartyMember partyMember) => ((PartyMember)partyMember).Write();
+
+        public IPartyMember ReadPartyMember(int index, byte[] data) =>
+            PartyMember.Load(new Asset(new(AssetType.Person, index), new Amber.Serialization.DataReader(data)), textLoader.Value);
+
         public Dictionary<int, IPartyMember> GetPartyMemberCopies()
         {
             var keys = assetProvider.GetAssetKeys(AssetType.Person);
