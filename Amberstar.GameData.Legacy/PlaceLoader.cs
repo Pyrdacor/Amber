@@ -8,6 +8,22 @@ namespace Amberstar.GameData.Legacy;
 internal class PlaceLoader(Amber.Assets.Common.IAssetProvider assetProvider) : IPlaceLoader
 {
 	private readonly Dictionary<int, Place> places = [];
+	private readonly Dictionary<int, IItem?[]> wares = [];
+
+	// The wares have the same format as chests (12 items).
+	public IItem?[] LoadMerchantWares(int waresIndex)
+	{
+		if (wares.TryGetValue(waresIndex, out var items))
+			return items;
+
+		var asset = assetProvider.GetAsset(new(AssetType.Merchant, waresIndex))
+			?? throw new AmberException(ExceptionScope.Data, $"Merchant wares {waresIndex} not found.");
+
+		items = Chest.Load(asset).Items;
+		wares.Add(waresIndex, items);
+
+		return items;
+	}
 
 	public IPlace LoadPlace(PlaceType placeType, int index)
 	{

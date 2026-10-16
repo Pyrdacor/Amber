@@ -215,6 +215,7 @@ partial class Game
 			PlaceType.Inn => ScreenType.Inn,
 			PlaceType.Healer => ScreenType.Healer,
 			PlaceType.Sage => ScreenType.Sage,
+			PlaceType.Merchant or PlaceType.Library => ScreenType.Merchant,
 			PlaceType.HorseDealer or PlaceType.RaftDealer or PlaceType.ShipDealer => ScreenType.TransportDealer,
 			PlaceType.FoodDealer => ScreenType.FoodDealer,
 			_ => ScreenType.Place

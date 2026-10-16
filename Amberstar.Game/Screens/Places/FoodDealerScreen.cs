@@ -60,8 +60,8 @@ internal sealed class FoodDealerScreen : PlaceScreen
 
 		PlaceFood = 0;
 
-		var gold = Game.LoadUIText(UIText.Gold).GetString();
-		ShowMessage(Game.AssetProvider.TextLoader.FromString($"{Game.LoadMessageText(Message.FoodPrice).GetString()} {Place.Data.Price} {gold}"), false);
+		var gold = Game.GetFullText(Game.LoadUIText(UIText.Gold));
+		ShowMessage(Game.AssetProvider.TextLoader.FromString($"{Game.GetFullText(Game.LoadMessageText(Message.FoodPrice))} {Place.Data.Price} {gold}"), false);
 	}
 
 	public override void ScreenPopped(Screen screen)
@@ -71,8 +71,8 @@ internal sealed class FoodDealerScreen : PlaceScreen
 		if (screen is BuyFoodScreen && Game.CurrentAmount > 0)
 		{
 			int amount = Game.CurrentAmount;
-			var food = Game.LoadUIText(UIText.Food).GetString();
-			var question = Game.AssetProvider.TextLoader.FromString($"{food} x {amount} {Game.LoadMessageText(Message.PriceForItem).GetString()}");
+			var food = Game.GetFullText(Game.LoadUIText(UIText.Food));
+			var question = Game.AssetProvider.TextLoader.FromString($"{food} x {amount} {Game.GetFullText(Game.LoadMessageText(Message.PriceForItem))}");
 
 			AskToBuy(question, amount * Place.Data.Price, () => PlaceFood += amount);
 		}

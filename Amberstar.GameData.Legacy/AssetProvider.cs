@@ -409,6 +409,7 @@ public class AssetProvider : IAssetProvider
             AssetType.MonsterGroup => "MON_DATA.AMB",
             AssetType.Person => "CHARDATA.AMB",
             AssetType.Chest => "CHESTDAT.AMB",
+            AssetType.Merchant => "WARESDAT.AMB",
             _ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],
 		};
 	}

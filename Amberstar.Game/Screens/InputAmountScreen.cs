@@ -14,6 +14,9 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
     const byte WindowDisplayLayer = 150;
     const byte ControlDisplayLayer = 175;
     Label? inputValue;
+    Image? image;
+    Label? inputLabel;
+    Label? messageLabel;
     Button? upButton;
     Button? downButton;
 
@@ -24,6 +27,14 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
     protected abstract Message Message { get; }
 
     public override bool CloseOnEscape { get; } = false;
+
+    /// <summary>
+    /// If true, the graphic and the texts are updated whenever the
+    /// window is opened (e.g. for the amount of different items).
+    /// </summary>
+    protected virtual bool DynamicContent => false;
+
+    const int MaxDynamicTextWidth = 128;
 
     public override void Init()
     {
@@ -39,7 +50,7 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
             return label;
         }
 
-        Label CreateFixedLabel(int x, int y, IText text) => CreateLabel(x, y, Game.GetMaxLineWidth(text), text);
+        Label CreateFixedLabel(int x, int y, IText text) => CreateLabel(x, y, DynamicContent ? MaxDynamicTextWidth : Game.GetMaxLineWidth(text), text);
 
         int x = WindowX + 16;
         int y = WindowY + 16;
@@ -47,13 +58,13 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
         // Image background
         AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), ControlDisplayLayer, true);
 
-        var image = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(Graphic), ControlDisplayLayer + 5);
+        image = AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetItemGraphicIndex(Graphic), ControlDisplayLayer + 5);
         image.PaletteIndex = Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item];
 
         x += 16 + 3;
         y += 2;
 
-        var inputLabel = CreateFixedLabel(x, y, InputLabelText);
+        inputLabel = CreateFixedLabel(x, y, InputLabelText);
         inputLabel.Visible = true;
 
         y += 11;
@@ -65,8 +76,8 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
         y += 9;
 
         var text = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)Message));
-        var message = CreateFixedLabel(x, y, text);
-        message.Visible = true;
+        messageLabel = CreateFixedLabel(x, y, text);
+        messageLabel.Visible = true;
 
         x = WindowX + 16;
         y = WindowY + 48;
@@ -106,6 +117,13 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
 			throw new InvalidOperationException($"{nameof(InputAmountScreen)} needs {nameof(Game.CurrentMaxAmount)} to be set beforehand.");
 
 		base.Open(closeAction);
+
+        if (DynamicContent)
+        {
+            image!.SetTextureIndex(Game.GraphicIndexProvider.GetItemGraphicIndex(Graphic));
+            inputLabel!.SetText(InputLabelText, MaxDynamicTextWidth);
+            messageLabel!.SetText(Game.LoadMessageText(Message), MaxDynamicTextWidth);
+        }
 
         UpdateControls();
     }

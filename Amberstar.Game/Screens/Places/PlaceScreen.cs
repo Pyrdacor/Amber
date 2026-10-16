@@ -33,12 +33,15 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 	bool waitForClick = false;
 	Action? afterClickAction = null;
 	TransferType transfer = TransferType.None;
+	IItem? transferItem = null;
+	Action? itemTransferred = null;
 
 	protected enum TransferType
 	{
 		None,
 		Gold,
-		Food
+		Food,
+		Item
 	}
 
 	protected PlaceEvent PlaceEvent { get; private set; } = null!;
@@ -246,18 +249,43 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 	/// Asks if something should be bought for the given price.
 	/// The price is paid from the gold pile of the place.
 	/// </summary>
-	protected void AskToBuy(IText question, int price, Action bought)
+	protected void AskToBuy(IText question, int price, Action bought) => AskForPrice(question, price, () =>
 	{
-		var gold = Game.LoadUIText(UIText.Gold).GetString();
-		var text = Game.AssetProvider.TextLoader.FromString($"{question.GetString()} {price} {gold}");
+		placeGold -= price;
+		bought();
+		// updates the display and the buttons after the purchase
+		PlaceGold = placeGold;
+	});
 
-		Game.AskForConfirmation(text, () =>
+	/// <summary>
+	/// Asks a question with a price like "... 120 GOLD".
+	/// </summary>
+	protected void AskForPrice(IText question, int price, Action confirmed)
+	{
+		var gold = Game.GetFullText(Game.LoadUIText(UIText.Gold));
+		var text = Game.AssetProvider.TextLoader.FromString($"{Game.GetFullText(question)} {price} {gold}");
+
+		Game.AskForConfirmation(text, confirmed);
+	}
+
+	/// <summary>
+	/// Lets the player give items to a party member by clicking a portrait.
+	/// </summary>
+	protected void StartItemTransfer(IItem item, int count, Action transferred)
+	{
+		if (Game.SetHandIconsByItem(item, count) == 0)
 		{
-			placeGold -= price;
-			bought();
-			// updates the display and the buttons after the purchase
-			PlaceGold = placeGold;
-		});
+			Game.ResetStatusIcons();
+			ShowMessage(Message.NoMemberHasRoomForItem);
+			return;
+		}
+
+		transfer = TransferType.Item;
+		transferItem = item;
+		itemTransferred = transferred;
+		Game.CurrentAmount = count;
+		Game.TrapMouseInPortraitArea();
+		Game.Cursor.CursorType = CursorType.Sword;
 	}
 
 	protected int CountPartyMembers() => Game.State.PartyMembers.Count();
@@ -302,6 +330,7 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 	private void EndTransfer()
 	{
 		transfer = TransferType.None;
+		transferItem = null;
 		Game.CurrentAmount = 0;
 		Game.Cursor.CursorType = CursorType.Sword;
 		Game.UntrapMouse();
@@ -348,6 +377,9 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 		{
 			var transferType = transfer;
 			int amount = Game.CurrentAmount;
+			var item = transferItem;
+			var transferred = itemTransferred;
+			itemTransferred = null;
 			EndTransfer();
 
 			int? slot = buttons == MouseButtons.Left ? Game.TestPartyPortraitHit(position) : null;
@@ -358,6 +390,11 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 					PlaceGold -= amount;
 				else if (transferType == TransferType.Food && Game.TryAddFood(slot.Value, amount))
 					PlaceFood -= amount;
+				else if (transferType == TransferType.Item && Game.TryAddItem(slot.Value, item!, amount))
+				{
+					Game.State.GetPartyMember(slot.Value)!.TotalWeight += (uint)amount * item!.Weight;
+					transferred?.Invoke();
+				}
 			}
 
 			return true;

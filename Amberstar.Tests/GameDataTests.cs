@@ -101,6 +101,23 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void AllMerchantWaresLoad(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+		var keys = assetProvider.GetAssetKeys(AssetType.Merchant);
+
+		Assert.NotEmpty(keys);
+
+		foreach (var key in keys)
+		{
+			var wares = assetProvider.PlaceLoader.LoadMerchantWares(key);
+			Assert.Equal(12, wares.Length);
+			Assert.Contains(wares, ware => ware != null);
+		}
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void InitialSavegameRoundtrip(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

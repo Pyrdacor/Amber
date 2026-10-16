@@ -14,6 +14,12 @@ partial class Game
     internal int CurrentMaxAmount { get; set; } // For amount input screen etc (e.g. gold amount to give)
     internal string? CurrentWord { get; set; }
     internal bool CurrentResult { get; set; } = false;
+    /// <summary>
+    /// Gets the whole text as a string. In contrast to <see cref="IText.GetString"/>
+    /// this contains all text fragments (e.g. all words of a message).
+    /// </summary>
+    internal static string GetFullText(IText text) => string.Join(" ", text.GetParagraphs(1000).Select(lines => string.Join(" ", lines)));
+
     internal IText LoadUIText(UIText uiText) => AssetProvider.TextLoader.LoadText(new(AssetType.UIText, (int)uiText));
     internal IText LoadMessageText(Message message) => AssetProvider.TextLoader.LoadText(new(AssetType.Message, (int)message));
     internal int GetMaxLineLength(IText text)
