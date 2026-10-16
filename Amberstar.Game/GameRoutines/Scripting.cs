@@ -52,9 +52,15 @@ partial class Game
 	public int ScriptMapIndex => State.GetIndexOfMapWithPlayer();
 
 	/// <summary>
-	/// 1-based party position.
+	/// 1-based party position. On world maps it is the position on the
+	/// world map part with the player (see <see cref="ScriptMapIndex"/>).
 	/// </summary>
-	public Position ScriptPartyPosition => State.PartyPosition + new Position(1, 1);
+	public Position ScriptPartyPosition => State.GetPartyPositionOnMapWithPlayer() + new Position(1, 1);
+
+	/// <summary>
+	/// Number of finished map transitions (teleports, map exits, ...).
+	/// </summary>
+	public int ScriptMapTransitions { get; private set; } = 0;
 
 	public Direction ScriptPartyDirection => State.PartyDirection;
 

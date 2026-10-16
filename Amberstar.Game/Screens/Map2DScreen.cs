@@ -1264,13 +1264,14 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 	public static int GetWorldMapIndex(int index, int offsetX, int offsetY)
 	{
-		int currentX = index % WorldMapWidthInMaps;
-		int currentY = index / WorldMapWidthInMaps;
+		// Note: The world map indices are 1-based (1 to 64).
+		int currentX = (index - 1) % WorldMapWidthInMaps;
+		int currentY = (index - 1) / WorldMapWidthInMaps;
 
 		currentX = (currentX + offsetX + WorldMapWidthInMaps) % WorldMapWidthInMaps;
 		currentY = (currentY + offsetY + WorldMapHeightInMaps) % WorldMapHeightInMaps;
 
-		return currentX + currentY * WorldMapWidthInMaps;
+		return 1 + currentX + currentY * WorldMapWidthInMaps;
 	}
 
 	private IEvent? GetEvent(int x, int y, bool onlyActive = true)

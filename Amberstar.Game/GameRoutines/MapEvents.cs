@@ -96,14 +96,19 @@ partial class Game
 		void TransitionToMap()
 		{
 			var map = AssetProvider.MapLoader.LoadMap(mapIndex);
+			bool mapChange = State.GetIndexOfMapWithPlayer() != mapIndex;
 
 			State.SetPartyPosition(x - 1, y - 1);
+
+			if (mapChange)
+				State.ResetLastPosition();
 			if (direction != Direction.Keep)
 				State.PartyDirection = direction;
 			State.MapIndex = mapIndex;
 
 			EnableInput(true);
 			Resume();
+			ScriptMapTransitions++;
 
 			if (map.Type == MapType.Map2D)
 			{

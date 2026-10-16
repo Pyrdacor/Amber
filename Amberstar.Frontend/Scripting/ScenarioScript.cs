@@ -30,6 +30,8 @@ using G = Game.Game;
 ///                             wait until the given screen (e.g. Chest, Conversation) is active (default 10000)
 ///   dismiss                   scroll or close the shown text or end a message which waits for a click (like a click)
 ///   dismissall [timeout ms]   close all texts until the game is idle (default timeout 15000)
+///   closeall [timeout ms]     like dismissall but also answers confirmations with no and leaves all other
+///                             screens like doors, chests or conversations with escape (default timeout 15000)
 ///   yes / no                  answer the shown confirmation window
 ///   answer &lt;word&gt;             answer the shown riddlemouth with a word or a dictionary index like #1615
 ///   word &lt;index&gt; [text]       print a dictionary word, optionally check it
@@ -238,6 +240,9 @@ public sealed class ScenarioScript
 			catch (Exception ex)
 			{
 				Report(false, $"line {lineNumber} failed: {ex.Message} ({game.ScriptState()})");
+
+				foreach (var frame in (ex.StackTrace ?? "").Split(Environment.NewLine).Take(4))
+					output("    " + frame.Trim());
 			}
 		}
 	}
@@ -281,6 +286,9 @@ public sealed class ScenarioScript
 				break;
 			case "dismissall":
 				wait = new("dismissall", time + (OptionalArg(0) ?? 15000), g => g.ScriptIdle, DismissTexts);
+				break;
+			case "closeall":
+				wait = new("closeall", time + (OptionalArg(0) ?? 15000), g => g.ScriptIdle, CloseScreens);
 				break;
 			case "yes":
 			case "no":
@@ -360,10 +368,20 @@ public sealed class ScenarioScript
 				CheckResult(game.ScriptTurn(ParseDirection(args[0])));
 				break;
 			case "teleport":
-				CheckResult(game.ScriptTeleport(Arg(0), Arg(1), Arg(2), args.Length > 3 ? ParseDirection(args[3]) : Direction.Keep));
-				// wait for the new map to be shown
-				wait = new("teleport", time + DefaultTimeout, g => g.ScriptIdle || IsTextShown(g));
+			{
+				// without fading the transition happens immediately
+				int transitions = game.ScriptMapTransitions;
+				var error = game.ScriptTeleport(Arg(0), Arg(1), Arg(2), args.Length > 3 ? ParseDirection(args[3]) : Direction.Keep);
+				CheckResult(error);
+
+				// Wait for the new map. Events at the target may show a text, open a screen
+				// like a chest or even lead to another map.
+				if (error == null)
+				{
+					wait = new("teleport", time + DefaultTimeout, g => !g.ScriptFading && g.ScriptMapTransitions > transitions);
+				}
 				break;
+			}
 			case "trigger":
 				CheckResult(game.ScriptTrigger(args.Length > 2 ? args[2] : "Eye", Arg(0), Arg(1)));
 				continueTime = time + 1;
@@ -571,6 +589,21 @@ public sealed class ScenarioScript
 			wait = null;
 			Report(false, $"dismissall reached a confirmation: {game.ScriptState()}");
 		}
+	}
+
+	void CloseScreens(G game)
+	{
+		if (time - lastDismissTime < DismissInterval || game.ScriptFading || !game.ScriptInputEnabled)
+			return;
+
+		lastDismissTime = time;
+
+		if (game.ScriptWaitingForClick)
+			Click(game, TextClickPosition, MouseButtons.Left);
+		else if (game.ScriptActiveScreen == "Confirmation")
+			game.ScriptAnswer(false);
+		else if (game.ScriptActiveScreen is not ("Map2D" or "Map3D"))
+			PressKey(game, Key.Escape);
 	}
 
 	static void Click(G game, Position position, MouseButtons button)

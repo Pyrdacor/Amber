@@ -172,7 +172,7 @@ namespace Amberstar.Frontend
 
 				if (glyph != null)
 				{
-					runeGlyphTextureIndices.Add((char)i, glyphTextureIndex++);
+					runeGlyphTextureIndices.Add((char)i, glyphTextureIndex);
 					graphics.Add(glyphTextureIndex++, glyph);
 				}
 			}

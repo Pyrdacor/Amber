@@ -973,7 +973,11 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			var offset = offsets[perspectiveLocation];
 			int x = playerPosition.X + offset.X;
 			int y = playerPosition.Y + offset.Y;
-			var tile = map!.Tiles[x + y * map.Width];
+
+			if (x < 0 || y < 0 || x >= map!.Width || y >= map.Height)
+				continue;
+
+			var tile = map.Tiles[x + y * map.Width];
 
 			if (tile.LabTileIndex == 0)
 				continue;

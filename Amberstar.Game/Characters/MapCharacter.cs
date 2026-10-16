@@ -53,11 +53,18 @@ internal class MapCharacter
             case MapCharacterWalkType.Path:
             {
                 int totalSteps = GameState.Hour * 12 + GameState.Minute / 5;
-                TryWalkTo(positions[totalSteps]);
+
+                // The first time the character is always placed, otherwise it would have no valid position.
+                if (position == new Position())
+                    position = positions[totalSteps];
+                else
+                    TryWalkTo(positions[totalSteps]);
                 break;
             }
             case MapCharacterWalkType.Chase:
-                // TODO
+                // TODO: Chase the party. For now the character stays at its start position.
+                if (position == new Position())
+                    position = positions[0];
                 break;
             default: // random
                 if (position == new Position()) // first time

@@ -29,6 +29,9 @@ The exit code is 1 if a check failed or the script timed out, so headless runs c
 - Every command is printed as `[script <line>] <command>`. Checks print `PASS` or `FAIL`, and at the end
   `Script finished: x of y checks passed, z failed.` is printed.
 - Map positions and party member slots are 1-based like in the cheats and the data docs.
+  On the world map, positions are positions inside the 50x50 map parts (maps 1 to 64).
+- `teleport` only works while the map is shown and nothing happens, so use `dismissall` or `closeall` before.
+- If the game crashes, the script is aborted with a failure that contains the exception.
 
 ## Directives
 
@@ -49,12 +52,17 @@ The most important ones:
 |------------------------------------------|----------------------------------------------------------------------|
 | `waittext`, `waitidle`, `waitscreen <t>` | Wait until a text, the map or a screen is shown                      |
 | `dismiss`, `dismissall`                  | Scroll or close texts (dismissall until the map is shown again)      |
+| `closeall`                               | Like dismissall, but also leaves doors, chests, places, ...          |
 | `yes`, `no`                              | Answer a confirmation window                                         |
+| `answer <word\|#index>`                  | Answer a riddlemouth (a dictionary index keeps scripts language-independent) |
+| `useitem <item> [noeffect]`              | Use an item at the party position like the inventory                 |
 | `move <dir> [steps] [optional]`          | Move like the player, events on the way are triggered                |
 | `teleport <map> <x> <y> [dir]`           | Teleport without fading                                              |
 | `trigger <x> <y> [Eye\|Mouth\|...]`      | Trigger the event at a position, Mouth talks to persons              |
 | `key`, `hold`, `click`, `hover`          | Raw input                                                            |
 | `map`, `pos`, `dir`, `screen`            | Print or check the location and the active screen                    |
+| `tile <x> <y> [tile]`                    | Check a tile of the shown map (3D: lab tile, 2D: `underlay/overlay`) |
+| `word <index> [text]`                    | Print or check a dictionary word                                     |
 | `eventactive <map> <event> [0\|1]`       | Check if an event would be executed                                  |
 | `eventbit <map> <save index> [0\|1]`     | Check an event bit (see below)                                       |
 | `value <slot> <name> [v\|+n\|-n\|+\|-]`  | Check gold, food, hp, sp, attributes, skills, ...                    |
@@ -72,6 +80,11 @@ Events are disabled by event bits. The bit is not given by the event index but b
 of the event data (byte 5): bit = (map - 1) * 65 + save index. Events with save index 0 are never
 disabled, and one bit can disable several events. The cheat `events <map>` lists all events of a map
 with their state, positions and raw data (`[byte1 byte2 byte3 byte4, save index, word6 word8]`).
+
+## Smoke test
+
+`MapEventSmokeTests` enters every placed event of every map (German and English data) and closes everything
+which opens afterwards. It takes only a few seconds and finds crashes in events, screens and map changes.
 
 ## Conventions
 

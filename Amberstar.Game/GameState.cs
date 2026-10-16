@@ -341,12 +341,32 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 		return mapIndex;
 	}
 
+	/// <summary>
+	/// 0-based party position on the map with the player. On world maps
+	/// this is the position inside the world map part.
+	/// </summary>
+	public Position GetPartyPositionOnMapWithPlayer()
+	{
+		var position = PartyPosition;
+
+		if (!WorldMap)
+			return position;
+
+		return new(position.X % Map2DScreen.WorldMapWidth, position.Y % Map2DScreen.WorldMapHeight);
+	}
+
 	public void SetPartyPosition(int x, int y)
 	{
 		LastPosition = new(PartyX - 1, PartyY - 1);
         PartyX = x + 1;
 		PartyY = y + 1;
 	}
+
+    /// <summary>
+    /// Makes the current position the last position, e.g. after a map change
+    /// as the last position of the old map is no valid position on the new map.
+    /// </summary>
+    public void ResetLastPosition() => LastPosition = PartyPosition;
 
     public bool ResetPartyPosition()
     {
