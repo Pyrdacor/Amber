@@ -103,6 +103,12 @@ public partial class Game : IDisposable
 	internal EventHandler EventHandler { get; }
 	internal TextManager TextManager { get; }
 	internal Time Time { get; }
+	/// <summary>
+	/// The game clock. It only advances by the update deltas, so
+	/// fading and timed actions also work if the game runs faster
+	/// or slower than real time (e.g. headless in tests).
+	/// </summary>
+	internal DateTime Now => DateTime.MinValue + TimeSpan.FromSeconds(totalTime);
     public event Action? QuitRequested;
     internal event Action<bool>? CanSeeChanged;
 

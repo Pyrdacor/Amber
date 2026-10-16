@@ -8,9 +8,15 @@ partial class Game
 {
 	readonly SortedStack<long, TimedAction> timedActions = new();
 	long lastTimedActionKey = -1;
-	static readonly Random random = new();
+	static Random random = new();
 
-	public static int Random(int min, int max) => random.Next(min, max);
+	/// <summary>
+	/// Makes the random numbers reproducible, e.g. for automated tests.
+	/// </summary>
+	public static void SetRandomSeed(int seed) => random = new(seed);
+
+	// Note: max is inclusive like in the original (e.g. Random(1, 100) for a probe).
+	public static int Random(int min, int max) => random.Next(min, max + 1);
     public static int Random(int max) => Random(0, max);
     public static bool Random() => Random(0, 1) == 1;
 
@@ -34,7 +40,7 @@ partial class Game
 
     internal long AddDelayedActionAt(DateTime timestamp, Action action)
     {
-		var delay = timestamp - DateTime.Now;
+		var delay = timestamp - Now;
 
 		if (delay.TotalMilliseconds < 0)
 			delay = TimeSpan.FromMilliseconds(0);

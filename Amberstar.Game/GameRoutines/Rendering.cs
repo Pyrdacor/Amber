@@ -80,7 +80,7 @@ partial class Game
 
 		fadeColor = new(fadeColor, 255);
 		fadeArea ??= CreateColoredRect(Layer.TopMost, new(0, 0), new(VirtualScreenWidth, VirtualScreenHeight), fadeColor);
-		fadingStartTime = DateTime.Now;
+		fadingStartTime = Now;
 		fadingEndTime = fadingStartTime + TimeSpan.FromMilliseconds(durationInMs);
 
 		if (fadingOut && afterFadeOutAction != null)
@@ -106,7 +106,7 @@ partial class Game
 
 		fadeColor = new(color ?? Color.Black, 0);
 		fadeArea ??= CreateColoredRect(Layer.TopMost, new(0, 0), new(VirtualScreenWidth, VirtualScreenHeight), fadeColor);
-		fadingStartTime = DateTime.Now;
+		fadingStartTime = Now;
 		fadingEndTime = fadingStartTime + TimeSpan.FromMilliseconds(durationInMs);
 		fadingOut = true;
 	}
@@ -179,7 +179,7 @@ partial class Game
 		int Change()
 		{
 			var totalMs = (fadingEndTime - fadingStartTime).TotalMilliseconds;
-			var elapsedMs = (DateTime.Now - fadingStartTime).TotalMilliseconds;
+			var elapsedMs = (Now - fadingStartTime).TotalMilliseconds;
 
 			return MathUtil.Limit(0, MathUtil.Round(elapsedMs * 255 / totalMs), 255);
 		}
