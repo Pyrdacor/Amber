@@ -146,6 +146,20 @@ partial class Game
     }
 
     /// <summary>
+    /// Marks an item as identified (e.g. by a sage) which shows more details.
+    /// </summary>
+    internal void IdentifyItem(ItemSlot itemSlot)
+    {
+        var item = itemSlot.Item;
+
+        if (item == null)
+            return;
+
+        var identifiedItem = AssetProvider.ItemFactory.Create(item, new ItemSlotData(item.SpellCharges, item.SlotFlags | ItemSlotFlags.Identified));
+        itemSlot.SetItem(identifiedItem, itemSlot.Count);
+    }
+
+    /// <summary>
     /// Counts an item in the inventories and equipment of all party members.
     /// </summary>
     internal int CountPartyItems(uint itemIndex)

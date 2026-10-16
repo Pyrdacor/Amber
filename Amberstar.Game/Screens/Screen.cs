@@ -44,6 +44,7 @@ public enum ScreenType
     // Place sub screens and places
     Inn,
     Healer,
+    Sage,
     TransportDealer,
     FoodDealer,
     PlaceGiveGold,
@@ -680,6 +681,7 @@ internal class ScreenHandler(Game Game) : IDisposable
 			ScreenType.Place => new UnfinishedPlaceScreen(),
 			ScreenType.Inn => new InnScreen(),
 			ScreenType.Healer => new HealerScreen(),
+			ScreenType.Sage => new SageScreen(),
 			ScreenType.TransportDealer => new TransportDealerScreen(),
 			ScreenType.FoodDealer => new FoodDealerScreen(),
 			ScreenType.PlaceGiveGold => new PlaceScreen.GiveGoldScreen(),

@@ -48,6 +48,7 @@ using G = Game.Game;
 ///   portrait &lt;slot&gt;          click the portrait of a party member (e.g. to give gold)
 ///   slot &lt;index&gt;             click one of the 12 item slots (1-based) of doors, chests or places
 ///   placegold [amount]        print the gold of the shown place, optionally check it
+///   identified &lt;item&gt; [0|1]   print if an item of the active party member is identified, optionally check it
 ///   placefood [amount]        print the food of the shown food dealer, optionally check it
 ///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
 ///                             print the transport at a position (none, Horse, Raft or Ship), optionally check it
@@ -334,6 +335,16 @@ public sealed class ScenarioScript
 				int slot = Arg(0) - 1;
 				Click(game, new Position(16 + (slot % 6) * 32 + 8, 37 + 108 + (slot / 6) * 32 + 8), MouseButtons.Left);
 				continueTime = time + 1;
+				break;
+			}
+			case "identified":
+			{
+				var identified = game.ScriptIsItemIdentified((uint)Arg(0));
+
+				if (identified == null)
+					Report(false, $"the active party member has no item {Arg(0)}");
+				else
+					CheckBool($"identified {Arg(0)}", identified.Value, OptionalBool(1));
 				break;
 			}
 			case "placegold":

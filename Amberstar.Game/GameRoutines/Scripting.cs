@@ -5,8 +5,6 @@ using Amberstar.GameData;
 
 namespace Amberstar.Game;
 
-file sealed record ScriptItemSlot(byte SpellCharges, ItemSlotFlags SlotFlags) : IItemSlot;
-
 /// <summary>
 /// Functionality for scenario scripts and automated tests.
 ///
@@ -193,6 +191,18 @@ partial class Game
 	/// Food on the food pile of the shown food dealer.
 	/// </summary>
 	public int? ScriptPlaceFood => (ScriptPlaceScreen as FoodDealerScreen)?.ScriptPlaceFood;
+
+	/// <summary>
+	/// Checks if an item of the active party member was identified (e.g. by a sage).
+	/// Returns null if the party member has no such item.
+	/// </summary>
+	public bool? ScriptIsItemIdentified(uint itemIndex)
+	{
+		var partyMember = State.ActivePartyMember;
+		var item = partyMember?.Inventory.Concat(partyMember.Equipment.Values).FirstOrDefault(slot => slot.Item?.Index == itemIndex)?.Item;
+
+		return item?.SlotFlags.HasFlag(ItemSlotFlags.Identified);
+	}
 
 	/// <summary>
 	/// Checks if there is a transport at a position (like it is stored in the savegame).
@@ -524,7 +534,7 @@ partial class Game
 			return $"item {itemIndex} could not be loaded: {ex.Message}";
 		}
 
-		var item = AssetProvider.ItemFactory.Create(itemData, new ScriptItemSlot(0, 0));
+		var item = AssetProvider.ItemFactory.Create(itemData, new ItemSlotData(0, 0));
 
 		if (!TryAddItem(slot, item, count))
 			return $"the inventory of slot {slot} is full";
