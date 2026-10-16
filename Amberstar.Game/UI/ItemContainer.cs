@@ -226,7 +226,7 @@ internal class ItemContainer : Control
 	{
         if (count > 0 && item == null)
             throw new AmberException(ExceptionScope.Application, "Item count is greater than 0 but item is null.");
-        if (count <= 0 && item != null)
+        if (count <= 0 && item != null && count != TwoHandedSecondSlotMarker)
             throw new AmberException(ExceptionScope.Application, "Item count is less than 1 but item is not null.");
 
         ItemCount = count;
@@ -241,7 +241,9 @@ internal class ItemContainer : Control
             var layer = game.GetRenderLayer(Layer.UI);
             var textureAtlas = layer.Config.Texture!;
 
-            var itemGraphicIndex = game!.GraphicIndexProvider.GetItemGraphicIndex(item!.GraphicIndex);
+            // The second hand of a two-handed weapon shows a red cross.
+            var itemGraphic = count == TwoHandedSecondSlotMarker ? ItemGraphic.RedCross : item!.GraphicIndex;
+            var itemGraphicIndex = game!.GraphicIndexProvider.GetItemGraphicIndex(itemGraphic);
 
 			if (sprite == null)
 			{

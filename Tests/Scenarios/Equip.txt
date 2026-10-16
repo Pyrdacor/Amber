@@ -1,0 +1,46 @@
+# Equip and unequip items in the inventory: boni, two-handed weapons and cursed items.
+# The hero starts with item 151 in backpack slot 1 and the one-handed weapon 127 in the right hand.
+waittext
+dismissall
+give 1 175
+give 1 230
+# the two-handed sword can't be used by adventurers
+setclass 1 Warrior
+itemslot 1 2 175
+itemslot 1 3 230
+itemslot 1 RightHand 127
+value 1 charisma
+value 1 strength
+value 1 hands 1
+# --- open the inventory of the hero (right click on the portrait)
+click 32 17 right
+waitscreen Inventory
+# --- the ivory chain gives 20 charisma
+invslot 2
+itemslot 1 Neck 175:1
+itemslot 1 2 empty
+value 1 charisma +20
+# --- unequip it again
+invslot Neck
+itemslot 1 Neck empty
+itemslot 1 2 175:1
+value 1 charisma -20
+# --- the two-handed sword needs both hands
+invslot 3
+itemslot 1 RightHand 127
+itemslot 1 3 230
+dismiss
+invslot RightHand
+itemslot 1 RightHand empty
+value 1 hands 0
+itemslot 1 4 127:1
+# --- the cursed two-handed sword takes 25 strength and both hands
+invslot 3
+itemslot 1 RightHand 230
+value 1 strength -25
+value 1 hands 2
+# --- the second hand unequips the weapon but it is cursed
+invslot LeftHand
+dismiss
+itemslot 1 RightHand 230
+value 1 hands 2

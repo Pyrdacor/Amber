@@ -148,8 +148,8 @@ internal class Item : IItem
         dataWriter.Write((byte)InitialCharges);
         dataWriter.Write((byte)MaxCharges);
         dataWriter.Write((byte)((byte)Flags | (byte)SlotFlags));
-        dataWriter.Write((byte)(MalusSkill1 == null ? 0 : MalusSkill1.Value + 1));
-        dataWriter.Write((byte)(MalusSkill2 == null ? 0 : MalusSkill2.Value + 1));
+        dataWriter.Write((byte)(MalusSkill1 ?? Skill.None));
+        dataWriter.Write((byte)(MalusSkill2 ?? Skill.None));
         dataWriter.Write((byte)Malus1);
         dataWriter.Write((byte)Malus2);
         dataWriter.Write((byte)TextIndex);

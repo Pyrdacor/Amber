@@ -116,8 +116,9 @@ namespace Amberstar.GameData.Legacy
                 MaxCharges = maxCharges,
                 Flags = (ItemFlags)(itemFlags & 0x7f),
                 SlotFlags = (ItemSlotFlags)(itemFlags & 0x80),
-                MalusSkill1 = malusSkill1 == 0 ? null : (Skill?)(malusSkill1 - 1),
-                MalusSkill2 = malusSkill2 == 0 ? null : (Skill?)(malusSkill2 - 1),
+                // Note: The skills are 1-based like the skill enum (0 means none).
+                MalusSkill1 = malusSkill1 == 0 ? null : (Skill)malusSkill1,
+                MalusSkill2 = malusSkill2 == 0 ? null : (Skill)malusSkill2,
                 Malus1 = malus1,
                 Malus2 = malus2,
                 TextIndex = textIndex,

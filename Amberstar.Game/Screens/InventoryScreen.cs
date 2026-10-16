@@ -5,7 +5,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal class InventoryScreen : ItemGridScreen
+internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 {
     IPartyMember? partyMember;
     bool itemDragged = false;
@@ -63,6 +63,8 @@ internal class InventoryScreen : ItemGridScreen
 
     public override ScreenType Type { get; } = ScreenType.Inventory;
 
+    public bool WaitingForClick => waitForClick;
+
     internal override byte ButtonGridPaletteIndex => Game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
 
     internal override ItemContainer[] ItemContainers => [.. equippedItemSlots.Values, .. inventoryItemSlots];
@@ -85,15 +87,19 @@ internal class InventoryScreen : ItemGridScreen
         buttonGrid.SetButton(7, ButtonType.GiveGold);
         buttonGrid.SetButton(8, ButtonType.GiveFood);
 
-        bool hasInventoryItems = partyMember!.Inventory.Any(itemSlot => itemSlot.Count > 0);
+        // like Inv2CIL_evaluate in the original
+        bool special = partyMember.Class >= Class.Animal;
+        bool hasInventoryItems = partyMember.Inventory.Any(itemSlot => itemSlot.Count > 0);
+        bool hasAnyItems = hasInventoryItems || partyMember.Equipment.Any(itemSlot => itemSlot.Value.Count > 0);
+        bool canPoolGold = partyMember.TotalWeight < partyMember.MaxWeight() &&
+            !partyMember.HasAnyConditionOf(Condition.Dead | Condition.Ashes | Condition.Dust);
+
         buttonGrid.EnableButton(1, hasInventoryItems);
+        buttonGrid.EnableButton(3, !special && hasAnyItems);
+        buttonGrid.EnableButton(4, !special && canPoolGold);
+        buttonGrid.EnableButton(5, !special && hasAnyItems);
         buttonGrid.EnableButton(6, hasInventoryItems);
-
-        bool hasAnyItems = hasInventoryItems && partyMember.Equipment.Any(itemSlot => itemSlot.Value.Count > 0);
-        buttonGrid.EnableButton(3, hasInventoryItems);
-        buttonGrid.EnableButton(5, hasAnyItems);
-
-        buttonGrid.EnableButton(7, partyMember.Gold > 0);
+        buttonGrid.EnableButton(7, !special && partyMember.Gold > 0);
         buttonGrid.EnableButton(8, partyMember.Food > 0);
     }
 
@@ -337,9 +343,9 @@ internal class InventoryScreen : ItemGridScreen
 
         var weightString = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.WeightTwoValues)).GetString();
         weightString = Game.InsertNumberIntoString(weightString, " KG", false, partyMember.TotalWeight / 1000, 3, '0');
-        var maxWeight = partyMember.Attributes[GameData.Attribute.Strength].CurrentValue; // TODO: bonus value?
+        var maxWeight = partyMember.MaxWeight() / 1000;
         weightString = Game.InsertNumberIntoString(weightString, "/", true, maxWeight, 3, '0');
-        int colorIndex = partyMember.MentalConditions.HasFlag(MentalCondition.Overloaded) ? 1 : 15; // TODO: is the mental condition correct?
+        int colorIndex = partyMember.TotalWeight > partyMember.MaxWeight() ? 1 : 15;
         if (weightString[0] == 1) // The weight string might contain a SetInk command. We overwrite it to match the color.
             weightString = $"\x1{(char)colorIndex}{weightString[2..]}";
         weightText!.SetText(weightString, colorIndex);
@@ -420,108 +426,34 @@ internal class InventoryScreen : ItemGridScreen
 
     private void InventorySlotClicked(int index, MouseButtons mouseButtons, KeyModifiers keyModifiers)
     {
-        var slot = inventoryItemSlots[index];
-
-        if (slot.ItemCount <= 0)
+        if (mouseButtons != MouseButtons.Left)
             return;
 
-        var item = slot.Item!;
-
-        if (item.Type == ItemType.MonsterItem)
-            return;
-
-        // TODO: If in battle, check if can be equipped during battle here
-
-        var targetSlot = item.EquipmentSlot;
-
-        if (targetSlot == null) // Not equipable
-        {
-            ShowMessage(Message.ItemNotEquippable);
-            return;
-        }
-
-        if (targetSlot == EquipmentSlot.RightFinger && partyMember!.Equipment[targetSlot.Value].Count > 0)
-            targetSlot = EquipmentSlot.LeftFinger;
-
-        var targetItemSlot = equippedItemSlots[targetSlot.Value];
-
-        if (targetItemSlot.ItemCount > 0)
-        {
-            ShowMessage(Message.ItemNotEquippable);
-            return;
-        }
-
-        if (!item.UsableClasses.HasFlag((ClassFlags)(1 << (int)partyMember!.Class)))
-        {
-            ShowMessage(Message.WrongClass);
-            return;
-        }
-
-        if (item.Genders != GenderFlags.Both && !item.Genders.HasFlag((GenderFlags)(1 << (int)partyMember.Gender)))
-        {
-            ShowMessage(Message.WrongGender);
-            return;
-        }
-
-        if (item.Hands > 2 - partyMember.UsedHands)
-        {
-            ShowMessage(Message.NotEnoughFreeHands);
-            return;
-        }
-
-        if (item.Fingers > 2 - partyMember.UsedFingers)
-        {
-            ShowMessage(Message.NotEnoughFreeFingers);
-            return;
-        }
-
-        targetItemSlot.AddItem(1, item);
-        slot.ReduceItemCount(1);
-
-        // TODO: update values of party, etc
+        ItemActionDone(Game.EquipItem(partyMember!, index));
     }
 
     private void EquipmentSlotClicked(EquipmentSlot equipmentSlot, MouseButtons mouseButtons, KeyModifiers keyModifiers)
     {
-        var slot = equippedItemSlots[equipmentSlot];
-
-        if (slot.ItemCount == 0)
+        if (mouseButtons != MouseButtons.Left)
             return;
 
-        var item = slot.Item!;
+        // the second hand of a two-handed weapon unequips the weapon
+        if (equipmentSlot == EquipmentSlot.LeftHand && equippedItemSlots[equipmentSlot].TwoHandedSecondSlot)
+            equipmentSlot = EquipmentSlot.RightHand;
 
-        if (item.Type == ItemType.MonsterItem)
-            return;
+        ItemActionDone(Game.UnequipItem(partyMember!, equipmentSlot));
+    }
 
-        // TODO: If in battle, check if can be unequipped during battle here
-
-        if (item.Flags.HasFlag(ItemFlags.Cursed))
-        {
-            ShowMessage(Message.ItemIsCursed);
-            return;
-        }
-
-        int targetSlotIndex = -1;
-        var inventorySlots = inventoryItemSlots.ToList();
-
-        if (item.Flags.HasFlag(ItemFlags.Stackable))
-        {
-            targetSlotIndex = inventorySlots.FindIndex(slot => slot.Item?.Index == item.Index && slot.ItemCount < 99);
-        }
-
-        if (targetSlotIndex == -1)
-            targetSlotIndex = inventorySlots.FindIndex(slot => slot.Empty);
-
-        if (targetSlotIndex == -1)
-        {
-            ShowMessage(Message.NoRoomForItem);
-            return;
-        }
-
-        var targetSlot = inventoryItemSlots[targetSlotIndex];
-
-        targetSlot.AddItem(1, item);
-        slot.ReduceItemCount(1);
+    /// <summary>
+    /// Shows the items and values after the party member data was changed
+    /// and shows the given message if any.
+    /// </summary>
+    private void ItemActionDone(Message? message)
+    {
+        if (message != null)
+            ShowMessage(message.Value);
+        else
+            SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
     }
 
     private void EndClickWait()

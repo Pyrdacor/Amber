@@ -47,12 +47,17 @@ using G = Game.Game;
 ///   amount &lt;amount&gt;          enter an amount in the shown amount input window
 ///   portrait &lt;slot&gt;          click the portrait of a party member (e.g. to give gold)
 ///   slot &lt;index&gt;             click one of the 12 item slots (1-based) of doors, chests or places
+///   invslot &lt;index|equip&gt;     click a backpack slot (1-12) or an equipment slot (e.g. Neck, RightHand) in the inventory
+///   itemslot &lt;slot&gt; &lt;index|equip&gt; [item[:count]|empty]
+///                             print the content of a backpack or equipment slot of a party member as item:count,
+///                             optionally check it (without a count only the item is checked)
 ///   placegold [amount]        print the gold of the shown place, optionally check it
 ///   identified &lt;item&gt; [0|1]   print if an item of the active party member is identified, optionally check it
 ///   trainskill &lt;skill&gt; &lt;points&gt;
 ///                             distribute points to a skill (negative to take them back) after a level-up
 ///   finishtraining            close the skill training window
 ///   class &lt;slot&gt; [class]      print the class of a party member, optionally check it
+///   setclass &lt;slot&gt; &lt;class&gt;   set the class of a party member (e.g. Warrior)
 ///   automap &lt;x&gt; &lt;y&gt; [icon]    print the icon of a map position in the shown automap (Unknown, Wall, Floor, Door,
 ///                             Exit, Treasure, Riddlemouth, Merchant, Teleporter, Party, PartyNorth, ...),
 ///                             optionally check it
@@ -98,7 +103,8 @@ using G = Game.Game;
 ///   partysize [count]         print the party size, optionally check it
 ///   activate &lt;slot&gt;           make the party member in slot 1-6 the active one
 ///   value &lt;slot&gt; &lt;name&gt; [v]   print a party member value (gold, food, hp, maxhp, sp, maxsp, level, exp, slp,
-///                             weight, spellschools or an attribute or skill name), optionally check it
+///                             weight, defense, damage, hands, fingers, spellschools or an attribute or skill name),
+///                             optionally check it
 ///   setvalue &lt;slot&gt; &lt;name&gt; &lt;v&gt; set a party member value
 ///   spellknown &lt;slot&gt; &lt;school&gt; &lt;spell&gt; [0|1]
 ///                             print if a party member knows a spell (school: White, Gray, Black or Special,
@@ -379,6 +385,40 @@ public sealed class ScenarioScript
 					Report(view.Value == new Position(Arg(0), Arg(1)), $"automapview = {view.Value.X},{view.Value.Y} (expected {Arg(0)},{Arg(1)})");
 				break;
 			}
+			case "invslot":
+			{
+				Position position;
+
+				if (int.TryParse(args[0], out int index))
+					position = new(112 + (index - 1) % 3 * 32 + 8, 81 + (index - 1) / 3 * 32 + 8);
+				else
+				{
+					int equipmentSlot = (int)Enum.Parse<EquipmentSlot>(args[0], true);
+					position = new(16 + equipmentSlot % 3 * 32 + 8, 81 + equipmentSlot / 3 * 32 + 8);
+				}
+
+				Click(game, position, MouseButtons.Left);
+				continueTime = time + 1;
+				break;
+			}
+			case "itemslot":
+			{
+				var content = game.ScriptItemSlot(Arg(0), args[1]);
+
+				if (content == null)
+					Report(false, $"slot {args[1]} of party member {Arg(0)} does not exist");
+				else if (args.Length < 3)
+					output($"  itemslot {Arg(0)} {args[1]} = {content}");
+				else
+				{
+					bool ok = args[2].Contains(':') || args[2] == "empty" ? content == args[2] : content.Split(':')[0] == args[2];
+					Report(ok, $"itemslot {Arg(0)} {args[1]} = {content} (expected {args[2]})");
+				}
+				break;
+			}
+			case "setclass":
+				CheckResult(game.ScriptSetClass(Arg(0), args[1]));
+				break;
 			case "class":
 			{
 				var @class = game.ScriptClass(Arg(0)) ?? "none";

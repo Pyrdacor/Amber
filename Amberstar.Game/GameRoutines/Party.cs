@@ -234,8 +234,10 @@ partial class Game
                     break;
             }
 
-            if (remaining <= 0 && !partyMember.Inventory.Any(slot => slot.Item == null || slot.Count == 0))
+            if (remaining > 0 && !partyMember.Inventory.Any(slot => slot.Item == null || slot.Count == 0))
                 return false;
+
+            partyMember.TotalWeight += (uint)count * item.Weight;
 
             foreach (var itemSlotWithSameItem in itemSlotsWithSameItem)
             {
@@ -257,6 +259,9 @@ partial class Game
 
         emptySlot.SetItem(item, (byte)count);
 
+        if (!item.Flags.HasFlag(ItemFlags.Stackable))
+            partyMember.TotalWeight += (uint)count * item.Weight;
+
         return true;
     }
 
@@ -275,6 +280,7 @@ partial class Game
         if (partyMember.Gold + gold <= short.MaxValue && partyMember.TotalWeight + weight <= partyMember.MaxWeight())
         {
             partyMember.Gold += (ushort)gold;
+            partyMember.TotalWeight += (uint)weight;
             return true;
         }
 

@@ -66,21 +66,9 @@ public static class ItemExtensions
         return textLoader.FromTextFragmentIndex(item.NameIndex);
     }
 
-    public static bool IsTwoHanded(this IItem item)
-    {
-        // TODO ...
-        return false;
-    }
+    public static bool IsTwoHanded(this IItem item) => item.Hands == 2;
 
-    public static bool CanThrowAway(this IItem item)
-    {
-        // TODO ...
-        return false;
-    }
+    public static bool CanThrowAway(this IItem item) => item.Flags.HasFlag(ItemFlags.NotImportant);
 
-    public static bool IsStackable(this IItem item)
-    {
-        // TODO ...
-        return false;
-    }
+    public static bool IsStackable(this IItem item) => item.Flags.HasFlag(ItemFlags.Stackable);
 }

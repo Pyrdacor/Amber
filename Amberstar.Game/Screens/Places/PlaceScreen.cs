@@ -391,10 +391,7 @@ internal abstract class PlaceScreen : ButtonGridScreen, IWaitForClickScreen
 				else if (transferType == TransferType.Food && Game.TryAddFood(slot.Value, amount))
 					PlaceFood -= amount;
 				else if (transferType == TransferType.Item && Game.TryAddItem(slot.Value, item!, amount))
-				{
-					Game.State.GetPartyMember(slot.Value)!.TotalWeight += (uint)amount * item!.Weight;
 					transferred?.Invoke();
-				}
 			}
 
 			return true;

@@ -239,6 +239,21 @@ partial class Game
 
 	public string? ScriptClass(int slot) => State.GetPartyMember(slot)?.Class.ToString();
 
+	public string? ScriptSetClass(int slot, string className)
+	{
+		var partyMember = State.GetPartyMember(slot);
+
+		if (partyMember == null)
+			return $"no party member in slot {slot}";
+
+		if (!Enum.TryParse<Class>(className, true, out var @class))
+			return $"unknown class {className}";
+
+		partyMember.Class = @class;
+
+		return null;
+	}
+
 	/// <summary>
 	/// Gets the icon of a 1-based position in the shown automap.
 	/// </summary>
@@ -429,6 +444,35 @@ partial class Game
 	public string? ScriptPartyMemberName(int slot) => State.GetPartyMember(slot)?.Name;
 
 	/// <summary>
+	/// Gets the content of a backpack slot (1-based) or an equipment slot (e.g. Neck)
+	/// of a party member as "item:count" or "empty".
+	/// </summary>
+	public string? ScriptItemSlot(int slot, string slotName)
+	{
+		var partyMember = State.GetPartyMember(slot);
+
+		if (partyMember == null)
+			return null;
+
+		ItemSlot? itemSlot = null;
+
+		if (int.TryParse(slotName, out int index))
+		{
+			if (index >= 1 && index <= partyMember.Inventory.Length)
+				itemSlot = partyMember.Inventory[index - 1];
+		}
+		else if (Enum.TryParse<EquipmentSlot>(slotName, true, out var equipmentSlot))
+		{
+			itemSlot = partyMember.Equipment[equipmentSlot];
+		}
+
+		if (itemSlot == null)
+			return null;
+
+		return itemSlot.Item == null || itemSlot.Count == 0 ? "empty" : $"{itemSlot.Item.Index}:{itemSlot.Count}";
+	}
+
+	/// <summary>
 	/// Gets a value of a party member. Valid names are gold, food, hp, maxhp, sp, maxsp, level,
 	/// exp, slp, weight as well as all attribute and skill names (current total value).
 	/// </summary>
@@ -461,6 +505,14 @@ partial class Game
 				return partyMember.SpellLearningPoints;
 			case "weight":
 				return (int)partyMember.TotalWeight;
+			case "defense":
+				return (word)(partyMember.Defense + partyMember.BonusDefense);
+			case "damage":
+				return (word)(partyMember.Damage + partyMember.BonusDamage);
+			case "hands":
+				return partyMember.UsedHands;
+			case "fingers":
+				return partyMember.UsedFingers;
 			case "spellschools":
 				return (int)partyMember.LearnedSpellSchools;
 		}
@@ -598,9 +650,6 @@ partial class Game
 
 		if (!TryAddItem(slot, item, count))
 			return $"the inventory of slot {slot} is full";
-
-		var partyMember = State.GetPartyMember(slot)!;
-		partyMember.TotalWeight += (uint)count * item.Weight;
 
 		return null;
 	}
