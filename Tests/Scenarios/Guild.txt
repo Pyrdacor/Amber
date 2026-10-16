@@ -1,0 +1,52 @@
+# The warrior guild in Twinlake (map 67, 28,18): the classless hero needs 30 experience to join
+# and 90 for level 2. After each level 10 skill points are distributed.
+waittext
+dismissall
+cheat gold 2000
+cleartexts
+teleport 67 28 18
+waitscreen Guild
+textshown BRAUCHT FÜR DIE NÄCHSTE STUFE NOCH: 30
+button 6
+buttonenabled 0 0
+button 7
+button 2
+waitidle
+# --- with enough experience
+setvalue 1 exp 100
+cleartexts
+teleport 67 28 18
+waitscreen Guild
+textshown GILDENBEITRITT KOSTET
+button 6
+buttonenabled 0 1
+buttonenabled 3 0
+value 1 maxhp
+value 1 attack
+value 1 parry
+button 0
+waitscreen SkillTraining
+trainskill Attack 4
+trainskill Parry 6
+trainskill Parry -1
+trainskill Swim 1
+finishtraining
+class 1 Warrior
+value 1 level 1
+value 1 attack +4
+value 1 parry +5
+value 1 maxhp +
+textshown STUFE 1 ERREICHT
+dismiss
+# --- the next level
+buttonenabled 3 1
+button 3
+waitscreen SkillTraining
+trainskill Attack 10
+finishtraining
+value 1 level 2
+dismiss
+buttonenabled 3 0
+button 7
+button 2
+waitidle

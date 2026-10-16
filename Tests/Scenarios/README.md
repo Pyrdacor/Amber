@@ -60,6 +60,11 @@ The most important ones:
 | `teleport <map> <x> <y> [dir]`           | Teleport without fading                                              |
 | `trigger <x> <y> [Eye\|Mouth\|...]`      | Trigger the event at a position, Mouth talks to persons              |
 | `key`, `hold`, `click`, `hover`          | Raw input                                                            |
+| `button <0-8>`, `buttonenabled`          | Press or check a button of the button grid (row by row)              |
+| `slot <1-12>`, `portrait <slot>`         | Click an item slot or a party member portrait                        |
+| `amount <n>`                             | Enter an amount in the amount input window                           |
+| `placegold`, `placefood`, `transport`    | Check the gold/food pile of a place or a bought transport            |
+| `trainskill`, `finishtraining`, `class`  | Distribute skill points after a level-up in a guild                  |
 | `map`, `pos`, `dir`, `screen`            | Print or check the location and the active screen                    |
 | `tile <x> <y> [tile]`                    | Check a tile of the shown map (3D: lab tile, 2D: `underlay/overlay`) |
 | `word <index> [text]`                    | Print or check a dictionary word                                     |

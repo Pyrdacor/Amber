@@ -7,7 +7,7 @@ public interface ICharacter
     CharacterType Type { get; init; }
     Gender Gender { get; init; }
     Race Race { get; init; }
-    Class Class { get; init; }
+    Class Class { get; set; }
     byte Level { get; set; }
     word Gold { get; set; }
     word Food { get; set; }

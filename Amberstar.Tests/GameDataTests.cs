@@ -101,6 +101,27 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void ClassDataIsPlausible(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+
+		foreach (var @class in Enum.GetValues<Class>().Where(@class => @class >= Class.Warrior && @class <= Class.BlackWizzard))
+		{
+			var classData = assetProvider.ClassDataLoader.LoadClassData(@class);
+			var experience = Enumerable.Range(0, IClassData.MaxLevel).Select(classData.GetExperienceForNextLevel).ToArray();
+
+			Assert.True(experience.Zip(experience.Skip(1)).All(pair => pair.First < pair.Second), $"The experience of {@class} is not increasing.");
+			Assert.All(Enum.GetValues<Skill>().Skip(1), skill => Assert.InRange(classData.GetSkillMaxValue(skill), 0, 100));
+			Assert.True(classData.HitPointsPerLevel > 0);
+		}
+
+		Assert.Equal(30u, assetProvider.ClassDataLoader.LoadClassData(Class.Warrior).GetExperienceForNextLevel(0));
+		Assert.Equal(SpellSchoolFlags.None, assetProvider.ClassDataLoader.LoadClassData(Class.Warrior).SpellSchools);
+		Assert.Equal(SpellSchoolFlags.White, assetProvider.ClassDataLoader.LoadClassData(Class.WhiteWizzard).SpellSchools);
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AllMerchantWaresLoad(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

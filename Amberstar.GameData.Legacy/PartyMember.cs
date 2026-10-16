@@ -55,10 +55,10 @@ internal class PartyMember : BattleCharacter, IPartyMember
 
     public ClassFlags PossibleClasses { get; set; }
     public byte DefaultBattlePosition { get => defaultBattlePosition; init => defaultBattlePosition = value; }
-    public word AttackPerRoundLevel { get => attackPerRoundLevel; init => attackPerRoundLevel = value; }
-    public word HitPointsPerLevel { get => hitPointsPerLevel; init => hitPointsPerLevel = value; }
-    public word SpellPointsPerLevel { get => spellPointsPerLevel; init => spellPointsPerLevel = value; }
-    public word SpellLearningPointsPerLevel { get => spellLearningPointsPerLevel; init => spellLearningPointsPerLevel = value; }
+    public word AttackPerRoundLevel { get => attackPerRoundLevel; set => attackPerRoundLevel = value; }
+    public word HitPointsPerLevel { get => hitPointsPerLevel; set => hitPointsPerLevel = value; }
+    public word SpellPointsPerLevel { get => spellPointsPerLevel; set => spellPointsPerLevel = value; }
+    public word SpellLearningPointsPerLevel { get => spellLearningPointsPerLevel; set => spellLearningPointsPerLevel = value; }
     public word SpellLearningPoints { get; set; }
     public word SaveBit { get => saveBit; set => saveBit = value; }
     public dword ExperiencePoints { get; set; }

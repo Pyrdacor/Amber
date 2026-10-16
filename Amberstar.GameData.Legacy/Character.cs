@@ -90,7 +90,7 @@ internal class Character : ICharacter
     CharacterType ICharacter.Type { get => type; init => type = value; }
     Gender ICharacter.Gender { get => gender; init => gender = value; }
     Race ICharacter.Race { get => race; init => race = value; }
-    Class ICharacter.Class { get => @class; init => @class = value; }
+    Class ICharacter.Class { get => @class; set => @class = value; }
     public byte Level { get; set; }
     public word Gold { get; set; }
     public word Food { get; set; }

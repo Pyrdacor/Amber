@@ -228,6 +228,15 @@ namespace Amberstar.GameData.Legacy
             if (!dataSeeker(EmbeddedDataOffset.ClassNames, dataReader))
                 throw new AmberException(ExceptionScope.Application, "Could not find the class names in the program file.");
 
+            // The class data of the 11 classes is located directly before the class names.
+            int classNamesOffset = dataReader.Position;
+            dataReader.Position = classNamesOffset - 11 * Legacy.ClassData.DataSize;
+
+            for (int i = 0; i < 11; i++)
+                ClassData.Add(dataReader.ReadBytes(Legacy.ClassData.DataSize));
+
+            dataReader.Position = classNamesOffset;
+
             // Note: The file CLASSDAT.DAT contains some information for classes, the class names and the skill names.
             // 
             // There are 394 bytes per class.
@@ -422,6 +431,7 @@ namespace Amberstar.GameData.Legacy
         public Dictionary<int, IDataReader> SpellLocationNames { get; } = [];
         public Dictionary<int, IDataReader> SpellTargetNames { get; } = [];
         public Dictionary<int, IDataReader> ClassNames { get; } = [];
+        public List<byte[]> ClassData { get; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

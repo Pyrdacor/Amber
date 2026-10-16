@@ -210,6 +210,36 @@ partial class Game
 	public string? ScriptGetTransport(int mapIndex, int x, int y) => State.GetTransportAtLocation(x, y, mapIndex)?.Type.ToString();
 
 	/// <summary>
+	/// Trains a skill in the shown skill training window (after a level-up).
+	/// </summary>
+	public string? ScriptTrainSkill(string skillName, int points)
+	{
+		if (ScreenHandler.ActiveScreen is not SkillTrainingScreen trainingScreen)
+			return $"no skill training is shown but {ScriptActiveScreen}";
+
+		if (!Enum.TryParse<Skill>(skillName, true, out var skill) || skill == Skill.None)
+			return $"invalid skill '{skillName}'";
+
+		for (int i = 0; i < Math.Abs(points); i++)
+		{
+			if (!trainingScreen.TrainSkill((int)skill - 1, points > 0))
+				return $"skill {skill} can't be changed by {points}";
+		}
+
+		return null;
+	}
+
+	public string? ScriptFinishTraining()
+	{
+		if (ScreenHandler.ActiveScreen is not SkillTrainingScreen trainingScreen)
+			return $"no skill training is shown but {ScriptActiveScreen}";
+
+		return trainingScreen.ScriptFinish() ? null : "not all training points are used";
+	}
+
+	public string? ScriptClass(int slot) => State.GetPartyMember(slot)?.Class.ToString();
+
+	/// <summary>
 	/// Gets a dictionary word by its index.
 	/// </summary>
 	public string ScriptGetWord(int wordIndex) => AssetProvider.TextLoader.FromTextFragmentIndex((word)wordIndex).GetString();

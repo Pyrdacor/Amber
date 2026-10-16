@@ -21,5 +21,6 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
     IPersonLoader PersonLoader { get; }
     IItemLoader ItemLoader { get; }
     IItemFactory ItemFactory { get; }
+    IClassDataLoader ClassDataLoader { get; }
     ISongLoader SongLoader { get; }
 }

@@ -49,6 +49,10 @@ using G = Game.Game;
 ///   slot &lt;index&gt;             click one of the 12 item slots (1-based) of doors, chests or places
 ///   placegold [amount]        print the gold of the shown place, optionally check it
 ///   identified &lt;item&gt; [0|1]   print if an item of the active party member is identified, optionally check it
+///   trainskill &lt;skill&gt; &lt;points&gt;
+///                             distribute points to a skill (negative to take them back) after a level-up
+///   finishtraining            close the skill training window
+///   class &lt;slot&gt; [class]      print the class of a party member, optionally check it
 ///   placefood [amount]        print the food of the shown food dealer, optionally check it
 ///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
 ///                             print the transport at a position (none, Horse, Raft or Ship), optionally check it
@@ -335,6 +339,23 @@ public sealed class ScenarioScript
 				int slot = Arg(0) - 1;
 				Click(game, new Position(16 + (slot % 6) * 32 + 8, 37 + 108 + (slot / 6) * 32 + 8), MouseButtons.Left);
 				continueTime = time + 1;
+				break;
+			}
+			case "trainskill":
+				CheckResult(game.ScriptTrainSkill(args[0], Arg(1)));
+				break;
+			case "finishtraining":
+				CheckResult(game.ScriptFinishTraining());
+				continueTime = time + 1;
+				break;
+			case "class":
+			{
+				var @class = game.ScriptClass(Arg(0)) ?? "none";
+
+				if (args.Length < 2)
+					output($"  class = {@class}");
+				else
+					Report(@class.Equals(args[1], StringComparison.OrdinalIgnoreCase), $"class = {@class} (expected {args[1]})");
 				break;
 			}
 			case "identified":

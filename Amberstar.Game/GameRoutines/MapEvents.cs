@@ -216,9 +216,10 @@ partial class Game
 			PlaceType.Healer => ScreenType.Healer,
 			PlaceType.Sage => ScreenType.Sage,
 			PlaceType.Merchant or PlaceType.Library => ScreenType.Merchant,
+			>= PlaceType.FirstGuild and <= PlaceType.LastGuild => ScreenType.Guild,
 			PlaceType.HorseDealer or PlaceType.RaftDealer or PlaceType.ShipDealer => ScreenType.TransportDealer,
 			PlaceType.FoodDealer => ScreenType.FoodDealer,
-			_ => ScreenType.Place
+			_ => throw new AmberException(ExceptionScope.Data, $"Unsupported place type {placeEvent.PlaceType}")
 		};
 
 		ScreenHandler.PushScreen(screenType);
