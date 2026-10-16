@@ -1,4 +1,5 @@
 ﻿using Amber.Common;
+using Amberstar.Game.Screens;
 
 namespace Amberstar.Game;
 
@@ -17,19 +18,17 @@ partial class Game
 	{
 		if (key == Key.F10)
 			PlaySong(1);
-		else if (key == Key.F5)
+		else if (key == Key.F5 && SavegamePath != null && ScreenHandler.ActiveScreen is IMapScreen)
 		{
+			// quick save
 			SaveGame();
-			ShowTextMessage($"Game was saved at '{Path.GetFileName(TempSaveFile)}'.");
+			ShowTextMessage($"Game was saved at '{Path.GetFileName(SavegamePath)}'.");
 			return;
 		}
-        else if (key == Key.F7)
+        else if (key == Key.F7 && HasSavegame && ScreenHandler.ActiveScreen is IMapScreen)
         {
-            LoadGame();
-			ShowTextMessage($"Game was loaded from '{Path.GetFileName(TempSaveFile)}'.", () =>
-			{
-				Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true);
-			});
+            // quick load
+            LoadGameAndContinue();
             return;
         }
 

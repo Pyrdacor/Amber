@@ -24,6 +24,25 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	readonly Dictionary<int, IPartyMember> partyMembers = assetProvider.PersonLoader.GetPartyMemberCopies();
 
+	/// <summary>
+	/// Resets all possible party members to the original data (e.g. before loading a savegame).
+	/// </summary>
+	public void ResetPartyMembers()
+	{
+		partyMembers.Clear();
+
+		foreach (var (index, partyMember) in assetProvider.PersonLoader.GetPartyMemberCopies())
+			partyMembers.Add(index, partyMember);
+	}
+
+	public void ReplacePartyMember(int characterIndex, IPartyMember partyMember) => partyMembers[characterIndex] = partyMember;
+
+	/// <summary>
+	/// The party members with their character index (index in CHARDATA.AMB).
+	/// </summary>
+	public IEnumerable<(int CharacterIndex, IPartyMember PartyMember)> PartyMembersWithCharacterIndex =>
+		PartyCharacterIndices.Where(index => index != 0).Select(index => (index, partyMembers[index]));
+
     public ISavegame ToSavegame(ISavegameLoader savegameLoader)
     {
         int mapIndex = MapIndex;
@@ -441,8 +460,17 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
     #region Automap
 
     // One bit per tile of 3D maps (AUTOMAP.AMB in the original, initially nothing is explored).
-    // TODO: Store the automaps in the savegame.
     readonly Dictionary<int, byte[]> automaps = [];
+
+    public IReadOnlyDictionary<int, byte[]> Automaps => automaps;
+
+    public void SetAutomaps(Dictionary<int, byte[]> automaps)
+    {
+        this.automaps.Clear();
+
+        foreach (var (mapIndex, automap) in automaps)
+            this.automaps.Add(mapIndex, automap);
+    }
 
     byte[] GetAutomap(IMap map)
     {
@@ -487,7 +515,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
     /// <summary>
     /// ?, docs say (0 / -1)
     /// </summary>
-    bool MusicBlock { get; set; } = savegame.MusicBlock;
+    public bool MusicBlock { get; set; } = savegame.MusicBlock;
     /// <summary>
     /// 32 bytes = 256 bits
     /// </summary>

@@ -423,8 +423,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
                     Game.TrapMouse(CreateActionCursorTrapArea(mouth: true));
                     break;
 				case ButtonType.Disk:
-					// TODO: Show options
-					Game.Quit();
+					Game.ScreenHandler.PushScreen(ScreenType.Options);
 					break;
 				case ButtonType.Camp:
 					Game.OpenCamp();

@@ -35,6 +35,8 @@ public sealed class HeadlessGame : IScenarioScriptHost, IDisposable
 		Game = GameSetup.CreateGame(renderer, dataPath, new NullAudioOutput(), new Configuration(),
 			() => [.. heldKeys], _ => { });
 		Game.QuitRequested += () => ExitRequested = true;
+		// every headless game has its own savegame
+		Game.SavegamePath = Path.Combine(Path.GetTempPath(), $"Amberstar.net-{Guid.NewGuid():N}.sav");
 	}
 
 	public G Game { get; }
@@ -127,6 +129,9 @@ public sealed class HeadlessGame : IScenarioScriptHost, IDisposable
 	{
 		if (!disposed)
 		{
+			if (Game.SavegamePath != null && File.Exists(Game.SavegamePath))
+				File.Delete(Game.SavegamePath);
+
 			Game.Dispose();
 			disposed = true;
 		}

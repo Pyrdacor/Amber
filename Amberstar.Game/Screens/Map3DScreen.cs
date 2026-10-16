@@ -301,8 +301,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				}
 				case ButtonType.Disk: // options
 				{
-					// TODO: Show options
-					Game.Quit();
+					Game.ScreenHandler.PushScreen(ScreenType.Options);
 					break;
 				}
 			}

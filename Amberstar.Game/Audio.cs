@@ -51,6 +51,15 @@ partial class Game
         }
     }
 
+    /// <summary>
+    /// Switches the music on or off (stored in the savegame like in the original).
+    /// </summary>
+    internal void SetMusic(bool on)
+    {
+        State.MusicBlock = !on;
+        audioOutput.Enabled = on;
+    }
+
     internal void PlaySong(int songIndex)
     {
         return; // TODO: REMOVE

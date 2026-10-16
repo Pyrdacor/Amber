@@ -287,6 +287,7 @@ namespace Amberstar
             game = GameSetup.CreateGame(renderer, dataPath, audioOuput, configuration, QueryPressedKeys, SetMousePosition);
 
             game.QuitRequested += window.Close;
+            game.SavegamePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Amberstar.net", "Saves", "Savegame.sav");
 
             StartCheatInputTask();
         }
