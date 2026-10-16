@@ -1,18 +1,44 @@
-﻿namespace Amberstar;
+﻿using Amberstar.Frontend;
+using Amberstar.Frontend.Scripting;
+
+namespace Amberstar;
 
 class Program
 {
+	// Only wait for the user after errors if nobody runs a script (e.g. CI).
+	static bool interactive = true;
+
 	[STAThread]
-	static void Main()
+	static void Main(string[] args)
 	{
 		AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-		var gameWindow = new GameWindow();
+		var options = CommandLineOptions.Parse(args);
+
+		if (options == null)
+			Environment.Exit(1);
+
+		if (options.ShowHelp)
+		{
+			CommandLineOptions.PrintUsage();
+			return;
+		}
+
+		interactive = options.ScriptPath == null;
 		int exitCode = 0;
 
 		try
 		{
-			gameWindow.Run();
+			if (options.Headless)
+			{
+				exitCode = RunHeadless(options);
+			}
+			else
+			{
+				var gameWindow = new GameWindow(options);
+				gameWindow.Run();
+				exitCode = gameWindow.ExitCode;
+			}
 		}
 		catch (Exception ex)
 		{
@@ -25,12 +51,32 @@ class Program
 		}
 	}
 
+	static int RunHeadless(CommandLineOptions options)
+	{
+		var dataPath = GameSetup.FindDataPath(options.DataPath);
+
+		if (dataPath == null)
+		{
+			Console.WriteLine("Game data not found. Use '--data <path>' or the environment variable " + GameSetup.DataPathEnvironmentVariable + ".");
+			return 1;
+		}
+
+		using var game = new HeadlessGame(dataPath, options.RandomSeed ?? 0);
+		var result = game.RunScript(ScenarioScript.FromFile(options.ScriptPath!), options.MaxScriptTime);
+
+		return result.Success ? 0 : 1;
+	}
+
 	static void OutputError(string error)
 	{
 		Console.WriteLine(error);
-		Console.WriteLine();
-		Console.WriteLine("Press return to exit");
-		Console.ReadLine();
+
+		if (interactive)
+		{
+			Console.WriteLine();
+			Console.WriteLine("Press return to exit");
+			Console.ReadLine();
+		}
 	}
 
 	static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

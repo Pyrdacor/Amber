@@ -2,11 +2,11 @@
 using System.Text;
 using Amberstar.GameData;
 
-namespace Amberstar;
+namespace Amberstar.Frontend;
 
 using G = Game.Game;
 
-internal static class Cheats
+public static class Cheats
 {
     record Parameter(string Name)
     {
@@ -60,24 +60,26 @@ internal static class Cheats
                 string command = commandQueue.Dequeue();
 
                 ProcessCheatCommand(game, command);
+                EndCommand();
             }
         }
     }
 
+    /// <summary>
+    /// Executes a cheat command directly (e.g. from a scenario script).
+    /// </summary>
+    public static void Execute(G game, string command) => ProcessCheatCommand(game, command);
+
     private static void ProcessCheatCommand(G game, string command)
     {
         if (string.IsNullOrWhiteSpace(command))
-        {
-            EndCommand();
             return;
-        }
 
         var parts = command.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         if (!commands.TryGetValue(parts[0].ToLower(), out var commandInfo))
         {
             Console.WriteLine($"Invalid command: '{parts[0]}'");
-            EndCommand();
             return;
         }
 
@@ -86,18 +88,15 @@ internal static class Cheats
         if (paramCount < commandInfo.RequiredParameterCount)
         {
             Console.WriteLine($"Command '{parts[0]}' needs at least {commandInfo.RequiredParameterCount} parameter(s). Use 'help {parts[0]}'");
-            EndCommand();
             return;
         }
         else if (paramCount > commandInfo.Parameters.Length && parts[0].ToLower() != "help")
         {
             Console.WriteLine($"Command '{parts[0]}' supports at max {commandInfo.Parameters.Length} parameter(s). Use 'help {parts[0]}'");
-            EndCommand();
             return;
         }
 
         commandInfo.Action(game, parts[1..]);
-        EndCommand();
     }
 
     private static void EndCommand()
@@ -243,6 +242,7 @@ internal static class Cheats
         if (!int.TryParse(args[0], out int amount) || amount < 0 || amount > short.MaxValue)
         {
             Console.WriteLine($"Invalid value for parameter amount. Provide a valid number in range 0 to {short.MaxValue}.");
+            return;
         }
 
         if (amount == 0)
@@ -261,6 +261,7 @@ internal static class Cheats
         if (!int.TryParse(args[0], out int amount) || amount < 0 || amount > short.MaxValue)
         {
             Console.WriteLine($"Invalid value for parameter amount. Provide a valid number in range 0 to {short.MaxValue}.");
+            return;
         }
 
         if (amount == 0)

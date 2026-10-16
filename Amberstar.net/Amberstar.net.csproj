@@ -29,6 +29,7 @@
     <ProjectReference Include="..\Amber.Renderer.OpenGL\Amber.Renderer.OpenGL.csproj" />
     <ProjectReference Include="..\Amberstar.GameData.Legacy\Amberstar.GameData.Legacy.csproj" />
     <ProjectReference Include="..\Amberstar.Game\Amberstar.Game.csproj" />
+    <ProjectReference Include="..\Amberstar.Frontend\Amberstar.Frontend.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 ﻿using Amberstar.Game;
 
-namespace Amberstar
+namespace Amberstar.Frontend
 {
 	internal class FontInfoProvider
 	(

@@ -10,7 +10,7 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal class Map3DScreen : ButtonGridScreen
+internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 {
 	private static readonly Dictionary<Direction, Dictionary<PerspectiveLocation, Position>> PerspectiveMappings =
 		new()
@@ -804,6 +804,55 @@ internal class Map3DScreen : ButtonGridScreen
 		{
 			// TODO: ouch
 		}
+	}
+
+	bool IScriptMapScreen.ScriptMove(int x, int y)
+	{
+		int targetX = Game.State.PartyPosition.X + x;
+		int targetY = Game.State.PartyPosition.Y + y;
+
+		if (!CanMoveTo(targetX, targetY, true, 0))
+			return false;
+
+		lastMoveTicks = currentTicks;
+		Game.State.SetPartyPosition(targetX, targetY);
+		AfterMove();
+
+		return true;
+	}
+
+	void IScriptMapScreen.ScriptTurn(Direction direction)
+	{
+		lastTurnTicks = currentTicks;
+		Game.State.PartyDirection = direction;
+		UpdateView();
+	}
+
+	bool IScriptMapScreen.ScriptTrigger(EventTrigger trigger, int x, int y)
+	{
+		var position = new Position(x, y);
+
+		if (trigger == EventTrigger.Mouth)
+		{
+			var character = characters.FirstOrDefault(character => character.Position == position);
+
+			if (character != null && character.Type == MapCharacterType.Person)
+			{
+				Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
+				Game.ScreenHandler.PushScreen(ScreenType.Conversation);
+				return true;
+			}
+		}
+
+		if (x < 0 || y < 0 || x >= map!.Width || y >= map.Height)
+			return false;
+
+		int eventIndex = map.Tiles[x + y * map.Width].Event;
+
+		if (eventIndex == 0 || !Game.IsEventActive(map, eventIndex, map.Events[eventIndex - 1]))
+			return false;
+
+		return Game.EventHandler.HandleEvent(trigger, Event.CreateEvent(map.Events[eventIndex - 1], eventIndex), map);
 	}
 
 	private void TurnTo(Direction newDirection)

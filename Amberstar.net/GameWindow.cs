@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using Amber.Audio.OpenAL;
 using Amber.Common;
-using Amber.IO.FileSystem;
 using Amber.Renderer.OpenGL;
 using Amber.Serialization;
-using Amberstar.GameData.Legacy;
+using Amberstar.Frontend;
+using Amberstar.Frontend.Scripting;
 using Silk.NET.Core.Contexts;
 using Silk.NET.Input;
 using Silk.NET.Input.Glfw;
@@ -17,7 +17,7 @@ using WindowDimension = Silk.NET.Maths.Vector2D<int>;
 
 namespace Amberstar
 {
-	class GameWindow(string id = "MainWindow") : IContextProvider
+	class GameWindow(CommandLineOptions options, string id = "MainWindow") : IContextProvider, IScenarioScriptHost
     {
         string gameVersion = "Amberstar.net";
         Renderer? renderer;
@@ -27,8 +27,11 @@ namespace Amberstar
         ICursor? cursor = null;
         Game.Game? game = null;
         bool closed = false;
+        ScenarioScript? scenarioScript = null;
+        readonly HashSet<Game.Key> scriptHeldKeys = [];
 
         public string Identifier { get; } = id;
+        public int ExitCode { get; private set; } = 0;
         public IGLContext? GLContext => window?.GLContext;
         public int Width { get; private set; }
         public int Height { get; private set; }
@@ -75,7 +78,9 @@ namespace Amberstar
 
         List<Game.Key> QueryPressedKeys()
         {
-            return keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToList() ?? [];
+            var keys = keyboard?.SupportedKeys?.Where(key => keyboard.IsKeyPressed(key)).Select(InputConverter.Convert).Where(key => key != Game.Key.Invalid).ToList() ?? [];
+            keys.AddRange(scriptHeldKeys);
+            return keys;
         }
 
         void SetMousePosition(Position position)
@@ -265,22 +270,21 @@ namespace Amberstar
 
             renderer = new(this, new Size(Width, Height), new Size(320, 200));
 
-			var fileSystem = FileSystem.FromOperatingSystemPath(@"D:\Projects\Amber\German\AmberfilesST");
+            var dataPath = GameSetup.FindDataPath(options.DataPath)
+                ?? throw new DirectoryNotFoundException("Game data not found. Use '--data <path>' or the environment variable " + GameSetup.DataPathEnvironmentVariable + ".");
 
-			var assetProvider = new AssetProvider(fileSystem.AsReadOnly());
-
-            // setup the layers
-            LayerSetup.Run(assetProvider, renderer, out var uiGraphicIndexProvider,
-                out var paletteIndexProvider, out var paletteColorProvider, out var fontInfoProvider);
+            if (options.RandomSeed != null)
+                Game.Game.SetRandomSeed(options.RandomSeed.Value);
 
             var audioOuput = new AudioOutput();
             var configuration = new Configuration(); // TODO: load it later!
 
-            game = new Game.Game(renderer, assetProvider, audioOuput, uiGraphicIndexProvider,
-                paletteIndexProvider, paletteColorProvider, fontInfoProvider, configuration,
-                QueryPressedKeys, SetMousePosition);
+            game = GameSetup.CreateGame(renderer, dataPath, audioOuput, configuration, QueryPressedKeys, SetMousePosition);
 
             game.QuitRequested += window.Close;
+
+            if (options.ScriptPath != null)
+                scenarioScript = ScenarioScript.FromFile(options.ScriptPath);
 
             StartCheatInputTask();
         }
@@ -317,6 +321,19 @@ namespace Amberstar
             if (game != null)
             {
                 Cheats.HandleQueuedCommands(game);
+
+                if (scenarioScript != null)
+                {
+                    scenarioScript.Update(game, this, delta);
+
+                    if (scenarioScript.Finished)
+                    {
+                        Console.WriteLine(scenarioScript.Summary);
+                        ExitCode = scenarioScript.Failures == 0 ? 0 : 1;
+                        scenarioScript = null;
+                    }
+                }
+
                 game.Update(delta);
             }
         }
@@ -387,6 +404,16 @@ namespace Amberstar
                 window.Position = new WindowDimension(newX ?? window.Position.X, newY ?? window.Position.Y);
             }
         }
+
+        void IScenarioScriptHost.SetKeyHeld(Game.Key key, bool held)
+        {
+            if (held)
+                scriptHeldKeys.Add(key);
+            else
+                scriptHeldKeys.Remove(key);
+        }
+
+        void IScenarioScriptHost.Exit() => window?.Close();
 
         public void Run()
         {

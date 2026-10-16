@@ -1,8 +1,8 @@
 ﻿using Amberstar.Game;
 
-namespace Amberstar;
+namespace Amberstar.Frontend;
 
-internal class Configuration : IConfiguration
+public sealed class Configuration : IConfiguration
 {
     const int DefaultWindowX = 10;
     const int DefaultWindowY = 10;

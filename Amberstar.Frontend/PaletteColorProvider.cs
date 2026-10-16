@@ -2,7 +2,7 @@
 using Amber.Common;
 using Amberstar.Game;
 
-namespace Amberstar
+namespace Amberstar.Frontend
 {
 	internal class PaletteColorProvider(Dictionary<int, IGraphic> palettes) : IPaletteColorProvider
 	{

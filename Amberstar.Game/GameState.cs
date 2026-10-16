@@ -478,6 +478,8 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public void SaveEvent(int mapIndex, int eventIndex) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, eventIndex), true);
 
+	public void SetEventActive(int mapIndex, int eventIndex, bool active) => SetBit(EventBits, BitFromMapEventIndex(mapIndex, eventIndex), !active);
+
     // NOTE: This assumes that mapCharIndex is 1-based!
     static int BitFromMapCharIndex(int mapIndex, int mapCharIndex) => (mapIndex - 1) * 24 + mapCharIndex;
 

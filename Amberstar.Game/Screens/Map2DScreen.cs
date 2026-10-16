@@ -9,7 +9,7 @@ using Amberstar.GameData.Serialization;
 namespace Amberstar.Game.Screens;
 
 // TODO: Shadows (see Do_shadow)
-internal class Map2DScreen : ButtonGridScreen
+internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 {
 	class WorldMap : IMap2D
 	{
@@ -626,14 +626,10 @@ internal class Map2DScreen : ButtonGridScreen
 			TryExecuteMapEvent(EventTrigger.Move);
     }
 
-	private bool TryExecuteMapEvent(EventTrigger trigger, int x = 0, int y = 0)
+	private bool TryExecuteMapEvent(EventTrigger trigger, int? x = null, int? y = null)
 	{
-		if (x == 0)
-		{
-            (x, y) = Game.State.PartyPosition;
-        }
-
-        var eventWithIndex = GetEventWithIndex(x, y);
+		var position = Game.State.PartyPosition;
+        var eventWithIndex = GetEventWithIndex(x ?? position.X, y ?? position.Y);
 
         if (eventWithIndex != null)
         {
@@ -827,6 +823,53 @@ internal class Map2DScreen : ButtonGridScreen
 
         return true;
     }
+
+	bool IScriptMapScreen.ScriptMove(int x, int y)
+	{
+		// Same direction logic as for key movement
+		if (x < 0)
+			Game.State.PartyDirection = Direction.Left;
+		else if (x > 0)
+			Game.State.PartyDirection = Direction.Right;
+		if (y < 0)
+			Game.State.PartyDirection = Direction.Up;
+		else if (y > 0)
+			Game.State.PartyDirection = Direction.Down;
+
+		if (!MovePlayer(x, y))
+		{
+			UpdateMap();
+			return false;
+		}
+
+		lastMoveStartTicks = currentTicks;
+		AfterMove();
+
+		return true;
+	}
+
+	void IScriptMapScreen.ScriptTurn(Direction direction)
+	{
+		Game.State.PartyDirection = direction;
+		UpdateMap();
+	}
+
+	bool IScriptMapScreen.ScriptTrigger(EventTrigger trigger, int x, int y)
+	{
+		if (trigger == EventTrigger.Mouth)
+		{
+			var character = characters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
+
+			if (character != null && Game.State.IsMapCharacterActive(map!.Index, 1 + character.Index) && character.Type == MapCharacterType.Person)
+			{
+				Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
+				Game.ScreenHandler.PushScreen(ScreenType.Conversation);
+				return true;
+			}
+		}
+
+		return TryExecuteMapEvent(trigger, x, y);
+	}
 
 	private Position MousePositionToMapTilePosition(Position mousePosition)
 	{

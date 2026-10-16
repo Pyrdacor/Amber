@@ -36,10 +36,19 @@ internal class ConfirmationScreen() : WindowScreen(WindowX, WindowY, WindowWidth
 
 		base.Open(closeAction);
 
+        Game.ScriptTextShown(Game.CurrentText);
         text!.SetText(Game.CurrentText);
         text.Visible = true;
 
         Game.CurrentResult = false;
+    }
+
+    internal void ScriptAnswer(bool yes)
+    {
+        if (yes)
+            Yes();
+        else
+            No();
     }
 
 	private void Yes()

@@ -47,6 +47,7 @@ internal class PictureTextScreen : Screen
         var text = Game.AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
 
 		text = text.GetTextBlock(@event.TextIndex);
+		Game.ScriptTextShown(text);
 
 		displayText = AddLabel(TextX, TextY, text, TextWidth, TextHeight, ControlDisplayLayer);
 		displayText.PaletteIndex = palette;

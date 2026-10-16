@@ -48,6 +48,7 @@ internal sealed class TextBoxScreen() : WindowScreen(WindowX, WindowY, WindowWid
             text = text.GetTextBlock(@event.TextIndex);
         }
 
+        Game.ScriptTextShown(text);
         paletteIndex = GetPalette();
         displayText = AddLabel(0, 0, text, width: (WindowWidthInTiles - 2) * Window.TileWidth, height: WindowMaxHeightInTiles * Window.TileHeight + 7, TextDisplayLayer);
         displayText.PaletteIndex = paletteIndex;

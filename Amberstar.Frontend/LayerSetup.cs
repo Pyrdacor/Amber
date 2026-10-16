@@ -1,15 +1,14 @@
 ﻿using Amber.Assets.Common;
 using Amber.Renderer.Common;
-using Ambermoon.Renderer.OpenGL;
 using Amberstar.GameData;
 using Amberstar.GameData.Legacy;
 using Amberstar.GameData.Serialization;
 
-namespace Amberstar
+namespace Amberstar.Frontend
 {
 	internal static class LayerSetup
 	{
-		public static void Run(AssetProvider assetProvider, Renderer renderer,
+		public static void Run(AssetProvider assetProvider, IRenderer renderer,
 			out GraphicIndexProvider graphicIndexProvider,
 			out PaletteIndexProvider paletteIndexProvider,
 			out PaletteColorProvider paletteColorProvider,

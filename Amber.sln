@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amber.Audio.Common", "Amber
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Renderer.Headless", "Amber.Renderer.Headless\Amber.Renderer.Headless.csproj", "{BE2F0A43-D49A-48F3-B1B4-D66C097A3E77}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.Frontend", "Amberstar.Frontend\Amberstar.Frontend.csproj", "{D6D6681D-D25B-474C-918C-3BADB9A76E10}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -242,6 +244,18 @@ Global
 		{BE2F0A43-D49A-48F3-B1B4-D66C097A3E77}.ReleaseAndroid|Any CPU.Build.0 = ReleaseAndroid|Any CPU
 		{BE2F0A43-D49A-48F3-B1B4-D66C097A3E77}.ReleaseES|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
 		{BE2F0A43-D49A-48F3-B1B4-D66C097A3E77}.ReleaseES|Any CPU.Build.0 = ReleaseAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.DebugAndroid|Any CPU.ActiveCfg = DebugAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.DebugAndroid|Any CPU.Build.0 = DebugAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.DebugES|Any CPU.ActiveCfg = DebugAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.DebugES|Any CPU.Build.0 = DebugAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseAndroid|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseAndroid|Any CPU.Build.0 = ReleaseAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseES|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
+		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseES|Any CPU.Build.0 = ReleaseAndroid|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
