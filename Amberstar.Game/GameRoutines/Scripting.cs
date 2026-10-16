@@ -240,6 +240,18 @@ partial class Game
 	public string? ScriptClass(int slot) => State.GetPartyMember(slot)?.Class.ToString();
 
 	/// <summary>
+	/// Gets the icon of a 1-based position in the shown automap.
+	/// </summary>
+	public string? ScriptAutomapIcon(int x, int y) => (ScreenHandler.ActiveScreen as AutomapScreen)?.GetIcon(x, y).ToString();
+
+	/// <summary>
+	/// Gets the 1-based position of the upper left tile of the shown automap.
+	/// </summary>
+	public Position? ScriptAutomapView => ScreenHandler.ActiveScreen is AutomapScreen automapScreen
+		? new Position(automapScreen.ScriptViewX, automapScreen.ScriptViewY)
+		: null;
+
+	/// <summary>
 	/// Gets a dictionary word by its index.
 	/// </summary>
 	public string ScriptGetWord(int wordIndex) => AssetProvider.TextLoader.FromTextFragmentIndex((word)wordIndex).GetString();

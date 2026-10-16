@@ -13,6 +13,11 @@ public enum LabTileFlags : uint
 	/// </summary>
 	WaveAnimation =		0x_0000_0001,
 	BlockSight =		0x_0000_0002,
+	/// <summary>
+	/// If set, the tile is shown the other way round on the automap
+	/// (blocking tiles as floor and walkable tiles as walls).
+	/// </summary>
+	AutomapReverse =	0x_0000_0020,
 	BlockAllMovement =	0x_0000_0080,
 	AllowWalk1 =        0x_0000_0100,
 	AllowWalk2 =		0x_0000_0200,

@@ -438,6 +438,43 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
     #endregion
 
 
+    #region Automap
+
+    // One bit per tile of 3D maps (AUTOMAP.AMB in the original, initially nothing is explored).
+    // TODO: Store the automaps in the savegame.
+    readonly Dictionary<int, byte[]> automaps = [];
+
+    byte[] GetAutomap(IMap map)
+    {
+        if (!automaps.TryGetValue(map.Index, out var automap))
+        {
+            automap = new byte[(map.Width * map.Height + 7) / 8];
+            automaps.Add(map.Index, automap);
+        }
+
+        return automap;
+    }
+
+    /// <summary>
+    /// Checks if a tile (0-based position) of a 3D map was explored.
+    /// </summary>
+    public bool IsAutomapped(IMap map, int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= map.Width || y >= map.Height)
+            return false;
+
+        return IsBitSet(GetAutomap(map), x + y * map.Width);
+    }
+
+    public void SetAutomapped(IMap map, int x, int y)
+    {
+        if (x >= 0 && y >= 0 && x < map.Width && y < map.Height)
+            SetBit(GetAutomap(map), x + y * map.Width, true);
+    }
+
+    #endregion
+
+
     #region Conversation
 
     public ConversationCharacter? CurrentConversationCharacter { get; set; } = null;

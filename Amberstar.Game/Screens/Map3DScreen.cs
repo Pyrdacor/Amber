@@ -291,8 +291,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				}
 				case ButtonType.Map:
 				{
-					// TODO
-					// Game.ScreenHandler.PushScreen(ScreenType.Map);
+					Game.ScreenHandler.PushScreen(ScreenType.Automap);
 					break;
 				}
 				case ButtonType.PartyPositions:
@@ -439,10 +438,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 	private void AfterMove()
 	{
-		// TODO
-
 		var playerPosition = Game.State.PartyPosition;
 		UpdateView();
+		UpdateAutomap();
 
 		Game.Time.Moved3D();
 
@@ -465,6 +463,23 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
             }
 
 			Game.EventHandler.HandleEvent(EventTrigger.Move, mapEvent, map);
+		}
+	}
+
+	/// <summary>
+	/// Explores the tiles around the party (Update_automap in the original).
+	/// </summary>
+	private void UpdateAutomap()
+	{
+		if (!Game.CanSee())
+			return;
+
+		var (x, y) = Game.State.PartyPosition;
+
+		for (int offsetY = -1; offsetY <= 1; offsetY++)
+		{
+			for (int offsetX = -1; offsetX <= 1; offsetX++)
+				Game.State.SetAutomapped(map!, x + offsetX, y + offsetY);
 		}
 	}
 

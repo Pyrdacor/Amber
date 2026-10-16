@@ -65,6 +65,7 @@ The most important ones:
 | `amount <n>`                             | Enter an amount in the amount input window                           |
 | `placegold`, `placefood`, `transport`    | Check the gold/food pile of a place or a bought transport            |
 | `spellknown <slot> <school> <spell>`     | Check if a party member knows a spell                                |
+| `automap <x> <y> [icon]`, `automapview`  | Check the shown automap                                              |
 | `trainskill`, `finishtraining`, `class`  | Distribute skill points after a level-up in a guild                  |
 | `map`, `pos`, `dir`, `screen`            | Print or check the location and the active screen                    |
 | `tile <x> <y> [tile]`                    | Check a tile of the shown map (3D: lab tile, 2D: `underlay/overlay`) |

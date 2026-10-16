@@ -53,6 +53,10 @@ using G = Game.Game;
 ///                             distribute points to a skill (negative to take them back) after a level-up
 ///   finishtraining            close the skill training window
 ///   class &lt;slot&gt; [class]      print the class of a party member, optionally check it
+///   automap &lt;x&gt; &lt;y&gt; [icon]    print the icon of a map position in the shown automap (Unknown, Wall, Floor, Door,
+///                             Exit, Treasure, Riddlemouth, Merchant, Teleporter, Party, PartyNorth, ...),
+///                             optionally check it
+///   automapview [x y]         print the upper left map position of the shown automap, optionally check it
 ///   placefood [amount]        print the food of the shown food dealer, optionally check it
 ///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
 ///                             print the transport at a position (none, Horse, Raft or Ship), optionally check it
@@ -351,6 +355,30 @@ public sealed class ScenarioScript
 				CheckResult(game.ScriptFinishTraining());
 				continueTime = time + 1;
 				break;
+			case "automap":
+			{
+				var icon = game.ScriptAutomapIcon(Arg(0), Arg(1));
+
+				if (icon == null)
+					Report(false, $"no automap is shown but {game.ScriptActiveScreen}");
+				else if (args.Length < 3)
+					output($"  automap {Arg(0)},{Arg(1)} = {icon}");
+				else
+					Report(icon.Equals(args[2], StringComparison.OrdinalIgnoreCase), $"automap {Arg(0)},{Arg(1)} = {icon} (expected {args[2]})");
+				break;
+			}
+			case "automapview":
+			{
+				var view = game.ScriptAutomapView;
+
+				if (view == null)
+					Report(false, $"no automap is shown but {game.ScriptActiveScreen}");
+				else if (args.Length < 2)
+					output($"  automapview = {view.Value.X},{view.Value.Y}");
+				else
+					Report(view.Value == new Position(Arg(0), Arg(1)), $"automapview = {view.Value.X},{view.Value.Y} (expected {Arg(0)},{Arg(1)})");
+				break;
+			}
 			case "class":
 			{
 				var @class = game.ScriptClass(Arg(0)) ?? "none";

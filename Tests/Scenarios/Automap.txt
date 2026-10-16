@@ -1,0 +1,31 @@
+# The automap of Twinlake (map 67, 3D): the tiles around the party are explored on every step.
+waittext
+dismissall
+# --- enter Twinlake from the graveyard (arrival at 7,15)
+teleport 65 8 24
+move down
+waitidle
+map 67
+# --- switch to the action buttons and open the automap
+click 230 170 right
+buttonenabled 6 1
+button 6
+waitscreen Automap
+automap 7 15 Party
+automap 7 14 Exit
+automap 9 15 Unknown
+automapview 6 7
+button 4
+waitidle
+# --- after one step south, the row 17 is explored as well
+click 230 170 right
+move down
+pos 7 16
+click 230 170 right
+button 6
+waitscreen Automap
+automap 7 16 Party
+automap 7 15 Floor
+automap 7 17 Wall
+button 4
+waitidle
