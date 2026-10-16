@@ -260,7 +260,8 @@ internal class AttributeChangeEvent(EventData eventData) : Event(eventData), IAt
 {
 	public byte Attribute => eventData.Byte1;
 
-	public bool Add => eventData.Byte2 != 0;
+	// The original adds the amount if the byte is 0 and subtracts it otherwise.
+	public bool Add => eventData.Byte2 == 0;
 
 	public bool Random => eventData.Byte3 != 0;
 

@@ -15,6 +15,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		const int WorldMapSong = 2;
 		IMap2D[] maps = [];
+		int[] mapIndices = [];
 		readonly Dictionary<int, IMap2D> mapCache = [];
 		List<IEvent> events = [];
 		Tile2D[] tiles = [];
@@ -50,6 +51,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		public void SetMaps(IMap2D[] maps, int[] mapIndices)
 		{
 			this.maps = maps;
+			this.mapIndices = mapIndices;
 			UpperLeftMapIndex = mapIndices[0];
 
 			for (int i = 0; i < 4; i++)
@@ -87,6 +89,28 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		}
 
 		public IMap2D? GetMapByIndex(int index) => mapCache.GetValueOrDefault(index);
+
+		/// <summary>
+		/// Gets the world map part at a 0-based position.
+		/// </summary>
+		public IMap2D GetPartAt(int x, int y) => maps[(x < WorldMapWidth ? 0 : 1) + (y < WorldMapHeight ? 0 : 2)];
+
+		/// <summary>
+		/// Changes a tile of a world map part at a 1-based position of that part.
+		/// </summary>
+		public void ChangeTile(int mapIndex, int x, int y, int tileIndex)
+		{
+			int part = Array.IndexOf(mapIndices, mapIndex);
+
+			if (part == -1 || maps[part] is not MapInstance2D mapPart)
+				return;
+
+			mapPart.ChangeTile(x, y, tileIndex);
+
+			int offsetX = (part % 2) * WorldMapWidth;
+			int offsetY = (part / 2) * WorldMapHeight;
+			tiles[offsetX + x - 1 + (offsetY + y - 1) * Width] = mapPart.Tiles[x - 1 + (y - 1) * WorldMapWidth];
+		}
 
 		public IEvent? GetEvent(Game Game, int x, int y, bool onlyActive = true)
 		{
@@ -642,7 +666,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 				ResetPartyPosition();
             }
 
-			Game.EventHandler.HandleEvent(trigger, mapEvent, map!);
+			// On world maps the event belongs to the map part at the position (important for event bits and tile changes).
+			IMapEventProvider eventProvider = worldMap?.GetPartAt(x ?? position.X, y ?? position.Y) ?? map!;
+			Game.EventHandler.HandleEvent(trigger, mapEvent, eventProvider);
 
 			return true;
         }
@@ -824,6 +850,18 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         return true;
     }
 
+	void IMapScreen.ChangeTile(int mapIndex, int x, int y, int tileIndex)
+	{
+		if (worldMap != null)
+			worldMap.ChangeTile(mapIndex, x, y, tileIndex);
+		else if (map is MapInstance2D mapInstance && mapInstance.Index == mapIndex)
+			mapInstance.ChangeTile(x, y, tileIndex);
+		else
+			return;
+
+		UpdateMap();
+	}
+
 	bool IScriptMapScreen.ScriptMove(int x, int y)
 	{
 		// Same direction logic as for key movement
@@ -848,13 +886,13 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		return true;
 	}
 
-	void IScriptMapScreen.ScriptTurn(Direction direction)
+	void IMapScreen.Turn(Direction direction)
 	{
 		Game.State.PartyDirection = direction;
 		UpdateMap();
 	}
 
-	bool IScriptMapScreen.ScriptTrigger(EventTrigger trigger, int x, int y)
+	bool IMapScreen.TriggerEvent(EventTrigger trigger, int x, int y)
 	{
 		if (trigger == EventTrigger.Mouth)
 		{
@@ -1329,7 +1367,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 				var map = worldMap?.GetMapByIndex(index);
 
-				return map ?? (Game.AssetProvider.MapLoader.LoadMap(index) as IMap2D)!;
+				return map ?? Game.CreateMapInstance((Game.AssetProvider.MapLoader.LoadMap(index) as IMap2D)!);
 			}
 		}
 	}
@@ -1338,7 +1376,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		lastScrollX = -1;
 		lastScrollY = -1;
-		map = Game.AssetProvider.MapLoader.LoadMap(index) as IMap2D; // TODO: catch exceptions
+		map = Game.CreateMapInstance((Game.AssetProvider.MapLoader.LoadMap(index) as IMap2D)!); // TODO: catch exceptions
 		bool isWorldMap = map!.Flags.HasFlag(MapFlags.Wilderness);
 
 		if (isWorldMap)

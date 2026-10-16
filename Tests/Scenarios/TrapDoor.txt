@@ -1,0 +1,12 @@
+# A trap door in the floor (map 94, 26,26) drops the party to map 93 (31,31) and hurts it (1 to 10 damage).
+waittext
+dismissall
+setvalue 1 maxhp 50
+setvalue 1 hp 50
+value 1 hp
+teleport 94 26 26
+dismissall
+map 93
+pos 31 31
+value 1 hp -
+condition 1 Dead 0

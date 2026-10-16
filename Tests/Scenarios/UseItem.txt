@@ -1,0 +1,18 @@
+# Use item events (map 72): using item 170 on 10,17 changes the tile 11,17 to 4 and saves the event (save index 9).
+waittext
+dismissall
+teleport 72 10 17
+dismissall
+tile 11 17 10
+# --- a wrong item has no effect
+give 1 1
+useitem 1 noeffect
+# --- the right item
+give 1 170
+useitem 170
+tile 11 17 4
+eventbit 72 9 1
+# --- the change is kept after leaving the map
+teleport 65 8 11
+teleport 72 10 18
+tile 11 17 4

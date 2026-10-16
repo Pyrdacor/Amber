@@ -320,6 +320,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
     public Direction PartyDirection { get; set; } = savegame.PartyDirection;
     Transport[] Transports { get; } = savegame.Transports;
     HashSet<TileChange> TileChanges { get; } = new(savegame.TileChanges, new TileChangeComparer());
+    public IReadOnlyCollection<TileChange> SavedTileChanges => TileChanges;
     public Position LastPosition { get; private set; } = new(7, 10);
     public Position PartyPosition => new(PartyX - 1, PartyY - 1);
 	bool WorldMap { get; set; } = false;

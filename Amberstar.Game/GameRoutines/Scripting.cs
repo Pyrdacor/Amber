@@ -86,10 +86,10 @@ partial class Game
 
 	public string? ScriptTurn(Direction direction)
 	{
-		if (ScreenHandler.ActiveScreen is not IScriptMapScreen mapScreen)
+		if (ScreenHandler.ActiveScreen is not IMapScreen)
 			return $"no map is shown but {ScriptActiveScreen}";
 
-		mapScreen.ScriptTurn(direction);
+		TurnParty(direction);
 
 		return null;
 	}
@@ -103,10 +103,94 @@ partial class Game
 		if (!Enum.TryParse<EventTrigger>(trigger, true, out var eventTrigger))
 			return $"invalid trigger '{trigger}'";
 
-		if (ScreenHandler.ActiveScreen is not IScriptMapScreen mapScreen)
+		if (ScreenHandler.ActiveScreen is not IMapScreen mapScreen)
 			return $"no map is shown but {ScriptActiveScreen}";
 
-		return mapScreen.ScriptTrigger(eventTrigger, x - 1, y - 1) ? null : $"nothing to trigger at {x},{y}";
+		return mapScreen.TriggerEvent(eventTrigger, x - 1, y - 1) ? null : $"nothing to trigger at {x},{y}";
+	}
+
+	/// <summary>
+	/// True if a text is shown or a screen waits for a click to continue.
+	/// </summary>
+	public bool ScriptWaitingForClick => ScreenHandler.ActiveScreen switch
+	{
+		TextBoxScreen or PictureTextScreen => true,
+		IWaitForClickScreen screen => screen.WaitingForClick,
+		_ => false
+	};
+
+	/// <summary>
+	/// Uses an item of the active party member on the map event at the party position
+	/// like the inventory does. Items which are destroyed after usage are removed.
+	/// </summary>
+	public string? ScriptUseItem(uint itemIndex)
+	{
+		var partyMember = State.ActivePartyMember;
+
+		if (partyMember == null)
+			return "no active party member";
+
+		int slotIndex = Array.FindIndex(partyMember.Inventory, slot => slot.Item?.Index == itemIndex && slot.Count != 0);
+
+		if (slotIndex == -1)
+			return $"the active party member has no item {itemIndex}";
+
+		var item = partyMember.Inventory[slotIndex].Item!;
+
+		if (!UseItemOnMap(item))
+			return $"item {itemIndex} has no effect here";
+
+		if (item.Flags.HasFlag(ItemFlags.DestroyAfterUsage))
+			RemoveInventoryItem(partyMember, slotIndex);
+
+		return null;
+	}
+
+	/// <summary>
+	/// Gets a dictionary word by its index.
+	/// </summary>
+	public string ScriptGetWord(int wordIndex) => AssetProvider.TextLoader.FromTextFragmentIndex((word)wordIndex).GetString();
+
+	/// <summary>
+	/// Gets a tile of the shown map at a 1-based position. 3D maps give the
+	/// lab tile index, 2D maps the underlay and overlay index like "12/0".
+	/// </summary>
+	public string? ScriptGetTile(int x, int y)
+	{
+		var map = ScreenHandler.ActiveScreen switch
+		{
+			Map2DScreen map2DScreen => (IMap)map2DScreen.Map,
+			Map3DScreen map3DScreen => map3DScreen.Map,
+			_ => null
+		};
+
+		if (map == null || x < 1 || y < 1 || x > map.Width || y > map.Height)
+			return null;
+
+		int index = x - 1 + (y - 1) * map.Width;
+
+		return map switch
+		{
+			IMap2D map2D => $"{map2D.Tiles[index].Underlay}/{map2D.Tiles[index].Overlay}",
+			IMap3D map3D => map3D.Tiles[index].LabTileIndex.ToString(),
+			_ => null
+		};
+	}
+
+	/// <summary>
+	/// Answers the shown riddlemouth with a word.
+	/// </summary>
+	public string? ScriptAnswer(string word)
+	{
+		if (ScreenHandler.ActiveScreen is not RiddlemouthScreen riddlemouthScreen)
+			return $"no riddlemouth is shown but {ScriptActiveScreen}";
+
+		if (riddlemouthScreen.WaitingForClick)
+			return "the riddlemouth waits for a click";
+
+		riddlemouthScreen.CheckAnswer(word);
+
+		return null;
 	}
 
 	/// <summary>
@@ -121,6 +205,10 @@ partial class Game
 
 		if (x < 1 || y < 1 || x > mapSize.Value.Width || y > mapSize.Value.Height)
 			return $"position {x},{y} is outside of map {mapIndex} ({mapSize.Value.Width}x{mapSize.Value.Height})";
+
+		// Pending screen changes (e.g. a text which fades in) would be executed on the new map.
+		if (!ScriptIdle)
+			return $"teleporting is only possible while a map is shown and nothing happens (use dismissall before): {ScriptState()}";
 
 		Teleport(x, y, direction, mapIndex, false);
 

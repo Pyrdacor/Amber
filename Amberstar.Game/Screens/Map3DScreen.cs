@@ -806,6 +806,15 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		}
 	}
 
+	void IMapScreen.ChangeTile(int mapIndex, int x, int y, int tileIndex)
+	{
+		if (map is not MapInstance3D mapInstance || mapInstance.Index != mapIndex)
+			return;
+
+		mapInstance.ChangeTile(x, y, tileIndex);
+		UpdateView();
+	}
+
 	bool IScriptMapScreen.ScriptMove(int x, int y)
 	{
 		int targetX = Game.State.PartyPosition.X + x;
@@ -821,14 +830,14 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		return true;
 	}
 
-	void IScriptMapScreen.ScriptTurn(Direction direction)
+	void IMapScreen.Turn(Direction direction)
 	{
 		lastTurnTicks = currentTicks;
 		Game.State.PartyDirection = direction;
 		UpdateView();
 	}
 
-	bool IScriptMapScreen.ScriptTrigger(EventTrigger trigger, int x, int y)
+	bool IMapScreen.TriggerEvent(EventTrigger trigger, int x, int y)
 	{
 		var position = new Position(x, y);
 
@@ -1083,7 +1092,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 	private void LoadMap(int index)
 	{
-		map = Game.AssetProvider.MapLoader.LoadMap(index) as IMap3D; // TODO: catch exceptions
+		map = Game.CreateMapInstance((Game.AssetProvider.MapLoader.LoadMap(index) as IMap3D)!); // TODO: catch exceptions
 		labData = Game.AssetProvider.LabDataLoader.LoadLabData(map!.LabDataIndex);
 		palette = Game.PaletteIndexProvider.GetLabyrinthPaletteIndex(labData.PaletteIndex - 1);
 		characters.Clear();

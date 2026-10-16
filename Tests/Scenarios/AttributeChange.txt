@@ -1,0 +1,17 @@
+# Attribute change events (map 108, 11,34): strength +1..10 for all party members, text 8.
+waittext
+dismissall
+value 1 strength
+teleport 108 11 34
+waittext
+dismissall
+value 1 strength +
+eventbit 108 10 1
+# --- the event is saved, so it does not happen again
+teleport 108 11 33
+dismissall
+cleartexts
+teleport 108 11 34
+dismissall
+notextshown
+value 1 strength +0

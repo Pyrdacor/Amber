@@ -1,0 +1,10 @@
+# Spinners turn the party (map 76: 8,12 faces right, 10,12 faces up).
+waittext
+dismissall
+teleport 76 8 12 down
+waitidle
+pos 8 12
+dir right
+teleport 76 10 12 down
+waitidle
+dir up

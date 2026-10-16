@@ -13,6 +13,11 @@ public enum TileFlags : uint
 	WaveAnimation =		0x_0000_0001,
 	BlockSight =		0x_0000_0002,
 	/// <summary>
+	/// If set the tile is placed on the overlay layer when a map event
+	/// changes a tile to it. Otherwise the underlay is replaced.
+	/// </summary>
+	Overlay =			0x_0000_0004,
+	/// <summary>
 	/// If set and the player enters the tile, the next tile graphic is
 	/// displayed instead which usually is the tile occupied by a sitting
 	/// or sleeping player.

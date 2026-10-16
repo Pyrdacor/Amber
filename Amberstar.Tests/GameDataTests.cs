@@ -58,6 +58,22 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void AllMapEventsHaveAHandler(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+
+		foreach (var (index, map) in assetProvider.MapLoader.LoadAllMaps())
+		{
+			for (int i = 0; i < map.Events.Count; i++)
+			{
+				var exception = Record.Exception(() => Game.Events.Event.CreateEvent(map.Events[i], i + 1));
+				Assert.True(exception == null, $"Event {i + 1} ({map.Events[i].Type}) of map {index} has no handler.");
+			}
+		}
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AllMapTextsLoad(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

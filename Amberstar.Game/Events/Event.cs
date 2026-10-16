@@ -58,7 +58,17 @@ namespace Amberstar.Game.Events
                 IHPRegenerationEvent hpRegenerationEvent => new HPRegenerationEvent(hpRegenerationEvent, eventIndex),
                 ISPRegenerationEvent spRegenerationEvent => new SPRegenerationEvent(spRegenerationEvent, eventIndex),
                 IDamageFieldEvent damageFieldEvent => new DamageFieldEvent(damageFieldEvent, eventIndex),
-                _ => throw new NotImplementedException()
+                ITrapDoorEvent trapDoorEvent => new TrapDoorEvent(trapDoorEvent, eventIndex),
+                ISpinnerEvent spinnerEvent => new SpinnerEvent(spinnerEvent, eventIndex),
+                IAntiMagicEvent antiMagicEvent => new AntiMagicEvent(antiMagicEvent, eventIndex),
+                IRiddleMouthEvent riddleMouthEvent => new RiddleMouthEvent(riddleMouthEvent, eventIndex),
+                IAttributeChangeEvent attributeChangeEvent => new AttributeChangeEvent(attributeChangeEvent, eventIndex),
+                IChangeTileEvent changeTileEvent => new ChangeTileEvent(changeTileEvent, eventIndex),
+                IEncounterEvent encounterEvent => new EncounterEvent(encounterEvent, eventIndex),
+                IUseItemEvent useItemEvent => new UseItemEvent(useItemEvent, eventIndex),
+                IAltarEvent altarEvent => new AltarEvent(altarEvent, eventIndex),
+                IOutroEvent outroEvent => new OutroEvent(outroEvent, eventIndex),
+                _ => throw new NotSupportedException($"Event type {@event.Type} is not supported.")
 			};
 		}
 	}

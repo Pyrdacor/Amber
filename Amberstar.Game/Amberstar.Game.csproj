@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Amberstar.GameData\Amberstar.GameData.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Amberstar.Tests" />
+  </ItemGroup>
+
 </Project>

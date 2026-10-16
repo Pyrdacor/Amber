@@ -7,12 +7,14 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-internal abstract class LockedScreen<TEvent> : ItemGridScreen
+internal abstract class LockedScreen<TEvent> : ItemGridScreen, IWaitForClickScreen
     where TEvent : Event, ILockedEvent
 {
     bool trapFound = false;
     bool trapDisarmed = false;
     bool waitForClick = false;
+
+    public bool WaitingForClick => waitForClick;
     bool closeAfterClick = false;
     bool lockOpened = false;
     int lockpickReduction = 0;
@@ -345,6 +347,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen
 
     protected void ShowText(IText text, bool waitForClick = true, bool closeAfterClick = false)
     {
+        Game.ScriptTextShown(text);
         message!.SetText(text, messageDisplayArea.Size.Width, 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
         message.Visible = true;
 

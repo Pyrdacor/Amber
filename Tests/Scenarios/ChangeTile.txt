@@ -1,0 +1,23 @@
+# Tile change events: without save index the change is lost after leaving the map,
+# with save index it is stored in the savegame (both on map 83).
+waittext
+dismissall
+# --- the event at 9,20 changes the tile 9,21 to 2 (no save index)
+teleport 83 9 19
+tile 9 21 1
+teleport 83 9 20
+dismissall
+tile 9 21 2
+teleport 65 8 11
+teleport 83 9 19
+tile 9 21 1
+# --- the event at 9,16 changes the tile 9,14 to 1 (save index 8)
+teleport 83 9 17
+tile 9 14 2
+teleport 83 9 16
+dismissall
+tile 9 14 1
+eventbit 83 8 1
+teleport 65 8 11
+teleport 83 9 17
+tile 9 14 1

@@ -40,6 +40,7 @@ public enum ScreenType
     ConversationGiveItem,
     ConversationGiveGold,
     ConversationGiveFood,
+    Riddlemouth,
     // TODO ...
 }
 
@@ -646,6 +647,11 @@ internal class ScreenHandler(Game Game) : IDisposable
 	readonly Dictionary<ScreenType, Screen> createdScreens = [];
 
 	public Screen? ActiveScreen => screens.Count == 0 ? null : screens.Peek();
+
+	/// <summary>
+	/// Finds the map screen below other screens (e.g. below a text box).
+	/// </summary>
+	public IMapScreen? FindMapScreen() => screens.OfType<IMapScreen>().FirstOrDefault();
 	public Screen? LastScreen => screens.Skip(1).FirstOrDefault();
 
 	public event ScreenChangedHandler? ScreenChanged;
@@ -683,6 +689,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.ConversationGiveItem => new ConversationScreen.GiveItemScreen(),
             ScreenType.ConversationGiveGold => new ConversationScreen.GiveGoldScreen(),
             ScreenType.ConversationGiveFood => new ConversationScreen.GiveFoodScreen(),
+            ScreenType.Riddlemouth => new RiddlemouthScreen(),
             _ => throw new NotImplementedException()
 		};
 

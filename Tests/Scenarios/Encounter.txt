@@ -1,0 +1,10 @@
+# Encounter events (map 38, 22,29, chance 100%, monster group 35). Battles are not implemented yet,
+# so a message is shown and the event stays active.
+waittext
+dismissall
+cleartexts
+teleport 38 22 29
+waittext
+textshown not implemented
+dismissall
+eventactive 38 2 1

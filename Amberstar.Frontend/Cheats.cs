@@ -227,7 +227,10 @@ public static class Cheats
             Console.WriteLine("Invalid direction, using 'keep'");
         }
 
-        game.Teleport(x, y, direction, mapIndex, fade: false);
+        var error = game.ScriptTeleport(mapIndex, x, y, direction);
+
+        if (error != null)
+            Console.WriteLine(error);
     }
 
     private static void Where(G game, string[] args)

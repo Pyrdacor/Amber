@@ -1,0 +1,14 @@
+# The altar (map 49) and the outro (map 151) are not part of the released original source code.
+# For now they only show a message.
+waittext
+dismissall
+cleartexts
+teleport 49 49 29
+waittext
+textshown altar
+dismissall
+cleartexts
+teleport 151 11 18
+waittext
+textshown outro
+dismissall

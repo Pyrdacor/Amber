@@ -28,9 +28,16 @@ using G = Game.Game;
 ///   waittext [timeout ms]     wait until a text box, picture text or confirmation is shown (default 10000)
 ///   waitscreen &lt;type&gt; [timeout ms]
 ///                             wait until the given screen (e.g. Chest, Conversation) is active (default 10000)
-///   dismiss                   scroll or close the shown text (like a click)
+///   dismiss                   scroll or close the shown text or end a message which waits for a click (like a click)
 ///   dismissall [timeout ms]   close all texts until the game is idle (default timeout 15000)
 ///   yes / no                  answer the shown confirmation window
+///   answer &lt;word&gt;             answer the shown riddlemouth with a word or a dictionary index like #1615
+///   word &lt;index&gt; [text]       print a dictionary word, optionally check it
+///   tile &lt;x&gt; &lt;y&gt; [tile]       print a tile of the shown map (3D: lab tile, 2D: underlay/overlay like 12/0),
+///                             optionally check it
+///   useitem &lt;item&gt;            use an item of the active party member at the party position like the inventory
+///                             (e.g. a key on a use item event), items which are used up are removed.
+///                             "useitem &lt;item&gt; noeffect" checks that the item has no effect.
 ///   key &lt;key&gt;                 press and release a key (Amberstar.Game.Key name, e.g. Enter, Escape, F5)
 ///   hold &lt;key&gt; &lt;ms&gt;          hold a key for some milliseconds (e.g. movement keys)
 ///   click &lt;x&gt; &lt;y&gt; [right]     click at a game position (320x200)
@@ -265,7 +272,7 @@ public sealed class ScenarioScript
 				break;
 			}
 			case "dismiss":
-				if (!IsTextShown(game))
+				if (!game.ScriptWaitingForClick)
 					Report(false, $"no text to dismiss: {game.ScriptState()}");
 				else
 					Click(game, TextClickPosition, MouseButtons.Left);
@@ -278,6 +285,44 @@ public sealed class ScenarioScript
 			case "yes":
 			case "no":
 				CheckResult(game.ScriptAnswer(name == "yes"));
+				continueTime = time + 1;
+				break;
+			case "answer":
+				CheckResult(game.ScriptAnswer(argument.StartsWith('#') ? game.ScriptGetWord(int.Parse(argument[1..])) : argument));
+				continueTime = time + 1;
+				break;
+			case "word":
+			{
+				var word = game.ScriptGetWord(Arg(0));
+
+				if (args.Length < 2)
+					output($"  word {Arg(0)} = {word}");
+				else
+					Report(word.Equals(args[1], StringComparison.OrdinalIgnoreCase), $"word {Arg(0)} = {word} (expected {args[1]})");
+				break;
+			}
+			case "tile":
+			{
+				var tile = game.ScriptGetTile(Arg(0), Arg(1));
+
+				if (tile == null)
+					Report(false, $"no tile at {Arg(0)},{Arg(1)}: {game.ScriptState()}");
+				else if (args.Length < 3)
+					output($"  tile {Arg(0)},{Arg(1)} = {tile}");
+				else
+					Report(tile == args[2], $"tile {Arg(0)},{Arg(1)} = {tile} (expected {args[2]})");
+				break;
+			}
+			case "useitem":
+				if (args.Length > 1 && args[1].Equals("noeffect", StringComparison.OrdinalIgnoreCase))
+				{
+					var error = game.ScriptUseItem((uint)Arg(0));
+					Report(error != null, $"item {Arg(0)} has no effect ({error ?? "but it had one"})");
+				}
+				else
+				{
+					CheckResult(game.ScriptUseItem((uint)Arg(0)));
+				}
 				continueTime = time + 1;
 				break;
 			case "key":
@@ -514,9 +559,9 @@ public sealed class ScenarioScript
 
 		var screen = game.ScriptActiveScreen;
 
-		if (screen is "TextBox" or "PictureText")
+		if (game.ScriptWaitingForClick)
 		{
-			// text screens scroll or close on any click
+			// text screens scroll or close on any click, other screens end the message
 			Click(game, TextClickPosition, MouseButtons.Left);
 			lastDismissTime = time;
 		}

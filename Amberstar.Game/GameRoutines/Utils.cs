@@ -86,7 +86,7 @@ partial class Game
         }
 	}
 
-    IText GetMapText(int mapIndex, int index)
+    internal IText GetMapText(int mapIndex, int index)
     {
         var text = AssetProvider.TextLoader.LoadText(new(AssetType.MapText, mapIndex));
         return text.GetTextBlock(index);

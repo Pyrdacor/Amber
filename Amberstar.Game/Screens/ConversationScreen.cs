@@ -10,7 +10,7 @@ namespace Amberstar.Game.Screens;
 internal record ConversationCharacter(int CharacterIndex, IMap Map, int MapCharacterIndex);
 
 // TODO: Silk has no gold and food (but he has in original)
-internal sealed class ConversationScreen : ItemGridScreen
+internal sealed class ConversationScreen : ItemGridScreen, IWaitForClickScreen
 {
     const int ItemSlotCount = 12;
     const int MessageBaseY = 63;
@@ -29,6 +29,8 @@ internal sealed class ConversationScreen : ItemGridScreen
     Label? conversationText;
     Action? afterWaitClickAction = null;
     bool waitForClick = false;
+
+    public bool WaitingForClick => waitForClick;
     bool closeAfterClick = false;
     bool insideParty = false;
     int? dragSourceItemSlot = null;
@@ -486,6 +488,7 @@ internal sealed class ConversationScreen : ItemGridScreen
         conversationText.Alignment = center ? TextAlignment.Center : TextAlignment.Left;
 
         conversationText!.SetText(text);
+        Game.ScriptTextShown(text);
         conversationText.Visible = true;
         textScrollHandler.Attach(conversationText!);
         Game.TrapMouse(conversationText.Area);

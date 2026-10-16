@@ -8,15 +8,16 @@ namespace Amberstar.Game;
 
 partial class Game
 {
+	// Same as the trap table of the original (Trap_table in EVENTS.ASM).
 	readonly Dictionary<TrapType, (bool ActivePlayerOnly, Condition Condition, Message Message)> TrapTable = new()
 	{
 		{ TrapType.DamageTrap, (false, Condition.None, Message.TrapExplosion) },
 		{ TrapType.PoisonNeedle, (true, Condition.Poisoned, Message.TrapPoisonedArrows) },
-		{ TrapType.PoisonGasCloud, (true, Condition.Poisoned, Message.TrapPoisonGas) },
+		{ TrapType.PoisonGasCloud, (false, Condition.Poisoned, Message.TrapPoisonGas) },
 		{ TrapType.BlindingFlash, (false, Condition.Blind, Message.TrapBlindingFlash) },
 		{ TrapType.ParalyzingGasCloud, (false, Condition.Stunned, Message.TrapSleepGas) },
-        { TrapType.StoneGaze, (false, Condition.Petrified, Message.TrapBasiliskEye) },
-        { TrapType.Disease, (false, Condition.Diseased, Message.TrapSpores) },
+        { TrapType.StoneGaze, (true, Condition.Petrified, Message.TrapBasiliskEye) },
+        { TrapType.Disease, (true, Condition.Diseased, Message.TrapSpores) },
     };
 
     internal void SaveEvent(IEvent @event)
@@ -124,6 +125,59 @@ partial class Game
 					ScreenHandler.PushScreen(ScreenType.Map3D);
 				}
 			}
+		}
+	}
+
+	internal IMap2D CreateMapInstance(IMap2D map) =>
+		new MapInstance2D(map, AssetProvider.TilesetLoader.LoadTileset(map.TilesetIndex), State.SavedTileChanges);
+
+	internal IMap3D CreateMapInstance(IMap3D map) => new MapInstance3D(map, State.SavedTileChanges);
+
+	/// <summary>
+	/// Changes a tile of the map of the current event at a 1-based position.
+	/// If save is true, the change is stored in the savegame. Otherwise it is
+	/// lost when the map is left (like in the original).
+	/// </summary>
+	internal void ChangeMapTile(int x, int y, int tileIndex, bool save)
+	{
+		int mapIndex = EventHandler.CurrentEventMapIndex;
+
+		if (save)
+			State.SaveTileChange(mapIndex, x, y, tileIndex);
+
+		(ScreenHandler.ActiveScreen as IMapScreen ?? ScreenHandler.FindMapScreen())?.ChangeTile(mapIndex, x, y, tileIndex);
+	}
+
+	/// <summary>
+	/// Changes the party direction on the shown map.
+	/// </summary>
+	internal void TurnParty(Direction direction)
+	{
+		State.PartyDirection = direction;
+		(ScreenHandler.ActiveScreen as IMapScreen ?? ScreenHandler.FindMapScreen())?.Turn(direction);
+	}
+
+	/// <summary>
+	/// Uses an item on the map event at the party position (like in the original inventory).
+	/// Returns true if the item had an effect.
+	/// </summary>
+	internal bool UseItemOnMap(IItem item)
+	{
+		var mapScreen = ScreenHandler.FindMapScreen();
+
+		if (mapScreen == null)
+			return false;
+
+		var position = State.PartyPosition;
+		CurrentItem = item;
+
+		try
+		{
+			return mapScreen.TriggerEvent(EventTrigger.UseItem, position.X, position.Y);
+		}
+		finally
+		{
+			CurrentItem = null;
 		}
 	}
 
