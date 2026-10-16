@@ -1,6 +1,7 @@
 using Amber.Common;
 using Amberstar.Game.Screens;
 using Amberstar.GameData;
+using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game;
@@ -18,7 +19,13 @@ partial class Game
 	/// </summary>
 	sealed record MagicItem(IPartyMember Owner, ItemSlot ItemSlot, bool Equipped);
 
+	/// <summary>
+	/// An item of a party member is chosen for a spell.
+	/// </summary>
+	sealed record SpellItemSelection(Message Message, bool EquipmentOnly, Action<ItemSlot?, bool> Selected);
+
 	MagicItem? magicItem;
+	SpellItemSelection? spellItemSelection;
 	ISpellData? currentSpellData;
 	// party members whose attacks were doubled by haste (Hurry_bitlist in the original)
 	readonly HashSet<IPartyMember> hastedPartyMembers = [];
@@ -42,6 +49,25 @@ partial class Game
 	/// The party member slot which was chosen as the target of a spell.
 	/// </summary>
 	internal int? SelectedPartyMemberSlot { get; set; }
+
+	/// <summary>
+	/// The message while an item for a spell is chosen.
+	/// </summary>
+	internal Message? SpellItemMessage => spellItemSelection?.Message;
+
+	internal bool SpellItemEquipmentOnly => spellItemSelection?.EquipmentOnly == true;
+
+	/// <summary>
+	/// Called by the inventory when an item for a spell was chosen.
+	/// </summary>
+	internal void SpellItemPicked(ItemSlot? itemSlot, bool equipped)
+	{
+		var selection = spellItemSelection;
+		spellItemSelection = null;
+
+		if (selection != null)
+			AfterScreenClosed(() => selection.Selected(itemSlot, equipped));
+	}
 
 	/// <summary>
 	/// Number of spells of each school (Spells_per_class in the original).
@@ -250,6 +276,52 @@ partial class Game
 		}));
 	}
 
+	/// <summary>
+	/// Lets the player choose a party member and then an item of the party member in the
+	/// inventory (e.g. RemCurse2_Mod in the original). The inventory is opened if needed.
+	/// Nothing happens if no valid item is chosen.
+	/// </summary>
+	void SelectSpellItem(Message targetMessage, Message itemMessage, bool equipmentOnly, Func<IItem, bool> isValid,
+		Action finished, Action<IPartyMember, ItemSlot, bool, Action> selected)
+	{
+		SelectSpellTarget(targetMessage, finished, (slot, target) =>
+		{
+			bool openInventory = ScreenHandler.ActiveScreen is not InventoryScreen;
+
+			void Finish() => AfterScreenClosed(() =>
+			{
+				if (ScreenHandler.ActiveScreen is InventoryScreen inventoryScreen)
+				{
+					if (openInventory)
+						ScreenHandler.PopScreen();
+					else
+						inventoryScreen.Refresh();
+				}
+
+				finished();
+			});
+
+			spellItemSelection = new(itemMessage, equipmentOnly, (itemSlot, equipped) =>
+			{
+				if (itemSlot?.Item == null || itemSlot.Count == 0 || !isValid(itemSlot.Item))
+					Finish();
+				else
+					selected(target, itemSlot, equipped, Finish);
+			});
+
+			if (openInventory)
+			{
+				State.SetCurrentInventory(slot);
+				ScreenHandler.PushScreen(ScreenType.Inventory);
+			}
+			else
+			{
+				OpenInventory(slot);
+				ScreenHandler.PushScreen(ScreenType.InventorySpellItem);
+			}
+		});
+	}
+
 	#region White magic
 
 	void ExecuteWhiteSpell(WhiteSpell spell, Action finished)
@@ -338,8 +410,17 @@ partial class Game
 				}
 				break;
 			case WhiteSpell.RemoveCurse:
-				// TODO: Choose a cursed item of a party member and destroy it.
-				ShowNotImplementedMessage("Casting spells on items", finished);
+				// Remove_curse destroys a cursed equipped item.
+				SelectSpellItem(Message.WhoseCursedItemToDestroy, Message.WhichCurseToRemove, true, item => item.Flags.HasFlag(ItemFlags.Cursed),
+					finished, (target, itemSlot, _, done) =>
+				{
+					if (TrySpell(done))
+					{
+						// Note: The original doesn't remove the mali of the item.
+						DestroyUsedItem(target, itemSlot, true, itemSlot.Count);
+						done();
+					}
+				});
 				break;
 			default:
 				// stun, sleep, fear, irritation, blind, destroy undead and holy word
@@ -440,6 +521,20 @@ partial class Game
 		Invisibility
 	}
 
+	/// <summary>
+	/// The active spells last for some time steps of 5 minutes (Every_step in the original).
+	/// </summary>
+	void UpdateActiveSpells()
+	{
+		var activeSpells = State.ActiveSpells;
+
+		for (int i = 0; i < activeSpells.Length; i++)
+		{
+			if (activeSpells[i].Duration != 0)
+				activeSpells[i].Duration--;
+		}
+	}
+
 	void ActivateSpell(ActiveSpellType type, int value, int duration)
 	{
 		State.ActiveSpells[(int)type] = new ActiveSpell { Value = value, Duration = duration };
@@ -514,11 +609,71 @@ partial class Game
 				}
 				break;
 			}
+			case GraySpell.MagicCompass:
+				if (TrySpell(finished))
+					ScreenHandler.PushScreen(ScreenType.MagicCompass, () => AfterScreenClosed(finished));
+				break;
+			case GraySpell.Identification:
+				SelectSpellItem(Message.WhoseItemToExamine, Message.WhichItem, false, item => !item.SlotFlags.HasFlag(ItemSlotFlags.Identified),
+					finished, (_, itemSlot, _, done) =>
+				{
+					if (TrySpell(done))
+					{
+						IdentifyItem(itemSlot);
+						CurrentItem = itemSlot.Item;
+						ScreenHandler.PushScreen(ScreenType.ItemView, done);
+					}
+				});
+				break;
+			case GraySpell.Levitation:
+				Levitate(finished);
+				break;
 			default:
-				// TODO: magic compass, identification, levitation, teleport and x-ray vision
+				// TODO: Teleport and x-ray vision are not part of the original source code.
 				ShowNotImplementedMessage($"The spell {spell}", finished);
 				break;
 		}
+	}
+
+	/// <summary>
+	/// Goes up through a trap door in the ceiling at the party position or down through
+	/// a trap door in the floor in front of the party without falling (Levitate in the original).
+	/// </summary>
+	void Levitate(Action finished)
+	{
+		var mapScreen = ScreenHandler.FindMapScreen();
+		var position = State.PartyPosition;
+		var trapDoor = mapScreen?.GetActiveEvent(position.X, position.Y) as ITrapDoorEvent;
+
+		if (trapDoor?.Floor != false)
+		{
+			var front = State.PartyDirection switch
+			{
+				Direction.Up => new Position(position.X, position.Y - 1),
+				Direction.Right => new Position(position.X + 1, position.Y),
+				Direction.Down => new Position(position.X, position.Y + 1),
+				_ => new Position(position.X - 1, position.Y)
+			};
+
+			trapDoor = mapScreen?.GetActiveEvent(front.X, front.Y) as ITrapDoorEvent;
+
+			if (trapDoor?.Floor != true)
+				trapDoor = null;
+		}
+
+		if (trapDoor == null || !TrySpell(finished))
+		{
+			if (trapDoor == null)
+				finished();
+
+			return;
+		}
+
+		if (trapDoor.SaveIndex != 0)
+			State.SetEventBit(State.GetIndexOfMapWithPlayer(), trapDoor.SaveIndex, true);
+
+		finished();
+		Teleport(trapDoor.X, trapDoor.Y, Direction.Keep, trapDoor.MapIndex, true);
 	}
 
 	/// <summary>
@@ -575,12 +730,35 @@ partial class Game
 					}
 				});
 				break;
+			case SpecialSpell.WeaponBalm:
+				// Weapon_gunk increases the damage of a weapon.
+				SelectSpellItem(Message.ApplyPotionToWhoseWeapon, Message.ApplyBalmToWhat, false,
+					item => item.Type is ItemType.CloseRangedWeapon or ItemType.LongRangedWeapon, finished, (target, itemSlot, equipped, done) =>
+				{
+					if (TrySpell(done))
+					{
+						var item = itemSlot.Item!;
+						var newItem = item.WithDamage((byte)Math.Min(127, item.Damage + Random(1, 4)));
+
+						// the boni of equipped items contain the damage
+						if (equipped)
+							ApplyEquipmentBoni(target, item, false);
+
+						itemSlot.SetItem(newItem, itemSlot.Count);
+
+						if (equipped)
+							ApplyEquipmentBoni(target, newItem, true);
+
+						done();
+					}
+				});
+				break;
 			case >= SpecialSpell.Stun and <= SpecialSpell.FleshToStone2:
 			case SpecialSpell.BanishDemon:
 				ShowNotImplementedMessage("Casting combat spells", finished);
 				break;
 			default:
-				// TODO: map view, weapon balm, pick lock, eagle call and music
+				// TODO: map view, pick lock, eagle call and music
 				ShowNotImplementedMessage($"The spell {spell}", finished);
 				break;
 		}

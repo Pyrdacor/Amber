@@ -852,6 +852,19 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		UpdateView();
 	}
 
+	IEvent? IMapScreen.GetActiveEvent(int x, int y)
+	{
+		if (x < 0 || y < 0 || x >= map!.Width || y >= map.Height)
+			return null;
+
+		int eventIndex = map.Tiles[x + y * map.Width].Event;
+
+		if (eventIndex == 0 || !Game.IsEventActive(map, map.Events[eventIndex - 1]))
+			return null;
+
+		return map.Events[eventIndex - 1];
+	}
+
 	bool IMapScreen.TriggerEvent(EventTrigger trigger, int x, int y)
 	{
 		var position = new Position(x, y);

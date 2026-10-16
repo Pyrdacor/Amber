@@ -76,6 +76,8 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
     internal override ItemContainer[] BackpackItemContainers => inventoryItemSlots;
 
+    internal override ItemContainer[] EquipmentItemContainers => [.. Enum.GetValues<EquipmentSlot>().Select(slot => equippedItemSlots[slot])];
+
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
         if (partyMember == null)
@@ -196,6 +198,10 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
         SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
         SetupEventHandlers();
+
+        // The inventory was opened to choose an item for a spell.
+        if (Game.SpellItemMessage != null)
+            Game.AddDelayedAction(0, () => Game.ScreenHandler.PushScreen(ScreenType.InventorySpellItem));
     }
 
     private void CleanUpItems()
@@ -534,22 +540,37 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
     internal override void PickItem(ScreenType sourceScreen, int? index)
     {
-        if (index == null)
+        if (index == null && sourceScreen != ScreenType.InventorySpellItem)
             return;
 
         switch (sourceScreen)
         {
             case ScreenType.InventoryDropItem:
-                DropItem(index.Value);
+                DropItem(index!.Value);
                 break;
             case ScreenType.InventoryGiveItem:
-                GiveItem(index.Value);
+                GiveItem(index!.Value);
                 break;
             case ScreenType.InventoryUseItem:
-                UseItem(index.Value);
+                UseItem(index!.Value);
                 break;
+            case ScreenType.InventorySpellItem:
+            {
+                ItemSlot? itemSlot = null;
+                bool equipped = true;
+
+                if (index != null)
+                {
+                    itemSlot = Game.SpellItemEquipmentOnly
+                        ? partyMember!.Equipment[(EquipmentSlot)index.Value]
+                        : GetItemSlot(index.Value, out equipped);
+                }
+
+                Game.SpellItemPicked(itemSlot, equipped);
+                break;
+            }
             case ScreenType.InventoryExamineItem:
-                Game.CurrentItem = GetItemSlot(index.Value, out _).Item;
+                Game.CurrentItem = GetItemSlot(index!.Value, out _).Item;
                 Game.ScreenHandler.PushScreen(ScreenType.ItemView);
                 break;
         }
@@ -766,6 +787,23 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
         public override Message Message { get; } = Message.ExamineWhichItem;
     }
+
+    /// <summary>
+    /// Chooses an item for a spell like identification.
+    /// </summary>
+    internal class SpellItemScreen : InventoryItemPickerScreen
+    {
+        public override ScreenType Type { get; } = ScreenType.InventorySpellItem;
+
+        public override Message Message => Game.SpellItemMessage ?? Message.WhichItem;
+
+        public override bool EquipmentOnly => Game.SpellItemEquipmentOnly;
+    }
+
+    /// <summary>
+    /// Shows the items and values after they were changed (e.g. by a spell).
+    /// </summary>
+    internal void Refresh() => SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
 
     internal class GiveItemScreen : InventoryItemPickerScreen
     {

@@ -41,7 +41,7 @@ internal class Item : IItem
 
     public required byte Defense { get; init; }
 
-    public required byte Damage { get; init; }
+    public required byte Damage { get; set; }
 
     public required EquipmentSlot? EquipmentSlot { get; init; }
 
@@ -118,6 +118,16 @@ internal class Item : IItem
             Weight = Weight,
             NameIndex = NameIndex
         };
+    }
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    public IItem WithDamage(byte damage)
+    {
+        var item = (Item)Clone();
+        item.Damage = damage;
+        return item;
     }
 
     // Note: The order must be the same as in ItemLoader.ReadItem.

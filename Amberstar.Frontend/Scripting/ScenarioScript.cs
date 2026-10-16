@@ -103,6 +103,8 @@ using G = Game.Game;
 ///   wordknown &lt;index&gt; [0|1]   print if a dictionary word is known, optionally check it
 ///   partysize [count]         print the party size, optionally check it
 ///   join &lt;character&gt;         add a party member by its character index without a conversation
+///   learnspell &lt;slot&gt; &lt;school&gt; &lt;spell&gt;
+///                             teach a spell to a party member (also adds the spell school)
 ///   spell &lt;school&gt; &lt;spell&gt;    choose a spell in the spell selection (school: White, Gray, Black or Special,
 ///                             spell: 1-based number)
 ///   activespell &lt;name&gt; [duration:value]
@@ -426,6 +428,9 @@ public sealed class ScenarioScript
 				}
 				break;
 			}
+			case "learnspell":
+				CheckResult(game.ScriptLearnSpell(Arg(0), args[1], Arg(2)));
+				break;
 			case "spell":
 				CheckResult(game.ScriptSelectSpell(args[0], Arg(1)));
 				continueTime = time + 1;

@@ -286,6 +286,28 @@ partial class Game
 		return $"{activeSpell.Duration}:{activeSpell.Value}";
 	}
 
+	/// <summary>
+	/// Teaches a spell (1-based number) to a party member and adds the spell school.
+	/// </summary>
+	public string? ScriptLearnSpell(int slot, string schoolName, int spellNumber)
+	{
+		var partyMember = State.GetPartyMember(slot);
+
+		if (partyMember == null)
+			return $"no party member in slot {slot}";
+
+		if (!Enum.TryParse<SpellSchool>(schoolName, true, out var school) || GetSpellCount(school) == 0)
+			return $"invalid spell school {schoolName}";
+
+		if (spellNumber < 1 || spellNumber > GetSpellCount(school))
+			return $"invalid spell {spellNumber}";
+
+		partyMember.LearnedSpellSchools |= (SpellSchoolFlags)(1 << (int)school);
+		LearnSpell(partyMember, school, spellNumber);
+
+		return null;
+	}
+
 	public string? ScriptSetClass(int slot, string className)
 	{
 		var partyMember = State.GetPartyMember(slot);

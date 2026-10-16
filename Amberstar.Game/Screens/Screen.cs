@@ -31,6 +31,7 @@ public enum ScreenType
     InventoryGiveItem,
     InventoryUseItem,
     InventoryExamineItem,
+    InventorySpellItem,
 	// Door/chest sub screens
 	LockedUseItem,
 	ChestGiveItem,
@@ -56,6 +57,7 @@ public enum ScreenType
     Options,
     SpellSelect,
     SelectPartyMember,
+    MagicCompass,
     TransportDealer,
     FoodDealer,
     PlaceGiveGold,
@@ -699,6 +701,7 @@ internal class ScreenHandler(Game Game) : IDisposable
 			ScreenType.Options => new OptionsScreen(),
 			ScreenType.SpellSelect => new SpellSelectScreen(),
 			ScreenType.SelectPartyMember => new SelectPartyMemberScreen(),
+			ScreenType.MagicCompass => new MagicCompassScreen(),
 			ScreenType.SkillTraining => new SkillTrainingScreen(),
 			ScreenType.PlaceItemAmount => new MerchantScreen.ItemAmountScreen(),
 			ScreenType.TransportDealer => new TransportDealerScreen(),
@@ -716,6 +719,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.InventoryGiveItem => new InventoryScreen.GiveItemScreen(),
             ScreenType.InventoryUseItem => new InventoryScreen.UseItemScreen(),
             ScreenType.InventoryExamineItem => new InventoryScreen.ExamineItemScreen(),
+            ScreenType.InventorySpellItem => new InventoryScreen.SpellItemScreen(),
 			// Door/chest sub screens
 			ScreenType.LockedUseItem => new DoorScreen.UseItemScreen(), // Note: Doesn't matter if DoorScreen.UseItemScreen or ChestScreen.UseItemScreen
             ScreenType.ChestGiveItem => new ChestScreen.GiveItemScreen(),

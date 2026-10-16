@@ -28,23 +28,33 @@ internal abstract class ItemPickerScreen : Screen
     /// </summary>
     public virtual bool BackpackOnly { get; } = false;
 
+    /// <summary>
+    /// If set, only equipped items can be picked.
+    /// </summary>
+    public virtual bool EquipmentOnly => false;
+
     public override void Init()
 	{
         base.Init();
 
-        var (x, y, width, height) = ItemTooltipArea;
-        itemNameTooltip = AddLabel(x, y, width, height, displayLayer: 100);
-        itemNameTooltip.Alignment = TextAlignment.Center;
-
         // Note: During Init the ActiveScreen is still the last one.
         parentScreen = Game.ScreenHandler.ActiveScreen as ItemGridScreen;
-
-        items = [.. (BackpackOnly ? parentScreen?.BackpackItemContainers : parentScreen?.ItemContainers) ?? []];
     }
 
     public override void Open(Action? closeAction)
     {
         base.Open(closeAction);
+
+        // Note: Controls which are added in Open are destroyed when the screen is closed.
+        var (x, y, width, height) = ItemTooltipArea;
+        itemNameTooltip = AddLabel(x, y, width, height, displayLayer: 100);
+        itemNameTooltip.Alignment = TextAlignment.Center;
+
+        // The screen is reused, so the items are determined every time.
+        var itemContainers = BackpackOnly ? parentScreen?.BackpackItemContainers
+            : EquipmentOnly ? parentScreen?.EquipmentItemContainers
+            : parentScreen?.ItemContainers;
+        items = [.. itemContainers ?? []];
 
         parentScreen?.ShowMessage(Message, false, false);
         items.ForEach(item => item.Visible = true);
@@ -61,8 +71,6 @@ internal abstract class ItemPickerScreen : Screen
 
         if (HideItemsAfterPicking)
             items.ForEach(item => item.Visible = false);
-
-        itemNameTooltip!.Destroy();
 
         base.Close();
 

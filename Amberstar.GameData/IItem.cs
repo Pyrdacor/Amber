@@ -52,6 +52,10 @@ public interface IItemSlot
 public interface IItem : IStaticItemData, IItemSlot
 {   
     IItem Clone();
+    /// <summary>
+    /// Creates a copy with another damage (e.g. by the weapon balm spell).
+    /// </summary>
+    IItem WithDamage(byte damage);
 }
 
 public interface IItemFactory

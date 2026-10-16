@@ -1,0 +1,72 @@
+# Spells for items: remove curse, identification and weapon balm.
+waittext
+dismissall
+# Crag (white wizard) learns the spells and always succeeds
+join 61
+learnspell 2 White 27
+learnspell 2 Gray 21
+learnspell 2 Special 16
+setvalue 2 usemagic 100
+# --- the hero puts on the cursed golden brooch (strength -5)
+setclass 1 Warrior
+give 1 159
+give 1 230
+itemslot 1 2 159
+value 1 strength
+click 32 17 right
+waitscreen Inventory
+invslot 2
+itemslot 1 2 empty
+value 1 strength -5
+key Escape
+waitidle
+# --- Crag removes the curse which destroys the brooch
+activate 2
+click 230 170 right
+button 4
+waitscreen SpellSelect
+spell White 27
+waitscreen SelectPartyMember
+portrait 1
+waitscreen InventorySpellItem
+invslot Chest
+waitidle
+count 159 0
+value 1 strength +5
+# --- Crag identifies the two-handed sword of the hero
+activate 1
+identified 230 0
+activate 2
+button 4
+waitscreen SpellSelect
+spell Gray 21
+waitscreen SelectPartyMember
+portrait 1
+waitscreen InventorySpellItem
+invslot 3
+waitscreen ItemView
+activate 1
+identified 230 1
+activate 2
+key Escape
+waitidle
+# --- Crag puts weapon balm on the equipped sword of the hero (1 to 4 more damage)
+itemslot 1 RightHand 127
+value 1 damage
+button 4
+waitscreen SpellSelect
+spell Special 16
+waitscreen SelectPartyMember
+portrait 1
+waitscreen InventorySpellItem
+invslot RightHand
+waitidle
+value 1 damage +
+# --- the damage is kept when the sword is put into the backpack
+click 32 17 right
+waitscreen Inventory
+invslot RightHand
+value 1 damage
+invslot 2
+itemslot 1 RightHand 127
+value 1 damage +

@@ -1,0 +1,51 @@
+# Spells on the map: magic compass and levitation through trap doors (maps 105 and 108).
+waittext
+dismissall
+# Crag (white wizard) learns the gray spells and always succeeds
+join 61
+learnspell 2 Gray 20
+learnspell 2 Gray 22
+setvalue 2 usemagic 100
+activate 2
+click 230 170 right
+# --- the magic compass shows the direction
+button 4
+waitscreen SpellSelect
+spell Gray 20
+waitscreen MagicCompass
+key Escape
+waitidle
+# --- levitation through the trap door in the ceiling (map 108) leads up to map 105
+teleport 108 17 25
+dismissall
+map 108
+value 2 sp
+button 4
+waitscreen SpellSelect
+spell Gray 22
+waitidle
+map 105
+pos 17 26
+value 2 sp -
+# --- levitation through the trap door in the floor in front of the party leads down without damage
+teleport 105 17 24 down
+dismissall
+value 1 hp
+button 4
+waitscreen SpellSelect
+spell Gray 22
+waitidle
+dismissall
+map 108
+pos 17 25
+value 1 hp +0
+# --- without a trap door nothing happens and no spell points are used
+teleport 108 17 24
+dismissall
+value 2 sp
+button 4
+waitscreen SpellSelect
+spell Gray 22
+waitidle
+map 108
+value 2 sp +0

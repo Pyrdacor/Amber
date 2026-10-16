@@ -42,6 +42,12 @@ waitscreen SpellSelect
 spell Gray 2
 waitidle
 activespell Light 96:4
+# the duration is decreased every 5 minutes
+move right
+move left
+move right
+move left
+activespell Light 95:4
 # --- spells which fail still use the spell points
 setvalue 2 usemagic 0
 setvalue 1 hp 1

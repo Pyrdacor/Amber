@@ -23,4 +23,8 @@ internal interface IMapScreen
 	/// Returns false if there is nothing to trigger.
 	/// </summary>
 	bool TriggerEvent(EventTrigger trigger, int x, int y);
+	/// <summary>
+	/// Gets the active map event at the given 0-based map position if any.
+	/// </summary>
+	IEvent? GetActiveEvent(int x, int y);
 }

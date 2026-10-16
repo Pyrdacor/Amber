@@ -1298,6 +1298,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		return 1 + currentX + currentY * WorldMapWidthInMaps;
 	}
 
+	IEvent? IMapScreen.GetActiveEvent(int x, int y) => x < 0 || y < 0 || x >= map!.Width || y >= map.Height ? null : GetEvent(x, y);
+
 	private IEvent? GetEvent(int x, int y, bool onlyActive = true)
 	{
 		if (map is WorldMap worldMap)

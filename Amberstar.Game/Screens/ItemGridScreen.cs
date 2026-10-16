@@ -25,4 +25,9 @@ internal abstract class ItemGridScreen : ButtonGridScreen
 	/// Item containers of the backpack (some actions are not possible with equipped items).
 	/// </summary>
 	internal virtual ItemContainer[] BackpackItemContainers => ItemContainers;
+
+	/// <summary>
+	/// Item containers of the equipment (e.g. to remove curses).
+	/// </summary>
+	internal virtual ItemContainer[] EquipmentItemContainers => ItemContainers;
 }
