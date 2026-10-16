@@ -1,4 +1,4 @@
-namespace Amberstar.Game;
+﻿namespace Amberstar.Game;
 
 partial class Game
 {
@@ -11,5 +11,5 @@ partial class Game
 		ShowNotImplementedMessage($"Battles (monster group {monsterGroupIndex})");
 	}
 
-	internal void ShowNotImplementedMessage(string feature) => ShowTextMessage($"{feature} is not implemented yet.");
+	internal void ShowNotImplementedMessage(string feature, Action? nextAction = null) => ShowTextMessage($"{feature} is not implemented yet.", nextAction);
 }

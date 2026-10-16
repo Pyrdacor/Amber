@@ -281,7 +281,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				}
 				case ButtonType.UseMagic:
 				{
-					// TODO
+					Game.CastSpell(Game.GetMapSpellLocation());
 					break;
 				}
 				case ButtonType.Camp:
@@ -1144,6 +1144,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		Game.State.TravelType = TravelType.Walk;
 		Game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
-
+		// e.g. camping depends on the map
+		RequestButtonSetup();
     }
 }

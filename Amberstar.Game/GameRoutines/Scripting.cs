@@ -258,6 +258,34 @@ partial class Game
 		return null;
 	}
 
+	/// <summary>
+	/// Chooses a spell in the shown spell selection (1-based spell number).
+	/// </summary>
+	public string? ScriptSelectSpell(string schoolName, int spellNumber)
+	{
+		if (ScreenHandler.ActiveScreen is not SpellSelectScreen screen)
+			return $"no spell selection is shown but {ScriptActiveScreen}";
+
+		if (!Enum.TryParse<SpellSchool>(schoolName, true, out var school))
+			return $"unknown spell school {schoolName}";
+
+		return screen.ScriptSelectSpell(school, spellNumber);
+	}
+
+	/// <summary>
+	/// Gets the duration and the value of an active spell (Light, ArmorProtection,
+	/// WeaponPower, AntiMagic, Clairvoyance or Invisibility) as "duration:value".
+	/// </summary>
+	public string? ScriptActiveSpell(string name)
+	{
+		if (!Enum.TryParse<ActiveSpellType>(name, true, out var type))
+			return null;
+
+		var activeSpell = State.ActiveSpells[(int)type];
+
+		return $"{activeSpell.Duration}:{activeSpell.Value}";
+	}
+
 	public string? ScriptSetClass(int slot, string className)
 	{
 		var partyMember = State.GetPartyMember(slot);
@@ -665,7 +693,8 @@ partial class Game
 			return $"item {itemIndex} could not be loaded: {ex.Message}";
 		}
 
-		var item = AssetProvider.ItemFactory.Create(itemData, new ItemSlotData(0, 0));
+		// The item data contains the spell charges of the slot.
+		var item = itemData is IItem itemWithSlotData ? itemWithSlotData.Clone() : AssetProvider.ItemFactory.Create(itemData, new ItemSlotData(0, 0));
 
 		if (!TryAddItem(slot, item, count))
 			return $"the inventory of slot {slot} is full";

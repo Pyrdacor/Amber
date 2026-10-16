@@ -428,6 +428,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 				case ButtonType.Camp:
 					Game.OpenCamp();
 					break;
+				case ButtonType.UseMagic:
+					Game.CastSpell(Game.GetMapSpellLocation());
+					break;
                 // TODO
             }
 		}
@@ -1441,6 +1444,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		Game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
 		Game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
+		// e.g. camping depends on the map
+		RequestButtonSetup();
 	}
 
     private TileFlags GetTileFlags(int x, int y)

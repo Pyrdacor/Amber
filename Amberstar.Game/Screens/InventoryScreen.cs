@@ -598,9 +598,8 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
                 return;
             }
 
-            // TODO: Cast the spell of the item when magic is implemented (Do_magic with Magic_object_flag
-            // in the original). The location of the spell must fit and a charge is used (Remove_used_magic_item).
-            Game.ShowNotImplementedMessage("Spells of items");
+            var location = Game.ScreenHandler.FindScreen(ScreenType.Camp) != null ? SpellLocation.Camp : Game.GetMapSpellLocation();
+            Game.CastItemSpell(user, itemSlot, equipped, location, () => ItemActionDone(null));
             return;
         }
 

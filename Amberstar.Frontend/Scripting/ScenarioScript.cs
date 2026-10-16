@@ -103,6 +103,11 @@ using G = Game.Game;
 ///   wordknown &lt;index&gt; [0|1]   print if a dictionary word is known, optionally check it
 ///   partysize [count]         print the party size, optionally check it
 ///   join &lt;character&gt;         add a party member by its character index without a conversation
+///   spell &lt;school&gt; &lt;spell&gt;    choose a spell in the spell selection (school: White, Gray, Black or Special,
+///                             spell: 1-based number)
+///   activespell &lt;name&gt; [duration:value]
+///                             print an active spell (Light, ArmorProtection, WeaponPower, AntiMagic,
+///                             Clairvoyance or Invisibility), optionally check it
 ///   activate &lt;slot&gt;           make the party member in slot 1-6 the active one
 ///   value &lt;slot&gt; &lt;name&gt; [v]   print a party member value (gold, food, hp, maxhp, sp, maxsp, level, exp, slp,
 ///                             weight, defense, damage, hands, fingers, spellschools or an attribute or skill name),
@@ -419,6 +424,22 @@ public sealed class ScenarioScript
 					bool ok = args[2].Contains(':') || args[2] == "empty" ? content == args[2] : content.Split(':')[0] == args[2];
 					Report(ok, $"itemslot {Arg(0)} {args[1]} = {content} (expected {args[2]})");
 				}
+				break;
+			}
+			case "spell":
+				CheckResult(game.ScriptSelectSpell(args[0], Arg(1)));
+				continueTime = time + 1;
+				break;
+			case "activespell":
+			{
+				var activeSpell = game.ScriptActiveSpell(args[0]);
+
+				if (activeSpell == null)
+					Report(false, $"unknown active spell {args[0]}");
+				else if (args.Length < 2)
+					output($"  activespell {args[0]} = {activeSpell}");
+				else
+					Report(activeSpell == args[1], $"activespell {args[0]} = {activeSpell} (expected {args[1]})");
 				break;
 			}
 			case "join":

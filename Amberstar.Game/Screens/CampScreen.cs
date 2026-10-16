@@ -122,8 +122,7 @@ internal sealed class CampScreen : ButtonGridScreen, IWaitForClickScreen
 		switch (index)
 		{
 			case CastSpellButtonIndex:
-				// TODO: Casting spells needs the magic system (MAGIC.ASM).
-				ShowMessage(Game.AssetProvider.TextLoader.FromString("Casting spells is not implemented yet."));
+				Game.CastSpell(SpellLocation.Camp, RequestButtonSetup);
 				break;
 			case ExitButtonIndex:
 				Leave();

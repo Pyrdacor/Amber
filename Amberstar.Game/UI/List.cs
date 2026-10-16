@@ -123,9 +123,9 @@ internal class List : Control
         currentLabelY = 0;
     }
 
-    public void AddItem(string text)
+    public void AddItem(string text, byte colorIndex = 15)
     {
-        AddItem().SetText(text, 15, TextManager.TransparentPaper, paletteIndex);
+        AddItem().SetText(text, colorIndex, TextManager.TransparentPaper, paletteIndex);
         texts.Add(text);
     }
 
@@ -166,7 +166,7 @@ internal class List : Control
         labels.ForEach(label =>
         {
             label.Position = label.Position + new Position(0, -scrollDiff);
-            label.Visible = visible && label.Position.Y > Area.Top && label.Position.Y + LineHeight <= Area.Bottom;
+            label.Visible = visible && label.Position.Y >= Area.Top && label.Position.Y + LineHeight <= Area.Bottom;
         });
     }
 
@@ -181,7 +181,7 @@ internal class List : Control
         }
         else
         {
-            ScrollOffset -= Math.Min(amount, scrollOffset);
+            ScrollOffset -= (int)Math.Min(-(long)amount, scrollOffset);
         }
     }
 
@@ -199,17 +199,15 @@ internal class List : Control
 
     public bool MouseClick(Position position)
     {
-        int lineIndex = scrollOffset;
-
-        foreach (var label in labels)
+        for (int lineIndex = 0; lineIndex < labels.Count; lineIndex++)
         {
+            var label = labels[lineIndex];
+
             if (label.Visible && label.Area.Contains(position))
             {
                 ItemClicked?.Invoke(lineIndex, texts[lineIndex]);
                 return true;
             }
-
-            lineIndex++;
         }
 
         return false;
