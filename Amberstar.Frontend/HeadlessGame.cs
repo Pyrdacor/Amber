@@ -58,6 +58,22 @@ public sealed class HeadlessGame : IScenarioScriptHost, IDisposable
 	}
 
 	/// <summary>
+	/// Steps until the condition is met. Returns false if it was not met within the given number of frames.
+	/// </summary>
+	public bool StepUntil(Func<bool> condition, int maxFrames = 600)
+	{
+		for (int i = 0; i < maxFrames; i++)
+		{
+			if (condition())
+				return true;
+
+			Step();
+		}
+
+		return condition();
+	}
+
+	/// <summary>
 	/// Runs a scenario script until it finishes or the given game time elapsed.
 	/// </summary>
 	public ScenarioResult RunScript(ScenarioScript script, double maxGameSeconds = 600.0, Action<string>? output = null)

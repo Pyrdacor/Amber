@@ -406,7 +406,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.LabData => "LAB_DATA.AMB",
 			AssetType.LabBlock => "LABBLOCK.AMB",
 			AssetType.Background => "BACKGRND.AMB",
-            AssetType.Monster => "MON_DATA.AMB",
+            AssetType.MonsterGroup => "MON_DATA.AMB",
             AssetType.Person => "CHARDATA.AMB",
             AssetType.Chest => "CHESTDAT.AMB",
             _ => Platform == LegacyPlatform.Source ? "" : programFileNames[Platform],

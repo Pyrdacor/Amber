@@ -6,6 +6,8 @@ namespace Amberstar.GameData.Legacy;
 
 internal class Savegame : ISavegame
 {
+    const dword EncryptionHeader = 0x59415921; // "YAY!"
+
     public Savegame()
     {
 
@@ -18,7 +20,7 @@ internal class Savegame : ISavegame
 
 	public void Read(IDataReader dataReader)
 	{
-        if (dataReader.PeekDword() == 0x59415921) // "YAY!"?
+        if (dataReader.PeekDword() == EncryptionHeader)
         {
             dataReader.Position += 4;
             dataReader = new DataReader(YAY.Decrypt(dataReader));
@@ -108,6 +110,8 @@ internal class Savegame : ISavegame
         {
             var writer = new DataWriter();
             Write(writer, false);
+            // the header is needed to detect the encryption when reading
+            dataWriter.Write(EncryptionHeader);
             dataWriter.Write(YAY.Encrypt(writer.ToArray()));
             return;
         }

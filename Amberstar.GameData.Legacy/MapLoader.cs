@@ -44,6 +44,7 @@ namespace Amberstar.GameData.Legacy
                     throw new AmberException(ExceptionScope.Data, $"Map {key} not found.");
 
                 var map = Map.Load(asset);
+                map.Index = key;
                 maps.Add(key, map);
             }
 
