@@ -50,6 +50,18 @@ public interface ITransportDealerData : IPlaceData
 	word SpawnMapIndex { get; }
 }
 
+public interface IInnData : IPlaceData
+{
+	/// <summary>
+	/// 1-based position where the party leaves the inn after resting.
+	/// </summary>
+	word ExitX { get; }
+
+	word ExitY { get; }
+
+	Direction ExitDirection { get; }
+}
+
 public interface IHealerData : IPlaceData
 {
 	word HealStunned { get; }

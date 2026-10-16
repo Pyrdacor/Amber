@@ -286,7 +286,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				}
 				case ButtonType.Camp:
 				{
-					// TODO
+					Game.OpenCamp();
 					break;
 				}
 				case ButtonType.Map:
@@ -346,6 +346,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			buttonGrid.EnableButton(3, false);
 			buttonGrid.SetButton(4, ButtonType.UseMagic);
 			buttonGrid.SetButton(5, ButtonType.Camp);
+			buttonGrid.EnableButton(5, map?.Flags.HasFlag(MapFlags.CanCamp) == true);
 			// Lower row
 			buttonGrid.SetButton(6, ButtonType.Map);
 			buttonGrid.SetButton(7, ButtonType.PartyPositions);

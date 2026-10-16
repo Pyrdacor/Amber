@@ -226,12 +226,17 @@ partial class Game
 	}
 
 	/// <summary>
-	/// Opens the camp. In the inn the party rests in a guestroom with full regeneration.
+	/// Inn data while the party camps in an inn (guestroom), otherwise null.
 	/// </summary>
-	internal void OpenCamp(bool inn)
+	internal IInnData? CampInInn { get; set; }
+
+	/// <summary>
+	/// Opens the camp. In an inn the party rests in a guestroom with full regeneration.
+	/// </summary>
+	internal void OpenCamp(IInnData? innData = null)
 	{
-		// TODO: The camp screen (cast spells, learn spells, rest). In the inn resting regenerates everything.
-		ShowNotImplementedMessage(inn ? "Resting in the inn" : "The camp");
+		CampInInn = innData;
+		ScreenHandler.PushScreen(ScreenType.Camp);
 	}
 
 	internal void ShowDoor()

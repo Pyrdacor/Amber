@@ -94,8 +94,11 @@ using G = Game.Game;
 ///   partysize [count]         print the party size, optionally check it
 ///   activate &lt;slot&gt;           make the party member in slot 1-6 the active one
 ///   value &lt;slot&gt; &lt;name&gt; [v]   print a party member value (gold, food, hp, maxhp, sp, maxsp, level, exp, slp,
-///                             weight or an attribute or skill name), optionally check it
+///                             weight, spellschools or an attribute or skill name), optionally check it
 ///   setvalue &lt;slot&gt; &lt;name&gt; &lt;v&gt; set a party member value
+///   spellknown &lt;slot&gt; &lt;school&gt; &lt;spell&gt; [0|1]
+///                             print if a party member knows a spell (school: White, Gray, Black or Special,
+///                             spell: 1-based number), optionally check it
 ///   condition &lt;slot&gt; &lt;condition&gt; [0|1]
 ///                             print if a party member has a condition (e.g. Poisoned), optionally check it
 ///   setcondition &lt;slot&gt; &lt;condition&gt; &lt;0|1&gt;
@@ -577,6 +580,16 @@ public sealed class ScenarioScript
 			case "setvalue":
 				CheckResult(game.ScriptSetPartyMemberValue(Arg(0), args[1], Arg(2)));
 				break;
+			case "spellknown":
+			{
+				var known = game.ScriptIsSpellLearned(Arg(0), args[1], Arg(2));
+
+				if (known == null)
+					Report(false, $"invalid party member or spell school: {argument}");
+				else
+					CheckBool($"spellknown {argument}", known.Value, OptionalBool(3));
+				break;
+			}
 			case "condition":
 			{
 				var conditions = game.ScriptGetConditions(Arg(0));

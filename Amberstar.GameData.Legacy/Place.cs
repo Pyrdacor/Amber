@@ -141,8 +141,13 @@ internal class SageData(PlaceDataArray placeData) : PlaceData(PlaceType.Sage, pl
 
 }
 
-internal class InnData(PlaceDataArray placeData) : PlaceData(PlaceType.Inn, placeData)
+internal class InnData(PlaceDataArray placeData) : PlaceData(PlaceType.Inn, placeData), IInnData
 {
+	public word ExitX => placeData[1];
+
+	public word ExitY => placeData[2];
+
+	public Direction ExitDirection => (Direction)placeData[3];
 
 }
 

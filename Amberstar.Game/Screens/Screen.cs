@@ -687,6 +687,7 @@ internal class ScreenHandler(Game Game) : IDisposable
 			ScreenType.Sage => new SageScreen(),
 			ScreenType.Merchant => new MerchantScreen(),
 			ScreenType.Guild => new GuildScreen(),
+			ScreenType.Camp => new CampScreen(),
 			ScreenType.SkillTraining => new SkillTrainingScreen(),
 			ScreenType.PlaceItemAmount => new MerchantScreen.ItemAmountScreen(),
 			ScreenType.TransportDealer => new TransportDealerScreen(),

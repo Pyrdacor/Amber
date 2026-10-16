@@ -426,6 +426,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 					// TODO: Show options
 					Game.Quit();
 					break;
+				case ButtonType.Camp:
+					Game.OpenCamp();
+					break;
                 // TODO
             }
 		}
@@ -466,6 +469,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			buttonGrid.SetButton(3, ButtonType.UseTransport);
 			buttonGrid.SetButton(4, ButtonType.UseMagic);
 			buttonGrid.SetButton(5, ButtonType.Camp);
+			buttonGrid.EnableButton(5, CanCamp());
 			// Lower row
 			buttonGrid.SetButton(6, ButtonType.Map);
 			buttonGrid.EnableButton(6, false);
@@ -860,6 +864,22 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			return;
 
 		UpdateMap();
+	}
+
+	/// <summary>
+	/// Camping is only possible on some maps and not in the water while walking.
+	/// </summary>
+	private bool CanCamp()
+	{
+		if (map == null || !map.Flags.HasFlag(MapFlags.CanCamp))
+			return false;
+
+		if (Game.State.TravelType != TravelType.Walk)
+			return true;
+
+		var (x, y) = Game.State.PartyPosition;
+
+		return !GetTileFlags(x, y).HasFlag(TileFlags.AllowSwim);
 	}
 
 	bool IScriptMapScreen.ScriptMove(int x, int y)

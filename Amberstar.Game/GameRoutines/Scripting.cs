@@ -449,6 +449,8 @@ partial class Game
 				return partyMember.SpellLearningPoints;
 			case "weight":
 				return (int)partyMember.TotalWeight;
+			case "spellschools":
+				return (int)partyMember.LearnedSpellSchools;
 		}
 
 		if (Enum.TryParse<GameData.Attribute>(name, true, out var attribute))
@@ -502,6 +504,9 @@ partial class Game
 			case "slp":
 				partyMember.SpellLearningPoints = wordValue;
 				break;
+			case "spellschools":
+				partyMember.LearnedSpellSchools = (SpellSchoolFlags)value;
+				break;
 			default:
 				if (Enum.TryParse<GameData.Attribute>(name, true, out var attribute))
 					partyMember.Attributes[attribute].CurrentValue = wordValue;
@@ -518,6 +523,19 @@ partial class Game
 	}
 
 	public Condition? ScriptGetConditions(int slot) => State.GetPartyMember(slot)?.GetConditions();
+
+	/// <summary>
+	/// Checks if a party member knows a spell (1-based number inside the spell school).
+	/// </summary>
+	public bool? ScriptIsSpellLearned(int slot, string school, int spellNumber)
+	{
+		var partyMember = State.GetPartyMember(slot);
+
+		if (partyMember == null || !Enum.TryParse<SpellSchool>(school, true, out var spellSchool))
+			return null;
+
+		return HasLearnedSpell(partyMember, spellSchool, spellNumber);
+	}
 
 	public string? ScriptSetCondition(int slot, string condition, bool set)
 	{

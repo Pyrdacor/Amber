@@ -1,5 +1,6 @@
 using Amberstar.Game.UI;
 using Amberstar.GameData;
+using Amberstar.GameData.Events;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
@@ -43,6 +44,6 @@ internal sealed class InnScreen : PlaceScreen
 	protected override void Left()
 	{
 		if (roomRented)
-			Game.OpenCamp(inn: true);
+			Game.OpenCamp((IInnData)Place.Data);
 	}
 }

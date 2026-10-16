@@ -279,6 +279,12 @@ namespace Amberstar.GameData.Legacy
             if (!dataSeeker(EmbeddedDataOffset.SpellSchoolNames, dataReader))
                 throw new AmberException(ExceptionScope.Application, "Could not find the spell names in the program file.");
 
+            // The spell data (SPELLDAT.DAT) is located directly before the spell school names.
+            int spellSchoolNamesOffset = dataReader.Position;
+            dataReader.Position = spellSchoolNamesOffset - Legacy.SpellData.TotalSize;
+            SpellData = dataReader.ReadBytes(Legacy.SpellData.TotalSize);
+            dataReader.Position = spellSchoolNamesOffset;
+
             for (int i = 1; i <= 7; i++)
                 SpellSchoolNames.Add(i, new DataReader(dataReader.ReadBytes(2))); // one word per spell school name
 
@@ -432,6 +438,7 @@ namespace Amberstar.GameData.Legacy
         public Dictionary<int, IDataReader> SpellTargetNames { get; } = [];
         public Dictionary<int, IDataReader> ClassNames { get; } = [];
         public List<byte[]> ClassData { get; } = [];
+        public byte[] SpellData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

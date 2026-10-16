@@ -122,6 +122,24 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void SpellDataIsPlausible(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+
+		foreach (var school in new[] { SpellSchool.White, SpellSchool.Gray, SpellSchool.Black })
+		{
+			for (int spell = 1; spell <= ISpellData.SpellsPerSchool; spell++)
+				Assert.InRange(assetProvider.SpellDataLoader.LoadSpellData(school, spell).SpellLearningPointCost, 0, 100);
+		}
+
+		// HEILUNG 1 can be cast everywhere and costs 1 spell learning point
+		var healing = assetProvider.SpellDataLoader.LoadSpellData(SpellSchool.White, 1);
+		Assert.Equal(0x1f, healing.LocationFlags);
+		Assert.Equal(1, healing.SpellLearningPointCost);
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AllMerchantWaresLoad(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

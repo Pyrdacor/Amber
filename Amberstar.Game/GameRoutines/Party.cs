@@ -146,6 +146,44 @@ partial class Game
     }
 
     /// <summary>
+    /// Adds a spell (1-based number inside the school) to the learned spells.
+    /// </summary>
+    internal static void LearnSpell(IPartyMember partyMember, SpellSchool school, int spellNumber)
+    {
+        dword bit = 1u << spellNumber;
+
+        switch (school)
+        {
+            case SpellSchool.White:
+                partyMember.LearnedWhiteSpells |= bit;
+                break;
+            case SpellSchool.Gray:
+                partyMember.LearnedGraySpells |= bit;
+                break;
+            case SpellSchool.Black:
+                partyMember.LearnedBlackSpells |= bit;
+                break;
+            case SpellSchool.Special:
+                partyMember.LearnedSpecialSpells |= bit;
+                break;
+        }
+    }
+
+    internal static bool HasLearnedSpell(IPartyMember partyMember, SpellSchool school, int spellNumber)
+    {
+        dword spells = school switch
+        {
+            SpellSchool.White => partyMember.LearnedWhiteSpells,
+            SpellSchool.Gray => partyMember.LearnedGraySpells,
+            SpellSchool.Black => partyMember.LearnedBlackSpells,
+            SpellSchool.Special => partyMember.LearnedSpecialSpells,
+            _ => 0
+        };
+
+        return (spells & (1u << spellNumber)) != 0;
+    }
+
+    /// <summary>
     /// Marks an item as identified (e.g. by a sage) which shows more details.
     /// </summary>
     internal void IdentifyItem(ItemSlot itemSlot)
