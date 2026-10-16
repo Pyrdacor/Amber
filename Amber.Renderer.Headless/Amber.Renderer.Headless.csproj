@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Configurations>Debug;Release;DebugAndroid;ReleaseAndroid</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amber.Common\Amber.Common.csproj" />
+    <ProjectReference Include="..\Amber.Renderer.Common\Amber.Renderer.Common.csproj" />
+  </ItemGroup>
+
+</Project>
