@@ -456,18 +456,7 @@ partial class Game
 	/// <summary>
 	/// Counts an item in the inventories and equipment of all party members.
 	/// </summary>
-	public int ScriptCountItem(uint itemIndex)
-	{
-		int count = 0;
-
-		foreach (var partyMember in State.PartyMembers)
-		{
-			count += partyMember.Inventory.Where(slot => slot.Item?.Index == itemIndex).Sum(slot => slot.Count);
-			count += partyMember.Equipment.Values.Where(slot => slot.Item?.Index == itemIndex).Sum(slot => Math.Max(1, (int)slot.Count));
-		}
-
-		return count;
-	}
+	public int ScriptCountItem(uint itemIndex) => CountPartyItems(itemIndex);
 
 	/// <summary>
 	/// Adds an item to the inventory of a party member.

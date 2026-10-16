@@ -145,6 +145,22 @@ partial class Game
         }
     }
 
+    /// <summary>
+    /// Counts an item in the inventories and equipment of all party members.
+    /// </summary>
+    internal int CountPartyItems(uint itemIndex)
+    {
+        int count = 0;
+
+        foreach (var partyMember in State.PartyMembers)
+        {
+            count += partyMember.Inventory.Where(slot => slot.Item?.Index == itemIndex).Sum(slot => slot.Count);
+            count += partyMember.Equipment.Values.Where(slot => slot.Item?.Index == itemIndex).Sum(slot => Math.Max(1, (int)slot.Count));
+        }
+
+        return count;
+    }
+
     public bool TryAddItem(int partyMemberSlotIndex, IItem item, int count = 1)
     {
         var partyMember = State.GetPartyMember(partyMemberSlotIndex);
