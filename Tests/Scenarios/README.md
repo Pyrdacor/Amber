@@ -52,6 +52,7 @@ The most important ones:
 |------------------------------------------|----------------------------------------------------------------------|
 | `waittext`, `waitidle`, `waitscreen <t>` | Wait until a text, the map or a screen is shown                      |
 | `dismiss`, `dismissall`                  | Scroll or close texts (dismissall until the map is shown again)      |
+| `dismisstext`                            | Close texts and messages until nothing waits for a click             |
 | `closeall`                               | Like dismissall, but also leaves doors, chests, places, ...          |
 | `yes`, `no`                              | Answer a confirmation window                                         |
 | `answer <word\|#index>`                  | Answer a riddlemouth (a dictionary index keeps scripts language-independent) |

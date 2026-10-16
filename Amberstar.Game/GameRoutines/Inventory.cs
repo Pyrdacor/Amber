@@ -143,6 +143,26 @@ partial class Game
 		partyMember.BonusDamage = Add(partyMember.BonusDamage, sign * (sbyte)item.Damage);
 	}
 
+	/// <summary>
+	/// Removes used items (Destroy_used_item in the original). The boni of equipped items are removed.
+	/// </summary>
+	internal static void DestroyUsedItem(IPartyMember partyMember, ItemSlot itemSlot, bool equipped, int count = 1)
+	{
+		var item = itemSlot.Item!;
+
+		count = Math.Min(count, itemSlot.Count);
+
+		if (equipped)
+			ApplyEquipmentBoni(partyMember, item, false);
+
+		itemSlot.Count -= (byte)count;
+
+		if (itemSlot.Count == 0)
+			itemSlot.ClearItem();
+
+		partyMember.TotalWeight -= (uint)(count * item.Weight);
+	}
+
 	// conditions of party members which can't take anything (like $e402 in the original)
 	const Condition NoTransferConditions = Condition.Dead | Condition.Ashes | Condition.Dust | Condition.Petrified | Condition.Mad;
 

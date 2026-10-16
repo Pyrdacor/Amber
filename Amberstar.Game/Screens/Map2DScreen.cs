@@ -1279,6 +1279,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		return tileset!.Tiles[index - 1];
 	}
 
+	internal bool IsWilderness => map?.Flags.HasFlag(MapFlags.Wilderness) == true;
+
 	private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[Game.State.TravelType] : CityTicksPerStep;
 
 	public static int GetWorldMapIndex(int index, int offsetX, int offsetY)

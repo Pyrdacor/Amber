@@ -407,6 +407,9 @@ internal class TextManager(Game game, IFont font,
                 int numDisplayedRows = (areaHeight + diff) / font.LineHeight;
                 scrollOffsetInPixels += amount;
 
+                if (glyphs.Count == 0)
+                    return;
+
                 if (scrollOffsetInPixels >= font.LineHeight)
                 {
                     // Line leaves upper bound.
@@ -469,7 +472,8 @@ internal class TextManager(Game game, IFont font,
 
             int totalScrolls = lines * font.LineHeight / scrollAmount;
 
-            var startedScrollActions = new List<long>(totalScrolls + 1);
+            // Note: The actions are remembered so that they are stopped when the text is deleted.
+            var startedScrollActions = startedScrollAction;
 
             for (int i = 0; i < totalScrolls; i++)
             {

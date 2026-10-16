@@ -30,6 +30,7 @@ using G = Game.Game;
 ///                             wait until the given screen (e.g. Chest, Conversation) is active (default 10000)
 ///   dismiss                   scroll or close the shown text or end a message which waits for a click (like a click)
 ///   dismissall [timeout ms]   close all texts until the game is idle (default timeout 15000)
+///   dismisstext [timeout ms]  close texts and messages until nothing waits for a click (e.g. in the inventory)
 ///   closeall [timeout ms]     like dismissall but also answers confirmations with no and leaves all other
 ///                             screens like doors, chests or conversations with escape (default timeout 15000)
 ///   yes / no                  answer the shown confirmation window
@@ -316,6 +317,9 @@ public sealed class ScenarioScript
 				break;
 			case "dismissall":
 				wait = new("dismissall", time + (OptionalArg(0) ?? 15000), g => g.ScriptIdle, DismissTexts);
+				break;
+			case "dismisstext":
+				wait = new("dismisstext", time + (OptionalArg(0) ?? 15000), g => !g.ScriptWaitingForClick, DismissTexts);
 				break;
 			case "closeall":
 				wait = new("closeall", time + (OptionalArg(0) ?? 15000), g => g.ScriptIdle, CloseScreens);

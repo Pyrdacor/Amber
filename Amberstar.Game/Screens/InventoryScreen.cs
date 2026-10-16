@@ -435,14 +435,14 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
                 Game?.ScreenHandler.PopScreen();
                 break;
             case 3: // Use item
-                // TODO
+                Game.ScreenHandler.PushScreen(ScreenType.InventoryUseItem);
                 break;
             case 4: // Gather gold
                 Game.GatherGold(partyMember!);
                 ItemActionDone(null);
                 break;
             case 5: // Examine item
-                // TODO
+                Game.ScreenHandler.PushScreen(ScreenType.InventoryExamineItem);
                 break;
             case 6: // Give item
                 Game.ScreenHandler.PushScreen(ScreenType.InventoryGiveItem);
@@ -492,10 +492,10 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     /// </summary>
     private void ItemActionDone(Message? message)
     {
+        SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
+
         if (message != null)
             ShowMessage(message.Value);
-        else
-            SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
     }
 
     private void EndClickWait()
@@ -544,6 +544,99 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
                 break;
             case ScreenType.InventoryGiveItem:
                 GiveItem(index.Value);
+                break;
+            case ScreenType.InventoryUseItem:
+                UseItem(index.Value);
+                break;
+            case ScreenType.InventoryExamineItem:
+                Game.CurrentItem = GetItemSlot(index.Value, out _).Item;
+                Game.ScreenHandler.PushScreen(ScreenType.ItemView);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Gets the item slot of an index in <see cref="ItemContainers"/>.
+    /// </summary>
+    private ItemSlot GetItemSlot(int index, out bool equipped)
+    {
+        equipped = index < equippedItemSlots.Count;
+
+        return equipped
+            ? partyMember!.Equipment[(EquipmentSlot)index]
+            : partyMember!.Inventory[index - equippedItemSlots.Count];
+    }
+
+    /// <summary>
+    /// Uses an equipped item or an item of the backpack (UseItem_entry in the original).
+    /// </summary>
+    private void UseItem(int index)
+    {
+        var user = partyMember!;
+        var itemSlot = GetItemSlot(index, out bool equipped);
+        var item = itemSlot.Item;
+
+        if (item == null || itemSlot.Count == 0)
+            return;
+
+        // items which are used on the map (e.g. keys or a shovel)
+        if (Game.UseItemOnMap(item))
+        {
+            if (item.Flags.HasFlag(ItemFlags.DestroyAfterUsage))
+                Game.DestroyUsedItem(user, itemSlot, equipped);
+
+            Game.ScreenHandler.PopScreen();
+            return;
+        }
+
+        // items with a spell
+        if (item.SpellCharges != 0)
+        {
+            if (!item.UsableClasses.HasFlag((ClassFlags)(1 << (int)user.Class)))
+            {
+                ShowMessage(Message.WrongClass);
+                return;
+            }
+
+            // TODO: Cast the spell of the item when magic is implemented (Do_magic with Magic_object_flag
+            // in the original). The location of the spell must fit and a charge is used (Remove_used_magic_item).
+            Game.ShowNotImplementedMessage("Spells of items");
+            return;
+        }
+
+        switch (item.Type)
+        {
+            case ItemType.SpecialItem:
+            {
+                var specialItem = (SpecialItems)(1 << (item.SpecialIndex - 1));
+
+                if (Game.State.SpecialItems.HasFlag(specialItem))
+                {
+                    ShowMessage(Message.SameItemAlreadyInUse);
+                    return;
+                }
+
+                Game.State.SpecialItems |= specialItem;
+                Game.DestroyUsedItem(user, itemSlot, equipped, itemSlot.Count);
+                ItemActionDone(Message.ItemFulfillsSpecialPurposeNow);
+                break;
+            }
+            case ItemType.TextScroll:
+            {
+                // The text file of CODETXT.AMB and the text index are stored in the item.
+                var texts = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.ItemText, item.SpecialIndex));
+                Game.ShowTextMessage(texts.GetTextBlock(item.TextIndex));
+                break;
+            }
+            case ItemType.Transportation: // magic disc
+                if (Game.ScreenHandler.FindMapScreen() is not Map2DScreen { IsWilderness: true })
+                {
+                    ShowMessage(Message.FlyingDiscNotUsableHere);
+                    return;
+                }
+
+                Game.State.TravelType = TravelType.MagicDisc;
+                Game.ScreenHandler.PopScreen();
                 break;
         }
     }
@@ -659,6 +752,20 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         public override Message Message { get; } = Message.DropWhichItem;
 
         public override bool BackpackOnly { get; } = true;
+    }
+
+    internal class UseItemScreen : InventoryItemPickerScreen
+    {
+        public override ScreenType Type { get; } = ScreenType.InventoryUseItem;
+
+        public override Message Message { get; } = Message.UseWhichItem;
+    }
+
+    internal class ExamineItemScreen : InventoryItemPickerScreen
+    {
+        public override ScreenType Type { get; } = ScreenType.InventoryExamineItem;
+
+        public override Message Message { get; } = Message.ExamineWhichItem;
     }
 
     internal class GiveItemScreen : InventoryItemPickerScreen

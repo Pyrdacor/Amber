@@ -29,6 +29,8 @@ public enum ScreenType
     // Inventory sub screens
     InventoryDropItem,
     InventoryGiveItem,
+    InventoryUseItem,
+    InventoryExamineItem,
 	// Door/chest sub screens
 	LockedUseItem,
 	ChestGiveItem,
@@ -708,6 +710,8 @@ internal class ScreenHandler(Game Game) : IDisposable
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
             ScreenType.InventoryGiveItem => new InventoryScreen.GiveItemScreen(),
+            ScreenType.InventoryUseItem => new InventoryScreen.UseItemScreen(),
+            ScreenType.InventoryExamineItem => new InventoryScreen.ExamineItemScreen(),
 			// Door/chest sub screens
 			ScreenType.LockedUseItem => new DoorScreen.UseItemScreen(), // Note: Doesn't matter if DoorScreen.UseItemScreen or ChestScreen.UseItemScreen
             ScreenType.ChestGiveItem => new ChestScreen.GiveItemScreen(),
