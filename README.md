@@ -33,6 +33,10 @@ Implementation of different file systems (e.g. virtual and operating system).
 
 Interfaces and general classes for rendering.
 
+### Amber.Renderer.Headless
+
+Renderer which only keeps the state of the drawables and never draws anything. It is used to run games without a window or graphics hardware, e.g. for automated tests.
+
 
 ## Amberstar
 
@@ -45,4 +49,20 @@ Definitions for Amberstar game data.
 ### Amberstar.GameData.Legacy
 
 Concrete loaders and implementations for Amberstar game data which are related to the original legacy games for Atari ST, Amiga or DOS.
+
+### Amberstar.Game
+
+The game logic, screens and UI.
+
+### Amberstar.Frontend
+
+Creates the game for a renderer and game data. Also contains the cheats, the headless runner and the scenario scripts which are shared by the window frontend and the tests.
+
+### Amberstar.net
+
+The game with a window, OpenGL rendering and OpenAL audio. Use `--help` for the command line options (e.g. `--script` and `--headless`).
+
+### Amberstar.Tests
+
+Automated tests: loading the game data of all versions in the repository, game logic in a headless game and all scenario scripts in [Tests/Scenarios](Tests/Scenarios/README.md). Run them with `dotnet test Amberstar.Tests`.
 

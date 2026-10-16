@@ -1,0 +1,22 @@
+# The start of the game: the intro text on the graveyard of Twinlake (map 65)
+# and the way into the town of Twinlake (map 67).
+waittext
+textshown GRAB
+screen PictureText
+dismissall
+screen Map2D
+map 65
+pos 8 11
+partysize 1
+# the intro text event (2) uses the save index 1 and is disabled now
+eventbit 65 1 1
+eventactive 65 2 0
+eventactive 65 6 1
+# --- the south exit (8,25) leads to Twinlake (7,15)
+teleport 65 8 24
+pos 8 24
+move down
+waitidle
+map 67
+pos 7 15
+screen Map3D

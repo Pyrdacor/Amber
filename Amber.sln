@@ -42,6 +42,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amber.Renderer.Headless", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.Frontend", "Amberstar.Frontend\Amberstar.Frontend.csproj", "{D6D6681D-D25B-474C-918C-3BADB9A76E10}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amberstar.Tests", "Amberstar.Tests\Amberstar.Tests.csproj", "{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -256,6 +258,18 @@ Global
 		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseAndroid|Any CPU.Build.0 = ReleaseAndroid|Any CPU
 		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseES|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
 		{D6D6681D-D25B-474C-918C-3BADB9A76E10}.ReleaseES|Any CPU.Build.0 = ReleaseAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.DebugAndroid|Any CPU.ActiveCfg = DebugAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.DebugAndroid|Any CPU.Build.0 = DebugAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.DebugES|Any CPU.ActiveCfg = DebugAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.DebugES|Any CPU.Build.0 = DebugAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.ReleaseAndroid|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.ReleaseAndroid|Any CPU.Build.0 = ReleaseAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.ReleaseES|Any CPU.ActiveCfg = ReleaseAndroid|Any CPU
+		{144D0E40-FE4E-4F1F-9510-6DF3FCD66C37}.ReleaseES|Any CPU.Build.0 = ReleaseAndroid|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
