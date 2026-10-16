@@ -19,10 +19,15 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     readonly static Position[] InventorySlotPositions = new Position[ICharacter.InventorySlotCount];
     readonly static Rect messageDisplayArea = new(16, 50, 176, 14);
     readonly static Rect itemTooltipArea = new(16, 57, 176, 7);
+    readonly static Rect backpackArea = new(112, 81, 80, 112);
+    readonly static Rect itemArea = new(16, 81, 176, 112);
     PersonInfoView? personInfoView;
     Label? message;
     Label? weightText;
     bool ignoreItemChangeEvents = false;
+    Action<int>? amountEntered;
+    Func<IPartyMember, bool>? transferCheck;
+    Action<IPartyMember>? transferAction;
 
     static InventoryScreen()
     {
@@ -68,6 +73,8 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     internal override byte ButtonGridPaletteIndex => Game?.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI] ?? 0;
 
     internal override ItemContainer[] ItemContainers => [.. equippedItemSlots.Values, .. inventoryItemSlots];
+
+    internal override ItemContainer[] BackpackItemContainers => inventoryItemSlots;
 
     protected override void SetupButtons(ButtonGrid buttonGrid)
     {
@@ -246,6 +253,15 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
             if (message != null)
                 message.Visible = true;
         }
+
+        if (screen is InputAmountScreen)
+        {
+            var action = amountEntered;
+            amountEntered = null;
+
+            if (Game.CurrentAmount > 0)
+                action?.Invoke(Game.CurrentAmount);
+        }
     }
 
     public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -258,6 +274,14 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
             return true;
         }
 
+        if (transferAction != null)
+        {
+            if (key == Key.Escape)
+                EndTransfer(null);
+
+            return true;
+        }
+
         return base.KeyDown(key, keyModifiers);
 	}
 
@@ -266,6 +290,13 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         if (waitForClick)
         {
             EndClickWait();
+            return true;
+        }
+
+        if (transferAction != null)
+        {
+            int? slot = buttons == MouseButtons.Left ? Game.TestPartyPortraitHit(position) : null;
+            EndTransfer(slot == null ? null : Game.State.GetPartyMember(slot.Value));
             return true;
         }
 
@@ -406,21 +437,32 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
             case 3: // Use item
                 // TODO
                 break;
-            case 4: // Gather gold?
-                // TODO
+            case 4: // Gather gold
+                Game.GatherGold(partyMember!);
+                ItemActionDone(null);
                 break;
             case 5: // Examine item
                 // TODO
                 break;
             case 6: // Give item
-                // TODO
+                Game.ScreenHandler.PushScreen(ScreenType.InventoryGiveItem);
                 break;
             case 7: // Give gold
-                // TODO
+            {
+                var giver = partyMember!;
+                AskForAmount(giver.Gold, ScreenType.PlaceGiveGold, amount => StartTransfer(
+                    receiver => Game.CanReceiveGold(receiver, amount),
+                    receiver => Game.TransferGold(giver, receiver, amount), CursorType.Gold));
                 break;
+            }
             case 8: // Give food
-                // TODO
+            {
+                var giver = partyMember!;
+                AskForAmount(giver.Food, ScreenType.PlaceGiveFood, amount => StartTransfer(
+                    receiver => Game.CanReceiveFood(receiver, amount),
+                    receiver => Game.TransferFood(giver, receiver, amount), CursorType.Food));
                 break;
+            }
         }
     }
 
@@ -492,17 +534,139 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
     internal override void PickItem(ScreenType sourceScreen, int? index)
     {
-        // TODO
+        if (index == null)
+            return;
+
+        switch (sourceScreen)
+        {
+            case ScreenType.InventoryDropItem:
+                DropItem(index.Value);
+                break;
+            case ScreenType.InventoryGiveItem:
+                GiveItem(index.Value);
+                break;
+        }
     }
 
-    internal class DropItemScreen : ItemPickerScreen
+    /// <summary>
+    /// Drops items of a backpack slot (Do_DropItem in the original).
+    /// </summary>
+    private void DropItem(int slotIndex)
+    {
+        var owner = partyMember!;
+        var itemSlot = owner.Inventory[slotIndex];
+        var item = itemSlot.Item!;
+
+        if (!item.CanThrowAway())
+        {
+            ShowMessage(Message.ItemCannotBeDropped);
+            return;
+        }
+
+        AskForItemAmount(item, itemSlot.Count, Message.HowManyItemsToDrop, amount =>
+            Game.AskForConfirmation(Game.LoadMessageText(Message.ReallyDropItem), () =>
+            {
+                Game.RemoveInventoryItem(owner, slotIndex, amount);
+                ItemActionDone(null);
+            }));
+    }
+
+    /// <summary>
+    /// Gives items of a backpack slot to another party member (Do_TransferItem in the original).
+    /// </summary>
+    private void GiveItem(int slotIndex)
+    {
+        var giver = partyMember!;
+        var itemSlot = giver.Inventory[slotIndex];
+        var item = itemSlot.Item!;
+
+        AskForItemAmount(item, itemSlot.Count, Message.GiveHowMuch, amount => StartTransfer(
+            receiver => Game.CanReceiveItems(receiver, item, amount),
+            receiver => Game.TransferItems(giver, slotIndex, receiver, amount), CursorType.Sword));
+    }
+
+    private void AskForItemAmount(IItem item, int count, Message message, Action<int> entered)
+    {
+        if (!item.IsStackable() || count <= 1)
+        {
+            entered(1);
+            return;
+        }
+
+        MerchantScreen.ItemAmountScreen.Setup(Game, item, message);
+        AskForAmount(count, ScreenType.PlaceItemAmount, entered);
+    }
+
+    private void AskForAmount(int maxAmount, ScreenType screenType, Action<int> entered)
+    {
+        amountEntered = entered;
+        Game.CurrentAmount = 0;
+        Game.CurrentMaxAmount = maxAmount;
+        Game.ScreenHandler.PushScreen(screenType);
+    }
+
+    /// <summary>
+    /// Lets the player choose the receiver by clicking a portrait (TIVS module in the original).
+    /// </summary>
+    private void StartTransfer(Func<IPartyMember, bool> canReceive, Action<IPartyMember> transfer, CursorType cursorType)
+    {
+        if (Game.SetHandIcons(partyMember!, canReceive) == 0)
+        {
+            Game.ResetStatusIcons();
+            ShowMessage(Message.NoMemberHasRoomForItem);
+            return;
+        }
+
+        transferCheck = canReceive;
+        transferAction = transfer;
+        ShowMessage(Message.WhomToTransferTo, false);
+        Game.TrapMouseInPortraitArea();
+        Game.Cursor.CursorType = cursorType;
+    }
+
+    private void EndTransfer(IPartyMember? receiver)
+    {
+        var canReceive = transferCheck;
+        var transfer = transferAction;
+        transferCheck = null;
+        transferAction = null;
+
+        HideMessage();
+        Game.Cursor.CursorType = CursorType.Sword;
+        Game.UntrapMouse();
+        Game.ResetStatusIcons();
+
+        if (receiver != null && receiver != partyMember && canReceive!(receiver))
+        {
+            transfer!(receiver);
+            ItemActionDone(null);
+        }
+    }
+
+    internal abstract class InventoryItemPickerScreen : ItemPickerScreen
+    {
+        public override Rect MouseTrapArea => BackpackOnly ? backpackArea : itemArea;
+
+        public override Rect ItemTooltipArea { get; } = itemTooltipArea;
+
+        public override bool HideItemsAfterPicking { get; } = false;
+    }
+
+    internal class DropItemScreen : InventoryItemPickerScreen
     {
         public override ScreenType Type { get; } = ScreenType.InventoryDropItem;
 
         public override Message Message { get; } = Message.DropWhichItem;
 
-        public override Rect MouseTrapArea { get; } = messageDisplayArea;
+        public override bool BackpackOnly { get; } = true;
+    }
 
-        public override Rect ItemTooltipArea { get; } = itemTooltipArea;
+    internal class GiveItemScreen : InventoryItemPickerScreen
+    {
+        public override ScreenType Type { get; } = ScreenType.InventoryGiveItem;
+
+        public override Message Message { get; } = Message.TransferWhichItem;
+
+        public override bool BackpackOnly { get; } = true;
     }
 }

@@ -28,6 +28,7 @@ public enum ScreenType
     Confirmation,
     // Inventory sub screens
     InventoryDropItem,
+    InventoryGiveItem,
 	// Door/chest sub screens
 	LockedUseItem,
 	ChestGiveItem,
@@ -706,6 +707,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Confirmation => new ConfirmationScreen(),
             // Inventory sub screens
             ScreenType.InventoryDropItem => new InventoryScreen.DropItemScreen(),
+            ScreenType.InventoryGiveItem => new InventoryScreen.GiveItemScreen(),
 			// Door/chest sub screens
 			ScreenType.LockedUseItem => new DoorScreen.UseItemScreen(), // Note: Doesn't matter if DoorScreen.UseItemScreen or ChestScreen.UseItemScreen
             ScreenType.ChestGiveItem => new ChestScreen.GiveItemScreen(),

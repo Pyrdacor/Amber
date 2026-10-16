@@ -23,6 +23,11 @@ internal abstract class ItemPickerScreen : Screen
 
     public virtual bool HideItemsAfterPicking { get; } = true;
 
+    /// <summary>
+    /// If set, only items of the backpack can be picked.
+    /// </summary>
+    public virtual bool BackpackOnly { get; } = false;
+
     public override void Init()
 	{
         base.Init();
@@ -34,7 +39,7 @@ internal abstract class ItemPickerScreen : Screen
         // Note: During Init the ActiveScreen is still the last one.
         parentScreen = Game.ScreenHandler.ActiveScreen as ItemGridScreen;
 
-        items = [.. parentScreen?.ItemContainers ?? []];
+        items = [.. (BackpackOnly ? parentScreen?.BackpackItemContainers : parentScreen?.ItemContainers) ?? []];
     }
 
     public override void Open(Action? closeAction)
@@ -84,7 +89,7 @@ internal abstract class ItemPickerScreen : Screen
             {
                 var item = items[i];
 
-                if (!item.Empty && item.Contains(position))
+                if (!item.Empty && !item.TwoHandedSecondSlot && item.Contains(position))
                 {
                     pickedItem = i;
                     Game.ScreenHandler.PopScreen();
@@ -110,7 +115,7 @@ internal abstract class ItemPickerScreen : Screen
         {
             var item = items[i];
 
-            if (!item.Empty && item.Contains(position))
+            if (!item.Empty && !item.TwoHandedSecondSlot && item.Contains(position))
             {
                 itemNameTooltip!.SetText(item.Item!.GetName(Game.AssetProvider.TextLoader), 320 - itemNameTooltip!.Position.X, 15, 0, parentScreen!.ButtonGridPaletteIndex);
                 itemNameTooltip.Visible = true;

@@ -1,4 +1,5 @@
 using Amberstar.GameData;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game;
 
@@ -140,5 +141,146 @@ partial class Game
 		AddSkillBonus(item.Skill, sign * (sbyte)item.SkillValue);
 		partyMember.BonusDefense = Add(partyMember.BonusDefense, sign * (sbyte)item.Defense);
 		partyMember.BonusDamage = Add(partyMember.BonusDamage, sign * (sbyte)item.Damage);
+	}
+
+	// conditions of party members which can't take anything (like $e402 in the original)
+	const Condition NoTransferConditions = Condition.Dead | Condition.Ashes | Condition.Dust | Condition.Petrified | Condition.Mad;
+
+	/// <summary>
+	/// Checks if a party member can take the given items (Scan_4_transfer_victims in the original).
+	/// </summary>
+	internal static bool CanReceiveItems(IPartyMember partyMember, IItem item, int count)
+	{
+		if (partyMember.Race > Race.HalfOrc || partyMember.HasAnyConditionOf(NoTransferConditions))
+			return false;
+
+		if (partyMember.TotalWeight + (long)count * item.Weight > partyMember.MaxWeight())
+			return false;
+
+		return FindBackpackSlot(partyMember, item) != null;
+	}
+
+	/// <summary>
+	/// Checks if a party member can take the given gold (Scan_4_gold_victims in the original).
+	/// </summary>
+	internal static bool CanReceiveGold(IPartyMember partyMember, int amount)
+	{
+		if (partyMember.Race > Race.HalfOrc || partyMember.HasAnyConditionOf(NoTransferConditions))
+			return false;
+
+		return partyMember.Gold + amount <= short.MaxValue && partyMember.TotalWeight + amount * GoldWeight <= partyMember.MaxWeight();
+	}
+
+	/// <summary>
+	/// Checks if a party member can take the given food (TransFood_Return in the original).
+	/// Note: In contrast to items and gold, animals can take food.
+	/// </summary>
+	internal static bool CanReceiveFood(IPartyMember partyMember, int amount)
+	{
+		if (partyMember.HasAnyConditionOf(NoTransferConditions))
+			return false;
+
+		return partyMember.Food + amount <= short.MaxValue && partyMember.TotalWeight + amount * FoodWeight <= partyMember.MaxWeight();
+	}
+
+	/// <summary>
+	/// Moves items of a backpack slot to another party member (Inv2_Do_TI in the original).
+	/// Slots with the same item are filled first. Returns the amount of moved items.
+	/// </summary>
+	internal static int TransferItems(IPartyMember source, int inventorySlotIndex, IPartyMember target, int count)
+	{
+		var sourceSlot = source.Inventory[inventorySlotIndex];
+		var item = sourceSlot.Item!;
+		int moved = 0;
+
+		count = Math.Min(count, sourceSlot.Count);
+
+		while (moved < count)
+		{
+			var targetSlot = FindBackpackSlot(target, item);
+
+			if (targetSlot == null)
+				break;
+
+			int amount = Math.Min(count - moved, item.IsStackable() ? MaxItemsPerSlot - targetSlot.Count : 1);
+
+			if (targetSlot.Count == 0)
+				targetSlot.SetItem(item, (byte)amount);
+			else
+				targetSlot.Count += (byte)amount;
+
+			moved += amount;
+		}
+
+		sourceSlot.Count -= (byte)moved;
+
+		if (sourceSlot.Count == 0)
+			sourceSlot.ClearItem();
+
+		source.TotalWeight -= (uint)(moved * item.Weight);
+		target.TotalWeight += (uint)(moved * item.Weight);
+
+		return moved;
+	}
+
+	internal static void TransferGold(IPartyMember source, IPartyMember target, int amount)
+	{
+		source.Gold -= (word)amount;
+		target.Gold += (word)amount;
+		source.TotalWeight -= (uint)amount * GoldWeight;
+		target.TotalWeight += (uint)amount * GoldWeight;
+	}
+
+	internal static void TransferFood(IPartyMember source, IPartyMember target, int amount)
+	{
+		source.Food -= (word)amount;
+		target.Food += (word)amount;
+		source.TotalWeight -= (uint)amount * FoodWeight;
+		target.TotalWeight += (uint)amount * FoodWeight;
+	}
+
+	/// <summary>
+	/// Takes the gold of the other party members as far as the
+	/// party member can carry it (Pool_gold_INV2 in the original).
+	/// </summary>
+	internal void GatherGold(IPartyMember receiver)
+	{
+		ForeachPartyMember(partyMember =>
+		{
+			if (partyMember == receiver)
+				return;
+
+			// Note: The original only checks the weight of each single
+			// party member's gold so the receiver could get overloaded.
+			long freeWeight = Math.Max(0, (long)receiver.MaxWeight() - receiver.TotalWeight);
+			int gold = (int)Math.Min(Math.Min(partyMember.Gold, short.MaxValue - receiver.Gold), freeWeight / GoldWeight);
+
+			if (gold > 0)
+				TransferGold(partyMember, receiver, gold);
+		}, Condition.Petrified | Condition.Mad);
+	}
+
+	/// <summary>
+	/// Shows which party members can take something by the hand status icons.
+	/// The given party member never takes anything. Returns the amount of possible receivers.
+	/// </summary>
+	internal int SetHandIcons(IPartyMember giver, Func<IPartyMember, bool> canReceive)
+	{
+		int receiverCount = 0;
+
+		ForeachPartyMemberSlot((index, partyMember) =>
+		{
+			if (partyMember == null)
+				HideStatusIcon(index);
+			else if (partyMember != giver && canReceive(partyMember))
+			{
+				SetStatusIcon(index, StatusIcon.HandOpen, true, true);
+				receiverCount++;
+			}
+			else
+				SetStatusIcon(index, StatusIcon.HandStop, true, true);
+		});
+
+		return receiverCount;
 	}
 }

@@ -239,6 +239,25 @@ partial class Game
 
 	public string? ScriptClass(int slot) => State.GetPartyMember(slot)?.Class.ToString();
 
+	/// <summary>
+	/// Adds a party member by its character index (index in CHARDATA.AMB) without a conversation.
+	/// </summary>
+	public string? ScriptJoin(int characterIndex)
+	{
+		if (!State.IsPossiblePartyMember(characterIndex))
+			return $"character {characterIndex} is no possible party member";
+
+		if (State.PartyCharacterIndices.Contains(characterIndex))
+			return $"character {characterIndex} is already in the party";
+
+		if (!State.TryAddPartyMember(characterIndex, out _))
+			return "the party is full";
+
+		UpdatePartyMembers();
+
+		return null;
+	}
+
 	public string? ScriptSetClass(int slot, string className)
 	{
 		var partyMember = State.GetPartyMember(slot);

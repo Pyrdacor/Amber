@@ -101,6 +101,7 @@ using G = Game.Game;
 ///                             print if a map character (1-based) is still active, optionally check it
 ///   wordknown &lt;index&gt; [0|1]   print if a dictionary word is known, optionally check it
 ///   partysize [count]         print the party size, optionally check it
+///   join &lt;character&gt;         add a party member by its character index without a conversation
 ///   activate &lt;slot&gt;           make the party member in slot 1-6 the active one
 ///   value &lt;slot&gt; &lt;name&gt; [v]   print a party member value (gold, food, hp, maxhp, sp, maxsp, level, exp, slp,
 ///                             weight, defense, damage, hands, fingers, spellschools or an attribute or skill name),
@@ -416,6 +417,9 @@ public sealed class ScenarioScript
 				}
 				break;
 			}
+			case "join":
+				CheckResult(game.ScriptJoin(Arg(0)));
+				break;
 			case "setclass":
 				CheckResult(game.ScriptSetClass(Arg(0), args[1]));
 				break;

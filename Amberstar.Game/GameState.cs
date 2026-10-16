@@ -37,6 +37,8 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public void ReplacePartyMember(int characterIndex, IPartyMember partyMember) => partyMembers[characterIndex] = partyMember;
 
+	public bool IsPossiblePartyMember(int characterIndex) => partyMembers.ContainsKey(characterIndex);
+
 	/// <summary>
 	/// The party members with their character index (index in CHARDATA.AMB).
 	/// </summary>
