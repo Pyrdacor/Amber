@@ -1,0 +1,22 @@
+# The inn in Twinlake (map 71, 18,29) rents a guestroom for the party.
+# Resting in the guestroom needs the camp which is not implemented yet.
+waittext
+dismissall
+cheat gold 500
+teleport 71 18 29
+waitscreen Inn
+buttonenabled 3 0
+button 6
+placegold
+buttonenabled 3 1
+button 3
+waitscreen Confirmation
+yes
+placegold -
+buttonenabled 3 0
+button 7
+cleartexts
+button 2
+waittext
+textshown Resting in the inn
+dismissall

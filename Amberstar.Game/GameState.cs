@@ -397,6 +397,20 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 		return null;
 	}
 
+	public bool HasFreeTransportSlot => Transports.Any(transport => transport.Type == 0);
+
+	public bool TryAddTransport(TransportType type, int x, int y, int mapIndex)
+	{
+		int index = Array.FindIndex(Transports, transport => transport.Type == 0);
+
+		if (index == -1)
+			return false;
+
+		Transports[index] = new() { Type = type, X = x, Y = y, MapIndex = mapIndex };
+
+		return true;
+	}
+
 	public Transport[] GetTransportsOnMap(int? mapIndex = null)
 	{
 		mapIndex ??= GetIndexOfMapWithPlayer();

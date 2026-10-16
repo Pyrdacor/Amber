@@ -153,6 +153,53 @@ partial class Game
 	}
 
 	/// <summary>
+	/// Presses a button of the button grid (0 to 8, row by row) of the active screen.
+	/// </summary>
+	public string? ScriptPressButton(int index)
+	{
+		if (ScreenHandler.ActiveScreen is not ButtonGridScreen screen)
+			return $"the active screen {ScriptActiveScreen} has no buttons";
+
+		return screen.ScriptPressButton(index) ? null : $"button {index} ({screen.GetButtonType(index)}) is disabled";
+	}
+
+	public bool? ScriptIsButtonEnabled(int index) => (ScreenHandler.ActiveScreen as ButtonGridScreen)?.ScriptIsButtonEnabled(index);
+
+	/// <summary>
+	/// Enters an amount in the shown amount input window and closes it.
+	/// </summary>
+	public string? ScriptEnterAmount(int amount)
+	{
+		if (ScreenHandler.ActiveScreen is not InputAmountScreen)
+			return $"no amount input is shown but {ScriptActiveScreen}";
+
+		if (amount < 0 || amount > CurrentMaxAmount)
+			return $"amount {amount} is not between 0 and {CurrentMaxAmount}";
+
+		CurrentAmount = amount;
+		ScreenHandler.PopScreen();
+
+		return null;
+	}
+
+	PlaceScreen? ScriptPlaceScreen => ScreenHandler.ActiveScreen as PlaceScreen ?? ScreenHandler.LastScreen as PlaceScreen;
+
+	/// <summary>
+	/// Gold on the gold pile of the shown place.
+	/// </summary>
+	public int? ScriptPlaceGold => ScriptPlaceScreen?.ScriptPlaceGold;
+
+	/// <summary>
+	/// Food on the food pile of the shown food dealer.
+	/// </summary>
+	public int? ScriptPlaceFood => (ScriptPlaceScreen as FoodDealerScreen)?.ScriptPlaceFood;
+
+	/// <summary>
+	/// Checks if there is a transport at a position (like it is stored in the savegame).
+	/// </summary>
+	public string? ScriptGetTransport(int mapIndex, int x, int y) => State.GetTransportAtLocation(x, y, mapIndex)?.Type.ToString();
+
+	/// <summary>
 	/// Gets a dictionary word by its index.
 	/// </summary>
 	public string ScriptGetWord(int wordIndex) => AssetProvider.TextLoader.FromTextFragmentIndex((word)wordIndex).GetString();

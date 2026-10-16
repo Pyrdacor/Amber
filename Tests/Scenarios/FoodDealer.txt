@@ -1,0 +1,34 @@
+# Food dealer in Twinlake (map 67, 20,16): pool the gold, buy food and distribute it.
+waittext
+dismissall
+cheat gold 200
+value 1 gold 200
+value 1 food
+teleport 67 20 16
+waitscreen FoodDealer
+placegold 0
+buttonenabled 3 0
+# --- pool the gold of the party
+button 6
+placegold 200
+value 1 gold 0
+buttonenabled 3 1
+# --- buy 5 rations
+button 3
+waitscreen PlaceBuyFood
+amount 5
+waitscreen Confirmation
+yes
+placefood 5
+placegold -
+# --- distribute the food and the gold
+button 4
+placefood 0
+value 1 food +5
+button 7
+placegold 0
+value 1 gold +
+# --- leave
+button 2
+waitidle
+map 67

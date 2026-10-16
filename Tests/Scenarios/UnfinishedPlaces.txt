@@ -1,0 +1,23 @@
+# Places which are not implemented yet (guild, merchant, healer, sage) still handle the gold.
+waittext
+dismissall
+cheat gold 100
+teleport 67 28 18
+waitscreen Place
+textshown not implemented
+button 6
+placegold 100
+value 1 gold 0
+# --- give 40 gold to the hero
+button 8
+waitscreen PlaceGiveGold
+amount 40
+portrait 1
+placegold 60
+value 1 gold 40
+# --- leaving with gold left behind (the gold stays at the guild)
+button 2
+waitscreen Confirmation
+yes
+waitidle
+value 1 gold 40

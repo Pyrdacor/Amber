@@ -6,6 +6,7 @@ namespace Amberstar.Game;
 partial class Game
 {
     public const uint GoldWeight = 10;
+    public const uint FoodWeight = 250;
 
 	internal IText? CurrentText { get; private set; }
     internal IItem? CurrentItem { get; set; }

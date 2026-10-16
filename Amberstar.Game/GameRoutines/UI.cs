@@ -130,6 +130,27 @@ partial class Game
         return takerCount;
     }
 
+    internal int SetHandIconsByFood(int amount)
+    {
+        int takerCount = 0;
+        long weight = amount * FoodWeight;
+
+        ForeachPartyMemberSlot((index, partyMember) =>
+        {
+            if (partyMember == null)
+                HideStatusIcon(index);
+            else if (partyMember.Food + amount <= short.MaxValue && partyMember.TotalWeight + weight <= partyMember.MaxWeight())
+            {
+                SetStatusIcon(index, StatusIcon.HandOpen, true, true);
+                takerCount++;
+            }
+            else
+                SetStatusIcon(index, StatusIcon.HandStop, true, true);
+        });
+
+        return takerCount;
+    }
+
     internal void ResetStatusIcons()
     {
         ForeachPartyMemberSlot((index, partyMember) =>

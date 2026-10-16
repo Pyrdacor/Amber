@@ -229,69 +229,113 @@ partial class Game
         return false;
     }
 
-    public int DistributeFood(int amount)
+    public bool TryAddFood(int partyMemberSlotIndex, int food)
     {
-        // TODO
-        throw new NotImplementedException();
+        if (food < 0)
+            return false;
+
+        var partyMember = State.GetPartyMember(partyMemberSlotIndex);
+
+        if (partyMember == null)
+            return false;
+
+        var weight = food * FoodWeight;
+
+        if (partyMember.Food + food <= short.MaxValue && partyMember.TotalWeight + weight <= partyMember.MaxWeight())
+        {
+            partyMember.Food += (word)food;
+            partyMember.TotalWeight += (uint)weight;
+            return true;
+        }
+
+        return false;
     }
 
-    // TODO: Needs testing with bigger party and different constellations
-    // TODO: Seems to only give the amount to the first member
-    public int DistributeGold(int amount)
+    /// <summary>
+    /// Distributes food rations to the party members like Divide_food in the original.
+    /// Returns the remaining food which nobody could carry.
+    /// </summary>
+    public int DistributeFood(int amount) => Distribute(amount, FoodWeight,
+        partyMember => partyMember.Food, (partyMember, food) => partyMember.Food += (word)food);
+
+    /// <summary>
+    /// Distributes gold coins to the party members like Divide_gold in the original.
+    /// Returns the remaining gold which nobody could carry.
+    /// </summary>
+    public int DistributeGold(int amount) => Distribute(amount, GoldWeight,
+        partyMember => partyMember.Gold, (partyMember, gold) => partyMember.Gold += (word)gold);
+
+    /// <summary>
+    /// Takes the gold of all party members (like Pool_gold in the original).
+    /// The given amount is already pooled and the total is limited to 32767.
+    /// Returns the new total.
+    /// </summary>
+    internal int PoolGold(int pooledGold)
     {
-        List<(IPartyMember Taker, int MaxAmount)> takers = [];
+        ForeachPartyMember(partyMember =>
+        {
+            int gold = Math.Min(partyMember.Gold, short.MaxValue - pooledGold);
+
+            if (gold <= 0)
+                return;
+
+            partyMember.Gold -= (word)gold;
+            partyMember.TotalWeight -= (uint)gold * GoldWeight;
+            pooledGold += gold;
+        }, Condition.Mad | Condition.Petrified);
+
+        return pooledGold;
+    }
+
+    // Everyone who can carry something gets the same share. This is repeated
+    // until everything is given away or nobody can carry any more.
+    private int Distribute(int amount, uint weightPerUnit, Func<IPartyMember, int> getCurrent, Action<IPartyMember, int> add)
+    {
+        if (amount <= 0)
+            return amount;
+
+        var takers = new List<IPartyMember>();
+        var capacities = new List<int>();
 
         ForeachPartyMember(partyMember =>
         {
+            // Animals and monsters don't take anything.
             if (partyMember.Race > Race.HalfOrc)
                 return;
 
-            int maxGoldToTake = Math.Min((int)((partyMember.MaxWeight() - partyMember.TotalWeight) / GoldWeight), short.MaxValue - partyMember.Gold);
+            long freeWeight = (long)partyMember.MaxWeight() - partyMember.TotalWeight;
+            int capacity = (int)Math.Min(Math.Max(0, freeWeight) / weightPerUnit, short.MaxValue - getCurrent(partyMember));
 
-            if (maxGoldToTake > 0)
+            if (capacity > 0)
             {
-                takers.Add((partyMember, maxGoldToTake));
+                takers.Add(partyMember);
+                capacities.Add(capacity);
             }
         }, Condition.Mad | Condition.Petrified | Condition.Dead | Condition.Ashes | Condition.Dust);
 
-        if (takers.Count == 0)
-            return amount;
+        int interested = takers.Count;
 
-        if (takers.Count == 1)
+        while (amount > 0 && interested > 0)
         {
-            var taker = takers[0];
-            int takenGold = Math.Min(amount, taker.MaxAmount);
-            taker.Taker.Gold += (ushort)takenGold;
-            taker.Taker.TotalWeight += (uint)takenGold * GoldWeight;
-            amount -= takenGold;
-
-            return amount;
-        }
-
-        while (amount > 0)
-        {
-            int takerCount = takers.Count;
-            int goldToTake = amount / takerCount;
-
-            for (int i = 0; i < takers.Count; i++)
+            for (int i = 0; i < takers.Count && amount > 0; i++)
             {
-                var taker = takers[i];
+                if (capacities[i] == 0)
+                    continue;
 
-                if (goldToTake == 0)
-                    goldToTake = amount;
+                int share = amount / interested;
 
-                int takenGold = Math.Min(goldToTake, taker.MaxAmount);
-                taker.Taker.Gold += (ushort)takenGold;
-                taker.Taker.TotalWeight += (uint)takenGold * GoldWeight;
-                taker.MaxAmount -= takenGold;
-                amount -= takenGold;
+                if (share == 0)
+                    share = amount;
+
+                int taken = Math.Min(share, capacities[i]);
+                add(takers[i], taken);
+                takers[i].TotalWeight += (uint)taken * weightPerUnit;
+                capacities[i] -= taken;
+                amount -= taken;
+
+                if (capacities[i] == 0)
+                    interested--;
             }
-
-            // Remove takers who can't take any more gold
-            takers = takers.Where(taker => taker.MaxAmount > 0).ToList();
-
-            if (takers.Count == 0)
-                break;
         }
 
         return amount;

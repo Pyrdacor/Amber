@@ -11,10 +11,31 @@ internal abstract class ButtonGridScreen : Screen
 	protected abstract void SetupButtons(ButtonGrid buttonGrid);
 	protected abstract void ButtonClicked(int index);
     internal abstract byte ButtonGridPaletteIndex { get; }
-    protected void RequestButtonSetup() => SetupButtons(buttonGrid!);
+    protected void RequestButtonSetup()
+    {
+        // The grid does not exist while another screen covers this one.
+        if (buttonGrid != null)
+            SetupButtons(buttonGrid);
+    }
     protected void RequestButtonGridPaletteUpdate() => buttonGrid!.PaletteIndex = ButtonGridPaletteIndex;
 
     public ButtonType GetButtonType(int index) => buttonGrid?.GetButtonType(index) ?? ButtonType.Empty;
+
+    /// <summary>
+    /// Presses a button like a click (used by scenario scripts).
+    /// Returns false if the button is disabled or empty.
+    /// </summary>
+    internal bool ScriptPressButton(int index)
+    {
+        if (buttonGrid == null || !buttonGrid.IsButtonEnabled(index) || buttonGrid.GetButtonType(index) is ButtonType.Empty or ButtonType.EmptyArea)
+            return false;
+
+        buttonGrid.Press(index);
+
+        return true;
+    }
+
+    internal bool ScriptIsButtonEnabled(int index) => buttonGrid != null && buttonGrid.IsButtonEnabled(index) && buttonGrid.GetButtonType(index) is not (ButtonType.Empty or ButtonType.EmptyArea);
 
     public override void Open(Action? closeAction)
 	{

@@ -41,6 +41,13 @@ public enum ScreenType
     ConversationGiveGold,
     ConversationGiveFood,
     Riddlemouth,
+    // Place sub screens and places
+    Inn,
+    TransportDealer,
+    FoodDealer,
+    PlaceGiveGold,
+    PlaceGiveFood,
+    PlaceBuyFood,
     // TODO ...
 }
 
@@ -669,7 +676,13 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Inventory => new InventoryScreen(),
             ScreenType.CharacterStats => new CharacterStatsScreen(),
             ScreenType.Conversation => new ConversationScreen(),
-			ScreenType.Place => new PlaceScreen(),
+			ScreenType.Place => new UnfinishedPlaceScreen(),
+			ScreenType.Inn => new InnScreen(),
+			ScreenType.TransportDealer => new TransportDealerScreen(),
+			ScreenType.FoodDealer => new FoodDealerScreen(),
+			ScreenType.PlaceGiveGold => new PlaceScreen.GiveGoldScreen(),
+			ScreenType.PlaceGiveFood => new PlaceScreen.GiveFoodScreen(),
+			ScreenType.PlaceBuyFood => new FoodDealerScreen.BuyFoodScreen(),
 			ScreenType.ItemView => new ItemScreen(),
 			ScreenType.ItemDetails => new ItemDetailsScreen(),
             ScreenType.SelectWord => new SelectWordScreen(),

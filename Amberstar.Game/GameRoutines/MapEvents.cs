@@ -210,7 +210,24 @@ partial class Game
 			return;
 		}
 
-		ScreenHandler.PushScreen(ScreenType.Place);
+		var screenType = placeEvent.PlaceType switch
+		{
+			PlaceType.Inn => ScreenType.Inn,
+			PlaceType.HorseDealer or PlaceType.RaftDealer or PlaceType.ShipDealer => ScreenType.TransportDealer,
+			PlaceType.FoodDealer => ScreenType.FoodDealer,
+			_ => ScreenType.Place
+		};
+
+		ScreenHandler.PushScreen(screenType);
+	}
+
+	/// <summary>
+	/// Opens the camp. In the inn the party rests in a guestroom with full regeneration.
+	/// </summary>
+	internal void OpenCamp(bool inn)
+	{
+		// TODO: The camp screen (cast spells, learn spells, rest). In the inn resting regenerates everything.
+		ShowNotImplementedMessage(inn ? "Resting in the inn" : "The camp");
 	}
 
 	internal void ShowDoor()

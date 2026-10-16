@@ -40,6 +40,16 @@ using G = Game.Game;
 ///   useitem &lt;item&gt;            use an item of the active party member at the party position like the inventory
 ///                             (e.g. a key on a use item event), items which are used up are removed.
 ///                             "useitem &lt;item&gt; noeffect" checks that the item has no effect.
+///   button &lt;index&gt;           press a button of the button grid (0 to 8, row by row, like the keypad
+///                             keys 7, 8, 9, 4, ...), it is a failure if the button is disabled
+///   buttonenabled &lt;index&gt; [0|1]
+///                             print if a button is enabled, optionally check it
+///   amount &lt;amount&gt;          enter an amount in the shown amount input window
+///   portrait &lt;slot&gt;          click the portrait of a party member (e.g. to give gold)
+///   placegold [amount]        print the gold of the shown place, optionally check it
+///   placefood [amount]        print the food of the shown food dealer, optionally check it
+///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
+///                             print the transport at a position (none, Horse, Raft or Ship), optionally check it
 ///   key &lt;key&gt;                 press and release a key (Amberstar.Game.Key name, e.g. Enter, Escape, F5)
 ///   hold &lt;key&gt; &lt;ms&gt;          hold a key for some milliseconds (e.g. movement keys)
 ///   click &lt;x&gt; &lt;y&gt; [right]     click at a game position (320x200)
@@ -295,6 +305,50 @@ public sealed class ScenarioScript
 				CheckResult(game.ScriptAnswer(name == "yes"));
 				continueTime = time + 1;
 				break;
+			case "button":
+				CheckResult(game.ScriptPressButton(Arg(0)));
+				// buttons react after a short highlight
+				continueTime = time + 300;
+				break;
+			case "buttonenabled":
+			{
+				var enabled = game.ScriptIsButtonEnabled(Arg(0));
+
+				if (enabled == null)
+					Report(false, $"the active screen {game.ScriptActiveScreen} has no buttons");
+				else
+					CheckBool($"buttonenabled {Arg(0)}", enabled.Value, OptionalBool(1));
+				break;
+			}
+			case "amount":
+				CheckResult(game.ScriptEnterAmount(Arg(0)));
+				continueTime = time + 1;
+				break;
+			case "portrait":
+				Click(game, new Position(16 + (Arg(0) - 1) * 48 + 16, 17), MouseButtons.Left);
+				continueTime = time + 1;
+				break;
+			case "placegold":
+			case "placefood":
+			{
+				var value = name == "placegold" ? game.ScriptPlaceGold : game.ScriptPlaceFood;
+
+				if (value == null)
+					Report(false, $"no matching place is shown but {game.ScriptActiveScreen}");
+				else
+					CheckValue(name, value.Value, args.FirstOrDefault());
+				break;
+			}
+			case "transport":
+			{
+				var transport = game.ScriptGetTransport(Arg(0), Arg(1), Arg(2)) ?? "none";
+
+				if (args.Length < 4)
+					output($"  transport = {transport}");
+				else
+					Report(transport.Equals(args[3], StringComparison.OrdinalIgnoreCase), $"transport = {transport} (expected {args[3]})");
+				break;
+			}
 			case "answer":
 				CheckResult(game.ScriptAnswer(argument.StartsWith('#') ? game.ScriptGetWord(int.Parse(argument[1..])) : argument));
 				continueTime = time + 1;
