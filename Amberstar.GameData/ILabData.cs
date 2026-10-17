@@ -26,6 +26,10 @@ public enum LabTileFlags : uint
 	AllowWalk5 =		0x_0000_1000,
 	AllowWalk6 =		0x_0000_2000,
 	AllowWalk7 =		0x_0000_4000,
+	/// <summary>
+	/// The party might get poisoned on this tile.
+	/// </summary>
+	Poison =			0x_8000_0000,
 	// TODO ...
 
 }

@@ -93,6 +93,7 @@ public static class BattleCharacterExtensions
         if (inBattle)
             return !battleCharacter.HasAnyConditionOf(Condition.Stunned | Condition.Sleeping | Condition.Petrified | Condition.Mad | Condition.Overloaded | Condition.Panicked);
 
-        return !battleCharacter.HasAnyConditionOf(Condition.Overloaded);
+        // Note: Stunned party members can't move in the original (Before_move).
+        return !battleCharacter.HasAnyConditionOf(Condition.Overloaded | Condition.Stunned);
     }
 }

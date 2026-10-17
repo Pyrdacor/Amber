@@ -248,7 +248,10 @@ internal sealed class CampScreen : ButtonGridScreen, IWaitForClickScreen
 		var texts = new List<string>();
 		string Text(Message message) => Game.GetFullText(Game.LoadMessageText(message));
 
-		// TODO: In the camp aging party members get older and might die.
+		// Party members with the aging condition get older in the camp (but not in inns).
+		if (!inn)
+			Game.AgePartyMembers();
+
 		Game.ForeachPartyMember(partyMember =>
 		{
 			if (!inn && partyMember.Food == 0)

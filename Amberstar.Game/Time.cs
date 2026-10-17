@@ -50,7 +50,9 @@ internal class Time(Game game)
 
 	public void Moved3D()
 	{
-		// TODO
+		// Note: The original uses the same move counter for 2D and 3D maps.
+		if (++moveTicks >= TravelType.Walk.MovesPerTimeProgress())
+			Tick();
 	}
 
 	public void Tick()

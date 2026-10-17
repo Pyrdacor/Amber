@@ -133,7 +133,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		LoadMap(Game.State.MapIndex);
         ShowMapName();
-		AfterMove();
+		AfterMove(moved: false);
 	}
 
 	public override void Init()
@@ -209,7 +209,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		SetLayout();
 		LoadMap(Game.State.MapIndex);
         ShowMapName();
-        AfterMove();
+        AfterMove(moved: false);
 
         Game.Time.MinuteChanged += MinuteChanged;
 		CheckLight();
@@ -461,13 +461,17 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			CheckMove();
 	}
 
-	private void AfterMove()
+	private void AfterMove(bool moved = true)
 	{
 		var playerPosition = Game.State.PartyPosition;
 		UpdateView();
 		UpdateAutomap();
 
-		Game.Time.Moved3D();
+		if (moved)
+		{
+			Game.Time.Moved3D();
+			Game.AfterPartyMoved(GetTileFlags(playerPosition.X, playerPosition.Y).HasFlag(LabTileFlags.Poison), false);
+		}
 
 		// Check for events
 		var eventIndex = map!.Tiles[playerPosition.X + playerPosition.Y * map.Width].Event;

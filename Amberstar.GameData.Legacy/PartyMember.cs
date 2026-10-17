@@ -160,6 +160,10 @@ internal class PartyMember : BattleCharacter, IPartyMember
             WriteWord(0x9c + i * 2, attribute.BonusValue);
         }
 
+        // The age is the 9th attribute.
+        var age = ((IPerson)this).Age;
+        WriteWord(0x58, age.CurrentValue);
+        WriteWord(0x6c, age.MaxValue);
         WriteWord(0x70, attackPerRoundLevel);
         WriteWord(0x72, hitPointsPerLevel);
         WriteWord(0x74, spellPointsPerLevel);

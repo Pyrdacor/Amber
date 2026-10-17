@@ -243,7 +243,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		LoadMap(Game.State.MapIndex);
         ShowMapName();
-        AfterMove();
+        AfterMove(moved: false);
 	}
 
 	public override void Init()
@@ -332,7 +332,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		LoadMap(Game.State.MapIndex);
         ShowMapName();
         InitPlayer();
-		AfterMove();
+		AfterMove(moved: false);
 		darkness ??= new(Game, new Rect(OffsetX, OffsetY, MapViewWidth, MapViewHeight), DarknessDisplayLayer);
 		darkness.Visible = true;
 		UpdateLight(true);
@@ -693,11 +693,18 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
             Game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
     }
 
-	private void AfterMove(bool ignoreEvents = false)
+	private void AfterMove(bool ignoreEvents = false, bool moved = true)
 	{
 		UpdateMap();
 
-		Game.Time.Moved2D();
+		if (moved)
+		{
+			Game.Time.Moved2D();
+
+			var (x, y) = Game.State.PartyPosition;
+			var tileFlags = GetTileFlags(x, y);
+			Game.AfterPartyMoved(tileFlags.HasFlag(TileFlags.Poison), tileFlags.HasFlag(TileFlags.AllowSwim));
+		}
 
         // Check for events
         if (!ignoreEvents)

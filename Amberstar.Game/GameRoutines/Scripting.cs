@@ -522,6 +522,15 @@ partial class Game
 
 	public bool ScriptIsWordKnown(int wordIndex) => State.IsWordKnown(wordIndex);
 
+	/// <summary>
+	/// Lets time pass in steps of 5 minutes like walking (all time effects happen).
+	/// </summary>
+	public void ScriptPassTime(int minutes)
+	{
+		for (int i = 0; i < minutes / 5; i++)
+			Time.Tick();
+	}
+
 	public void ScriptSetTime(int hour, int minute)
 	{
 		State.Hour = MathUtil.Limit(0, hour, 23);

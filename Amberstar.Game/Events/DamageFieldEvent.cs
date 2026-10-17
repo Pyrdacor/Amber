@@ -23,7 +23,7 @@ namespace Amberstar.Game.Events
 				_ => null
 			};
 
-            void DamagePartyMember(IPartyMember partyMember, Action finishHandler) => partyMember.Damage((word)Game.Random(1, Damage), finishHandler);
+            void DamagePartyMember(IPartyMember partyMember, Action finishHandler) => game.DamagePartyMember(partyMember, Game.Random(1, Damage), finishHandler);
 
             void DamageParty() => game.ForeachPartyMember(DamagePartyMember, null, true, allowedGenders);
 

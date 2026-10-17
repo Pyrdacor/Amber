@@ -44,6 +44,7 @@ public partial class Game : IDisposable
 		TextManager = new(this, AssetProvider.FontLoader.LoadFont(), fontInfoProvider);
 		Time = new(this);
 		Time.MinuteChanged += UpdateActiveSpells;
+		InitConditionEffects();
 		Cursor = new(this);
 		this.pressedKeyProvider = pressedKeyProvider;
 		this.setMousePosition = setMousePosition;

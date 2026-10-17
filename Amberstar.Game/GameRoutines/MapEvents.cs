@@ -281,7 +281,7 @@ partial class Game
 
                 if (trapType == TrapType.DamageTrap)
 				{
-                    activePartyMember.Damage(damage!.Value, ShowMessageAndFinish);
+                    DamagePartyMember(activePartyMember, damage!.Value, ShowMessageAndFinish);
                 }
 				else
 				{
@@ -308,7 +308,7 @@ partial class Game
                     partyMember.AddCondition(trapInfo.Condition);
 
 					if (trapType == TrapType.DamageTrap)
-						partyMember.Damage(damage!.Value, next);
+						DamagePartyMember(partyMember, damage!.Value, next);
 					else
 						next();
 				}, finishAndOptionallyShowMessage, disallowedConditions);

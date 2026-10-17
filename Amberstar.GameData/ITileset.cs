@@ -53,6 +53,10 @@ public enum TileFlags : uint
 	/// Hide player on this tile.
 	/// </summary>
 	PartyInvisible =	0x_0000_8000,
+	/// <summary>
+	/// The party might get poisoned on this tile.
+	/// </summary>
+	Poison =			0x_8000_0000,
 	// TODO ...
 
 }

@@ -32,7 +32,7 @@ namespace Amberstar.Game.Events
 					return;
 
 				void DamagePartyMember(IPartyMember partyMember, Action finishHandler) =>
-					partyMember.Damage((word)Game.Random(1, Math.Max(1, (int)MaxFallDamage)), finishHandler);
+					game.DamagePartyMember(partyMember, Game.Random(1, Math.Max(1, (int)MaxFallDamage)), finishHandler);
 
 				void FallDown()
 				{

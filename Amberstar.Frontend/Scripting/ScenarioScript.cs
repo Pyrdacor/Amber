@@ -64,6 +64,7 @@ using G = Game.Game;
 ///                             optionally check it
 ///   automapview [x y]         print the upper left map position of the shown automap, optionally check it
 ///   minimapview [x y]         print the upper left map position of the shown minimap (map show spell), optionally check it
+///   passtime &lt;minutes&gt;        let time pass in steps of 5 minutes (poison, diseases, aging, spell durations, ...)
 ///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
 ///                             set the duration (0 = inactive) and the value of an active spell
 ///   light [state]             print the light of the map (light, dark or the radius of the light circle
@@ -457,6 +458,11 @@ public sealed class ScenarioScript
 				break;
 			case "setclass":
 				CheckResult(game.ScriptSetClass(Arg(0), args[1]));
+				break;
+			case "passtime":
+				game.ScriptPassTime(Arg(0));
+				// the time effects happen in the next frame
+				continueTime = time + 1;
 				break;
 			case "setactivespell":
 				CheckResult(game.ScriptSetActiveSpell(args[0], Arg(1), args.Length > 2 ? Arg(2) : null));
