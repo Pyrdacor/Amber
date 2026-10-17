@@ -48,6 +48,11 @@ internal class Time(Game game)
 			Tick();
 	}
 
+	/// <summary>
+	/// The first move after the travel type changed lets time pass (Set_new_travel_mode in the original).
+	/// </summary>
+	public void TravelTypeChanged() => moveTicks = int.MaxValue;
+
 	public void Moved3D()
 	{
 		// Note: The original uses the same move counter for 2D and 3D maps.

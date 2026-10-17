@@ -1,0 +1,40 @@
+# Transports on the world map: buy horses in Twinlake (map 67, 14,30), ride and leave them somewhere else.
+waittext
+dismissall
+cheat gold 2000
+teleport 67 14 30
+waitscreen TransportDealer
+button 6
+button 3
+waitscreen Confirmation
+yes
+dismiss
+button 7
+button 2
+waitidle
+# --- the horses wait at 12,14 of the world map part 37
+transport 37 12 14 horse
+teleport 37 11 14
+waitidle
+travel Walk
+click 230 170 right
+# no transport here
+buttonenabled 3 0
+click 230 170 right
+move right
+click 230 170 right
+buttonenabled 3 1
+# --- get on the horses
+button 3
+travel Horse
+transport 37 12 14 none
+# --- ride and get off somewhere else
+click 230 170 right
+move right
+move right
+click 230 170 right
+pos 14 14
+buttonenabled 3 1
+button 3
+travel Walk
+transport 37 14 14 horse

@@ -64,6 +64,7 @@ using G = Game.Game;
 ///                             optionally check it
 ///   automapview [x y]         print the upper left map position of the shown automap, optionally check it
 ///   minimapview [x y]         print the upper left map position of the shown minimap (map show spell), optionally check it
+///   travel [type]             print the travel type (Walk, Horse, Raft, Ship, MagicDisc, ...), optionally check it
 ///   passtime &lt;minutes&gt;        let time pass in steps of 5 minutes (poison, diseases, aging, spell durations, ...)
 ///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
 ///                             set the duration (0 = inactive) and the value of an active spell
@@ -459,6 +460,16 @@ public sealed class ScenarioScript
 			case "setclass":
 				CheckResult(game.ScriptSetClass(Arg(0), args[1]));
 				break;
+			case "travel":
+			{
+				var travelType = game.ScriptTravelType;
+
+				if (args.Length == 0)
+					output($"  travel = {travelType}");
+				else
+					Report(travelType.Equals(args[0], StringComparison.OrdinalIgnoreCase), $"travel = {travelType} (expected {args[0]})");
+				break;
+			}
 			case "passtime":
 				game.ScriptPassTime(Arg(0));
 				// the time effects happen in the next frame

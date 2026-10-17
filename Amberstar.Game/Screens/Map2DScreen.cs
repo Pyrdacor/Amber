@@ -91,6 +91,20 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		public IMap2D? GetMapByIndex(int index) => mapCache.GetValueOrDefault(index);
 
 		/// <summary>
+		/// Gets the 0-based world map position of a 1-based position of a world map part
+		/// or null if the part is not shown.
+		/// </summary>
+		public Position? GetPosition(int mapIndex, int x, int y)
+		{
+			int part = Array.IndexOf(mapIndices, mapIndex);
+
+			if (part == -1)
+				return null;
+
+			return new((part % 2) * WorldMapWidth + x - 1, (part / 2) * WorldMapHeight + y - 1);
+		}
+
+		/// <summary>
 		/// Gets the world map part at a 0-based position.
 		/// </summary>
 		public IMap2D GetPartAt(int x, int y) => maps[(x < WorldMapWidth ? 0 : 1) + (y < WorldMapHeight ? 0 : 2)];
@@ -202,6 +216,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	const int OffsetX = 16;
 	const int OffsetY = 49;
 	const int RenderOrderOffset = TileHeight / 4;
+	// The tile of a transport is this 1-based tile index plus the travel type.
+	const int TransportTileIndex = 244;
+	readonly List<ISprite> transportSprites = [];
 	const byte DarknessDisplayLayer = 1;
 	DarknessOverlay? darkness;
 	int lightRadius = -1;
@@ -281,6 +298,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			screenPushPlayerWasVisible = player!.Visible;
 			player!.Visible = false;
+			transportSprites.ForEach(sprite => sprite.Visible = false);
             mapNameText!.Visible = false;
 
 			mapCharacters.ForEach(c => c.Visible = false);
@@ -475,6 +493,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 				case ButtonType.UseMagic:
 					Game.CastSpell(Game.GetMapSpellLocation());
 					break;
+				case ButtonType.UseTransport:
+					ChangeTravelType();
+					break;
                 // TODO
             }
 		}
@@ -513,6 +534,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			buttonGrid.SetButton(2, ButtonType.Mouth);
 			// Middle row
 			buttonGrid.SetButton(3, ButtonType.UseTransport);
+			buttonGrid.EnableButton(3, CanChangeTravelType());
 			buttonGrid.SetButton(4, ButtonType.UseMagic);
 			buttonGrid.SetButton(5, ButtonType.Camp);
 			buttonGrid.EnableButton(5, CanCamp());
@@ -533,6 +555,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
         ClearMap();
 		darkness?.Hide();
+		transportSprites.ForEach(sprite => sprite.Visible = false);
+		transportSprites.Clear();
 		lightRadius = -1;
 		player!.Visible = false;
 		player = null;
@@ -700,6 +724,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		if (moved)
 		{
 			Game.Time.Moved2D();
+			// e.g. the party might stand on a transport now
+			RequestButtonSetup();
 
 			var (x, y) = Game.State.PartyPosition;
 			var tileFlags = GetTileFlags(x, y);
@@ -1244,7 +1270,35 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
             }
 		}
 
-		// TODO: Transports
+		// Transports are only placed on world maps (Enter_transport_icons in the original).
+		int transportCount = 0;
+
+		if (worldMap != null)
+		{
+			foreach (var transport in Game.State.PlacedTransports)
+			{
+				var position = worldMap.GetPosition(transport.MapIndex, transport.X, transport.Y);
+
+				if (position == null || !displayedMapPortion.Contains(position.Value))
+					continue;
+
+				if (transportCount == transportSprites.Count)
+					transportSprites.Add(renderLayer.SpriteFactory!.Create());
+
+				var sprite = transportSprites[transportCount++];
+				var relativePosition = position.Value - displayedMapPortion.Position;
+				var tileInfo = tileset!.Tiles[TransportTileIndex + (int)transport.Type - 1];
+				sprite.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex);
+				sprite.Size = new(TileWidth, TileHeight);
+				sprite.PaletteIndex = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
+				sprite.Position = new(OffsetX + relativePosition.X * TileWidth, OffsetY + relativePosition.Y * TileHeight);
+				sprite.BaseLineOffset = 2 * RenderOrderOffset;
+				sprite.Visible = true;
+			}
+		}
+
+		for (int i = transportCount; i < transportSprites.Count; i++)
+			transportSprites[i].Visible = false;
 
 		if (playerVisible)
 		{
@@ -1338,6 +1392,70 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	}
 
 	internal bool IsWilderness => map?.Flags.HasFlag(MapFlags.Wilderness) == true;
+
+	/// <summary>
+	/// The world map part and the 1-based position of the party in that part.
+	/// </summary>
+	private (int MapIndex, int X, int Y) PartyLocation
+	{
+		get
+		{
+			var position = Game.State.GetPartyPositionOnMapWithPlayer();
+			return (Game.State.GetIndexOfMapWithPlayer(), position.X + 1, position.Y + 1);
+		}
+	}
+
+	/// <summary>
+	/// The party can get on a transport at its position. A transport can be left
+	/// where the party could walk and no other transport is (Map_CIL_evaluate in the original).
+	/// </summary>
+	private bool CanChangeTravelType()
+	{
+		if (worldMap == null)
+			return false;
+
+		var (mapIndex, x, y) = PartyLocation;
+		bool transportHere = Game.State.FindTransport(mapIndex, x, y) != -1;
+
+		if (Game.State.TravelType == TravelType.Walk)
+			return transportHere;
+
+		var position = Game.State.PartyPosition;
+		var flags = GetTileFlags(position.X, position.Y);
+
+		return !transportHere && !flags.HasFlag(TileFlags.BlockAllMovement) && flags.HasFlag(TileFlags.AllowWalk);
+	}
+
+	/// <summary>
+	/// Gets on or off a transport (Change_travelmode in the original).
+	/// The magic disc and the super chicken are not placed on the map.
+	/// </summary>
+	private void ChangeTravelType()
+	{
+		if (!CanChangeTravelType())
+			return;
+
+		var (mapIndex, x, y) = PartyLocation;
+		var travelType = Game.State.TravelType;
+
+		if (travelType == TravelType.Walk)
+		{
+			int index = Game.State.FindTransport(mapIndex, x, y);
+			Game.State.TravelType = (TravelType)Game.State.GetTransportType(index);
+			Game.State.RemoveTransport(index);
+		}
+		else
+		{
+			if (travelType is TravelType.Horse or TravelType.Raft or TravelType.Ship)
+				Game.State.TryAddTransport((TransportType)travelType, x, y, mapIndex);
+
+			Game.State.TravelType = TravelType.Walk;
+		}
+
+		Game.Time.TravelTypeChanged();
+		UpdateMap();
+		RequestButtonSetup();
+	}
 
 	internal byte Palette => palette;
 
@@ -1505,7 +1623,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         }
 
         Game.State.SetIsWorldMap(isWorldMap);
-		Game.State.TravelType = TravelType.Walk; // TODO: is it possible to change map with travel type (always reset to walk for non-world maps though!)
+		// Note: Transports can only be used on world maps.
+		if (!isWorldMap)
+			Game.State.TravelType = TravelType.Walk;
 		Game.Cursor.PaletteIndex = palette;
 		RequestButtonGridPaletteUpdate();
 		// e.g. camping depends on the map

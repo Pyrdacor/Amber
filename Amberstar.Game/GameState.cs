@@ -420,6 +420,21 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public bool HasFreeTransportSlot => Transports.Any(transport => transport.Type == 0);
 
+	/// <summary>
+	/// The transports which are placed on maps.
+	/// </summary>
+	public IEnumerable<Transport> PlacedTransports => Transports.Where(transport => transport.Type != 0);
+
+	/// <summary>
+	/// Gets the index of the transport at a 1-based position or -1.
+	/// </summary>
+	public int FindTransport(int mapIndex, int x, int y) =>
+		Array.FindIndex(Transports, transport => transport.Type != 0 && transport.MapIndex == mapIndex && transport.X == x && transport.Y == y);
+
+	public TransportType GetTransportType(int index) => Transports[index].Type;
+
+	public void RemoveTransport(int index) => Transports[index] = default;
+
 	public bool TryAddTransport(TransportType type, int x, int y, int mapIndex)
 	{
 		int index = Array.FindIndex(Transports, transport => transport.Type == 0);

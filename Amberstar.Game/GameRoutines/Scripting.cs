@@ -325,6 +325,8 @@ partial class Game
 		return null;
 	}
 
+	public string ScriptTravelType => State.TravelType.ToString();
+
 	public string? ScriptSetClass(int slot, string className)
 	{
 		var partyMember = State.GetPartyMember(slot);
