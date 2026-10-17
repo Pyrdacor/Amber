@@ -1,4 +1,4 @@
-# Spells on the map: magic compass and levitation through trap doors (maps 105 and 108).
+# Spells on the map: magic compass, levitation through trap doors (maps 105 and 108) and map show.
 waittext
 dismissall
 # Crag (white wizard) learns the gray spells and always succeeds
@@ -49,3 +49,30 @@ spell Gray 22
 waitidle
 map 108
 value 2 sp +0
+# --- map show on the world map (100x100 tiles) can be scrolled in steps of 8 tiles
+learnspell 2 Special 12
+teleport 37 10 12
+dismissall
+button 4
+waitscreen SpellSelect
+spell Special 12
+waitscreen Minimap
+minimapview 17 25
+# the view is at the right border
+button 5
+minimapview 17 25
+button 3
+minimapview 9 25
+button 1
+minimapview 9 17
+button 4
+waitidle
+# --- map show is blocked in Jasmin's gardens (map 91)
+teleport 91 19 41
+dismissall
+button 4
+waitscreen SpellSelect
+spell Special 12
+waittext
+textshown KRISTALLKUGEL
+dismissall

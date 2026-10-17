@@ -336,6 +336,13 @@ partial class Game
 		: null;
 
 	/// <summary>
+	/// Gets the 1-based position of the upper left tile of the shown minimap (map show spell).
+	/// </summary>
+	public Position? ScriptMinimapView => ScreenHandler.ActiveScreen is MinimapScreen minimapScreen
+		? new Position(minimapScreen.ScriptViewX, minimapScreen.ScriptViewY)
+		: null;
+
+	/// <summary>
 	/// Gets a dictionary word by its index.
 	/// </summary>
 	public string ScriptGetWord(int wordIndex) => AssetProvider.TextLoader.FromTextFragmentIndex((word)wordIndex).GetString();

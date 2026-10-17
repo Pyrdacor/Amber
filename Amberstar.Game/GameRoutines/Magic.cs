@@ -730,6 +730,23 @@ partial class Game
 					}
 				});
 				break;
+			case SpecialSpell.Mapshow:
+				// Map_view (the spell points are used even if the map can't be shown)
+				if (TrySpell(finished))
+				{
+					var map = ScreenHandler.FindMapScreen() switch
+					{
+						Map2DScreen map2DScreen => (IMap)map2DScreen.Map,
+						Map3DScreen map3DScreen => map3DScreen.Map,
+						_ => null
+					};
+
+					if (map?.Flags.HasFlag(MapFlags.CanUseMapViewSpell) == true)
+						ScreenHandler.PushScreen(ScreenType.Minimap, () => AfterScreenClosed(finished));
+					else
+						ShowTextMessage(LoadMessageText(Message.CrystalBallBlockedByMagic), finished);
+				}
+				break;
 			case SpecialSpell.WeaponBalm:
 				// Weapon_gunk increases the damage of a weapon.
 				SelectSpellItem(Message.ApplyPotionToWhoseWeapon, Message.ApplyBalmToWhat, false,
@@ -758,7 +775,7 @@ partial class Game
 				ShowNotImplementedMessage("Casting combat spells", finished);
 				break;
 			default:
-				// TODO: map view, pick lock, eagle call and music
+				// TODO: pick lock, eagle call and music
 				ShowNotImplementedMessage($"The spell {spell}", finished);
 				break;
 		}

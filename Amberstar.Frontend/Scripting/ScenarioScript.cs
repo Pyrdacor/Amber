@@ -63,6 +63,7 @@ using G = Game.Game;
 ///                             Exit, Treasure, Riddlemouth, Merchant, Teleporter, Party, PartyNorth, ...),
 ///                             optionally check it
 ///   automapview [x y]         print the upper left map position of the shown automap, optionally check it
+///   minimapview [x y]         print the upper left map position of the shown minimap (map show spell), optionally check it
 ///   placefood [amount]        print the food of the shown food dealer, optionally check it
 ///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
 ///                             print the transport at a position (none, Horse, Raft or Ship), optionally check it
@@ -453,6 +454,18 @@ public sealed class ScenarioScript
 			case "setclass":
 				CheckResult(game.ScriptSetClass(Arg(0), args[1]));
 				break;
+			case "minimapview":
+			{
+				var view = game.ScriptMinimapView;
+
+				if (view == null)
+					Report(false, $"no minimap is shown but {game.ScriptActiveScreen}");
+				else if (args.Length < 2)
+					output($"  minimapview = {view.Value.X},{view.Value.Y}");
+				else
+					Report(view.Value == new Position(Arg(0), Arg(1)), $"minimapview = {view.Value.X},{view.Value.Y} (expected {Arg(0)},{Arg(1)})");
+				break;
+			}
 			case "class":
 			{
 				var @class = game.ScriptClass(Arg(0)) ?? "none";

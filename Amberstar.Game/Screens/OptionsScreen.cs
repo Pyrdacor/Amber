@@ -59,8 +59,7 @@ internal sealed class OptionsScreen : ButtonGridScreen
 		switch (index)
 		{
 			case QuitButtonIndex:
-				// TODO: The original text is in CODE0008.SYS which is not loaded yet.
-				Game.AskForConfirmation("Do you really want to quit?", () => Game.Quit());
+				Game.AskForConfirmation(Game.LoadMessageText(Message.ReallyQuitProgram), () => Game.Quit());
 				break;
 			case ExitButtonIndex:
 				Game.ScreenHandler.PopScreen();

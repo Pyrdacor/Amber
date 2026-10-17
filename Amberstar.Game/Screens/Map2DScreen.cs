@@ -1284,6 +1284,13 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 	internal bool IsWilderness => map?.Flags.HasFlag(MapFlags.Wilderness) == true;
 
+	internal byte Palette => palette;
+
+	/// <summary>
+	/// Gets the minimap color of a 1-based tile index.
+	/// </summary>
+	internal int GetMinimapColorIndex(int tileIndex) => GetTileInfo(tileIndex).MinimapColorIndex;
+
 	private int GetTicksPerStep() => map!.Flags.HasFlag(MapFlags.Wilderness) ? TicksPerStep[Game.State.TravelType] : CityTicksPerStep;
 
 	public static int GetWorldMapIndex(int index, int offsetX, int offsetY)

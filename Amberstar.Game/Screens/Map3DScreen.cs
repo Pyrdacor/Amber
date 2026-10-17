@@ -122,6 +122,8 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
     public override ScreenFadeType FadeType { get; } = ScreenFadeType.None;
     public IMap3D Map => map!;
 
+	internal byte Palette => palette;
+
     internal override byte ButtonGridPaletteIndex => palette;
 
     internal void MapChanged()
