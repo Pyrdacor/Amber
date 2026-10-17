@@ -111,7 +111,6 @@ public partial class Game : IDisposable
 	/// </summary>
 	internal DateTime Now => DateTime.MinValue + TimeSpan.FromSeconds(totalTime);
     public event Action? QuitRequested;
-    internal event Action<bool>? CanSeeChanged;
 
 	public void Update(double delta)
 	{
@@ -147,11 +146,7 @@ public partial class Game : IDisposable
 		// TODO: needed?
 	}
 
-	internal bool CanSee()
-	{
-		// TODO
-		return true;
-	}	
+	
 
 	public void Dispose()
 	{

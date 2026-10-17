@@ -1,0 +1,44 @@
+# Light and darkness: the light circle of 2D maps with changing light (graveyard, map 65),
+# dark 3D maps (Breth's cellar, map 72), light spells and blindness.
+waittext
+dismissall
+# Satine (gray wizard) knows light 2 and always succeeds
+join 62
+setvalue 2 usemagic 100
+# --- at day everything is visible
+hour 16
+light light
+# --- at night only a small circle around the party is lit (the radius shrinks slowly)
+settime 22 0
+wait 2000
+light 16
+# --- light 2 makes the circle larger by 4 * 8 pixels
+activate 2
+click 230 170 right
+button 4
+waitscreen SpellSelect
+spell Gray 2
+waitidle
+wait 2000
+light 48
+# --- the light spell is gone (e.g. by an anti-magic field)
+setactivespell Light 0
+wait 2000
+light 16
+# --- a dark 3D map is completely black without light
+teleport 72 10 17
+dismissall
+light dark
+button 4
+waitscreen SpellSelect
+spell Gray 2
+waitidle
+wait 100
+light light
+# --- a blind active party member can't see anything
+setcondition 2 blind 1
+wait 100
+light dark
+setcondition 2 blind 0
+wait 100
+light light

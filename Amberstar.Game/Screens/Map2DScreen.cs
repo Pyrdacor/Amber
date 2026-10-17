@@ -202,6 +202,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	const int OffsetX = 16;
 	const int OffsetY = 49;
 	const int RenderOrderOffset = TileHeight / 4;
+	const byte DarknessDisplayLayer = 1;
+	DarknessOverlay? darkness;
+	int lightRadius = -1;
 	const int MinScrollX = TilesPerRow / 2;
 	const int MinScrollY = TileRows / 2 + 1;
 	IMap2D? map;
@@ -273,6 +276,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		if (!screen.Transparent)
 		{
+			darkness!.Visible = false;
 			underlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = false);
 			screenPushPlayerWasVisible = player!.Visible;
@@ -297,7 +301,11 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			player!.Visible = screenPushPlayerWasVisible;
             mapNameText!.Visible = true;
             UpdateMap();
+			darkness!.Visible = true;
         }
+
+		// e.g. a light spell was cast
+		UpdateLight(false);
 
 		timeText?.Delete();
 		timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
@@ -325,7 +333,43 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         ShowMapName();
         InitPlayer();
 		AfterMove();
+		darkness ??= new(Game, new Rect(OffsetX, OffsetY, MapViewWidth, MapViewHeight), DarknessDisplayLayer);
+		darkness.Visible = true;
+		UpdateLight(true);
 	}
+
+	/// <summary>
+	/// Shows the light circle around the party (Display_night_circle in the original).
+	/// The radius changes by 2 pixels per update unless the change is immediate.
+	/// </summary>
+	private void UpdateLight(bool immediately)
+	{
+		if (darkness == null || player == null)
+			return;
+
+		int? targetRadius = Game.GetLightRadius(map!);
+
+		if (targetRadius == null)
+		{
+			lightRadius = -1;
+			darkness.Hide();
+			return;
+		}
+
+		if (immediately || lightRadius < 0)
+			lightRadius = targetRadius.Value;
+		else if (lightRadius < targetRadius)
+			lightRadius = Math.Min(targetRadius.Value, lightRadius + 2);
+		else if (lightRadius > targetRadius)
+			lightRadius = Math.Max(targetRadius.Value, lightRadius - 2);
+
+		if (lightRadius > Game.MaxLightRadius)
+			darkness.Hide();
+		else
+			darkness.Show(player.Position + new Position(TileWidth / 2, TileHeight / 2), lightRadius);
+	}
+
+	internal int? ScriptLightRadius => darkness?.ScriptShown == true ? lightRadius : null;
 
     private void MinuteChanged()
     {
@@ -488,6 +532,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         Game.Time.MinuteChanged -= MinuteChanged;
 
         ClearMap();
+		darkness?.Hide();
+		lightRadius = -1;
 		player!.Visible = false;
 		player = null;
         characters.Clear();
@@ -524,6 +570,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			return;
 
         currentTicks += elapsedTicks;
+
+		UpdateLight(false);
 
 		if (moveX != 0 || moveY != 0)
 		{
@@ -1455,6 +1503,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		RequestButtonGridPaletteUpdate();
 		// e.g. camping depends on the map
 		RequestButtonSetup();
+		UpdateLight(true);
 	}
 
     private TileFlags GetTileFlags(int x, int y)

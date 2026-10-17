@@ -97,6 +97,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	const int TicksPerTurn = 16;
 	const int AnimationTicksPerFrame = 25;
 
+	const byte DarknessDisplayLayer = 1;
+	DarknessOverlay? darkness;
+	bool? canSee;
 	const int ViewWidth = 144;
 	const int ViewHeight = 144;
 	const int OffsetX = 32;
@@ -148,6 +151,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 		if (!screen.Transparent)
 		{
+			darkness!.Visible = false;
 			images.ForEach(image => image.Visible = false);
 			skyGradient.ForEach(g => g.Visible = false);
 			mapNameText!.Visible = false;
@@ -165,7 +169,11 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
             images.ForEach(image => image.Visible = true);
 			skyGradient.ForEach(g => g.Visible = true);
             mapNameText!.Visible = true;
+			darkness!.Visible = true;
         }
+
+		// e.g. a light spell was cast
+		CheckLight();
 
 		base.ScreenPopped(screen);
 
@@ -194,14 +202,38 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		lastTurnTicks = 0;
 		mouseDown = false;
 
+		darkness ??= new(Game, new Rect(OffsetX, OffsetY, ViewWidth, ViewHeight), DarknessDisplayLayer);
+		darkness.Visible = true;
+		canSee = null;
+
 		SetLayout();
 		LoadMap(Game.State.MapIndex);
         ShowMapName();
         AfterMove();
 
         Game.Time.MinuteChanged += MinuteChanged;
-        Game.CanSeeChanged += CanSeeChanged;
+		CheckLight();
 	}
+
+	/// <summary>
+	/// Updates the view if the party can see again or can't see anymore
+	/// (e.g. a light spell ends or the active party member is blind).
+	/// </summary>
+	private void CheckLight()
+	{
+		bool canSeeNow = Game.CanSee();
+
+		if (canSee == canSeeNow)
+			return;
+
+		canSee = canSeeNow;
+		UpdateLight();
+
+		if (map!.Flags.HasFlag(MapFlags.City))
+			UpdateSky(canSeeNow);
+	}
+
+	internal bool ScriptDark => darkness?.ScriptShown == true;
 
 	protected override void ButtonClicked(int index)
 	{
@@ -358,7 +390,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		mouseDown = false;
 		Game.Time.MinuteChanged -= MinuteChanged;
-		Game.CanSeeChanged -= CanSeeChanged;
+		darkness?.Hide();
 		ClearView();
 		skyGradient.ForEach(g => g.Visible = false);
 		skyGradient.Clear();
@@ -368,16 +400,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		base.Close();
 	}
 
-	private void CanSeeChanged(bool canSee)
-	{
-		if (Game.Paused)
-			return;
 
-		UpdateLight();
-
-		if (map!.Flags.HasFlag(MapFlags.City))
-			UpdateSky(canSee);
-	}
 
 	private void MinuteChanged()
 	{
@@ -423,6 +446,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			return;
 
 		currentTicks += elapsedTicks;
+		CheckLight();
 		long animationFrame = currentTicks / AnimationTicksPerFrame;
 
 		if (animationFrame != lastAnimationFrame)
@@ -511,9 +535,18 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		return tileFlags.HasFlag((LabTileFlags)(1 << (8 + collisionClass)));
 	}
 
+	/// <summary>
+	/// In stygian darkness the view is black (Build_3D_map in the original).
+	/// </summary>
 	private void UpdateLight()
 	{
-		// TODO
+		if (darkness == null)
+			return;
+
+		if (Game.CanSee())
+			darkness.Hide();
+		else
+			darkness.Show(null, 0);
 	}
 
 	private void UpdateSky(bool canSee)

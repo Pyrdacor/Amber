@@ -64,6 +64,10 @@ using G = Game.Game;
 ///                             optionally check it
 ///   automapview [x y]         print the upper left map position of the shown automap, optionally check it
 ///   minimapview [x y]         print the upper left map position of the shown minimap (map show spell), optionally check it
+///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
+///                             set the duration (0 = inactive) and the value of an active spell
+///   light [state]             print the light of the map (light, dark or the radius of the light circle
+///                             around the party on 2D maps), optionally check it
 ///   placefood [amount]        print the food of the shown food dealer, optionally check it
 ///   transport &lt;map&gt; &lt;x&gt; &lt;y&gt; [type]
 ///                             print the transport at a position (none, Horse, Raft or Ship), optionally check it
@@ -454,6 +458,19 @@ public sealed class ScenarioScript
 			case "setclass":
 				CheckResult(game.ScriptSetClass(Arg(0), args[1]));
 				break;
+			case "setactivespell":
+				CheckResult(game.ScriptSetActiveSpell(args[0], Arg(1), args.Length > 2 ? Arg(2) : null));
+				break;
+			case "light":
+			{
+				var light = game.ScriptLight;
+
+				if (args.Length == 0)
+					output($"  light = {light}");
+				else
+					Report(light == args[0], $"light = {light} (expected {args[0]})");
+				break;
+			}
 			case "minimapview":
 			{
 				var view = game.ScriptMinimapView;

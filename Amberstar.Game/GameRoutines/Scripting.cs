@@ -308,6 +308,23 @@ partial class Game
 		return null;
 	}
 
+	/// <summary>
+	/// Sets the duration and optionally the value of an active spell (see <see cref="ScriptActiveSpell"/>).
+	/// </summary>
+	public string? ScriptSetActiveSpell(string name, int duration, int? value)
+	{
+		if (!Enum.TryParse<ActiveSpellType>(name, true, out var type))
+			return $"unknown active spell {name}";
+
+		var activeSpells = State.ActiveSpells;
+		activeSpells[(int)type].Duration = Math.Clamp(duration, 0, byte.MaxValue);
+
+		if (value != null)
+			activeSpells[(int)type].Value = value.Value;
+
+		return null;
+	}
+
 	public string? ScriptSetClass(int slot, string className)
 	{
 		var partyMember = State.GetPartyMember(slot);
@@ -334,6 +351,17 @@ partial class Game
 	public Position? ScriptAutomapView => ScreenHandler.ActiveScreen is AutomapScreen automapScreen
 		? new Position(automapScreen.ScriptViewX, automapScreen.ScriptViewY)
 		: null;
+
+	/// <summary>
+	/// Gets the light state of the shown map: "light" (everything visible), "dark" (stygian
+	/// darkness) or the radius of the light circle around the party on 2D maps.
+	/// </summary>
+	public string ScriptLight => ScreenHandler.FindMapScreen() switch
+	{
+		Map2DScreen map2DScreen => !CanSee() ? "dark" : map2DScreen.ScriptLightRadius?.ToString() ?? "light",
+		Map3DScreen map3DScreen => map3DScreen.ScriptDark ? "dark" : "light",
+		_ => "light"
+	};
 
 	/// <summary>
 	/// Gets the 1-based position of the upper left tile of the shown minimap (map show spell).

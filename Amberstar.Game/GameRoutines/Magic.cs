@@ -797,14 +797,7 @@ partial class Game
 				// Map_view (the spell points are used even if the map can't be shown)
 				if (TrySpell(finished))
 				{
-					var map = ScreenHandler.FindMapScreen() switch
-					{
-						Map2DScreen map2DScreen => (IMap)map2DScreen.Map,
-						Map3DScreen map3DScreen => map3DScreen.Map,
-						_ => null
-					};
-
-					if (map?.Flags.HasFlag(MapFlags.CanUseMapViewSpell) == true)
+					if (ShownMap?.Flags.HasFlag(MapFlags.CanUseMapViewSpell) == true)
 						ScreenHandler.PushScreen(ScreenType.Minimap, () => AfterScreenClosed(finished));
 					else
 						ShowTextMessage(LoadMessageText(Message.CrystalBallBlockedByMagic), finished);
