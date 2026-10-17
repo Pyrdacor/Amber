@@ -165,6 +165,48 @@ partial class Game
 	/// </summary>
 	void AfterScreenClosed(Action action) => AddDelayedAction(0, action);
 
+	const int SparkleSteps = 12;
+	const long TicksPerSparkleStep = 3;
+
+	/// <summary>
+	/// Shows magic sparkles over the portrait of a party member (Do_sparkle in the original).
+	/// </summary>
+	void ShowMagicSparkle(IPartyMember partyMember)
+	{
+		var (slotIndex, _) = State.PartyMembersWithSlot.FirstOrDefault(p => p.PartyMember == partyMember, (-1, null));
+
+		if (slotIndex == -1)
+			return;
+
+		var layer = GetRenderLayer(Layer.UI);
+		var sparkle = layer.SpriteFactory!.CreateAnimated();
+		sparkle.Position = new(16 + slotIndex * 48, 1);
+		sparkle.Size = new(32, 32);
+		sparkle.TextureOffset = layer.Config.Texture!.GetOffset(GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.MagicAnimation));
+		sparkle.DisplayLayer = 50;
+		sparkle.PaletteIndex = PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI];
+		sparkle.FrameCount = 3;
+		sparkle.CurrentFrameIndex = 0;
+		sparkle.Visible = true;
+
+		int step = 0;
+
+		void NextStep()
+		{
+			if (++step == SparkleSteps)
+			{
+				sparkle.Visible = false;
+				return;
+			}
+
+			// like Magic_anim_counter in the original
+			sparkle.CurrentFrameIndex = step * 3 / SparkleSteps;
+			AddDelayedAction(TicksPerSparkleStep, NextStep);
+		}
+
+		AddDelayedAction(TicksPerSparkleStep, NextStep);
+	}
+
 	/// <summary>
 	/// Executes the spell (Do_magic in the original).
 	/// </summary>
@@ -349,7 +391,10 @@ partial class Game
 					ForeachPartyMember(partyMember =>
 					{
 						if (partyMember.HitPoints.CurrentValue < partyMember.HitPoints.TotalMax)
+						{
 							partyMember.FillHitPoints();
+							ShowMagicSparkle(partyMember);
+						}
 					}, NotAliveConditions);
 					finished();
 				}
@@ -382,7 +427,11 @@ partial class Game
 				// Note: The original code uses the wrong pointer here and doesn't work.
 				if (TrySpell(finished))
 				{
-					ForeachPartyMember(partyMember => partyMember.RemoveCondition(Condition.Sleeping), NotAliveConditions);
+					ForeachPartyMember(partyMember =>
+					{
+						partyMember.RemoveCondition(Condition.Sleeping);
+						ShowMagicSparkle(partyMember);
+					}, NotAliveConditions);
 					finished();
 				}
 				break;
@@ -444,7 +493,10 @@ partial class Game
 			{
 				// Increase_LP
 				if (target.HitPoints.CurrentValue < target.HitPoints.TotalMax)
+				{
 					target.HealHitPoints((word)amount);
+					ShowMagicSparkle(target);
+				}
 
 				finished();
 			}
@@ -463,6 +515,7 @@ partial class Game
 			else if (TrySpell(finished))
 			{
 				target.RemoveCondition(condition);
+				ShowMagicSparkle(target);
 				finished();
 			}
 		});
@@ -496,6 +549,8 @@ partial class Game
 			{
 				target.AddCondition(failCondition.Value);
 			}
+
+			ShowMagicSparkle(target);
 
 			if (success)
 				finished();
@@ -683,6 +738,7 @@ partial class Game
 	{
 		hastedPartyMembers.Add(partyMember);
 		partyMember.AttacksPerRound = (byte)Math.Min(byte.MaxValue, partyMember.AttacksPerRound * 2);
+		ShowMagicSparkle(partyMember);
 	}
 
 	#endregion
@@ -699,6 +755,7 @@ partial class Game
 					if (TrySpell(finished))
 					{
 						target.HealSpellPoints((word)Random(1, 25));
+						ShowMagicSparkle(target);
 						finished();
 					}
 				});
@@ -709,7 +766,10 @@ partial class Game
 					if (TrySpell(finished))
 					{
 						if (target.SpellPoints.CurrentValue < target.SpellPoints.TotalMax)
+						{
 							target.FillSpellPoints();
+							ShowMagicSparkle(target);
+						}
 
 						finished();
 					}
@@ -724,7 +784,10 @@ partial class Game
 
 						// The party member can't be younger than 15.
 						if (age >= 15)
+						{
 							target.Age.CurrentValue = (word)age;
+							ShowMagicSparkle(target);
+						}
 
 						finished();
 					}
