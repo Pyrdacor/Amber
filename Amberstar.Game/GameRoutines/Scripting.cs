@@ -328,6 +328,22 @@ partial class Game
 	public string ScriptTravelType => State.TravelType.ToString();
 
 	/// <summary>
+	/// Adds or removes a used special item (Compass, Amberstar, MagicalPicture, WindChain, MapLocator or Clock).
+	/// </summary>
+	public string? ScriptSetSpecialItem(string name, bool active)
+	{
+		if (!Enum.TryParse<SpecialItems>(name, true, out var specialItem))
+			return $"unknown special item {name}";
+
+		if (active)
+			State.SpecialItems |= specialItem;
+		else
+			State.SpecialItems &= ~specialItem;
+
+		return null;
+	}
+
+	/// <summary>
 	/// Checks if a 1-based position of the shown 2D map is in the shadow.
 	/// </summary>
 	public bool? ScriptIsShadowed(int x, int y) => (ScreenHandler.FindMapScreen() as Map2DScreen)?.ScriptIsShadowed(x - 1, y - 1);

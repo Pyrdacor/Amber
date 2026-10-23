@@ -1,0 +1,15 @@
+# With the Amberstar every door is open (Twinlake door at 13,14 of map 67).
+waittext
+dismissall
+# --- without the Amberstar the door is locked
+teleport 67 13 14
+waitscreen Door
+closeall
+map 67
+# --- with the Amberstar the party walks through the door
+setspecialitem Amberstar 1
+teleport 67 13 14
+# the door leads to the graveyard (follow-up map exit event)
+waitidle
+map 65
+pos 23 24

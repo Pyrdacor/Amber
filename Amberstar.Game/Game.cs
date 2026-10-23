@@ -9,8 +9,6 @@ using IAssetProvider = Amberstar.GameData.IAssetProvider;
 
 namespace Amberstar.Game;
 
-// TODO: Savegame needs to store the character data
-
 /// <summary>
 /// Much of the implementation is located in the folder GameRoutines.
 /// </summary>

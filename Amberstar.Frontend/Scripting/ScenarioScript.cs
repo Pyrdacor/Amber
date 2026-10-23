@@ -67,6 +67,7 @@ using G = Game.Game;
 ///   characters                print the positions of the persons and monsters on the map
 ///   characterat &lt;x&gt; &lt;y&gt; [0|1]  print if a person or monster is at a map position, optionally check it
 ///   shadow &lt;x&gt; &lt;y&gt; [0|1]      print if a position of a 2D map is in the shadow, optionally check it
+///   setspecialitem &lt;item&gt; &lt;0|1&gt; add or remove a used special item (Compass, Amberstar, WindChain, ...)
 ///   travel [type]             print the travel type (Walk, Horse, Raft, Ship, MagicDisc, ...), optionally check it
 ///   passtime &lt;minutes&gt;        let time pass in steps of 5 minutes (poison, diseases, aging, spell durations, ...)
 ///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
@@ -478,6 +479,9 @@ public sealed class ScenarioScript
 			}
 			case "characterat":
 				CheckBool($"characterat {Arg(0)},{Arg(1)}", game.ScriptCharacterPositions.Contains(new Position(Arg(0), Arg(1))), OptionalBool(2));
+				break;
+			case "setspecialitem":
+				CheckResult(game.ScriptSetSpecialItem(args[0], ParseBool(args[1])));
 				break;
 			case "travel":
 			{

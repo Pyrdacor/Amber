@@ -8,7 +8,6 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
-// TODO: Shadows (see Do_shadow)
 internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 {
 	class WorldMap : IMap2D

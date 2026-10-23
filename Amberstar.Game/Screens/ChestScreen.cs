@@ -64,8 +64,9 @@ internal class ChestScreen : LockedScreen<ChestEvent>
             }
         }
         
-        // TODO: If you have the Amberstar, every chest will be open (there is a bit in the savegame [Special_item_flags bit 1])
-        bool lockOpened = chestEvent.LockpickReduction == 0 || Game.IsCurrentEventSaved();
+        // With the Amberstar every chest is open.
+        bool lockOpened = chestEvent.LockpickReduction == 0 || Game.IsCurrentEventSaved() ||
+            Game.State.SpecialItems.HasFlag(SpecialItems.Amberstar);
 
         Image = lockOpened ? Image80x80.OpenChest : Image80x80.LockedChest;
         goldLabel!.Visible = lockOpened;
