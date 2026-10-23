@@ -128,9 +128,14 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen, IWaitForClickScre
             buttonGrid.EnableButton(8, lowerRightButton.Enabled);
     }
 
+    readonly TextScrollHandler textScrollHandler = new();
+
     public override void Init()
     {
         base.Init();
+
+        // long messages are scrolled before they are closed
+        textScrollHandler.ScrollEnded += EndClickWait;
 
         for (int i = 0; i < inventoryItemSlots.Length; i++)
         {
@@ -227,6 +232,7 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen, IWaitForClickScre
     private void EndClickWait()
     {
         waitForClick = false;
+        textScrollHandler.Detach();
         Game.Cursor.CursorType = CursorType.Sword;
         HideMessage();
         Game.UntrapMouse();
@@ -242,6 +248,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen, IWaitForClickScre
     {
         if (waitForClick)
         {
+            if (textScrollHandler.KeyDown(key, keyModifiers))
+                return true;
+
             if (key == Key.Space || key == Key.Escape)
                 EndClickWait();
 
@@ -255,6 +264,9 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen, IWaitForClickScre
     {
         if (waitForClick)
         {
+            if (textScrollHandler.MouseDown(buttons))
+                return true;
+
             EndClickWait();
             return true;
         }
@@ -351,7 +363,8 @@ internal abstract class LockedScreen<TEvent> : ItemGridScreen, IWaitForClickScre
         message!.SetText(text, messageDisplayArea.Size.Width, 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
         message.Visible = true;
 
-        // TODO: Scrolling
+        if (waitForClick)
+            textScrollHandler.Attach(message);
 
         this.waitForClick = waitForClick;
         this.closeAfterClick = closeAfterClick;

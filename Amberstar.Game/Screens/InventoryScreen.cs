@@ -124,9 +124,14 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         ItemContainer.DraggingEnded -= draggingEndedHandler;
     }
 
+    readonly TextScrollHandler textScrollHandler = new();
+
     public override void Init()
     {
         base.Init();
+
+        // long messages are scrolled before they are closed
+        textScrollHandler.ScrollEnded += EndClickWait;
 
         void UpdateInventoryItem(int index)
         {
@@ -274,6 +279,9 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 	{
         if (waitForClick)
         {
+            if (textScrollHandler.KeyDown(key, keyModifiers))
+                return true;
+
             if (key == Key.Space || key == Key.Escape)
                 EndClickWait();
 
@@ -295,6 +303,9 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 	{
         if (waitForClick)
         {
+            if (textScrollHandler.MouseDown(buttons))
+                return true;
+
             EndClickWait();
             return true;
         }
@@ -507,6 +518,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     private void EndClickWait()
     {
         waitForClick = false;
+        textScrollHandler.Detach();
         Game.Cursor.CursorType = CursorType.Sword;
         HideMessage();
         Game.UntrapMouse();
@@ -518,10 +530,12 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     internal override void ShowMessage(Message messageIndex, bool waitForClick = true, bool closeAfterClick = false)
     {
         var messageText = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)messageIndex));
+        Game.ScriptTextShown(messageText);
         message!.SetText(messageText);
         message.Visible = true;
 
-        // TODO: Scrolling
+        if (waitForClick)
+            textScrollHandler.Attach(message);
 
         this.waitForClick = waitForClick;
         this.closeAfterClick = closeAfterClick;

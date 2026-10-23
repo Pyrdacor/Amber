@@ -29,9 +29,14 @@ internal sealed class RiddlemouthScreen : ButtonGridScreen, IWaitForClickScreen
 
 	public bool WaitingForClick => waitForClick;
 
+	readonly TextScrollHandler textScrollHandler = new();
+
 	public override void Init()
 	{
 		base.Init();
+
+		// long messages are scrolled before they are closed
+		textScrollHandler.ScrollEnded += EndClickWait;
 
 		var image = AddImage(224, 49, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(Image80x80.Riddlemouth), 0, true);
 		image.PaletteIndex = ButtonGridPaletteIndex;
@@ -145,7 +150,8 @@ internal sealed class RiddlemouthScreen : ButtonGridScreen, IWaitForClickScreen
 		message!.SetText(text, messageDisplayArea.Size.Width, 15, TextManager.TransparentPaper, ButtonGridPaletteIndex);
 		message.Visible = true;
 
-		// TODO: Scrolling
+		if (waitForClick)
+		    textScrollHandler.Attach(message);
 
 		this.waitForClick = waitForClick;
 		this.afterClickAction = afterClickAction;
@@ -160,6 +166,7 @@ internal sealed class RiddlemouthScreen : ButtonGridScreen, IWaitForClickScreen
 	private void EndClickWait()
 	{
 		waitForClick = false;
+		textScrollHandler.Detach();
 		Game.Cursor.CursorType = CursorType.Sword;
 		message!.Visible = false;
 		Game.UntrapMouse();
@@ -173,6 +180,9 @@ internal sealed class RiddlemouthScreen : ButtonGridScreen, IWaitForClickScreen
 	{
 		if (waitForClick)
 		{
+			if (textScrollHandler.KeyDown(key, keyModifiers))
+			    return true;
+
 			if (key == Key.Space || key == Key.Escape || key == Key.Enter)
 				EndClickWait();
 
@@ -186,6 +196,9 @@ internal sealed class RiddlemouthScreen : ButtonGridScreen, IWaitForClickScreen
 	{
 		if (waitForClick)
 		{
+			if (textScrollHandler.MouseDown(buttons))
+			    return true;
+
 			EndClickWait();
 			return true;
 		}
