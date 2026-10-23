@@ -1,4 +1,5 @@
 using Amber.Common;
+using Amber.Renderer.Common;
 using Amberstar.Game.UI;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
@@ -22,6 +23,7 @@ internal sealed class HealerScreen : PlaceScreen
 		Condition.Mad, Condition.Blind, Condition.Dead, Condition.Ashes, Condition.Dust
 	];
 	readonly Image[] conditionImages = new Image[SlotCount];
+	ISprite? ankh;
 	readonly Condition[] slotConditions = new Condition[SlotCount];
 	int patientSlot = 1;
 
@@ -63,6 +65,12 @@ internal sealed class HealerScreen : PlaceScreen
 		foreach (var image in conditionImages)
 			image.Visible = false;
 
+		if (ankh != null)
+		{
+			ankh.Visible = false;
+			ankh = null;
+		}
+
 		base.Close();
 	}
 
@@ -96,10 +104,17 @@ internal sealed class HealerScreen : PlaceScreen
 			conditionImages[slot].Visible = false;
 		}
 
-		// TODO: The original shows an ankh at the portrait of the patient.
 		Game.ResetStatusIcons();
 		Game.SetStatusIcon(patientSlot - 1, StatusIcon.HandOpen, true, true);
 		Game.UpdatePartyMember(patientSlot - 1);
+
+		// The ankh is shown over the portrait of the patient (Display_Ankh in the original).
+		var ankhPosition = new Position(16 + (patientSlot - 1) * 48, 1);
+		ankh ??= Game.CreateSprite(Layer.UI, ankhPosition, UIGraphic.HealingCross.GetSize(),
+			Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.HealingCross), Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI]);
+		ankh!.Position = ankhPosition;
+		ankh.DisplayLayer = 40;
+		ankh.Visible = true;
 
 		RequestButtonSetup();
 	}
