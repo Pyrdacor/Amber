@@ -33,6 +33,7 @@ public enum EmbeddedDataOffset
 	UITexts,
 	Music,
 	EnterWordLabel,
+	ShadowTable, // SHADOW.DAT
 }
 
 public class AssetProvider : IAssetProvider
@@ -132,6 +133,7 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<IItemFactory> itemFactory;
     readonly Lazy<IClassDataLoader> classDataLoader;
     readonly Lazy<ISpellDataLoader> spellDataLoader;
+    readonly Lazy<IShadowTable> shadowTable;
     readonly Lazy<ISongLoader> songLoader;
 
     private ProgramData Data => programData.Value;
@@ -154,6 +156,7 @@ public class AssetProvider : IAssetProvider
     public IItemFactory ItemFactory => itemFactory.Value;
     public IClassDataLoader ClassDataLoader => classDataLoader.Value;
     public ISpellDataLoader SpellDataLoader => spellDataLoader.Value;
+    public IShadowTable ShadowTable => shadowTable.Value;
     public ISongLoader SongLoader => songLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -204,6 +207,7 @@ public class AssetProvider : IAssetProvider
         itemFactory = new(() => new ItemFactory());
         classDataLoader = new(() => new ClassDataLoader(() => Data.ClassData));
         spellDataLoader = new(() => new SpellDataLoader(() => Data.SpellData));
+        shadowTable = new(() => new ShadowTable(Data.ShadowData));
         songLoader = new(() => new SongLoader(this, Platform));
     }
 
@@ -541,6 +545,9 @@ public class AssetProvider : IAssetProvider
 			}
             case EmbeddedDataOffset.Music:
 				return FindAndGotoText(dataReader, 0x2a000, "COSO");
+			case EmbeddedDataOffset.ShadowTable:
+				// The first offsets of the shadow table
+				return FindAndGotoByteSequence(dataReader, 0x2a000, 0x00, 0x00, 0x00, 0xc6, 0x01, 0x68, 0x01, 0xe8, 0x02, 0x4a);
             default:
 				return false;
 		}

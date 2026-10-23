@@ -357,6 +357,11 @@ namespace Amberstar.GameData.Legacy
 				throw new AmberException(ExceptionScope.Application, "Could not find the font information in the program file.");
 			Fonts.Add(0, new DataReader(dataReader.ReadBytes(0x3fe)));
 			#endregion
+			#region Shadows
+			// Note: Without the shadow table there are no shadows on 2D maps.
+			if (dataSeeker(EmbeddedDataOffset.ShadowTable, dataReader))
+				ShadowData = dataReader.ReadBytes(Legacy.ShadowTable.DetermineSize(dataReader));
+			#endregion
         }
 
         private static string ReadString(IDataReader dataReader, byte endByte = 0)
@@ -439,6 +444,7 @@ namespace Amberstar.GameData.Legacy
         public Dictionary<int, IDataReader> ClassNames { get; } = [];
         public List<byte[]> ClassData { get; } = [];
         public byte[] SpellData { get; private set; } = [];
+        public byte[] ShadowData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

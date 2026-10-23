@@ -36,6 +36,18 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void ShadowTableLoads(string folder)
+	{
+		var shadowTable = TestData.CreateAssetProvider(folder).ShadowTable;
+
+		// A tile diagonal to the party hides the tiles behind it on the diagonal.
+		Assert.Equal([new(2, 2), new(3, 3), new(4, 4), new(5, 5), new(6, 6), new(7, 7), new(8, 8)], shadowTable.GetShadow(1, 1));
+		Assert.Equal(98, shadowTable.GetShadow(1, 0).Count);
+		Assert.Empty(shadowTable.GetShadow(0, 0));
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AllMapEventsAreKnownAndPlacedEventsExist(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

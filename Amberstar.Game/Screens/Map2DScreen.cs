@@ -218,6 +218,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	const int RenderOrderOffset = TileHeight / 4;
 	// The tile of a transport is this 1-based tile index plus the travel type.
 	const int TransportTileIndex = 244;
+	// The tile of the shadow (Do_shadow in the original)
+	const int ShadowTileIndex = 1;
 	readonly List<ISprite> transportSprites = [];
 	const byte DarknessDisplayLayer = 1;
 	DarknessOverlay? darkness;
@@ -1186,6 +1188,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		lastScrollX = scrollOffsetX;
 		lastScrollY = scrollOffsetY;
         Rect displayedMapPortion = new(Math.Max(0, scrollOffsetX), Math.Max(0, scrollOffsetY), TilesPerRow, TileRows);
+		var shadowedTiles = GetShadowedTiles(displayedMapPortion);
 
         // Regarding render order. There are only 2 supported scenarios:
         // - Underlay <- Player <- Overlay (default)
@@ -1198,6 +1201,17 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 				int gridIndex = x + y * TilesPerRow;
 				int index = (x + scrollOffsetX) + (y + scrollOffsetY) * map!.Width;
 				var tile = map.Tiles[index];
+
+				// Tiles in the shadow are black and their overlays are not shown.
+				if (shadowedTiles.Contains(new Position(x + scrollOffsetX, y + scrollOffsetY)))
+				{
+					CreateTileSprite(underlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, ShadowTileIndex);
+
+					if (overlay.TryGetValue(gridIndex, out var shadowedOverlaySprite))
+						shadowedOverlaySprite.Visible = false;
+
+					continue;
+				}
 
 				if (tile.Underlay != 0)
 				{
@@ -1262,7 +1276,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			int baseLineOffset = GetBaseLineOffset(tile, out bool visible);
 
 			// Note: This would not work for world maps but there are no characters on world maps.
-			if (visible && (!Game.State.IsMapCharacterActive(map.Index, 1 + i) || !character.IsPresent(Game.State)))
+			if (visible && (!Game.State.IsMapCharacterActive(map.Index, 1 + i) || !character.IsPresent(Game.State) || shadowedTiles.Contains(character.Position)))
 				visible = false;
 
             mapCharacter.Visible = visible && displayedMapPortion.Contains(character.Position);
@@ -1393,6 +1407,71 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		return tileSprite;
 	}
+
+	/// <summary>
+	/// The positions around the party which are checked for shadows (Spiral_table in the original).
+	/// They are in rings from the inside to the outside up to 8 tiles horizontally and 6 tiles vertically.
+	/// </summary>
+	static readonly Position[] ShadowSpiral = CreateShadowSpiral();
+
+	static Position[] CreateShadowSpiral()
+	{
+		var positions = new List<Position>();
+
+		for (int ring = 1; ring <= IShadowTable.MaxDistanceX; ring++)
+		{
+			for (int x = -ring + 1; x <= ring; x++)
+				positions.Add(new(x, -ring));
+
+			for (int y = -ring + 1; y <= ring; y++)
+				positions.Add(new(ring, y));
+
+			for (int x = ring - 1; x >= -ring; x--)
+				positions.Add(new(x, ring));
+
+			for (int y = ring - 1; y >= -ring; y--)
+				positions.Add(new(-ring, y));
+		}
+
+		return [.. positions.Where(position => Math.Abs(position.Y) <= IShadowTable.MaxDistanceY)];
+	}
+
+	/// <summary>
+	/// Tiles which block the sight hide the tiles behind them (Shadow_handler and Do_shadow in the original).
+	/// Tiles which are already in the shadow don't cast shadows. There are no shadows in the sky.
+	/// </summary>
+	private HashSet<Position> GetShadowedTiles(Rect displayedMapPortion)
+	{
+		var shadowedTiles = new HashSet<Position>();
+
+		if (Game.State.TravelType >= TravelType.Eagle)
+			return shadowedTiles;
+
+		var shadowTable = Game.AssetProvider.ShadowTable;
+		var partyPosition = Game.State.PartyPosition;
+
+		foreach (var offset in ShadowSpiral)
+		{
+			var position = partyPosition + offset;
+
+			if (!displayedMapPortion.Contains(position) || shadowedTiles.Contains(position))
+				continue;
+
+			if (!GetTileFlags(position.X, position.Y).HasFlag(TileFlags.BlockSight))
+				continue;
+
+			// The shadows are stored for the lower right quadrant and are mirrored for the others.
+			int signX = offset.X < 0 ? -1 : 1;
+			int signY = offset.Y < 0 ? -1 : 1;
+
+			foreach (var shadow in shadowTable.GetShadow(Math.Abs(offset.X), Math.Abs(offset.Y)))
+				shadowedTiles.Add(partyPosition + new Position(shadow.X * signX, shadow.Y * signY));
+		}
+
+		return shadowedTiles;
+	}
+
+	internal bool ScriptIsShadowed(int x, int y) => GetShadowedTiles(new Rect(0, 0, map!.Width, map.Height)).Contains(new Position(x, y));
 
 	private ITile GetTileInfo(int index)
 	{

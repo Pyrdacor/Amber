@@ -66,6 +66,7 @@ using G = Game.Game;
 ///   minimapview [x y]         print the upper left map position of the shown minimap (map show spell), optionally check it
 ///   characters                print the positions of the persons and monsters on the map
 ///   characterat &lt;x&gt; &lt;y&gt; [0|1]  print if a person or monster is at a map position, optionally check it
+///   shadow &lt;x&gt; &lt;y&gt; [0|1]      print if a position of a 2D map is in the shadow, optionally check it
 ///   travel [type]             print the travel type (Walk, Horse, Raft, Ship, MagicDisc, ...), optionally check it
 ///   passtime &lt;minutes&gt;        let time pass in steps of 5 minutes (poison, diseases, aging, spell durations, ...)
 ///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
@@ -465,6 +466,16 @@ public sealed class ScenarioScript
 			case "characters":
 				output($"  characters = {string.Join(" ", game.ScriptCharacterPositions.Select(position => $"{position.X},{position.Y}"))}");
 				break;
+			case "shadow":
+			{
+				var shadowed = game.ScriptIsShadowed(Arg(0), Arg(1));
+
+				if (shadowed == null)
+					Report(false, $"no 2D map is shown but {game.ScriptActiveScreen}");
+				else
+					CheckBool($"shadow {Arg(0)},{Arg(1)}", shadowed.Value, OptionalBool(2));
+				break;
+			}
 			case "characterat":
 				CheckBool($"characterat {Arg(0)},{Arg(1)}", game.ScriptCharacterPositions.Contains(new Position(Arg(0), Arg(1))), OptionalBool(2));
 				break;

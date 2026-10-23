@@ -24,4 +24,5 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
     IClassDataLoader ClassDataLoader { get; }
     ISpellDataLoader SpellDataLoader { get; }
     ISongLoader SongLoader { get; }
+    IShadowTable ShadowTable { get; }
 }

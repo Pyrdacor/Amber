@@ -328,6 +328,11 @@ partial class Game
 	public string ScriptTravelType => State.TravelType.ToString();
 
 	/// <summary>
+	/// Checks if a 1-based position of the shown 2D map is in the shadow.
+	/// </summary>
+	public bool? ScriptIsShadowed(int x, int y) => (ScreenHandler.FindMapScreen() as Map2DScreen)?.ScriptIsShadowed(x - 1, y - 1);
+
+	/// <summary>
 	/// Gets the 1-based positions of the persons and monsters on the shown map.
 	/// </summary>
 	public IEnumerable<Position> ScriptCharacterPositions =>
