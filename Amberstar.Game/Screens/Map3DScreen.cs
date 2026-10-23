@@ -100,6 +100,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	const byte DarknessDisplayLayer = 1;
 	DarknessOverlay? darkness;
 	bool? canSee;
+	const int OuchX = 112;
+	ISprite? ouch;
+	long ouchDeleteActionIndex = -1;
 	const int ViewWidth = 144;
 	const int ViewHeight = 144;
 	const int OffsetX = 32;
@@ -159,6 +162,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 		if (!screen.Transparent)
 		{
+			HideOuch();
 			darkness!.Visible = false;
 			images.ForEach(image => image.Visible = false);
 			skyGradient.ForEach(g => g.Visible = false);
@@ -287,7 +291,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			{
 				case ButtonType.Eye:
 				{
-					// TODO: NPCs
+					// Note: The original only checks the events in front of the party (Eye_spy).
 
 					var playerPosition = Game.State.PartyPosition;
 					var forwardPosition = playerPosition + Game.State.PartyDirection.Offset();
@@ -399,6 +403,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		mouseDown = false;
 		Game.Time.MinuteChanged -= MinuteChanged;
 		darkness?.Hide();
+		Game.DeleteDelayedActions(ouchDeleteActionIndex);
+		HideOuch();
+		ouch = null;
 		ClearView();
 		skyGradient.ForEach(g => g.Visible = false);
 		skyGradient.Clear();
@@ -681,6 +688,8 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		bool backward = Game.IsKeyDown(Key.Down) || Game.IsKeyDown('S');
 		bool turnLeft = Game.IsKeyDown(Key.Left) || Game.IsKeyDown('Q');
 		bool turnRight = Game.IsKeyDown(Key.Right) || Game.IsKeyDown('E');
+		bool fullTurnLeft = false;
+		bool fullTurnRight = false;
 
 		if (mouseDown && Game.InputEnabled && !Game.Paused)
 		{
@@ -705,10 +714,10 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 					turnRight = true;
 					break;
 				case CursorType.FullTurnLeft:
-					// TODO
+					fullTurnLeft = true;
 					break;
 				case CursorType.FullTurnRight:
-					// TODO
+					fullTurnRight = true;
 					break;
 			}
 		}
@@ -727,14 +736,16 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				turnLeft = Game.IsKeyDown(Key.Keypad7);
 			if (!turnRight)
 				turnRight = Game.IsKeyDown(Key.Keypad9);
-			// TODO
-			/*if (!fullTurnLeft)
+			if (!fullTurnLeft)
 				fullTurnLeft = Game.IsKeyDown(Key.Keypad1);
 			if (!fullTurnRight)
-				fullTurnRight = Game.IsKeyDown(Key.Keypad3);*/
+				fullTurnRight = Game.IsKeyDown(Key.Keypad3);
 		}
 
-		CheckMove(forward, backward, left, right, turnLeft, turnRight);
+		if (fullTurnLeft != fullTurnRight)
+			Rotate(fullTurnRight);
+		else
+			CheckMove(forward, backward, left, right, turnLeft, turnRight);
 	}
 
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
@@ -868,7 +879,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		}
 		else
 		{
-			// TODO: ouch
+			ShowOuch();
 		}
 	}
 
@@ -953,9 +964,49 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		UpdateView();
 	}
 
+	/// <summary>
+	/// Turns around by two quarter turns. The view is shown in between (D3_fullturnleft and D3_fullturnright in the original).
+	/// </summary>
 	private void Rotate(bool right)
 	{
-		// TODO
+		if (currentTicks - lastTurnTicks < TicksPerTurn)
+			return;
+
+		lastTurnTicks = currentTicks;
+
+		int step = right ? 1 : 3;
+
+		void Turn()
+		{
+			Game.State.PartyDirection = (Direction)(((int)Game.State.PartyDirection + step) % 4);
+			UpdateView();
+		}
+
+		Turn();
+		Game.AddDelayedAction(TicksPerTurn / 2, Turn);
+	}
+
+	/// <summary>
+	/// Shows "OUCH!" at a random height when the party bumps into something (Build_3D_map in the original).
+	/// </summary>
+	private void ShowOuch()
+	{
+		Game.DeleteDelayedActions(ouchDeleteActionIndex);
+
+		var position = new Position(OuchX, OffsetY + Game.Random(0, 63));
+		ouch ??= Game.CreateSprite(Layer.UI, position, UIGraphic.Ouch.GetSize(), Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.Ouch),
+			Game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.UI])!;
+		ouch.Position = position;
+		ouch.DisplayLayer = 10;
+		ouch.Visible = true;
+
+		ouchDeleteActionIndex = Game.AddDelayedAction(Game.TicksPerSecond / 2, HideOuch);
+	}
+
+	private void HideOuch()
+	{
+		if (ouch != null)
+			ouch.Visible = false;
 	}
 
 	private BlockFacing FacingByRelativeOffset(Position offset)
