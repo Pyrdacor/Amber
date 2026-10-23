@@ -139,9 +139,11 @@ partial class Game
 
         partyMember.TotalWeight -= (uint)count * item.Weight;
 
+        // Removed equipment doesn't give its boni (or mali) anymore.
         if (wasEquipped)
         {
-            // TODO
+            for (int i = 0; i < count; i++)
+                ApplyEquipmentBoni(partyMember, item, false);
         }
     }
 

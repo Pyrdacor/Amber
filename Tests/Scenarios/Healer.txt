@@ -37,3 +37,25 @@ value 1 hp 1
 button 7
 button 2
 waitidle
+# --- destroying a cursed item also removes its malus (the golden brooch takes 5 strength)
+setclass 1 Warrior
+give 1 159
+value 1 strength
+click 32 17 right
+waitscreen Inventory
+invslot 2
+value 1 strength -5
+key Escape
+waitidle
+teleport 67 10 26
+waitscreen Healer
+button 6
+buttonenabled 3 1
+button 3
+waitscreen Confirmation
+yes
+count 159 0
+value 1 strength +5
+button 7
+button 2
+waitidle

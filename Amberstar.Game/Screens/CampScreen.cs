@@ -227,10 +227,13 @@ internal sealed class CampScreen : ButtonGridScreen, IWaitForClickScreen
 			result = Message.SpellLearnFailedScrollCrumbles;
 		}
 
-		// TODO: The original shows an animation of the crumbling scroll.
+		// The scroll crumbles to dust.
 		Game.RemoveInventoryItem(partyMember, slot, 1);
-		ShowItems();
-		ShowAndContinue(result);
+		itemContainers[slot].ReduceItemCount(1, true, () =>
+		{
+			ShowItems();
+			ShowAndContinue(result);
+		});
 	}
 
 	/// <summary>
