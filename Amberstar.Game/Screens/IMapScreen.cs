@@ -1,3 +1,4 @@
+using Amber.Common;
 using Amberstar.Game.Events;
 using Amberstar.GameData;
 
@@ -27,4 +28,8 @@ internal interface IMapScreen
 	/// Gets the active map event at the given 0-based map position if any.
 	/// </summary>
 	IEvent? GetActiveEvent(int x, int y);
+	/// <summary>
+	/// Gets the 0-based positions of the persons and monsters which are on the map now.
+	/// </summary>
+	IEnumerable<Position> GetCharacterPositions();
 }

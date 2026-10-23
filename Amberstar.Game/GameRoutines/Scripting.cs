@@ -327,6 +327,12 @@ partial class Game
 
 	public string ScriptTravelType => State.TravelType.ToString();
 
+	/// <summary>
+	/// Gets the 1-based positions of the persons and monsters on the shown map.
+	/// </summary>
+	public IEnumerable<Position> ScriptCharacterPositions =>
+		ScreenHandler.FindMapScreen()?.GetCharacterPositions().Select(position => position + new Position(1, 1)) ?? [];
+
 	public string? ScriptSetClass(int slot, string className)
 	{
 		var partyMember = State.GetPartyMember(slot);

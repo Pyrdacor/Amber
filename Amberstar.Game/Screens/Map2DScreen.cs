@@ -230,6 +230,14 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	readonly Dictionary<int, IAnimatedSprite> underlay = [];
 	readonly Dictionary<int, IAnimatedSprite> overlay = [];
     readonly List<Characters.MapCharacter> characters = [];
+
+	/// <summary>
+	/// The characters which are on the map now (not removed and present at the current date).
+	/// </summary>
+	IEnumerable<Characters.MapCharacter> PresentCharacters =>
+		characters.Where(character => character.IsPresent(Game.State) && Game.State.IsMapCharacterActive(map!.Index, 1 + character.Index));
+
+	IEnumerable<Position> IMapScreen.GetCharacterPositions() => PresentCharacters.Select(character => character.Position);
     readonly List<ISprite> mapCharacters = [];
     ISprite? player;
     ISprite? ouchBubble;
@@ -475,10 +483,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 					Game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
                     break;
                 case ButtonType.Ear:
-                    // TODO: check for something to hear
-                    //Game.Cursor.CursorType = CursorType.Ear;
-                    //Game.TrapMouse(CreateActionCursorTrapArea(mouth: false));
-                    Game.ShowTextMessage(Message.ListenNothingHeard);
+                    Game.Listen();
                     break;
                 case ButtonType.Mouth:
                     Game.Cursor.CursorType = CursorType.Mouth;
@@ -723,6 +728,10 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		if (moved)
 		{
+			// Hunting monsters which see the party follow it.
+			if (characters.Count(character => character.PartyMoved(Game)) != 0)
+				FillMap(lastScrollX, lastScrollY, true);
+
 			Game.Time.Moved2D();
 			// e.g. the party might stand on a transport now
 			RequestButtonSetup();
@@ -999,9 +1008,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		if (trigger == EventTrigger.Mouth)
 		{
-			var character = characters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
+			var character = PresentCharacters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
 
-			if (character != null && Game.State.IsMapCharacterActive(map!.Index, 1 + character.Index) && character.Type == MapCharacterType.Person)
+			if (character != null && character.Type == MapCharacterType.Person)
 			{
 				Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
 				Game.ScreenHandler.PushScreen(ScreenType.Conversation);
@@ -1070,9 +1079,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 					Game.Cursor.CursorType = CursorType.Sword;
                     Game.UntrapMouse();
 
-                    var character = characters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
+                    var character = PresentCharacters.FirstOrDefault(character => character.Position.X == x && character.Position.Y == y);
 
-                    if (character != null && Game.State.IsMapCharacterActive(map!.Index, 1 + character.Index) && character.Type == MapCharacterType.Person)
+                    if (character != null && character.Type == MapCharacterType.Person)
                     {
                         Game.State.CurrentConversationCharacter = new(character.CharacterIndex, character.Map, character.Index);
                         Game.ScreenHandler.PushScreen(ScreenType.Conversation);
@@ -1253,7 +1262,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			int baseLineOffset = GetBaseLineOffset(tile, out bool visible);
 
 			// Note: This would not work for world maps but there are no characters on world maps.
-			if (visible && !Game.State.IsMapCharacterActive(map.Index, 1 + i))
+			if (visible && (!Game.State.IsMapCharacterActive(map.Index, 1 + i) || !character.IsPresent(Game.State)))
 				visible = false;
 
             mapCharacter.Visible = visible && displayedMapPortion.Contains(character.Position);
@@ -1615,7 +1624,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
             if (characterData.Index != 0 && characterData.Icon != 0)
             {
                 characters.Add(new Characters.MapCharacter(map, i, map.CharacterPositions[i], Game.State,
-                    (x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass)));
+                    (x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass),
+                    (x, y) => GetTileFlags(x, y).HasFlag(TileFlags.BlockSight)));
                 var sprite = Game.CreateSprite(Layer.Map2D, new(), new(16, 16), 1, palette, false)!;
                 sprite.Visible = false;
                 mapCharacters.Add(sprite);
@@ -1658,7 +1668,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         {
             var testPosition = new Position(x, y);
 
-            if (characters.Any(character => character.Position == testPosition))
+            if (PresentCharacters.Any(character => character.Position == testPosition))
                 return false;
         }
 

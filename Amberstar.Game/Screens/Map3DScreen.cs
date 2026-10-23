@@ -113,6 +113,14 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	readonly List<IColoredRect> skyGradient = [];
 	readonly List<IAnimatedSprite> images = [];
 	readonly List<Characters.MapCharacter> characters = [];
+
+	/// <summary>
+	/// The characters which are on the map now (not removed and present at the current date).
+	/// </summary>
+	IEnumerable<Characters.MapCharacter> PresentCharacters =>
+		characters.Where(character => character.IsPresent(Game.State) && Game.State.IsMapCharacterActive(map!.Index, 1 + character.Index));
+
+	IEnumerable<Position> IMapScreen.GetCharacterPositions() => PresentCharacters.Select(character => character.Position);
 	long currentTicks = 0;
 	long lastMoveTicks = 0;
 	long lastTurnTicks = 0;
@@ -297,12 +305,12 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
                 }				
                 case ButtonType.Ear:
                 {
-					// TODO
+					Game.Listen();
 					break;
 				}
 				case ButtonType.Mouth:
                 {
-					var character = characters.FirstOrDefault(character => character.Position == Game.State.PartyPosition);
+					var character = PresentCharacters.FirstOrDefault(character => character.Position == Game.State.PartyPosition);
 
 					if (character != null && character.Type == MapCharacterType.Person)
 					{
@@ -415,7 +423,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		if (map.Flags.HasFlag(MapFlags.City) && Game.CanSee())
 			UpdateSky(true);
 
-		if (characters.Count != 0) // TODO: check for active ones only (or maybe remove inactive ones)
+		if (characters.Count != 0)
 		{
 			foreach (var character in characters)
 			{
@@ -431,7 +439,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				int x = playerPosition.X + offset.X;
 				int y = playerPosition.Y + offset.Y;
 
-				if (characters.Any(character => character.Position.X == x && character.Position.Y == y))
+				if (PresentCharacters.Any(character => character.Position.X == x && character.Position.Y == y))
 				{
 					UpdateView();
 					break;
@@ -469,6 +477,10 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 		if (moved)
 		{
+			// Hunting monsters which see the party follow it.
+			if (characters.Count(character => character.PartyMoved(Game)) != 0)
+				UpdateView();
+
 			Game.Time.Moved3D();
 			Game.AfterPartyMoved(GetTileFlags(playerPosition.X, playerPosition.Y).HasFlag(LabTileFlags.Poison), false);
 		}
@@ -527,7 +539,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		{
 			var testPosition = new Position(x, y);
 
-			if (characters.Any(character => character.Position == testPosition))
+			if (PresentCharacters.Any(character => character.Position == testPosition))
 				return false;
 		}
 
@@ -910,7 +922,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 		if (trigger == EventTrigger.Mouth)
 		{
-			var character = characters.FirstOrDefault(character => character.Position == position);
+			var character = PresentCharacters.FirstOrDefault(character => character.Position == position);
 
 			if (character != null && character.Type == MapCharacterType.Person)
 			{
@@ -1138,7 +1150,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			if (labTile.PrimaryLabBlockIndex != 1) // 1 seems to be a marker for free tiles
 				DrawBlock(primary);
 
-			var character = characters.FirstOrDefault(character => character.Position == new Position(x, y));
+			var character = PresentCharacters.FirstOrDefault(character => character.Position == new Position(x, y));
 
 			if (character != null)
 			{
@@ -1176,7 +1188,8 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			if (characterData.Index != 0 && characterData.Icon != 0)
 			{
 				characters.Add(new Characters.MapCharacter(map, i, map.CharacterPositions[i], Game.State,
-					(x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass)));
+					(x, y, collisionClass) => CanMoveTo(x, y, false, collisionClass),
+					(x, y) => GetTileFlags(x, y).HasFlag(LabTileFlags.BlockSight)));
 			}
 		}
 
