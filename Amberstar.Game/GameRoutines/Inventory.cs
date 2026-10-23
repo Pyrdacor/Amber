@@ -282,9 +282,9 @@ partial class Game
 
 	/// <summary>
 	/// Shows which party members can take something by the hand status icons.
-	/// The given party member never takes anything. Returns the amount of possible receivers.
+	/// The given party member never takes anything (if any). Returns the amount of possible receivers.
 	/// </summary>
-	internal int SetHandIcons(IPartyMember giver, Func<IPartyMember, bool> canReceive)
+	internal int SetHandIcons(IPartyMember? giver, Func<IPartyMember, bool> canReceive)
 	{
 		int receiverCount = 0;
 

@@ -626,7 +626,7 @@ internal sealed class ConversationScreen : ItemGridScreen, IWaitForClickScreen
 
                 if (characterSlotIndex != null)
                 {
-                    // TODO: allow many stacked items? use count param
+                    // Note: Stacked items are picked up one by one.
                     if (Game.TryAddItem(characterSlotIndex.Value, Game.CurrentItem!))
                     {
                         var sourceSlot = receivedItems[dragSourceItemSlot!.Value];
@@ -711,7 +711,7 @@ internal sealed class ConversationScreen : ItemGridScreen, IWaitForClickScreen
                 if (index != null)
                 {
                     Game.CurrentItem = ItemContainers[index.Value].Item;
-                    if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
+                    if (Game.SetHandIcons(null, partyMember => Game.CanReceiveItems(partyMember, Game.CurrentItem!, 1)) > 0)
                     {
                         Game.CurrentItem = ItemContainers[index.Value].Item;
                         dragSourceItemSlot = index;
@@ -730,7 +730,8 @@ internal sealed class ConversationScreen : ItemGridScreen, IWaitForClickScreen
                 {
                     Game.AskForConfirmation(Game.LoadMessageText(Message.ReallyDropItem), () =>
                     {
-                        receivedItems[index.Value].ClearItem(); // TODO: allow count > 1?
+                        // The whole stack is dropped.
+                        receivedItems[index.Value].ClearItem();
                         ShowReceivedItems();
                         RequestButtonSetup();
                     });
@@ -752,7 +753,8 @@ internal sealed class ConversationScreen : ItemGridScreen, IWaitForClickScreen
                 {
                     if (!TryExecuteReactionsForTrigger(InteractionTriggerType.Give, (word)ItemContainers[index.Value].Item!.Index, () =>
                     {
-                        Game.RemoveInventoryItem(Game.State.ActivePartyMember!, index.Value); // TODO: allow count > 1?
+                        // Persons only take a single item.
+                        Game.RemoveInventoryItem(Game.State.ActivePartyMember!, index.Value);
                         RequestButtonSetup();
                         ShowReceivedItems();
                     }))

@@ -89,7 +89,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
         if (screen is GiveGoldScreen && Game.CurrentAmount > 0)
         {
-            if (Game.SetHandIconsByGold(Game.CurrentAmount) > 0)
+            if (Game.SetHandIcons(null, partyMember => Game.CanReceiveGold(partyMember, Game.CurrentAmount)) > 0)
             {
                 goldDragging = true;
                 Game.TrapMouseInPortraitArea();
@@ -236,7 +236,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
 
                 if (characterSlotIndex != null)
                 {
-                    // TODO: allow many stacked items? use count param
+                    // Note: Each chest slot contains a single item.
                     if (Game.TryAddItem(characterSlotIndex.Value, Game.CurrentItem!))
                     {
                         Game.State.SetChestSlotBit(LockedEvent.ChestIndex, currentChestSlot!.Value, false);
@@ -247,7 +247,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                         UpdateChestItems();
                         RequestButtonSetup();
 
-                        if (chestGold == 0 || !chestHasItems) // TODO: Test this
+                        // The chest is closed when it is empty.
+                        if (chestGold == 0 && !chestHasItems)
                             Game.ScreenHandler.PopScreen();
                     }
                     else
@@ -279,7 +280,7 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                         {
                             RequestButtonSetup();
 
-                            if (!chestHasItems) // TODO: Test this
+                            if (!chestHasItems)
                                 Game.ScreenHandler.PopScreen();
                         }
                     }
@@ -412,7 +413,8 @@ internal class ChestScreen : LockedScreen<ChestEvent>
                 if (index != null)
                 {
                     Game.CurrentItem = ItemContainers[index.Value].Item;
-                    if (Game.SetHandIconsByItem(Game.CurrentItem!) > 0) // TODO: item count
+                    // Note: Each chest slot contains a single item.
+                    if (Game.SetHandIcons(null, partyMember => Game.CanReceiveItems(partyMember, Game.CurrentItem!, 1)) > 0)
                     {
                         currentChestSlot = index;
                         Game.CurrentItem = ItemContainers[index.Value].Item;
