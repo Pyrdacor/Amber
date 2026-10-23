@@ -38,7 +38,9 @@ class AudioStream(IAssetProvider assetProvider, int musicIndex, int songIndex) :
 partial class Game
 {
     bool musicPlaying = false;
-    int currentSongIndex = -1; // TODO: Use enum later?
+    int currentSongIndex = -1;
+    // the song of the shown map which is played when the music is switched on
+    int requestedSongIndex = -1;
     readonly Dictionary<int, AudioStream> music = [];
 
     private void UpdateMusic(double elapsed)
@@ -57,17 +59,21 @@ partial class Game
     internal void SetMusic(bool on)
     {
         State.MusicBlock = !on;
+        StopSong();
         audioOutput.Enabled = on;
+
+        if (on && requestedSongIndex != -1)
+            PlaySong(requestedSongIndex);
     }
 
     internal void PlaySong(int songIndex)
     {
-        return; // TODO: REMOVE
+        requestedSongIndex = songIndex;
 
         if (musicPlaying && songIndex == currentSongIndex)
             return;
 
-        if (audioOutput == null || !audioOutput.Available)
+        if (audioOutput == null || !audioOutput.Available || !audioOutput.Enabled)
             return;
 
         if (songIndex != currentSongIndex)
@@ -113,5 +119,7 @@ partial class Game
 
         audioOutput.Stop();
         musicPlaying = false;
+        // The next song must be streamed again.
+        currentSongIndex = -1;
     }
 }

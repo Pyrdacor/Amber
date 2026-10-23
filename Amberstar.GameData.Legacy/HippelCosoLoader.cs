@@ -8,28 +8,33 @@ file class IndexTable
 {
     public byte[][] Entries { get; }
 
+    /// <summary>
+    /// Note: The entries are not always sorted and might share data. So each entry
+    /// contains all data up to the end of the section. The data of an entry ends
+    /// with a command like loop or end which is checked while parsing.
+    /// </summary>
     public IndexTable(IDataReader reader, int startOffset, int count, int end)
     {
         Entries = new byte[count][];
-        var offsets = new int[count + 1];
+        var offsets = new int[count];
 
         for (int i = 0; i < count; i++)
         {
             offsets[i] = reader.ReadWord();
         }
 
-        offsets[count] = end;
-
-        if (offsets[0] != reader.Position - startOffset)
-            throw new AmberException(ExceptionScope.Data, "Invalid index table");
+        int dataStart = reader.Position - startOffset;
+        var data = reader.ReadBytes(end - dataStart);
 
         for (int i = 0; i < count; i++)
         {
-            Entries[i] = reader.ReadBytes(offsets[i + 1] - offsets[i]);
-        }
+            int entryStart = offsets[i] - dataStart;
 
-        if (reader.Position != startOffset + end)
-            throw new AmberException(ExceptionScope.Data, "Invalid index table");
+            if (entryStart < 0 || entryStart > data.Length)
+                throw new AmberException(ExceptionScope.Data, "Invalid index table");
+
+            Entries[i] = data[entryStart..];
+        }
     }
 }
 
@@ -248,13 +253,9 @@ internal static class HippelCosoLoader
 
         dataReader.Position = position + (int)posSamples;
 
-        // TODO: samples
+        // TODO: samples (not used by the Atari ST version)
         for (int i = 0; i < numSamples; i++)
-        {
-            var data = dataReader.ReadBytes(sizePerSample);
-
-            Console.WriteLine();
-        }
+            dataReader.ReadBytes(sizePerSample);
 
         // The data stores numSamples + 1 entries but the last is just full of zeros.
 
@@ -269,7 +270,9 @@ internal static class HippelCosoLoader
             var instrumentData = instrumentTable.Entries[i];
             var commands = new List<HippelCosoSong.Instrument.Command>();
 
-            for (int b = 0; b < instrumentData.Length; b++)
+            bool instrumentEnd = false;
+
+            for (int b = 0; b < instrumentData.Length && !instrumentEnd; b++)
             {
                 var command = instrumentData[b];
 
@@ -277,9 +280,11 @@ internal static class HippelCosoLoader
                 {
                     case 0xe0:
                         commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Loop, instrumentData[++b]));
+                        instrumentEnd = true;
                         break;
                     case 0xe1:
                         commands.Add(new(b, HippelCosoSong.Instrument.CommandType.Complete));
+                        instrumentEnd = true;
                         break;
                     case 0xe2:
                         commands.Add(new(b, HippelCosoSong.Instrument.CommandType.ResetTimbre));
@@ -363,10 +368,12 @@ internal static class HippelCosoLoader
                 else if (command == 0xe0) // LOOP(offset)
                 {
                     commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Loop, timbreData[++b]));
+                    break;
                 }
                 else if (command == 0xe1) // HOLD
                 {
                     commands.Add(new(b, HippelCosoSong.VolumeEnvelop.CommandType.Hold));
+                    break;
                 }
                 else if (command == 0xe8) // SUSTAIN(ticks)
                 {
@@ -433,6 +440,7 @@ internal static class HippelCosoLoader
                 if (command == 0xff)
                 {
                     commands.Add(new(HippelCosoSong.Pattern.CommandType.EndPattern));
+                    break;
                 }
                 else if (command == 0xfe)
                 {

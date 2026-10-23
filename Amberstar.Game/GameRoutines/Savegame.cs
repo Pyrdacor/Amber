@@ -104,6 +104,7 @@ partial class Game
 
 		ResetStatusIcons();
 		UpdatePartyMembers();
+		SetMusic(!State.MusicBlock);
 	}
 
 	/// <summary>

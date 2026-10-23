@@ -40,6 +40,7 @@ public partial class Game : IDisposable
 		this.audioOutput = audioOutput;
         ScreenHandler = new(this);
 		State = new(assetProvider.SavegameLoader.LoadSavegame(), assetProvider);
+		audioOutput.Enabled = !State.MusicBlock;
 		EventHandler = new(this);
 		TextManager = new(this, AssetProvider.FontLoader.LoadFont(), fontInfoProvider);
 		Time = new(this);

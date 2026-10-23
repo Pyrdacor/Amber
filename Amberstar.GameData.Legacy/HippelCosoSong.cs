@@ -50,6 +50,10 @@ internal abstract class HippelCosoSong : ISong
 
             while (processCommands)
             {
+                // Without an end command the last pitch is kept.
+                if (currentCommandIndex >= Commands.Length)
+                    return;
+
                 var command = Commands[currentCommandIndex];
 
                 switch (command.Type)
@@ -60,12 +64,20 @@ internal abstract class HippelCosoSong : ISong
                         processCommands = false;
                         break;
                     case CommandType.Loop:
+                        // The loop offset might point to the argument of a command, so the next command is used.
                         int byteOffset = command.Params[0];
-                        currentCommandIndex = Commands.ToList().FindIndex(cmd => cmd.DataIndex == byteOffset);
+                        int loopIndex = Array.FindIndex(Commands, cmd => cmd.DataIndex >= byteOffset);
+
+                        // An endless loop without a pitch would block the player.
+                        if (loopIndex == -1 || loopIndex >= currentCommandIndex)
+                            return;
+
+                        currentCommandIndex = loopIndex;
                         break;
                     case CommandType.Complete:
                         // Do not increase the index.
-                        player.SetPitch(Commands[currentCommandIndex - 1].Params[0]);
+                        if (currentCommandIndex > 0 && Commands[currentCommandIndex - 1].Type == CommandType.SetPitch)
+                            player.SetPitch(Commands[currentCommandIndex - 1].Params[0]);
                         processCommands = false;
                         break;
                     /*case CommandType.SetSample:
