@@ -131,6 +131,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	byte palette = 0;
 	bool mouseDown = false;
 	IRenderText? mapNameText;
+	SpecialItemDisplay? specialItemDisplay;
 
 	public override ScreenType Type { get; } = ScreenType.Map3D;
     public override ScreenFadeType FadeType { get; } = ScreenFadeType.None;
@@ -154,6 +155,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
         backgrounds = Game.AssetProvider.GraphicLoader.LoadAllBackgroundGraphics();
 		clouds = Game.AssetProvider.GraphicLoader.LoadAllCloudGraphics();
 		skyGradients = Game.AssetProvider.GraphicLoader.LoadSkyGradients();
+		specialItemDisplay = new(Game);
     }
 
 	public override void ScreenPushed(Screen screen)
@@ -167,6 +169,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			images.ForEach(image => image.Visible = false);
 			skyGradient.ForEach(g => g.Visible = false);
 			mapNameText!.Visible = false;
+
+			if (specialItemDisplay != null)
+				specialItemDisplay.Covered = true;
 		}
 
 		mouseDown = false;
@@ -177,6 +182,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		if (!screen.Transparent)
 		{
+			if (specialItemDisplay != null)
+				specialItemDisplay.Covered = false;
+
 			SetLayout();
             images.ForEach(image => image.Visible = true);
 			skyGradient.ForEach(g => g.Visible = true);
@@ -188,6 +196,8 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 
 		// e.g. a light spell was cast
 		CheckLight();
+		// e.g. a special item was used
+		UpdateSpecialItems();
 
 		base.ScreenPopped(screen);
 
@@ -413,6 +423,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		skyGradient.Clear();
         characters.Clear();
 		mapNameText!.Delete();
+		specialItemDisplay?.Hide();
 
 		base.Close();
 	}
@@ -423,6 +434,9 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		if (Game.Paused)
 			return;
+
+		// e.g. the clock or the day/night display
+		UpdateSpecialItems();
 
 		var lightMode = map!.Flags.GetLightMode();
 
@@ -1226,7 +1240,20 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 				DrawBlock(objectBlock, customX);
 			}
 		}
+
+		UpdateSpecialItems();
 	}
+
+	/// <summary>
+	/// Shows the used special items. The compass shows the view direction (Show_special_items in the original).
+	/// </summary>
+	private void UpdateSpecialItems()
+	{
+		var position = Game.State.PartyPosition;
+		specialItemDisplay?.Update(palette, Game.State.PartyDirection, new(position.X + 1, position.Y + 1));
+	}
+
+	internal IEnumerable<string> ScriptSpecialItemDisplay => specialItemDisplay?.ShownItems ?? [];
 
 	private void ClearView()
 	{

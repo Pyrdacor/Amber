@@ -331,6 +331,16 @@ partial class Game
 	/// Adds or removes a used special item (Compass, Amberstar, MagicalPicture, WindChain, MapLocator or Clock).
 	/// </summary>
 	/// <summary>
+	/// The special items which are shown next to the map view (e.g. "Compass Up", "Day", "X:012").
+	/// </summary>
+	public IEnumerable<string> ScriptSpecialItemDisplay => ScreenHandler.FindMapScreen() switch
+	{
+		Map2DScreen map2DScreen => map2DScreen.ScriptSpecialItemDisplay,
+		Map3DScreen map3DScreen => map3DScreen.ScriptSpecialItemDisplay,
+		_ => []
+	};
+
+	/// <summary>
 	/// Checks if the party uses a special item. Returns null for unknown items.
 	/// </summary>
 	public bool? ScriptHasSpecialItem(string name) => Enum.TryParse<SpecialItems>(name, true, out var specialItem) ? State.SpecialItems.HasFlag(specialItem) : null;

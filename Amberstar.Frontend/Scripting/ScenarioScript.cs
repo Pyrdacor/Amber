@@ -71,6 +71,8 @@ using G = Game.Game;
 ///   shadow &lt;x&gt; &lt;y&gt; [0|1]      print if a position of a 2D map is in the shadow, optionally check it
 ///   setspecialitem &lt;item&gt; &lt;0|1&gt; add or remove a used special item (Compass, Amberstar, WindChain, ...)
 ///   specialitem &lt;item&gt; [0|1]  print if a special item is used, optionally check it
+///   specialdisplay [text|none] print the special items shown next to the map (e.g. Compass Up, Day, X:012, 16:00),
+///                             optionally check that one of them starts with the text or that none is shown
 ///   travel [type]             print the travel type (Walk, Horse, Raft, Ship, MagicDisc, ...), optionally check it
 ///   passtime &lt;minutes&gt;        let time pass in steps of 5 minutes (poison, diseases, aging, spell durations, ...)
 ///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
@@ -491,6 +493,19 @@ public sealed class ScenarioScript
 					Report(false, $"unknown special item {args[0]}");
 				else
 					CheckBool($"specialitem {args[0]}", used.Value, args.Length > 1 ? ParseBool(args[1]) : null);
+				break;
+			}
+			case "specialdisplay":
+			{
+				var shown = game.ScriptSpecialItemDisplay.ToList();
+				string actual = shown.Count == 0 ? "none" : string.Join(", ", shown);
+
+				if (args.Length == 0)
+					output($"  specialdisplay = {actual}");
+				else if (argument.Equals("none", StringComparison.OrdinalIgnoreCase))
+					Report(shown.Count == 0, $"specialdisplay = {actual} (expected none)");
+				else
+					Report(shown.Any(item => item.StartsWith(argument, StringComparison.OrdinalIgnoreCase)), $"specialdisplay = {actual} (expected {argument})");
 				break;
 			}
 			case "setspecialitem":

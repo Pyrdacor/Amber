@@ -253,7 +253,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	long currentTicks = 0;
 	bool additionalMoveRequested = false;
 	bool screenPushPlayerWasVisible = false;
-	IRenderText? timeText; // for debugging, TODO: REMOVE
+	SpecialItemDisplay? specialItemDisplay;
 	byte palette = 0;
 	long delayedMoveActionIndex = -1;
 	bool mouseDown = false;
@@ -278,18 +278,13 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		tilesets = [Game.AssetProvider.TilesetLoader.LoadTileset(1), Game.AssetProvider.TilesetLoader.LoadTileset(2)];
 
-		timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
-		timeText.Show(220, 70, 100);
+		specialItemDisplay = new(Game);
 
 		Game.Time.MinuteChanged += () =>
 		{
-			timeText?.Delete();
-
-			if (Game.ScreenHandler.ActiveScreen?.Type != ScreenType.Map2D)
-				return;
-
-			timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
-			timeText.Show(220, 70, 100);
+			// e.g. the clock or the day/night display
+			if (Game.ScreenHandler.ActiveScreen?.Type == ScreenType.Map2D)
+				UpdateSpecialItems();
 		};
 	}
 
@@ -311,9 +306,10 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
             mapNameText!.Visible = false;
 
 			mapCharacters.ForEach(c => c.Visible = false);
-        }
 
-		timeText?.Delete();
+			if (specialItemDisplay != null)
+				specialItemDisplay.Covered = true;
+        }
 
 		Game.Pause();
 	}
@@ -322,6 +318,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		if (!screen.Transparent)
 		{
+			if (specialItemDisplay != null)
+				specialItemDisplay.Covered = false;
+
 			SetLayout();
             underlay.Values.ToList().ForEach(tile => tile.Visible = true);
 			overlay.Values.ToList().ForEach(tile => tile.Visible = true);
@@ -333,10 +332,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		// e.g. a light spell was cast
 		UpdateLight(false);
-
-		timeText?.Delete();
-		timeText = Game.TextManager.Create($"{Game.State.Hour:00}:{Game.State.Minute:00}", 15, -1, palette);
-		timeText.Show(220, 70, 100);
+		// e.g. a special item was used
+		UpdateSpecialItems();
 
 		base.ScreenPopped(screen);
 
@@ -577,7 +574,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			ouchBubble = null;
         }
 
-		timeText?.Delete();
+		specialItemDisplay?.Hide();
         mapNameText!.Delete();
 
         base.Close();
@@ -719,10 +716,34 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         var playerPosition = Game.State.PartyPosition;
 
         FillMap(playerPosition.X - TilesPerRow / 2, playerPosition.Y - TileRows / 2, true);
+		UpdateSpecialItems();
 
         if (Game.Cursor.CursorType != CursorType.Disk)
             Game.SimulateMouseMoveWithoutButton(); // Update cursor (user might move by keys)
     }
+
+	/// <summary>
+	/// Shows the used special items. The compass always points north and
+	/// the coordinates on world maps are global (Show_special_items in the original).
+	/// </summary>
+	private void UpdateSpecialItems()
+	{
+		if (map == null)
+			return;
+
+		var position = Game.State.PartyPosition;
+		var coordinates = new Position(position.X + 1, position.Y + 1);
+
+		if (worldMap != null)
+		{
+			var (mapIndex, x, y) = PartyLocation;
+			coordinates = new(x + (mapIndex - 1) % WorldMapWidthInMaps * WorldMapWidth, y + (mapIndex - 1) / WorldMapWidthInMaps * WorldMapHeight);
+		}
+
+		specialItemDisplay?.Update(palette, Direction.Up, coordinates);
+	}
+
+	internal IEnumerable<string> ScriptSpecialItemDisplay => specialItemDisplay?.ShownItems ?? [];
 
 	private void AfterMove(bool ignoreEvents = false, bool moved = true)
 	{
