@@ -7,6 +7,12 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 {
 	Window? window;
 
+    public virtual int X { get; } = x;
+
+    public virtual int Y { get; } = y;
+
+    public virtual int WidthInTiles { get; } = widthInTiles;
+
     public virtual int HeightInTiles { get; } = heightInTiles;
 
 	public virtual bool CloseOnNextInput { get; } = false;
@@ -21,7 +27,7 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 
     public sealed override bool Transparent { get; } = true;
 
-    public Rect ClientArea => window?.ClientArea ?? new Rect(x, y, widthInTiles * 16, HeightInTiles * 16);
+    public Rect ClientArea => window?.ClientArea ?? new Rect(X, Y, WidthInTiles * 16, HeightInTiles * 16);
 
     public override void Init()
     {
@@ -70,7 +76,7 @@ internal abstract class WindowScreen(int x, int y, int widthInTiles, int heightI
 	{
         SetAnchor(0, 0);
 		window?.Destroy();
-		window = AddWindow(x, y, widthInTiles, HeightInTiles, Dark, windowDisplayLayer, PaletteIndex);
+		window = AddWindow(X, Y, WidthInTiles, HeightInTiles, Dark, windowDisplayLayer, PaletteIndex);
         SetAnchorToWindow(window);
     }
 

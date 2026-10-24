@@ -71,8 +71,9 @@ partial class Game
 	{
 		void Fight() => StartBattle(monsterGroupIndex, mapCharacter: mapCharacter);
 
+		// The combat requester uses a larger window than the other confirmations.
 		AskForConfirmation(LoadMessageText(Message.AttackOrFlee), () => AfterScreenClosed(Fight),
-			() => AfterScreenClosed(() => TryToAvoidBattle(monsterGroupIndex, mapCharacter)));
+			() => AfterScreenClosed(() => TryToAvoidBattle(monsterGroupIndex, mapCharacter)), true);
 	}
 
 	/// <summary>

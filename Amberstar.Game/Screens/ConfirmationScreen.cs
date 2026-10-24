@@ -3,38 +3,52 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
+/// <summary>
+/// A text with yes and no buttons. The combat requester uses a large window like the text boxes
+/// with the buttons at the left (CombatReq_DisInit in PERSONS.ASM).
+/// </summary>
 internal class ConfirmationScreen() : WindowScreen(WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, WindowDisplayLayer)
 {
 	const int WindowX = 48;
 	const int WindowY = 60;
 	const int WindowWidthInTiles = 12;
 	const int WindowHeightInTiles = 5;
+	const int LargeWindowX = 16;
+	const int LargeWindowY = 52;
+	const int LargeWindowWidthInTiles = 18;
     const byte WindowDisplayLayer = 150;
     const byte ControlDisplayLayer = 175;
     Label? text = null;
+    bool large = false;
 
     public override ScreenType Type { get; } = ScreenType.Confirmation;
 
-    public override void Init()
-    {
-        base.Init();
+    public override bool CreateWindowInOpenHandler { get; } = true;
 
-        text = AddLabel(x: 0, y: 0, "", ClientArea.Size.Width, 32, ControlDisplayLayer);
-        text.Visible = false;
+    public override int X => large ? LargeWindowX : WindowX;
 
-        var yesButton = AddButton(x: 16, y: 32, ButtonType.ThumbsUp, ControlDisplayLayer);
-        var noButton = AddButton(x: 16 + Button.Width, y: 32, ButtonType.ThumbsDown, ControlDisplayLayer);
+    public override int Y => large ? LargeWindowY : WindowY;
 
-        yesButton.ClickAction += Yes;
-        noButton.ClickAction += No;
-    }
+    public override int WidthInTiles => large ? LargeWindowWidthInTiles : WindowWidthInTiles;
 
     public override void Open(Action? closeAction)
 	{
 		if (Game.CurrentText == null)
 			throw new InvalidOperationException($"{nameof(ConfirmationScreen)} needs {nameof(Game.CurrentText)} to be set beforehand.");
 
+        large = Game.CurrentConfirmationLarge;
+        Game.CurrentConfirmationLarge = false;
+
 		base.Open(closeAction);
+
+        text = AddLabel(x: 0, y: 0, "", ClientArea.Size.Width, 32, ControlDisplayLayer);
+
+        int buttonX = large ? 0 : 16;
+        var yesButton = AddButton(x: buttonX, y: 32, ButtonType.ThumbsUp, ControlDisplayLayer);
+        var noButton = AddButton(x: buttonX + Button.Width, y: 32, ButtonType.ThumbsDown, ControlDisplayLayer);
+
+        yesButton.ClickAction += Yes;
+        noButton.ClickAction += No;
 
         Game.ScriptTextShown(Game.CurrentText);
         text!.SetText(Game.CurrentText);

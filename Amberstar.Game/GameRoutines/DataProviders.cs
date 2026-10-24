@@ -15,6 +15,10 @@ partial class Game
     internal string? CurrentWord { get; set; }
     internal bool CurrentResult { get; set; } = false;
     /// <summary>
+    /// The confirmation uses the large window of the combat requester.
+    /// </summary>
+    internal bool CurrentConfirmationLarge { get; set; } = false;
+    /// <summary>
     /// Gets the whole text as a string. In contrast to <see cref="IText.GetString"/>
     /// this contains all text fragments (e.g. all words of a message).
     /// </summary>

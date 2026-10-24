@@ -257,9 +257,10 @@ partial class Game
         AskForConfirmation(AssetProvider.TextLoader.FromString(text), confirmAction, cancelAction);
     }
 
-    internal void AskForConfirmation(IText text, Action confirmAction, Action? cancelAction = null)
+    internal void AskForConfirmation(IText text, Action confirmAction, Action? cancelAction = null, bool largeWindow = false)
     {
         CurrentText = text;
+        CurrentConfirmationLarge = largeWindow;
         ScreenHandler.PushScreen(ScreenType.Confirmation);
 
         ScreenHandler.ScreenChanged += Changed;
