@@ -330,6 +330,11 @@ partial class Game
 	/// <summary>
 	/// Adds or removes a used special item (Compass, Amberstar, MagicalPicture, WindChain, MapLocator or Clock).
 	/// </summary>
+	/// <summary>
+	/// Checks if the party uses a special item. Returns null for unknown items.
+	/// </summary>
+	public bool? ScriptHasSpecialItem(string name) => Enum.TryParse<SpecialItems>(name, true, out var specialItem) ? State.SpecialItems.HasFlag(specialItem) : null;
+
 	public string? ScriptSetSpecialItem(string name, bool active)
 	{
 		if (!Enum.TryParse<SpecialItems>(name, true, out var specialItem))
@@ -433,6 +438,24 @@ partial class Game
 	/// <summary>
 	/// Answers the shown riddlemouth with a word.
 	/// </summary>
+	/// <summary>
+	/// Selects the remaining altar piece with the given name.
+	/// </summary>
+	public string? ScriptSelectAltarPiece(string name)
+	{
+		if (ScreenHandler.ActiveScreen is not AltarScreen altarScreen)
+			return $"no altar is shown but {ScriptActiveScreen}";
+
+		return altarScreen.ScriptSelectPiece(name) ? null : $"there is no remaining altar piece {name}";
+	}
+
+	/// <summary>
+	/// The number of laid altar pieces and the name of the selected piece or null if no altar is shown.
+	/// </summary>
+	public string? ScriptAltar => ScreenHandler.FindScreen(ScreenType.Altar) is AltarScreen altarScreen
+		? $"{altarScreen.Step} {altarScreen.SelectedPieceName}"
+		: null;
+
 	public string? ScriptAnswer(string word)
 	{
 		if (ScreenHandler.ActiveScreen is not RiddlemouthScreen riddlemouthScreen)

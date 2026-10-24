@@ -48,6 +48,28 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void AltarPuzzleLoads(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+		var puzzle = assetProvider.AltarPuzzle;
+
+		Assert.NotNull(puzzle);
+		// Knowledge (Mork), the ally (Bralkur), the master of the sea (Sobek), ...
+		Assert.Equal(["MORK", "BRALKUR", "SOBEK", "GALA", "SANSRI", "NUT", "LORD TARBOS", "GEB", "BALA", "HARACHTE", "MARMION", "TALMIT"],
+			puzzle.PieceOrder.Select(piece => puzzle.PieceNames[piece]));
+		Assert.Equal(Enumerable.Range(4, IAltarPuzzle.PieceCount), puzzle.StepTextIndices);
+		Assert.Equal(Enumerable.Range(0, IAltarPuzzle.PieceCount), puzzle.PieceSigns.Order());
+		Assert.Equal(new Position(81, 1), puzzle.PiecePositions[0]);
+
+		var graphics = assetProvider.GraphicLoader.LoadPuzzleGraphics();
+
+		Assert.Equal((int)PuzzleGraphic.Count, graphics.Length);
+		Assert.Equal(176, graphics[(int)PuzzleGraphic.Background].Width);
+		Assert.Equal(96, graphics[(int)PuzzleGraphic.Center].Height);
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AllMapEventsAreKnownAndPlacedEventsExist(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

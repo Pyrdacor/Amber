@@ -36,6 +36,8 @@ using G = Game.Game;
 ///   yes / no                  answer the shown confirmation window
 ///   answer &lt;word&gt;             answer the shown riddlemouth with a word or a dictionary index like #1615
 ///   word &lt;index&gt; [text]       print a dictionary word, optionally check it
+///   altarselect &lt;name&gt;        select the remaining Amberstar piece with the given name at the altar
+///   altar [laid] [name]       print or check the number of laid Amberstar pieces and the selected piece
 ///   tile &lt;x&gt; &lt;y&gt; [tile]       print a tile of the shown map (3D: lab tile, 2D: underlay/overlay like 12/0),
 ///                             optionally check it
 ///   useitem &lt;item&gt;            use an item of the active party member at the party position like the inventory
@@ -68,6 +70,7 @@ using G = Game.Game;
 ///   characterat &lt;x&gt; &lt;y&gt; [0|1]  print if a person or monster is at a map position, optionally check it
 ///   shadow &lt;x&gt; &lt;y&gt; [0|1]      print if a position of a 2D map is in the shadow, optionally check it
 ///   setspecialitem &lt;item&gt; &lt;0|1&gt; add or remove a used special item (Compass, Amberstar, WindChain, ...)
+///   specialitem &lt;item&gt; [0|1]  print if a special item is used, optionally check it
 ///   travel [type]             print the travel type (Walk, Horse, Raft, Ship, MagicDisc, ...), optionally check it
 ///   passtime &lt;minutes&gt;        let time pass in steps of 5 minutes (poison, diseases, aging, spell durations, ...)
 ///   setactivespell &lt;name&gt; &lt;duration&gt; [value]
@@ -480,6 +483,16 @@ public sealed class ScenarioScript
 			case "characterat":
 				CheckBool($"characterat {Arg(0)},{Arg(1)}", game.ScriptCharacterPositions.Contains(new Position(Arg(0), Arg(1))), OptionalBool(2));
 				break;
+			case "specialitem":
+			{
+				var used = game.ScriptHasSpecialItem(args[0]);
+
+				if (used == null)
+					Report(false, $"unknown special item {args[0]}");
+				else
+					CheckBool($"specialitem {args[0]}", used.Value, args.Length > 1 ? ParseBool(args[1]) : null);
+				break;
+			}
 			case "setspecialitem":
 				CheckResult(game.ScriptSetSpecialItem(args[0], ParseBool(args[1])));
 				break;
@@ -568,6 +581,21 @@ public sealed class ScenarioScript
 				CheckResult(game.ScriptAnswer(argument.StartsWith('#') ? game.ScriptGetWord(int.Parse(argument[1..])) : argument));
 				continueTime = time + 1;
 				break;
+			case "altarselect":
+				CheckResult(game.ScriptSelectAltarPiece(argument));
+				break;
+			case "altar":
+			{
+				var actual = game.ScriptAltar;
+
+				if (actual == null)
+					Report(false, $"no altar is shown but {game.ScriptActiveScreen}");
+				else if (args.Length == 0)
+					output($"  altar = {actual}");
+				else
+					Report(actual.StartsWith(argument, StringComparison.OrdinalIgnoreCase), $"altar = {actual} (expected {argument})");
+				break;
+			}
 			case "word":
 			{
 				var word = game.ScriptGetWord(Arg(0));

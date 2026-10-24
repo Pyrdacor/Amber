@@ -179,7 +179,7 @@ partial class Game
 	/// The screen handler invokes the follow action of a screen while it is closed.
 	/// Further screens are opened afterwards.
 	/// </summary>
-	void AfterScreenClosed(Action action) => AddDelayedAction(0, action);
+	internal void AfterScreenClosed(Action action) => AddDelayedAction(0, action);
 
 	const int SparkleSteps = 12;
 	const long TicksPerSparkleStep = 3;

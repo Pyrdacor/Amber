@@ -45,6 +45,7 @@ public enum ScreenType
     ConversationGiveGold,
     ConversationGiveFood,
     Riddlemouth,
+    Altar,
     // Place sub screens and places
     Inn,
     Healer,
@@ -735,6 +736,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.ConversationGiveGold => new ConversationScreen.GiveGoldScreen(),
             ScreenType.ConversationGiveFood => new ConversationScreen.GiveFoodScreen(),
             ScreenType.Riddlemouth => new RiddlemouthScreen(),
+            ScreenType.Altar => new AltarScreen(),
             _ => throw new NotImplementedException()
 		};
 

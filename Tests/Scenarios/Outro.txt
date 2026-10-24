@@ -1,0 +1,8 @@
+# The outro event (map 151, 11,18) in the ritual room of Godsbane. The outro is not part of the released original source code.
+waittext
+dismissall
+cleartexts
+teleport 151 11 18
+waittext
+textshown outro
+dismissall

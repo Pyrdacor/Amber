@@ -14,6 +14,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 	private readonly Dictionary<int, IGraphic> cloudGraphics = [];
 	private readonly Dictionary<DayTime, Color[]> skyGradients = [];
     private readonly Dictionary<int, IGraphic> personPortraits = [];
+	private IGraphic[]? puzzleGraphics = null;
 
     public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
 	{
@@ -177,6 +178,32 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		LoadBackgroundsAndClouds();
 
 		return cloudGraphics;
+	}
+
+	public IGraphic[] LoadPuzzleGraphics()
+	{
+		if (puzzleGraphics != null)
+			return puzzleGraphics;
+
+		var asset = assetProvider.GetAsset(new(AssetType.PuzzleGraphics, 1));
+
+		if (asset == null)
+			throw new AmberException(ExceptionScope.Data, "Puzzle graphics not found.");
+
+		var reader = asset.GetReader();
+
+		IGraphic Load(int width, int height) => Graphic.FromBitPlanes(width, height, reader.ReadBytes(width * height / 2), 4);
+
+		var graphics = new List<IGraphic>
+		{
+			Load(176, 144),
+			Load(96, 96)
+		};
+
+		for (int i = 0; i < 2 * IAltarPuzzle.PieceCount; i++)
+			graphics.Add(Load(32, 32));
+
+		return puzzleGraphics = [.. graphics];
 	}
 
 	public IGraphic LoadItemGraphic(ItemGraphic index)

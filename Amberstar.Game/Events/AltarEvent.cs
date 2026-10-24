@@ -1,4 +1,5 @@
 using Amberstar.GameData;
+using Amberstar.Game.Screens;
 using Amberstar.GameData.Events;
 
 namespace Amberstar.Game.Events
@@ -7,7 +8,6 @@ namespace Amberstar.Game.Events
 	// It is used to assemble the Amberstar from its 13 pieces.
 	internal class AltarEvent(IAltarEvent @event, int eventIndex) : Event(@event, eventIndex), IAltarEvent
 	{
-		const uint PieceOfAmberstarItemIndex = 110;
 		const int RequiredPieces = 13;
 
 		public override bool AutoSave => false;
@@ -18,10 +18,15 @@ namespace Amberstar.Game.Events
 				return false;
 
 			// Note: The party position was already reset by the map screen (pushed away from the altar).
-			if (game.CountPartyItems(PieceOfAmberstarItemIndex) < RequiredPieces)
+			if (game.State.SpecialItems.HasFlag(SpecialItems.Amberstar))
+				return false;
+
+			if (game.CountPartyItems(Game.PieceOfAmberstarItemIndex) < RequiredPieces)
 				game.ShowTextMessage(Message.AltarRequires13);
-			else // TODO: Show the screen to assemble the Amberstar
-				game.ShowNotImplementedMessage("Assembling the Amberstar");
+			else if (game.AssetProvider.AltarPuzzle == null)
+				game.ShowNotImplementedMessage("Assembling the Amberstar without the puzzle data");
+			else
+				game.ScreenHandler.PushScreen(ScreenType.Altar);
 
 			return true;
 		}

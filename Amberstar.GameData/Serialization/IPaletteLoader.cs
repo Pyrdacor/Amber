@@ -7,6 +7,7 @@ public enum BuiltinPalette
     UI,
     Item,
 	Automap,
+	Puzzle, // the altar where the Amberstar is assembled
 }
 
 public interface IPaletteLoader

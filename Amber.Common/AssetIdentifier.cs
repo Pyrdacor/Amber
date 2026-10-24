@@ -48,6 +48,7 @@
 		Palette,
 		Music,
 		Chest,
+		PuzzleGraphics, // Amberstar assembling graphics
 	}
 
 	public struct AssetIdentifier

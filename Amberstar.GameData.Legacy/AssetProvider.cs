@@ -34,6 +34,7 @@ public enum EmbeddedDataOffset
 	Music,
 	EnterWordLabel,
 	ShadowTable, // SHADOW.DAT
+	AltarPuzzle,
 }
 
 public class AssetProvider : IAssetProvider
@@ -77,6 +78,26 @@ public class AssetProvider : IAssetProvider
         0x04, 0x51,
         0x04, 0x44,
         0x07, 0x65
+    ]));
+    // The palette of the altar puzzle which is stored right before the puzzle data.
+    private static readonly IGraphic PuzzlePalette = Legacy.PaletteLoader.LoadPalette(new DataReader(
+    [
+        0x00, 0x00,
+        0x05, 0x21,
+        0x03, 0x33,
+        0x02, 0x22,
+        0x01, 0x11,
+        0x07, 0x63,
+        0x07, 0x51,
+        0x06, 0x40,
+        0x05, 0x30,
+        0x04, 0x20,
+        0x03, 0x10,
+        0x02, 0x00,
+        0x00, 0x12,
+        0x01, 0x22,
+        0x04, 0x10,
+        0x06, 0x66
     ]));
     private static readonly IGraphic AutomapPalette = Legacy.PaletteLoader.LoadPalette(new DataReader(
     [
@@ -134,6 +155,7 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<IClassDataLoader> classDataLoader;
     readonly Lazy<ISpellDataLoader> spellDataLoader;
     readonly Lazy<IShadowTable> shadowTable;
+    readonly Lazy<IAltarPuzzle?> altarPuzzle;
     readonly Lazy<ISongLoader> songLoader;
 
     private ProgramData Data => programData.Value;
@@ -157,6 +179,7 @@ public class AssetProvider : IAssetProvider
     public IClassDataLoader ClassDataLoader => classDataLoader.Value;
     public ISpellDataLoader SpellDataLoader => spellDataLoader.Value;
     public IShadowTable ShadowTable => shadowTable.Value;
+    public IAltarPuzzle? AltarPuzzle => altarPuzzle.Value;
     public ISongLoader SongLoader => songLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -185,6 +208,7 @@ public class AssetProvider : IAssetProvider
 			{ BuiltinPalette.UI, UIPalette },
             { BuiltinPalette.Item, ItemPalette },
             { BuiltinPalette.Automap, AutomapPalette },
+            { BuiltinPalette.Puzzle, PuzzlePalette },
         };
 
 		textLoader = new(() => new TextLoader(this, Data.TextFragments));
@@ -208,6 +232,7 @@ public class AssetProvider : IAssetProvider
         classDataLoader = new(() => new ClassDataLoader(() => Data.ClassData));
         spellDataLoader = new(() => new SpellDataLoader(() => Data.SpellData));
         shadowTable = new(() => new ShadowTable(Data.ShadowData));
+        altarPuzzle = new(() => Data.AltarPuzzleData.Length == 0 ? null : new AltarPuzzle(Data.AltarPuzzleData));
         songLoader = new(() => new SongLoader(this, Platform));
     }
 
@@ -409,6 +434,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.MapText => "MAPTEXT.AMB",
 			AssetType.ItemText => "CODETXT.AMB",
 			AssetType.PuzzleText => "PUZZLE.TXT",
+			AssetType.PuzzleGraphics => "PUZZLE.ICN",
 			AssetType.Palette => "COL_PALL.AMB",
 			AssetType.Graphics80x80 => "PICS80.AMB",
 			AssetType.Tileset => "ICON_DAT.AMB",
@@ -548,6 +574,10 @@ public class AssetProvider : IAssetProvider
 			case EmbeddedDataOffset.ShadowTable:
 				// The first offsets of the shadow table
 				return FindAndGotoByteSequence(dataReader, 0x2a000, 0x00, 0x00, 0x00, 0xc6, 0x01, 0x68, 0x01, 0xe8, 0x02, 0x4a);
+			case EmbeddedDataOffset.AltarPuzzle:
+				// The text indices and the piece order
+				return FindAndGotoByteSequence(dataReader, 0, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+					0x07, 0x02, 0x0b, 0x04, 0x0c, 0x08, 0x01, 0x09, 0x05, 0x0a, 0x03, 0x06);
             default:
 				return false;
 		}

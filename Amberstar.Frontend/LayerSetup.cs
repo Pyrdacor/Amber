@@ -110,6 +110,9 @@ namespace Amberstar.Frontend
                 partyMemberPortraitIndices.Add(partyMemberPortrait.Key, graphics.Count);
                 graphics.Add(graphics.Count, partyMemberPortrait.Value);
             }
+			int puzzleGraphicOffset = graphics.Count;
+			foreach (var graphic in assetProvider.GraphicLoader.LoadPuzzleGraphics())
+				graphics.Add(graphics.Count, graphic);
             layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.7f,
@@ -260,7 +263,7 @@ namespace Amberstar.Frontend
             graphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
-				partyMemberPortraitIndices);
+				partyMemberPortraitIndices, puzzleGraphicOffset);
 			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);

@@ -25,4 +25,8 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
     ISpellDataLoader SpellDataLoader { get; }
     ISongLoader SongLoader { get; }
     IShadowTable ShadowTable { get; }
+	/// <summary>
+	/// The altar puzzle data or null if it was not found in the program data.
+	/// </summary>
+	IAltarPuzzle? AltarPuzzle { get; }
 }

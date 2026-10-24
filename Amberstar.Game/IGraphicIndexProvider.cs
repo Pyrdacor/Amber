@@ -16,4 +16,5 @@ public interface IGraphicIndexProvider
 	int GetLabBlockGraphicIndex(int labBlockIndex, PerspectiveLocation location, BlockFacing facing);
 	int GetCursorGraphicIndex(CursorType cursorType);
 	int GetPersonPortraitIndex(int index);
+	int GetPuzzleGraphicIndex(PuzzleGraphic graphic, int index = 0);
 }

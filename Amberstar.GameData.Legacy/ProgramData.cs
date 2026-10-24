@@ -362,6 +362,12 @@ namespace Amberstar.GameData.Legacy
 			if (dataSeeker(EmbeddedDataOffset.ShadowTable, dataReader))
 				ShadowData = dataReader.ReadBytes(Legacy.ShadowTable.DetermineSize(dataReader));
 			#endregion
+
+			#region Altar puzzle
+			// Note: Without the puzzle data the Amberstar can't be assembled.
+			if (dataSeeker(EmbeddedDataOffset.AltarPuzzle, dataReader))
+				AltarPuzzleData = dataReader.ReadBytes(Legacy.AltarPuzzle.DetermineSize(dataReader));
+			#endregion
         }
 
         private static string ReadString(IDataReader dataReader, byte endByte = 0)
@@ -445,6 +451,7 @@ namespace Amberstar.GameData.Legacy
         public List<byte[]> ClassData { get; } = [];
         public byte[] SpellData { get; private set; } = [];
         public byte[] ShadowData { get; private set; } = [];
+        public byte[] AltarPuzzleData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

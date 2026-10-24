@@ -12,4 +12,8 @@ public interface IGraphicLoader
     IReadOnlyDictionary<int, IGraphic> LoadAllCloudGraphics();
     IReadOnlyDictionary<DayTime, Color[]> LoadSkyGradients();
     IReadOnlyDictionary<int, IGraphic> LoadPersonPortraits();
+	/// <summary>
+	/// Loads the graphics of the altar puzzle in the order of <see cref="PuzzleGraphic"/>.
+	/// </summary>
+	IGraphic[] LoadPuzzleGraphics();
 }
