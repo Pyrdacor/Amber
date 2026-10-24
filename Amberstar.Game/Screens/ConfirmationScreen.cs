@@ -1,11 +1,12 @@
 ﻿using Amberstar.Game.UI;
+using Amberstar.GameData;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game.Screens;
 
 /// <summary>
 /// A text with yes and no buttons. The combat requester uses a large window like the text boxes
-/// with the buttons at the left (CombatReq_DisInit in PERSONS.ASM).
+/// with the sword and flee buttons at the left (CombatReq_DisInit in PERSONS.ASM).
 /// </summary>
 internal class ConfirmationScreen() : WindowScreen(WindowX, WindowY, WindowWidthInTiles, WindowHeightInTiles, WindowDisplayLayer)
 {
@@ -43,9 +44,13 @@ internal class ConfirmationScreen() : WindowScreen(WindowX, WindowY, WindowWidth
 
         text = AddLabel(x: 0, y: 0, "", ClientArea.Size.Width, 32, ControlDisplayLayer);
 
+        // The combat requester shows the sword (fight) and flee buttons and the sword cursor.
         int buttonX = large ? 0 : 16;
-        var yesButton = AddButton(x: buttonX, y: 32, ButtonType.ThumbsUp, ControlDisplayLayer);
-        var noButton = AddButton(x: buttonX + Button.Width, y: 32, ButtonType.ThumbsDown, ControlDisplayLayer);
+        var yesButton = AddButton(x: buttonX, y: 32, large ? ButtonType.Sword : ButtonType.ThumbsUp, ControlDisplayLayer);
+        var noButton = AddButton(x: buttonX + Button.Width, y: 32, large ? ButtonType.Flee : ButtonType.ThumbsDown, ControlDisplayLayer);
+
+        if (large)
+            Game.Cursor.CursorType = CursorType.Sword;
 
         yesButton.ClickAction += Yes;
         noButton.ClickAction += No;
