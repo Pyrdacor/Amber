@@ -12,6 +12,8 @@ battleresult PartyDefeated
 animationshown attack
 waittext
 textshown GÖTTIN BALA
+# --- the death song is played
+song 19
 dismissall
 map 65
 value 1 hp

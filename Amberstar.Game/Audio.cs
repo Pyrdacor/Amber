@@ -80,7 +80,7 @@ partial class Game
         {
             if (!music.TryGetValue(songIndex, out var audioStream))
             {
-                audioStream = new AudioStream(AssetProvider, songIndex, 0);
+                audioStream = new AudioStream(AssetProvider, AssetProvider.SongLoader.GetMusicIndex(songIndex), 0);
                 music.Add(songIndex, audioStream);
             }
 

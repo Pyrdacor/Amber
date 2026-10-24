@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amberstar.Game.Battle;
 using MapCharacter = Amberstar.Game.Characters.MapCharacter;
 using Amberstar.Game.Screens;
@@ -14,6 +14,8 @@ internal sealed record BattleLoot(List<(IItem Item, int Count)> Items, int Gold,
 partial class Game
 {
 	const int BattleSong = 16;
+	// played when the party is defeated (by Shandra's rescue and the game over)
+	const int DeathSong = 19;
 	// Shandra rescues the party if this quest bit is set and the party is lucky.
 	const int ShandraQuestBit = 6;
 	const int ResurrectionMap = 70;
@@ -295,7 +297,7 @@ partial class Game
 	/// </summary>
 	void Resurrection()
 	{
-		// TODO: The original plays song 19 but only 16 songs are loaded from the program data so far.
+		PlaySong(DeathSong);
 
 		State.Day++;
 		State.TravelledDays++;
@@ -334,7 +336,7 @@ partial class Game
 	/// </summary>
 	void GameOver()
 	{
-		// TODO: The original plays song 19 but only 16 songs are loaded from the program data so far.
+		PlaySong(DeathSong);
 		ScreenHandler.ClearAllScreens();
 		ShowTextMessage(LoadMessageText(Message.PartyDeath), () => AfterScreenClosed(RestartGame));
 	}

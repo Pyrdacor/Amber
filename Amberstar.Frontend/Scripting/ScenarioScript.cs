@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amberstar.Game;
 using Amberstar.GameData;
 
@@ -140,6 +140,7 @@ using G = Game.Game;
 ///                             Clairvoyance or Invisibility), optionally check it
 ///   activate &lt;slot&gt;           make the party member in slot 1-6 the active one
 ///   activemember [slot]     print or check the slot of the active party member
+///   song [index]              print or check the song which the game plays (1-19, also while the music is off)
 ///   value &lt;slot&gt; &lt;name&gt; [v]   print a party member value (gold, food, hp, maxhp, sp, maxsp, level, exp, slp,
 ///                             weight, defense, damage, hands, fingers, spellschools or an attribute or skill name),
 ///                             optionally check it
@@ -858,6 +859,9 @@ public sealed class ScenarioScript
 				break;
 			case "wordknown":
 				CheckBool($"wordknown {Arg(0)}", game.ScriptIsWordKnown(Arg(0)), OptionalBool(1));
+				break;
+			case "song":
+				CheckValue("song", game.ScriptSong, args.FirstOrDefault());
 				break;
 			case "partysize":
 				CheckValue("partysize", game.ScriptPartySize, args.FirstOrDefault());

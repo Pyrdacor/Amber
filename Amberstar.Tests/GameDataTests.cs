@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amber.Serialization;
 using Amberstar.GameData;
 
@@ -91,6 +91,13 @@ public sealed class GameDataTests
 		var one = assetProvider.CombatData.GetDamageDigit(1).GetData();
 		// .### in the 2nd line of the digit 1
 		Assert.Equal([0, ICombatData.DamageDigitColorIndex, ICombatData.DamageDigitColorIndex, ICombatData.DamageDigitColorIndex], one[4..8]);
+
+		// 19 songs use the 17 music modules (Play_song in the original)
+		Assert.Equal(19, assetProvider.SongLoader.SongCount);
+		Assert.Equal(7, assetProvider.SongLoader.GetMusicIndex(6));
+		Assert.Equal(14, assetProvider.SongLoader.GetMusicIndex(16));
+		Assert.Equal(17, assetProvider.SongLoader.GetMusicIndex(19));
+		Assert.NotNull(assetProvider.SongLoader.LoadSong(17, 0));
 
 		// the combat messages are the last message file
 		Assert.NotEmpty(assetProvider.TextLoader.LoadText(new(Amber.Common.AssetType.Message, (int)Message.GoesBlind)).GetString());

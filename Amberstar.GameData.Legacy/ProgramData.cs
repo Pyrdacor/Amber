@@ -327,20 +327,23 @@ namespace Amberstar.GameData.Legacy
             if (!dataSeeker(EmbeddedDataOffset.Music, dataReader))
                 throw new AmberException(ExceptionScope.Application, "Could not find the music data in the program file.");
 
-            const int SongCount = 16; // TODO
+            // The music modules follow each other (17 in the Atari ST versions).
+            var musicPositions = new List<int>();
 
-            for (int i = 1; i <= SongCount; i++)
+            while (dataReader.Position + 0x20 <= dataReader.Size && dataReader.PeekDword() == 0x434f534f) // COSO
             {
                 int position = dataReader.Position;
                 dataReader.Position += 0x1c; // there is the total size
                 int songDataSize = (int)dataReader.ReadDword();
                 dataReader.Position = position;
-                Songs.Add(i, new DataReader(dataReader.ReadBytes(songDataSize)));
-
-                if (dataReader.PeekDword() != 0x434f534f)
-                    throw new AmberException(ExceptionScope.Application, $"Could not find data for song {i}.");
+                musicPositions.Add(position);
+                Songs.Add(musicPositions.Count, new DataReader(dataReader.ReadBytes(songDataSize)));
             }
-            // TODO
+
+            if (Songs.Count == 0)
+                throw new AmberException(ExceptionScope.Application, "Could not find the music data in the program file.");
+
+            SongMusicIndices = FindSongTable(dataReader, musicPositions);
             #endregion
             #region Cursors
             if (!dataSeeker(EmbeddedDataOffset.Cursors, dataReader))
@@ -393,6 +396,57 @@ namespace Amberstar.GameData.Legacy
 			if (dataSeeker(EmbeddedDataOffset.AltarPuzzle, dataReader))
 				AltarPuzzleData = dataReader.ReadBytes(Legacy.AltarPuzzle.DetermineSize(dataReader));
 			#endregion
+        }
+
+        /// <summary>
+        /// The songs (1 to 19) are mapped to the music modules by a table of module addresses ($316dc in the
+        /// German program, used by Play_song). Some modules are used for several songs. The table is found by the
+        /// distances of the first 5 modules (songs 1-5 use modules 1-5). Without the table each song uses its module.
+        /// </summary>
+        private static List<int> FindSongTable(IDataReader dataReader, List<int> musicPositions)
+        {
+            const int MaxSongs = 19;
+            var identity = Enumerable.Range(1, musicPositions.Count).ToList();
+
+            if (musicPositions.Count < 5)
+                return identity;
+
+            int position = dataReader.Position;
+            dataReader.Position = 0;
+            var data = dataReader.ReadBytes(dataReader.Size);
+            dataReader.Position = position;
+
+            uint ReadLong(int offset) => (uint)((data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3]);
+
+            for (int offset = 0; offset + 4 * MaxSongs <= data.Length; offset += 2)
+            {
+                uint first = ReadLong(offset);
+                bool found = true;
+
+                for (int i = 1; i < 5 && found; i++)
+                    found = ReadLong(offset + i * 4) - first == musicPositions[i] - musicPositions[0];
+
+                if (!found)
+                    continue;
+
+                // the addresses are relative to the program start
+                long baseOffset = musicPositions[0] - (long)first;
+                var musicIndices = new List<int>();
+
+                for (int song = 0; song < MaxSongs; song++)
+                {
+                    int index = musicPositions.IndexOf((int)(ReadLong(offset + song * 4) + baseOffset));
+
+                    if (index == -1)
+                        break;
+
+                    musicIndices.Add(1 + index);
+                }
+
+                return musicIndices;
+            }
+
+            return identity;
         }
 
         private static string ReadString(IDataReader dataReader, byte endByte = 0)
@@ -502,6 +556,10 @@ namespace Amberstar.GameData.Legacy
 		public Dictionary<int, IDataReader> Windows { get; } = [];
 		public Dictionary<int, IDataReader> Cursors { get; } = [];
         public Dictionary<int, IDataReader> Songs { get; } = [];
+        /// <summary>
+        /// The music index (1-based) of each song (1-based).
+        /// </summary>
+        public List<int> SongMusicIndices { get; private set; } = [];
         public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;

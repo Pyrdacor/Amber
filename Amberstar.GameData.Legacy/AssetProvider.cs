@@ -244,7 +244,7 @@ public class AssetProvider : IAssetProvider
         monsterGroupLoader = new(() => new MonsterGroupLoader(this));
         combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData,
 			Data.SpellAnimationData, Data.DamageDigitData));
-        songLoader = new(() => new SongLoader(this, Platform));
+        songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices));
     }
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;

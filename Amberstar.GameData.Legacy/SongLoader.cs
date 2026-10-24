@@ -3,8 +3,12 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, LegacyPlatform platform) : ISongLoader
+internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, LegacyPlatform platform, List<int> songMusicIndices) : ISongLoader
 {
+    public int SongCount => songMusicIndices.Count;
+
+    public int GetMusicIndex(int song) => song >= 1 && song <= songMusicIndices.Count ? songMusicIndices[song - 1] : song;
+
     readonly Dictionary<int, List<HippelCosoSong>> music = [];
 
     public ISong LoadSong(int musicIndex, int songIndex)

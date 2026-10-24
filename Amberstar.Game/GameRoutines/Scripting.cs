@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amberstar.Game.Events;
 using Amberstar.Game.Screens;
 using Amberstar.GameData;
@@ -55,6 +55,11 @@ partial class Game
 	public bool ScriptInputEnabled => InputEnabled;
 
 	public bool ScriptPaused => Paused;
+
+	/// <summary>
+	/// The song which the game wants to play (also while the music is off).
+	/// </summary>
+	public int ScriptSong => requestedSongIndex;
 
 	public bool ScriptFading => fadeArea != null;
 
