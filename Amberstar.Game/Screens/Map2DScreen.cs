@@ -1,4 +1,4 @@
-﻿using Amber.Common;
+using Amber.Common;
 using Amber.Renderer.Common;
 using Amberstar.Game.Events;
 using Amberstar.Game.UI;
@@ -645,45 +645,6 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		int newX = MathUtil.Limit(0, oldPosition.X + x, map!.Width - 1);
 		int newY = MathUtil.Limit(0, oldPosition.Y + y, map.Height - 1);
 
-		bool TileBlocksMovement(int x, int y)
-		{
-			// Some events like teleports seem to allow movement. (TODO: any other events?)
-			var @event = GetEvent(x, y);
-
-			if (@event != null)
-			{
-				// TODO: we should check if the event is still active
-				if (@event.Type == EventType.MapExit ||
-					@event.Type == EventType.Teleporter ||
-					@event.Type == EventType.TrapDoor ||
-                    @event.Type == EventType.Door ||
-                    @event.Type == EventType.Place ||
-                    @event.Type == EventType.TravelExit ||
-					(@event.Type == EventType.WindGate && Game.State.HasWindChain))
-					return false;
-			}
-
-			var targetTile = map!.Tiles[x + y * map.Width];
-			
-			if (targetTile.Overlay != 0)
-			{
-                var flags = GetTileInfo(targetTile.Overlay).Flags;
-
-				if (!flags.HasFlag(TileFlags.UnderlayHasPriority))
-					return BlocksMovement(flags);
-            }
-
-			if (targetTile.Underlay == 0)
-				return false;
-
-			return BlocksMovement(GetTileInfo(targetTile.Underlay).Flags);
-		}
-
-		bool BlocksMovement(TileFlags flags)
-		{
-			return flags.HasFlag(TileFlags.BlockAllMovement) || !flags.HasFlag((TileFlags)(1 << (8 + (int)Game.State.TravelType)));
-		}
-
 		if (TileBlocksMovement(newX, newY))
 		{
 			if (newY != oldPosition.Y && !TileBlocksMovement(oldPosition.X, newY))
@@ -711,6 +672,45 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		return true;
 	}
 
+	private bool TileBlocksMovement(int x, int y)
+	{
+		// Some events like teleports seem to allow movement. (TODO: any other events?)
+		var @event = GetEvent(x, y);
+
+		if (@event != null)
+		{
+			// TODO: we should check if the event is still active
+			if (@event.Type == EventType.MapExit ||
+				@event.Type == EventType.Teleporter ||
+				@event.Type == EventType.TrapDoor ||
+                @event.Type == EventType.Door ||
+                @event.Type == EventType.Place ||
+                @event.Type == EventType.TravelExit ||
+				(@event.Type == EventType.WindGate && Game.State.HasWindChain))
+				return false;
+		}
+
+		var targetTile = map!.Tiles[x + y * map.Width];
+		
+		if (targetTile.Overlay != 0)
+		{
+            var flags = GetTileInfo(targetTile.Overlay).Flags;
+
+			if (!flags.HasFlag(TileFlags.UnderlayHasPriority))
+				return BlocksMovement(flags);
+        }
+
+		if (targetTile.Underlay == 0)
+			return false;
+
+		return BlocksMovement(GetTileInfo(targetTile.Underlay).Flags);
+	}
+
+	private bool BlocksMovement(TileFlags flags)
+	{
+		return flags.HasFlag(TileFlags.BlockAllMovement) || !flags.HasFlag((TileFlags)(1 << (8 + (int)Game.State.TravelType)));
+	}
+
 	private void UpdateMap()
 	{
         if (worldMap != null)
@@ -726,6 +726,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 	private void AfterMove(bool ignoreEvents = false, bool moved = true)
 	{
+		if (moved)
+			Game.XRayVisionStep();
+
 		UpdateMap();
 
 		if (moved)
@@ -1459,7 +1462,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	{
 		var shadowedTiles = new HashSet<Position>();
 
-		if (Game.State.TravelType >= TravelType.Eagle)
+		if (Game.State.TravelType >= TravelType.Eagle || Game.XRayVisionStepsLeft > 0)
 			return shadowedTiles;
 
 		var shadowTable = Game.AssetProvider.ShadowTable;
@@ -1685,6 +1688,42 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		Game.Time.TravelTypeChanged();
 		UpdateMap();
 		RequestButtonSetup();
+	}
+
+	/// <summary>
+	/// Finds the farthest tile in the party direction inside the view where the party
+	/// could move to. Returns null if there is none (Teleport spell).
+	/// </summary>
+	internal Position? FindTeleportTarget()
+	{
+		if (worldMap == null)
+			return null;
+
+		var position = Game.State.PartyPosition;
+		var (offsetX, offsetY, distance) = Game.State.PartyDirection switch
+		{
+			Direction.Up => (0, -1, TileRows / 2),
+			Direction.Right => (1, 0, TilesPerRow / 2),
+			Direction.Down => (0, 1, TileRows / 2),
+			_ => (-1, 0, TilesPerRow / 2)
+		};
+
+		for (; distance > 1; distance--)
+		{
+			int x = position.X + offsetX * distance;
+			int y = position.Y + offsetY * distance;
+
+			if (x >= 0 && y >= 0 && x < map!.Width && y < map.Height && !TileBlocksMovement(x, y))
+				return new(x, y);
+		}
+
+		return null;
+	}
+
+	internal void TeleportParty(Position target)
+	{
+		Game.State.SetPartyPosition(target.X, target.Y);
+		AfterMove();
 	}
 
 	internal byte Palette => palette;

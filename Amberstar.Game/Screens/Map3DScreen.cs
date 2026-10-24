@@ -180,6 +180,8 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			SetLayout();
             images.ForEach(image => image.Visible = true);
 			skyGradient.ForEach(g => g.Visible = true);
+			// e.g. x-ray vision was cast
+			UpdateView();
             mapNameText!.Visible = true;
 			darkness!.Visible = true;
         }
@@ -479,6 +481,10 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 	private void AfterMove(bool moved = true)
 	{
 		var playerPosition = Game.State.PartyPosition;
+
+		if (moved)
+			Game.XRayVisionStep();
+
 		UpdateView();
 		UpdateAutomap();
 
@@ -1117,6 +1123,10 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 			void DrawBlock(ILabBlock labBlock, int? customRenderX = null)
 			{
 				if (labBlock.Type != LabBlockType.Wall && i > 11)
+					return;
+
+				// With x-ray vision the party sees through the walls up to the farthest row.
+				if (labBlock.Type == LabBlockType.Wall && Game.XRayVisionStepsLeft > 0 && i is > (int)PerspectiveLocation.Forward3 and < (int)PerspectiveLocation.PlayerLocation)
 					return;
 
 				if (i > 11)

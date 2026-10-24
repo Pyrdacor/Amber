@@ -29,6 +29,22 @@ partial class Game
 	ISpellData? currentSpellData;
 	// party members whose attacks were doubled by haste (Hurry_bitlist in the original)
 	readonly HashSet<IPartyMember> hastedPartyMembers = [];
+	// Note: X-ray vision is not part of the original source code. Here it lasts some steps.
+	const int XRayVisionSteps = 10;
+
+	/// <summary>
+	/// The remaining steps in which the party sees through walls.
+	/// </summary>
+	internal int XRayVisionStepsLeft { get; private set; }
+
+	/// <summary>
+	/// Counts down the x-ray vision when the party moved.
+	/// </summary>
+	internal void XRayVisionStep()
+	{
+		if (XRayVisionStepsLeft > 0)
+			XRayVisionStepsLeft--;
+	}
 
 	/// <summary>
 	/// The party member who casts the spell.
@@ -683,8 +699,24 @@ partial class Game
 			case GraySpell.Levitation:
 				Levitate(finished);
 				break;
+			// Note: Teleport and x-ray vision are not part of the original source code.
+			case GraySpell.Teleport:
+				if (ScreenHandler.FindMapScreen() is not Map2DScreen mapScreen || mapScreen.FindTeleportTarget() is not Position target)
+					ShowTextMessage(LoadMessageText(Message.SpellDoesNotWorkHere), finished);
+				else if (TrySpell(finished))
+				{
+					finished();
+					mapScreen.TeleportParty(target);
+				}
+				break;
+			case GraySpell.XRayVision:
+				if (TrySpell(finished))
+				{
+					XRayVisionStepsLeft = XRayVisionSteps;
+					finished();
+				}
+				break;
 			default:
-				// TODO: Teleport and x-ray vision are not part of the original source code.
 				ShowNotImplementedMessage($"The spell {spell}", finished);
 				break;
 		}
