@@ -1,7 +1,55 @@
-using Amber.Assets.Common;
+﻿using Amber.Assets.Common;
 using Amber.Common;
 
 namespace Amberstar.GameData;
+
+/// <summary>
+/// The palettes of the outro pictures. Some lines use another palette (raster interrupts in the original).
+/// </summary>
+public enum OutroPalette
+{
+	ThroneRoom,
+	/// <summary>
+	/// From line <see cref="IOutroData.ThroneRoomLowerLine"/> color 5 differs.
+	/// </summary>
+	ThroneRoomLower,
+	/// <summary>
+	/// The sky of the balcony above line <see cref="IOutroData.LandscapeLine"/>.
+	/// </summary>
+	Sky,
+	/// <summary>
+	/// Replaces the sky palette when the third moon gets red.
+	/// </summary>
+	RedMoon,
+	Landscape,
+	/// <summary>
+	/// From line <see cref="IOutroData.LandscapeLowerLine"/> color 5 differs.
+	/// </summary>
+	LandscapeLower
+}
+
+/// <summary>
+/// The graphics of the outro. The pictures are split into the parts with different palettes.
+/// </summary>
+public enum OutroGraphic
+{
+	ThroneRoomTop,
+	ThroneRoomBottom,
+	BalconySky,
+	BalconyLandscape,
+	BalconyLower,
+	LeftTorch,
+	RightTorch,
+	Chancellor,
+	PartyFigure,
+	Eagle,
+	Dragon,
+	Flyer,
+	Moon,
+	BalconyPerson1,
+	BalconyPerson2,
+	BalconyPerson3
+}
 
 /// <summary>
 /// The data of the outro (EXTRO.68K, a separate program of the original). The chancellor speaks to the party
@@ -16,8 +64,6 @@ public interface IOutroData
 	/// The throne room (320x200). The lines from <see cref="ThroneRoomLowerLine"/> use the lower palette.
 	/// </summary>
 	IGraphic ThroneRoom { get; }
-	IGraphic ThroneRoomPalette { get; }
-	IGraphic ThroneRoomLowerPalette { get; }
 	public const int ThroneRoomLowerLine = 100;
 
 	/// <summary>
@@ -25,12 +71,26 @@ public interface IOutroData
 	/// by the red moon palette later. The landscape lines from <see cref="LandscapeLowerLine"/> use the lower palette.
 	/// </summary>
 	IGraphic Balcony { get; }
-	IGraphic SkyPalette { get; }
-	IGraphic RedMoonPalette { get; }
-	IGraphic LandscapePalette { get; }
-	IGraphic LandscapeLowerPalette { get; }
 	public const int LandscapeLine = 68;
 	public const int LandscapeLowerLine = 82;
+
+	/// <summary>
+	/// Gets a palette while it fades: 0 is the normal palette, 1 to <see cref="FadeSteps"/> - 1 fade in from black
+	/// (each color channel is increased by 1 per step), -1 to -<see cref="FadeSteps"/> fade out (each channel is
+	/// decreased by 1 per step). The palettes have 16 colors.
+	/// </summary>
+	IGraphic GetPalette(OutroPalette palette, int fadeStep = 0);
+	public const int FadeSteps = 7;
+
+	/// <summary>
+	/// Gets the frames of a graphic (the picture parts have 1 frame).
+	/// </summary>
+	IReadOnlyList<IGraphic> GetGraphics(OutroGraphic graphic);
+
+	/// <summary>
+	/// The characters of all texts (for which glyphs are needed).
+	/// </summary>
+	IEnumerable<char> UsedCharacters => ChancellorTexts.Concat(BalconyTexts).SelectMany(text => text).Distinct();
 
 	IReadOnlyList<IGraphic> LeftTorch { get; }
 	IReadOnlyList<IGraphic> RightTorch { get; }

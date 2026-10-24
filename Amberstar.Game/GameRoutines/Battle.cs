@@ -341,7 +341,10 @@ partial class Game
 		ShowTextMessage(LoadMessageText(Message.PartyDeath), () => AfterScreenClosed(RestartGame));
 	}
 
-	void RestartGame()
+	/// <summary>
+	/// Loads the savegame or starts the game again (also after the outro).
+	/// </summary>
+	internal void RestartGame()
 	{
 		if (HasSavegame)
 		{

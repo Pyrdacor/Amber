@@ -59,6 +59,15 @@ internal class Image : Control
         image.TextureOffset = textureAtlas.GetOffset(textureIndex);
     }
 
+    /// <summary>
+    /// Shows a part of the texture which starts at the given offset (e.g. for clipped images).
+    /// </summary>
+    public void SetTextureIndex(int textureIndex, Position offset)
+    {
+        var textureAtlas = image.Layer.Config.Texture!;
+        image.TextureOffset = textureAtlas.GetOffset(textureIndex) + offset;
+    }
+
     public override void Destroy()
     {
         base.Destroy();

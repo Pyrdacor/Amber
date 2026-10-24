@@ -20,7 +20,12 @@ namespace Amberstar.Frontend
 			var tilesetPalettes = Enumerable.Range(1, 2).Select(index => assetProvider.TilesetLoader.LoadTileset(index).Palette).ToArray();
 			var image80x80Palettes = Enumerable.Range(1, 26).Select(index => assetProvider.GraphicLoader.Load80x80Graphic((Image80x80)index).Palette).ToArray();
 			var combatPalettes = Enumerable.Range(1, ICombatData.CombatBackgroundCount).Select(assetProvider.CombatData.GetPalette).ToArray();
-			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length, GraphicFormat.RGBA);
+			// the outro palettes with all fading steps
+			var outroData = assetProvider.OutroData;
+			var outroPalettes = outroData == null ? [] : Enum.GetValues<OutroPalette>()
+				.SelectMany(outroPalette => Enumerable.Range(-IOutroData.FadeSteps, 2 * IOutroData.FadeSteps)
+					.Select(step => (Key: (outroPalette, step), Palette: outroData.GetPalette(outroPalette, step)))).ToArray();
+			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length + outroPalettes.Length, GraphicFormat.RGBA);
             var generalPaletteIndices = new Dictionary<int, byte>();
 			var palettes = new Dictionary<int, IGraphic>();
             byte y = 0;
@@ -63,6 +68,15 @@ namespace Amberstar.Frontend
 				combatPaletteIndices.Add(i + 1, y);
 				palettes.Add(y, combatPalettes[i]);
 				palette.AddOverlay(0, y++, combatPalettes[i]);
+			}
+
+			var outroPaletteIndices = new Dictionary<(OutroPalette, int), byte>();
+
+			foreach (var (key, outroPalette) in outroPalettes)
+			{
+				outroPaletteIndices.Add(key, y);
+				palettes.Add(y, outroPalette);
+				palette.AddOverlay(0, y++, outroPalette);
 			}
 
 			var paletteTexture = renderer.TextureFactory.Create(palette);
@@ -135,6 +149,26 @@ namespace Amberstar.Frontend
 			int damageDigitOffset = graphics.Count;
 			for (int i = 0; i < 10; i++)
 				graphics.Add(graphics.Count, assetProvider.CombatData.GetDamageDigit(i));
+			var outroGraphicOffsets = new Dictionary<OutroGraphic, int>();
+			var outroGlyphIndices = new Dictionary<char, int>();
+			if (outroData != null)
+			{
+				foreach (var outroGraphic in Enum.GetValues<OutroGraphic>())
+				{
+					outroGraphicOffsets.Add(outroGraphic, graphics.Count);
+					foreach (var graphic in outroData.GetGraphics(outroGraphic))
+						graphics.Add(graphics.Count, graphic);
+				}
+				foreach (char ch in outroData.UsedCharacters)
+				{
+					var glyph = outroData.GetGlyph(ch);
+					if (glyph != null)
+					{
+						outroGlyphIndices.Add(ch, graphics.Count);
+						graphics.Add(graphics.Count, glyph);
+					}
+				}
+			}
 			var monsterGraphicOffsets = new Dictionary<int, int>();
 			foreach (int monsterGraphic in assetProvider.GetAssetKeys(Amber.Common.AssetType.MonsterGraphics))
 			{
@@ -293,8 +327,9 @@ namespace Amberstar.Frontend
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
 				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets,
-				spellAnimationOffset, damageDigitOffset);
-			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices);
+				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices);
+			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices,
+				outroPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

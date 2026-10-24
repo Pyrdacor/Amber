@@ -44,6 +44,7 @@ using G = Game.Game;
 ///   battlecell &lt;x&gt; &lt;y&gt; [name|empty] print or check the participant at a 0-based battle field cell
 ///   battleresult [result]     print or check the battle result (Ongoing, Won, PartyFled, PartyDefeated, none)
 ///   leavebattle               leave the shown battle as if the party fled (closeall does this as well)
+///   (closeall also leaves the outro without restarting the game)
 ///   startbattle &lt;group&gt;       start a battle against a monster group without the request
 ///   loot [gold food items]    print or check the gold, food and item count of the shown loot
 ///   lootgive &lt;slot&gt;           give the item chosen with the give button of the loot to a party member
@@ -1021,6 +1022,8 @@ public sealed class ScenarioScript
 			game.ScriptAnswer(false);
 		else if (game.ScriptActiveScreen == "Battle")
 			game.ScriptLeaveBattle();
+		else if (game.ScriptActiveScreen == "Outro")
+			game.ScriptLeaveOutro();
 		else if (game.ScriptActiveScreen is not ("Map2D" or "Map3D"))
 			PressKey(game, Key.Escape);
 	}

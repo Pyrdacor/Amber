@@ -25,4 +25,9 @@ public interface IGraphicIndexProvider
 	/// </summary>
 	int GetSpellAnimationIconIndex(int animation, int icon);
 	int GetDamageDigitIndex(int digit);
+	int GetOutroGraphicIndex(OutroGraphic graphic, int frame = 0);
+	/// <summary>
+	/// Gets the texture index of the glyph of a character of the outro texts or null if it has no glyph.
+	/// </summary>
+	int? GetOutroGlyphIndex(char ch);
 }

@@ -47,6 +47,8 @@ internal class OutroData : IOutroData
 
 	readonly byte[] data;
 	readonly Dictionary<char, IGraphic?> glyphs = [];
+	// the 16 colors (Atari ST format) of each palette
+	readonly Dictionary<OutroPalette, int[]> palettes = [];
 
 	public OutroData(byte[] data, LegacyPlatform platform)
 	{
@@ -55,13 +57,13 @@ internal class OutroData : IOutroData
 		ThroneRoom = Picture(ThroneRoomOffset);
 		Balcony = Picture(BalconyOffset);
 		var throneRoomPalette = Address(ThroneRoomPaletteOffset);
-		ThroneRoomPalette = Palette(throneRoomPalette, null);
-		ThroneRoomLowerPalette = Palette(throneRoomPalette, Word(throneRoomPalette + 32));
 		var landscapePalette = Address(LandscapePaletteOffset);
-		LandscapePalette = Palette(landscapePalette, null);
-		LandscapeLowerPalette = Palette(landscapePalette, Word(landscapePalette + 32));
-		SkyPalette = Palette(Address(SkyPaletteOffset), null);
-		RedMoonPalette = Palette(Address(RedMoonPaletteOffset), null);
+		palettes.Add(OutroPalette.ThroneRoom, PaletteColors(throneRoomPalette, null));
+		palettes.Add(OutroPalette.ThroneRoomLower, PaletteColors(throneRoomPalette, Word(throneRoomPalette + 32)));
+		palettes.Add(OutroPalette.Sky, PaletteColors(Address(SkyPaletteOffset), null));
+		palettes.Add(OutroPalette.RedMoon, PaletteColors(Address(RedMoonPaletteOffset), null));
+		palettes.Add(OutroPalette.Landscape, PaletteColors(landscapePalette, null));
+		palettes.Add(OutroPalette.LandscapeLower, PaletteColors(landscapePalette, Word(landscapePalette + 32)));
 
 		LeftTorch = Frames(Address(LeftTorchOffset), 3, 1, 46);
 		RightTorch = Frames(Address(RightTorchOffset), 3, 1, 46);
@@ -114,13 +116,7 @@ internal class OutroData : IOutroData
 	}
 
 	public IGraphic ThroneRoom { get; }
-	public IGraphic ThroneRoomPalette { get; }
-	public IGraphic ThroneRoomLowerPalette { get; }
 	public IGraphic Balcony { get; }
-	public IGraphic SkyPalette { get; }
-	public IGraphic RedMoonPalette { get; }
-	public IGraphic LandscapePalette { get; }
-	public IGraphic LandscapeLowerPalette { get; }
 	public IReadOnlyList<IGraphic> LeftTorch { get; }
 	public IReadOnlyList<IGraphic> RightTorch { get; }
 	public IReadOnlyList<IGraphic> Chancellor { get; }
@@ -139,6 +135,34 @@ internal class OutroData : IOutroData
 	public IReadOnlyList<string> ChancellorTexts { get; }
 	public IReadOnlyList<string> BalconyTexts { get; }
 	public ISong? Music { get; }
+
+	public IReadOnlyList<IGraphic> GetGraphics(OutroGraphic graphic) => graphic switch
+	{
+		OutroGraphic.ThroneRoomTop => [PicturePart(ThroneRoom, 0, IOutroData.ThroneRoomLowerLine)],
+		OutroGraphic.ThroneRoomBottom => [PicturePart(ThroneRoom, IOutroData.ThroneRoomLowerLine, IOutroData.PictureHeight)],
+		OutroGraphic.BalconySky => [PicturePart(Balcony, 0, IOutroData.LandscapeLine)],
+		OutroGraphic.BalconyLandscape => [PicturePart(Balcony, IOutroData.LandscapeLine, IOutroData.LandscapeLowerLine)],
+		OutroGraphic.BalconyLower => [PicturePart(Balcony, IOutroData.LandscapeLowerLine, IOutroData.PictureHeight)],
+		OutroGraphic.LeftTorch => LeftTorch,
+		OutroGraphic.RightTorch => RightTorch,
+		OutroGraphic.Chancellor => Chancellor,
+		OutroGraphic.PartyFigure => PartyFigures,
+		OutroGraphic.Eagle => Eagles,
+		OutroGraphic.Dragon => Dragon,
+		OutroGraphic.Flyer => Flyer,
+		OutroGraphic.Moon => [Moon],
+		OutroGraphic.BalconyPerson1 => BalconyPeople[0],
+		OutroGraphic.BalconyPerson2 => BalconyPeople[1],
+		OutroGraphic.BalconyPerson3 => BalconyPeople[2],
+		_ => []
+	};
+
+	static IGraphic PicturePart(IGraphic picture, int startLine, int endLine)
+	{
+		int width = picture.Width;
+
+		return new Graphic(width, endLine - startLine, picture.GetData()[(startLine * width)..(endLine * width)], GraphicFormat.PaletteIndices);
+	}
 
 	int Word(int offset) => (data[offset] << 8) | data[offset + 1];
 
@@ -160,17 +184,46 @@ internal class OutroData : IOutroData
 	/// <summary>
 	/// The palettes have 16 colors. Some have a 17th color which replaces color 5 below a line.
 	/// </summary>
-	IGraphic Palette(int offset, int? color5)
+	int[] PaletteColors(int offset, int? color5)
 	{
-		var palette = data[offset..(offset + 32)];
+		var colors = Words(offset, 16);
 
 		if (color5 != null)
+			colors[5] = color5.Value;
+
+		return colors;
+	}
+
+	/// <summary>
+	/// Fading in increases each color channel by 1 per step up to its value (La36 in the extro),
+	/// fading out decreases each channel by 1 per step (La96 in the extro).
+	/// </summary>
+	public IGraphic GetPalette(OutroPalette palette, int fadeStep = 0)
+	{
+		var bytes = new byte[32];
+		var colors = palettes[palette];
+
+		for (int i = 0; i < colors.Length; i++)
 		{
-			palette[10] = (byte)(color5 >> 8);
-			palette[11] = (byte)color5;
+			int color = 0;
+
+			for (int shift = 0; shift <= 8; shift += 4)
+			{
+				int channel = (colors[i] >> shift) & 0x7;
+
+				if (fadeStep > 0)
+					channel = Math.Min(channel, fadeStep);
+				else if (fadeStep < 0)
+					channel = Math.Max(0, channel + fadeStep);
+
+				color |= channel << shift;
+			}
+
+			bytes[i * 2] = (byte)(color >> 8);
+			bytes[i * 2 + 1] = (byte)color;
 		}
 
-		return PaletteLoader.LoadPalette(new DataReader(palette));
+		return PaletteLoader.LoadPalette(new DataReader(bytes));
 	}
 
 	/// <summary>

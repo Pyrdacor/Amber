@@ -13,11 +13,11 @@ The outro is not part of the released source code. The game and the outro were d
 ## Throne room
 - Picture (320x200, ST low resolution) with a palette of 17 colors: the 17th replaces color 5 from line 100 (raster interrupt).
 - Fade in (7 steps of 5 vertical blanks), the music starts.
-- Every 6 vertical blanks: 2 torches (3 frames each, at 115,59 and 188,59), the chancellor (7 frames at 146,66, the counter
-  starts at 90 and counts down, then the frames 0-6 are shown one per step and the chancellor waits 80 steps), the party
-  figures (3 figures with y offsets, positions per slot, x - 8, y + 104).
-- The 3 texts of the chancellor are shown one after another in a text box ((20,150)-(300,192) color 15, inside
-  (23,153)-(297,189) color 3, text at (25,155), 6 pixels per character, 7 pixels per line) when the wait counter reaches -100.
+- Every 6 vertical blanks (1 step): 2 torches (3 frames each, at 115,59 and 188,59), the chancellor (7 frames at 146,66)
+  and the party figures (3 figures with y offsets, positions per slot, x - 8, y + 104, drawn once).
+- The chancellor waits 90 steps, stands up (frames 1-6, one per step) and then shows his 3 texts in a text box
+  ((20,150)-(300,192) color 15, inside (23,153)-(297,189) color 3, text at (25,155), 6 pixels per character,
+  7 pixels per line): the first after 20 steps, the next ones after 101 steps. 100 steps after the last text the room fades out.
 - Fade out.
 
 ## Balcony
@@ -30,4 +30,10 @@ The outro is not part of the released source code. The game and the outro were d
 - After the last text the space key ends the outro.
 
 ## Music
-- A COSO module with samples (TFMX variant) inside the music player of the outro. The port can't play it yet.
+- A COSO module with samples (TFMX variant, timbre transposes in the divisions) inside the music player of the outro.
+  The port can't play it yet and plays song 6 of the game instead.
+
+## Port
+- `OutroData` loads the data, `OutroScreen` shows it. The palettes fade like the original (fade in: each color channel
+  is increased by 1 per step up to its value, fade out: decreased by 1 per step).
+- After the outro the game starts again (savegame or new game) instead of returning to the desktop.

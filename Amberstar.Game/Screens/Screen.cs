@@ -67,6 +67,7 @@ public enum ScreenType
     PlaceGiveGold,
     PlaceGiveFood,
     PlaceBuyFood,
+    Outro,
     // TODO ...
 }
 
@@ -746,6 +747,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Altar => new AltarScreen(),
             ScreenType.Battle => new BattleScreen(),
             ScreenType.Loot => new LootScreen(),
+            ScreenType.Outro => new OutroScreen(),
             _ => throw new NotImplementedException()
 		};
 

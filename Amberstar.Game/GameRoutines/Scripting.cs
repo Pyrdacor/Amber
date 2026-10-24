@@ -559,6 +559,15 @@ partial class Game
 
 	public void ScriptLeaveBattle() => (ScreenHandler.ActiveScreen as BattleScreen)?.ScriptLeave();
 
+	/// <summary>
+	/// Leaves the outro without starting the game again.
+	/// </summary>
+	public void ScriptLeaveOutro()
+	{
+		if (ScreenHandler.ActiveScreen is OutroScreen)
+			ScreenHandler.PopScreen();
+	}
+
 	public string? ScriptAnswer(string word)
 	{
 		if (ScreenHandler.ActiveScreen is not RiddlemouthScreen riddlemouthScreen)

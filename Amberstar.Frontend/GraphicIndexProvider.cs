@@ -22,7 +22,9 @@ namespace Amberstar.Frontend
 		int tacticalIconOffset,
 		Dictionary<int, int> monsterGraphicOffsets,
 		int spellAnimationOffset,
-		int damageDigitOffset
+		int damageDigitOffset,
+		Dictionary<OutroGraphic, int> outroGraphicOffsets,
+		Dictionary<char, int> outroGlyphIndices
 
     ) : IGraphicIndexProvider
 	{
@@ -59,5 +61,9 @@ namespace Amberstar.Frontend
 		public int GetSpellAnimationIconIndex(int animation, int icon) => spellAnimationOffset + (animation - 1) * 6 + icon;
 
 		public int GetDamageDigitIndex(int digit) => damageDigitOffset + digit;
+
+		public int GetOutroGraphicIndex(OutroGraphic graphic, int frame = 0) => outroGraphicOffsets[graphic] + frame;
+
+		public int? GetOutroGlyphIndex(char ch) => outroGlyphIndices.TryGetValue(ch, out int index) ? index : null;
     }
 }
