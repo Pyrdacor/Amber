@@ -366,7 +366,20 @@ namespace Amberstar.GameData.Legacy
 			#region Combat data
 			// Note: Without the damage table the black magic spells do no damage.
 			if (dataSeeker(EmbeddedDataOffset.CombatData, dataReader))
+			{
+				int combatDataOffset = dataReader.Position;
 				CombatData = dataReader.ReadBytes(Legacy.CombatData.Size);
+
+				// The particle paths of the spell animations are stored before the damage table.
+				if (combatDataOffset >= Legacy.CombatData.SpellAnimationDataOffset)
+				{
+					dataReader.Position = combatDataOffset - Legacy.CombatData.SpellAnimationDataOffset;
+					SpellAnimationData = dataReader.ReadBytes(Legacy.CombatData.SpellAnimationDataSize);
+				}
+			}
+
+			if (dataSeeker(EmbeddedDataOffset.DamageDigits, dataReader))
+				DamageDigitData = dataReader.ReadBytes(Legacy.CombatData.DamageDigitDataSize);
 
 			if (dataSeeker(EmbeddedDataOffset.CombatPalette, dataReader))
 				CombatPaletteData = dataReader.ReadBytes(Legacy.CombatData.PaletteDataSize);
@@ -467,6 +480,8 @@ namespace Amberstar.GameData.Legacy
         public byte[] CombatData { get; private set; } = [];
         public byte[] CombatPaletteData { get; private set; } = [];
         public byte[] MonsterGraphicData { get; private set; } = [];
+        public byte[] SpellAnimationData { get; private set; } = [];
+        public byte[] DamageDigitData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

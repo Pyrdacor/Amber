@@ -114,3 +114,19 @@ mad -> random (random/2 % 37): bit0 -> attack random target in reach; row 4 and 
 - Otherwise: if quest bit 6 is set and Probe(average luck + bonus of the members) succeeds, the "Resurrection sequence"
   (0x9a8) runs: song 19, next day 7:20, map 70 at 16,13 facing north, all conditions cleared, HP filled, Message 87 (Shandra).
 - Else the "Game Over sequence" (0xba4): song 19, Message 88, then the game restarts.
+
+## Animations (VBL handler L182c4, 50 per second)
+- Idle (L16678, only while the actions are chosen): every 8 VBL a random countdown 0-15 runs over the 30 cells. Running
+  animations (participant word 6) advance 1-2-3-0 and the cell where the countdown reaches 0 starts one, unless the
+  participant is stunned or asleep. Frames [0, 1, 2, 1] are used for the tactical icon (icon * 3 + frame) and the monster graphic.
+- Monster graphics: the frame group (size) is the 3rd word of the monster position, its frames start after the frames
+  of the smaller groups (frame counts: 4 bytes per graphic, the 4th byte only changes the drawing order).
+- Attack (L16766, L166da): a monster which attacks (each attack) or casts a spell shows the frames 1 to count-1 and back
+  to 0, one frame every 6 VBL (4 in the fast mode). The next action waits until it is finished (L167aa).
+- Damage numbers (L1605c, L165c2): 3 digits (leading zeros) of a 4x5 font (color 9, shadow color 0 at +1,+1) at the top
+  left of the lower half of the tactical cell. Monsters show them for 100 VBL, party members for 70 VBL.
+- Spell animations (L19650, L18502): F_T_ANIM.ICN holds 15 animations of 6 16x16 icons. For 96 VBL (24 frames of 4 VBL)
+  6 particles fly around the center of the monster; the paths (x, y, icon per particle and frame) are 2 tables before the
+  damage table, a random one is chosen per round (L183aa). Particles are clipped at the bottom of the background.
+  Animations: black damage spells from the damage table, magic arrows 10, white 20 paralyze 4, 21 sleep 5, 22 panic 6,
+  23 irritate 7, 24 blind 14. Dissolve, destroy undead and the spells of monsters have none.

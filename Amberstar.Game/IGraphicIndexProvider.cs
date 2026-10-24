@@ -20,4 +20,9 @@ public interface IGraphicIndexProvider
 	int GetCombatBackgroundIndex(int background);
 	int GetTacticalIconIndex(int icon);
 	int GetMonsterGraphicIndex(int monsterGraphic, int frame);
+	/// <summary>
+	/// The spell animations are 1-based with 6 icons each.
+	/// </summary>
+	int GetSpellAnimationIconIndex(int animation, int icon);
+	int GetDamageDigitIndex(int digit);
 }

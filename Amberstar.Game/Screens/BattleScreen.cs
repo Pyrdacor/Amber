@@ -14,6 +14,10 @@ namespace Amberstar.Game.Screens;
 /// with 6x5 icons (rows 0-2 monsters, rows 3-4 party). The actions of the party members are chosen with
 /// the buttons (the active member is chosen by its portrait). Ok executes the round. The events of the
 /// round are shown one after another: in the slow mode each text waits for a click.
+///
+/// The animations are timed by vertical blanks (50 per second) like in the original: random idle animations
+/// of the participants while the actions are chosen, the attack frames of monsters, the particles of spells
+/// and the damage numbers on the tactical battle field.
 /// </summary>
 internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 {
@@ -38,16 +42,29 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	static readonly Rect TextArea = new(16, 177, 176, 16);
 	const int TacticalIconSize = 16;
 	const long TicksPerFastText = Game.TicksPerSecond;
-	const long TicksPerIconAnimation = Game.TicksPerSecond / 4;
+	const int VerticalBlanksPerSecond = 50;
+	const int VerticalBlanksPerIdleStep = 8;
+	const int VerticalBlanksPerSlowAttackFrame = 6;
+	const int VerticalBlanksPerFastAttackFrame = 4;
+	const int VerticalBlanksPerSpellFrame = 4;
+	const int MonsterDamageVerticalBlanks = 100;
+	const int PartyDamageVerticalBlanks = 70;
 	const byte BackgroundDisplayLayer = 1;
 	const byte MonsterDisplayLayer = 10;
+	const byte AttackingMonsterDisplayLayer = 26;
 	const byte TacticalDisplayLayer = 10;
 	const byte MarkerDisplayLayer = 20;
+	const byte DamageDisplayLayer = 22;
+	const byte SpellParticleDisplayLayer = 30;
+	const int DamageDigitDistance = 5;
+	const int SpellParticleSize = 16;
 	static readonly int[] IconAnimationFrames = [0, 1, 2, 1];
 
 	Battle.Battle? battle;
 	int background = 1;
 	readonly Image?[] tacticalIcons = new Image?[Battle.Battle.Columns * Battle.Battle.Rows];
+	// The battle field as shown. The battle executes a whole round at once and the shown battle field follows its events.
+	readonly BattleParticipant?[] shownBattleField = new BattleParticipant?[Battle.Battle.Columns * Battle.Battle.Rows];
 	readonly List<Image> monsterImages = [];
 	readonly List<IColoredRect> markers = [];
 	Label? text;
@@ -57,8 +74,33 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	bool executing = false;
 	readonly Queue<BattleEvent> pendingEvents = [];
 	Action? clickAction = null;
-	long animationTicks = 0;
-	int animationFrame = 0;
+	long verticalBlankTicks = 0;
+	// idle animation (index into IconAnimationFrames, 0 = not animated)
+	readonly Dictionary<BattleParticipant, int> idleFrames = [];
+	int idleVerticalBlanks = 0;
+	// attack animation of a monster
+	MonsterParticipant? attackingMonster = null;
+	int attackFrame = 0;
+	int attackDirection = 0;
+	int attackVerticalBlanks = 0;
+	readonly List<SpellAnimation> spellAnimations = [];
+	readonly Dictionary<BattleParticipant, DamageDisplay> damageDisplays = [];
+	bool waitingForAnimations = false;
+
+	sealed class SpellAnimation(MonsterParticipant target, int animation, int path)
+	{
+		public MonsterParticipant Target => target;
+		public int Animation => animation;
+		public int Path => path;
+		public int VerticalBlanks { get; set; } = 0;
+		public List<Image> Particles { get; } = [];
+	}
+
+	sealed class DamageDisplay(int verticalBlanks)
+	{
+		public int VerticalBlanks { get; set; } = verticalBlanks;
+		public List<Image> Digits { get; } = [];
+	}
 
 	public override ScreenType Type { get; } = ScreenType.Battle;
 
@@ -67,6 +109,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	// The battle can't be left with escape and the inventory is not available.
 	public override bool CloseOnEscape { get; } = false;
 	public override bool AllowInventoryAccess { get; } = false;
+	// The game time is paused during battles but the animations run.
+	public override bool UpdateWhilePaused { get; } = true;
 
 	internal Battle.Battle? CurrentBattle => battle;
 
@@ -92,6 +136,9 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		pendingEvents.Clear();
 		clickAction = null;
 		ShownTexts.Clear();
+		idleFrames.Clear();
+		attackingMonster = null;
+		waitingForAnimations = false;
 
 		Game.SetLayout(Layout.Battle, ButtonGridPaletteIndex);
 		Game.Cursor.CursorType = CursorType.Sword;
@@ -116,6 +163,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		text = AddLabel(textX, textY, textWidth, textHeight, 30);
 
 		battle.PrepareRound();
+		TakeBattleField();
 		UpdateBattleField();
 		UpdateStatusIcons();
 
@@ -129,6 +177,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		Game.State.ActivePartyMemberChanged -= ActivePartyMemberChanged;
 		ClearMonsterImages();
 		ClearMarkers();
+		ClearAnimations();
 
 		base.Close();
 	}
@@ -385,13 +434,26 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	{
 		base.Update(elapsedTicks);
 
-		animationTicks += elapsedTicks;
+		verticalBlankTicks += elapsedTicks * VerticalBlanksPerSecond;
+		int verticalBlanks = (int)(verticalBlankTicks / Game.TicksPerSecond);
+		verticalBlankTicks %= Game.TicksPerSecond;
 
-		if (animationTicks >= TicksPerIconAnimation)
+		if (verticalBlanks == 0 || battle == null)
+			return;
+
+		bool changed = UpdateIdleAnimation(verticalBlanks);
+		changed |= UpdateAttackAnimation(verticalBlanks);
+
+		if (changed)
+			UpdateBattleField();
+
+		UpdateSpellAnimations(verticalBlanks);
+		UpdateDamageDisplays(verticalBlanks);
+
+		if (waitingForAnimations && !AnimationRunning)
 		{
-			animationTicks %= TicksPerIconAnimation;
-			animationFrame = (animationFrame + 1) % IconAnimationFrames.Length;
-			UpdateTacticalIcons();
+			waitingForAnimations = false;
+			ShowNextEvent();
 		}
 	}
 
@@ -448,6 +510,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		pendingEvents.Clear();
 		clickAction = null;
 		executing = false;
+		waitingForAnimations = false;
 		battle.Abort();
 		Game.ScreenHandler.PopScreen();
 	}
@@ -467,6 +530,10 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		ClearMarkers();
 		RequestButtonSetup();
 
+		// The idle animations stop while the round is executed.
+		idleFrames.Clear();
+		TakeBattleField();
+
 		Game.UpdateBattleSpells(battle);
 		battle.ActiveSlot = ActiveSlot;
 
@@ -476,10 +543,39 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		ShowNextEvent();
 	}
 
+	/// <summary>
+	/// Animations are started at once. The other events wait until the attack and spell animations are finished.
+	/// </summary>
 	void ShowNextEvent()
 	{
-		while (pendingEvents.TryDequeue(out var battleEvent))
+		while (pendingEvents.TryPeek(out var battleEvent))
 		{
+			switch (battleEvent)
+			{
+				case BattleAttackAnimationEvent attackAnimationEvent:
+					if (AnimationRunning)
+						break;
+					pendingEvents.Dequeue();
+					StartAttackAnimation(attackAnimationEvent.Monster);
+					continue;
+				case BattleSpellAnimationEvent spellAnimationEvent:
+					pendingEvents.Dequeue();
+					StartSpellAnimation(spellAnimationEvent.Target, spellAnimationEvent.Animation);
+					continue;
+				case BattleDamageEvent damageEvent:
+					pendingEvents.Dequeue();
+					ShowDamage(damageEvent.Target, damageEvent.Damage);
+					continue;
+			}
+
+			if (AnimationRunning)
+			{
+				waitingForAnimations = true;
+				return;
+			}
+
+			pendingEvents.Dequeue();
+
 			switch (battleEvent)
 			{
 				case BattleTextEvent textEvent:
@@ -490,10 +586,28 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 					ShowText(FormatSpell(spellEvent));
 					WaitForText();
 					return;
+				case BattleMoveEvent moveEvent:
+					if (shownBattleField[CellIndex(moveEvent.From)] == moveEvent.Participant)
+						shownBattleField[CellIndex(moveEvent.From)] = null;
+					shownBattleField[CellIndex(moveEvent.To)] = moveEvent.Participant;
+					UpdateBattleField();
+					break;
+				case BattleRemoveEvent removeEvent:
+					int index = Array.IndexOf(shownBattleField, removeEvent.Participant);
+					if (index >= 0)
+						shownBattleField[index] = null;
+					UpdateBattleField();
+					break;
 				default:
 					UpdateBattleField();
 					break;
 			}
+		}
+
+		if (AnimationRunning)
+		{
+			waitingForAnimations = true;
+			return;
 		}
 
 		RoundFinished();
@@ -501,6 +615,13 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 	void WaitForText()
 	{
+		// The damage of a hit is shown with its text.
+		while (pendingEvents.TryPeek(out var battleEvent) && battleEvent is BattleDamageEvent damageEvent)
+		{
+			pendingEvents.Dequeue();
+			ShowDamage(damageEvent.Target, damageEvent.Damage);
+		}
+
 		UpdateBattleField();
 		Game.UpdatePartyMembers();
 
@@ -518,6 +639,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	{
 		executing = false;
 		ShowText("");
+		TakeBattleField();
 		UpdateBattleField();
 		Game.PartyMembersChanged();
 
@@ -592,6 +714,24 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		}
 	}
 
+	static int CellIndex(Position cell) => cell.X + cell.Y * Battle.Battle.Columns;
+
+	void TakeBattleField()
+	{
+		for (int i = 0; i < shownBattleField.Length; i++)
+			shownBattleField[i] = battle?[i % Battle.Battle.Columns, i / Battle.Battle.Columns];
+	}
+
+	/// <summary>
+	/// The shown cell of a participant or null if it is not shown.
+	/// </summary>
+	Position? GetShownCell(BattleParticipant participant)
+	{
+		int index = Array.IndexOf(shownBattleField, participant);
+
+		return index < 0 ? null : new Position(index % Battle.Battle.Columns, index / Battle.Battle.Columns);
+	}
+
 	void UpdateBattleField()
 	{
 		UpdateTacticalIcons();
@@ -608,7 +748,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		for (int i = 0; i < tacticalIcons.Length; i++)
 		{
-			var participant = battle[i % Battle.Battle.Columns, i / Battle.Battle.Columns];
+			var participant = shownBattleField[i];
 			var icon = tacticalIcons[i]!;
 
 			if (participant == null)
@@ -621,7 +761,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 				? (monster.Monster.BattleGraphicIndex + 9) * 3
 				: (int)((PartyMemberParticipant)participant).PartyMember.Class * 3;
 
-			icon.SetTextureIndex(Game.GraphicIndexProvider.GetTacticalIconIndex(baseIcon + IconAnimationFrames[animationFrame]));
+			icon.SetTextureIndex(Game.GraphicIndexProvider.GetTacticalIconIndex(baseIcon + IconAnimationFrames[idleFrames.GetValueOrDefault(participant)]));
 			icon.Visible = true;
 		}
 	}
@@ -648,14 +788,13 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		{
 			for (int column = 0; column < Battle.Battle.Columns; column++)
 			{
-				if (battle[column, row] is not MonsterParticipant monster)
+				if (shownBattleField[CellIndex(new(column, row))] is not MonsterParticipant monster)
 					continue;
 
 				int graphic = monster.Monster.BattleGraphicIndex;
 				var position = combatData.GetMonsterPosition(column, row);
-				var frameCounts = combatData.GetMonsterFrameCounts(graphic);
-				int frame = frameCounts.Take(position.FrameGroup).Sum();
 				var frames = Game.AssetProvider.GraphicLoader.LoadMonsterGraphic(graphic);
+				int frame = GetMonsterFrame(monster, position);
 
 				if (frame >= frames.Length)
 					continue;
@@ -663,11 +802,39 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 				var size = new Size(frames[frame].Width, frames[frame].Height);
 				int x = BackgroundPosition.X + position.X - size.Width / 2;
 				int y = BackgroundPosition.Y + position.Y - size.Height;
+				// The attacking monster is drawn in front of the others.
+				byte displayLayer = monster == attackingMonster ? AttackingMonsterDisplayLayer : (byte)(MonsterDisplayLayer + row * 5);
 				var image = new Image(Game, new Position(x, y), size, Game.GraphicIndexProvider.GetMonsterGraphicIndex(graphic, frame),
-					(byte)(MonsterDisplayLayer + row * 5), Layer.UI, ButtonGridPaletteIndex);
+					displayLayer, Layer.UI, ButtonGridPaletteIndex);
 				monsterImages.Add(image);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Each frame group (size) of a monster graphic starts with the 3 idle frames. The attack uses the frames 1 to count-1.
+	/// </summary>
+	int GetMonsterFrame(MonsterParticipant monster, MonsterGraphicPosition position)
+	{
+		var frameCounts = Game.AssetProvider.CombatData.GetMonsterFrameCounts(monster.Monster.BattleGraphicIndex);
+		int baseFrame = frameCounts.Take(position.FrameGroup).Sum();
+		int count = frameCounts[position.FrameGroup];
+		int frame = monster == attackingMonster ? attackFrame : IconAnimationFrames[idleFrames.GetValueOrDefault(monster)];
+
+		return baseFrame + Math.Clamp(frame, 0, Math.Max(0, count - 1));
+	}
+
+	/// <summary>
+	/// The center of a monster graphic on the screen.
+	/// </summary>
+	Position GetMonsterCenter(MonsterParticipant monster, Position cell)
+	{
+		var position = Game.AssetProvider.CombatData.GetMonsterPosition(cell.X, cell.Y);
+		var frames = Game.AssetProvider.GraphicLoader.LoadMonsterGraphic(monster.Monster.BattleGraphicIndex);
+		int frame = GetMonsterFrame(monster, position);
+		int height = frame < frames.Length ? frames[frame].Height : 0;
+
+		return new(BackgroundPosition.X + position.X, BackgroundPosition.Y + position.Y - height / 2);
 	}
 
 	void ClearMarkers()
@@ -714,6 +881,247 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		if (action.Type is BattleActionType.Move or BattleActionType.Attack)
 			AddMarker(action.Target, action.Type == BattleActionType.Move ? Color.Green : Color.Red);
+	}
+
+	#endregion
+
+	#region Animations
+
+	bool AnimationRunning => attackingMonster != null || spellAnimations.Count != 0;
+
+	/// <summary>
+	/// Every 8 vertical blanks the running idle animations advance and a random participant may start one.
+	/// Stunned and sleeping participants are not animated (L16678 in the original).
+	/// </summary>
+	bool UpdateIdleAnimation(int verticalBlanks)
+	{
+		if (executing)
+			return false;
+
+		idleVerticalBlanks += verticalBlanks;
+		bool changed = false;
+
+		while (idleVerticalBlanks >= VerticalBlanksPerIdleStep)
+		{
+			idleVerticalBlanks -= VerticalBlanksPerIdleStep;
+			int countdown = Game.Random(15);
+
+			for (int row = 0; row < Battle.Battle.Rows; row++)
+			{
+				for (int column = 0; column < Battle.Battle.Columns; column++)
+				{
+					var participant = shownBattleField[CellIndex(new(column, row))];
+
+					if (participant == null)
+						continue;
+
+					int frame = idleFrames.GetValueOrDefault(participant);
+
+					if (frame != 0)
+					{
+						idleFrames[participant] = (frame + 1) % IconAnimationFrames.Length;
+						changed = true;
+					}
+
+					countdown--;
+
+					if ((countdown & 0xf) == 0 && idleFrames.GetValueOrDefault(participant) == 0 &&
+						!participant.HasAnyConditionOf(Condition.Stunned | Condition.Sleeping))
+					{
+						idleFrames[participant] = 1;
+						changed = true;
+					}
+				}
+			}
+		}
+
+		return changed;
+	}
+
+	/// <summary>
+	/// The monster shows its attack frames forth and back (L16766 and L166da in the original).
+	/// </summary>
+	void StartAttackAnimation(MonsterParticipant monster)
+	{
+		var cell = GetShownCell(monster);
+
+		if (cell == null)
+			return;
+
+		var position = Game.AssetProvider.CombatData.GetMonsterPosition(cell.Value.X, cell.Value.Y);
+		var frameCounts = Game.AssetProvider.CombatData.GetMonsterFrameCounts(monster.Monster.BattleGraphicIndex);
+
+		if (frameCounts[position.FrameGroup] <= 1)
+			return;
+
+		attackingMonster = monster;
+		attackFrame = 0;
+		attackDirection = 1;
+		attackVerticalBlanks = 0;
+		UpdateBattleField();
+		Game.ScriptBattleAnimationShown($"attack {monster.Name}");
+	}
+
+	bool UpdateAttackAnimation(int verticalBlanks)
+	{
+		if (attackingMonster == null)
+			return false;
+
+		int verticalBlanksPerFrame = slowMode ? VerticalBlanksPerSlowAttackFrame : VerticalBlanksPerFastAttackFrame;
+		attackVerticalBlanks += verticalBlanks;
+
+		if (attackVerticalBlanks < verticalBlanksPerFrame)
+			return false;
+
+		attackVerticalBlanks -= verticalBlanksPerFrame;
+		attackFrame += attackDirection;
+		var cell = GetShownCell(attackingMonster);
+
+		if (attackFrame <= 0 || cell == null)
+		{
+			attackingMonster = null;
+			attackFrame = 0;
+			return true;
+		}
+
+		var position = Game.AssetProvider.CombatData.GetMonsterPosition(cell.Value.X, cell.Value.Y);
+		int count = Game.AssetProvider.CombatData.GetMonsterFrameCounts(attackingMonster.Monster.BattleGraphicIndex)[position.FrameGroup];
+
+		if (attackFrame >= count)
+		{
+			attackFrame = count - 1;
+			attackDirection = -1;
+		}
+
+		return true;
+	}
+
+	/// <summary>
+	/// 6 particles fly around the monster for 24 frames on one of the particle paths (L19650 and L18502 in the original).
+	/// </summary>
+	void StartSpellAnimation(MonsterParticipant target, int animation)
+	{
+		if (animation < 1 || GetShownCell(target) == null)
+			return;
+
+		var combatData = Game.AssetProvider.CombatData;
+		var spellAnimation = new SpellAnimation(target, animation, Game.Random(combatData.SpellAnimationPathCount - 1));
+		spellAnimations.Add(spellAnimation);
+		ShowSpellParticles(spellAnimation);
+		Game.ScriptBattleAnimationShown($"spell {target.Name} {animation}");
+	}
+
+	void ShowSpellParticles(SpellAnimation spellAnimation)
+	{
+		spellAnimation.Particles.ForEach(particle => particle.Destroy());
+		spellAnimation.Particles.Clear();
+
+		int frame = spellAnimation.VerticalBlanks / VerticalBlanksPerSpellFrame;
+		var cell = GetShownCell(spellAnimation.Target);
+
+		if (cell == null)
+			return;
+
+		var center = GetMonsterCenter(spellAnimation.Target, cell.Value);
+		int bottom = BackgroundPosition.Y + 112;
+
+		foreach (var particle in Game.AssetProvider.CombatData.GetSpellParticles(spellAnimation.Path, frame))
+		{
+			int x = center.X - SpellParticleSize / 2 + particle.X;
+			int y = center.Y - SpellParticleSize / 2 + particle.Y;
+			// The particles are clipped at the bottom of the combat background.
+			int height = Math.Min(SpellParticleSize, bottom - y);
+
+			if (height <= 0)
+				continue;
+
+			spellAnimation.Particles.Add(new Image(Game, new Position(x, y), new Size(SpellParticleSize, height),
+				Game.GraphicIndexProvider.GetSpellAnimationIconIndex(spellAnimation.Animation, particle.Icon),
+				SpellParticleDisplayLayer, Layer.UI, ButtonGridPaletteIndex));
+		}
+	}
+
+	void UpdateSpellAnimations(int verticalBlanks)
+	{
+		foreach (var spellAnimation in spellAnimations.ToList())
+		{
+			int frame = spellAnimation.VerticalBlanks / VerticalBlanksPerSpellFrame;
+			spellAnimation.VerticalBlanks += verticalBlanks;
+			int newFrame = spellAnimation.VerticalBlanks / VerticalBlanksPerSpellFrame;
+
+			if (newFrame >= ICombatData.SpellAnimationFrameCount || GetShownCell(spellAnimation.Target) == null)
+			{
+				spellAnimation.Particles.ForEach(particle => particle.Destroy());
+				spellAnimations.Remove(spellAnimation);
+			}
+			else if (newFrame != frame)
+			{
+				ShowSpellParticles(spellAnimation);
+			}
+		}
+	}
+
+	/// <summary>
+	/// The damage is shown with 3 digits in the tactical cell of the participant (L1605c and L165c2 in the original).
+	/// Monsters show it for 100 vertical blanks and party members for 70.
+	/// </summary>
+	void ShowDamage(BattleParticipant target, int damage)
+	{
+		RemoveDamageDisplay(target);
+		var cell = GetShownCell(target);
+
+		if (cell == null)
+			return;
+
+		var damageDisplay = new DamageDisplay(target is MonsterParticipant ? MonsterDamageVerticalBlanks : PartyDamageVerticalBlanks);
+		int x = TacticalPosition.X + cell.Value.X * TacticalIconSize;
+		int y = TacticalPosition.Y + cell.Value.Y * TacticalIconSize + TacticalIconSize / 2;
+		var size = new Size(ICombatData.DamageDigitWidth, ICombatData.DamageDigitHeight);
+		int[] digits = [damage / 100 % 10, damage / 10 % 10, damage % 10];
+
+		for (int i = 0; i < digits.Length; i++)
+		{
+			int textureIndex = Game.GraphicIndexProvider.GetDamageDigitIndex(digits[i]);
+			var position = new Position(x + i * DamageDigitDistance, y);
+			var shadow = new Image(Game, position + new Position(1, 1), size, textureIndex, DamageDisplayLayer, Layer.UI, ButtonGridPaletteIndex)
+			{
+				MaskColorIndex = 0
+			};
+			damageDisplay.Digits.Add(shadow);
+			damageDisplay.Digits.Add(new Image(Game, position, size, textureIndex, DamageDisplayLayer + 1, Layer.UI, ButtonGridPaletteIndex));
+		}
+
+		damageDisplays.Add(target, damageDisplay);
+		Game.ScriptBattleAnimationShown($"damage {target.Name} {damage}");
+	}
+
+	void RemoveDamageDisplay(BattleParticipant target)
+	{
+		if (damageDisplays.Remove(target, out var damageDisplay))
+			damageDisplay.Digits.ForEach(digit => digit.Destroy());
+	}
+
+	void UpdateDamageDisplays(int verticalBlanks)
+	{
+		foreach (var (participant, damageDisplay) in damageDisplays.ToList())
+		{
+			damageDisplay.VerticalBlanks -= verticalBlanks;
+
+			if (damageDisplay.VerticalBlanks <= 0 || GetShownCell(participant) == null)
+				RemoveDamageDisplay(participant);
+		}
+	}
+
+	void ClearAnimations()
+	{
+		attackingMonster = null;
+		waitingForAnimations = false;
+		idleFrames.Clear();
+		spellAnimations.ForEach(spellAnimation => spellAnimation.Particles.ForEach(particle => particle.Destroy()));
+		spellAnimations.Clear();
+
+		foreach (var participant in damageDisplays.Keys.ToList())
+			RemoveDamageDisplay(participant);
 	}
 
 	#endregion

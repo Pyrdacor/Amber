@@ -52,6 +52,7 @@
 		CombatBackground,
 		MonsterGraphics,
 		TacticalIcons,
+		SpellAnimations, // Amberstar combat spell effects
 	}
 
 	public struct AssetIdentifier

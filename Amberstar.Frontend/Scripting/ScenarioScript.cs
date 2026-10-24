@@ -155,7 +155,9 @@ using G = Game.Game;
 ///   texts                     print the texts shown since the last cleartexts
 ///   textshown &lt;text&gt;          check that a shown text contained the given text (case insensitive)
 ///   notextshown [text]        check that no text (containing the given text) was shown
-///   cleartexts                forget the shown texts
+///   cleartexts                forget the shown texts and battle animations
+///   animationshown &lt;text&gt;     check that a battle animation starting with the text was shown: "attack NAME",
+///                             "spell NAME animation" or "damage NAME value"
 ///   log &lt;text&gt;                print text
 ///   fail &lt;text&gt;               report a failure (e.g. as a reminder for something not implemented)
 ///   exit                      close the game
@@ -920,6 +922,10 @@ public sealed class ScenarioScript
 				break;
 			case "cleartexts":
 				game.ScriptClearShownTexts();
+				break;
+			case "animationshown":
+				Report(game.ScriptBattleAnimations.Any(animation => animation.StartsWith(argument, StringComparison.OrdinalIgnoreCase)),
+					$"battle animation \"{argument}\" was shown (shown: {string.Join(", ", game.ScriptBattleAnimations)})");
 				break;
 			case "log":
 				output("  " + argument);

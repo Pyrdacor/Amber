@@ -105,6 +105,11 @@ internal abstract class Screen
 
     public virtual bool CloseOnEscape { get; } = true;
 
+    /// <summary>
+    /// The screen is updated while the game time is paused (e.g. for animations).
+    /// </summary>
+    public virtual bool UpdateWhilePaused { get; } = false;
+
     public virtual bool CloseOnRightClick { get; } = false;
 
     public virtual bool CloseOnSpace => CloseOnRightClick;

@@ -83,6 +83,15 @@ public sealed class GameDataTests
 		Assert.Equal(93, assetProvider.GraphicLoader.LoadTacticalIcons().Length);
 		Assert.NotEqual(assetProvider.CombatData.GetPalette(1).GetData(), assetProvider.CombatData.GetPalette(2).GetData());
 
+		// animations: 15 spell animations with 6 icons, 2 particle paths and the digits of the damage numbers
+		Assert.Equal(90, assetProvider.GraphicLoader.LoadSpellAnimationIcons().Length);
+		Assert.Equal(2, assetProvider.CombatData.SpellAnimationPathCount);
+		Assert.Equal(new SpellParticle(1, 3, 1), assetProvider.CombatData.GetSpellParticles(0, 3)[1]);
+		Assert.Equal(new SpellParticle(15, 4, 5), assetProvider.CombatData.GetSpellParticles(1, 16)[0]);
+		var one = assetProvider.CombatData.GetDamageDigit(1).GetData();
+		// .### in the 2nd line of the digit 1
+		Assert.Equal([0, ICombatData.DamageDigitColorIndex, ICombatData.DamageDigitColorIndex, ICombatData.DamageDigitColorIndex], one[4..8]);
+
 		// the combat messages are the last message file
 		Assert.NotEmpty(assetProvider.TextLoader.LoadText(new(Amber.Common.AssetType.Message, (int)Message.GoesBlind)).GetString());
 	}

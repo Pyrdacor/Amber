@@ -68,7 +68,20 @@ internal sealed record BattleTextEvent(BattleParticipant? Actor, Message Message
 /// </summary>
 internal sealed record BattleSpellEvent(BattleParticipant Caster, SpellSchool School, int SpellNumber, bool Success) : BattleEvent;
 
+/// <summary>
+/// The damage is shown on the tactical battle field for a while.
+/// </summary>
 internal sealed record BattleDamageEvent(BattleParticipant Target, int Damage) : BattleEvent;
+
+/// <summary>
+/// A monster attacks or casts a spell and shows its attack frames.
+/// </summary>
+internal sealed record BattleAttackAnimationEvent(MonsterParticipant Monster) : BattleEvent;
+
+/// <summary>
+/// A spell of the party affects a monster. Particles of the animation (1-based, F_T_ANIM.ICN) fly around the monster.
+/// </summary>
+internal sealed record BattleSpellAnimationEvent(MonsterParticipant Target, int Animation) : BattleEvent;
 
 internal sealed record BattleMoveEvent(BattleParticipant Participant, Position From, Position To) : BattleEvent;
 

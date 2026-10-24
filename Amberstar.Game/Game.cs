@@ -131,10 +131,11 @@ public partial class Game : IDisposable
 		}
 
 		long elapsed = Paused ? 0 : gameTicks - lastGameTicks;
+		long screenElapsed = ScreenHandler.ActiveScreen?.UpdateWhilePaused == true ? gameTicks - lastGameTicks : elapsed;
 		lastGameTicks = gameTicks;
 
 		Time.Update(elapsed);
-		ScreenHandler.ActiveScreen?.Update(elapsed);
+		ScreenHandler.ActiveScreen?.Update(screenElapsed);
         UpdateStatusIcons();
 		Label.UpdateBlinkAnimations(gameTicks);
 

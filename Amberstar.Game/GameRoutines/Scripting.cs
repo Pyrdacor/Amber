@@ -22,7 +22,21 @@ partial class Game
 	/// </summary>
 	public IReadOnlyList<string> ScriptShownTexts => scriptShownTexts.AsReadOnly();
 
-	public void ScriptClearShownTexts() => scriptShownTexts.Clear();
+	public void ScriptClearShownTexts()
+	{
+		scriptShownTexts.Clear();
+		scriptBattleAnimations.Clear();
+	}
+
+	readonly List<string> scriptBattleAnimations = [];
+
+	/// <summary>
+	/// The battle animations which were started since the last call of <see cref="ScriptClearShownTexts"/>
+	/// (like "attack RIESENRATTE", "spell RIESENRATTE 5" or "damage THALION 3").
+	/// </summary>
+	public IReadOnlyList<string> ScriptBattleAnimations => scriptBattleAnimations.AsReadOnly();
+
+	internal void ScriptBattleAnimationShown(string animation) => scriptBattleAnimations.Add(animation);
 
 	internal void ScriptTextShown(string text) => scriptShownTexts.Add(text);
 

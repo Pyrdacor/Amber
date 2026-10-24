@@ -18,6 +18,7 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 	private readonly Dictionary<int, IGraphic> combatBackgrounds = [];
 	private readonly Dictionary<int, IGraphic[]> monsterGraphics = [];
 	private IGraphic[]? tacticalIcons = null;
+	private IGraphic[]? spellAnimationIcons = null;
 
     public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
 	{
@@ -253,20 +254,21 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 		return frames;
 	}
 
-	public IGraphic[] LoadTacticalIcons()
-	{
-		if (tacticalIcons != null)
-			return tacticalIcons;
+	public IGraphic[] LoadTacticalIcons() => tacticalIcons ??= LoadIcons(AssetType.TacticalIcons, "Tactical icons");
 
-		var asset = assetProvider.GetAsset(new(AssetType.TacticalIcons, 1))
-			?? throw new AmberException(ExceptionScope.Data, "Tactical icons not found.");
+	public IGraphic[] LoadSpellAnimationIcons() => spellAnimationIcons ??= LoadIcons(AssetType.SpellAnimations, "Spell animations");
+
+	IGraphic[] LoadIcons(AssetType assetType, string name)
+	{
+		var asset = assetProvider.GetAsset(new(assetType, 1))
+			?? throw new AmberException(ExceptionScope.Data, $"{name} not found.");
 		var reader = asset.GetReader();
 		var icons = new List<IGraphic>();
 
 		while (reader.Size - reader.Position >= 16 * 16 / 2)
 			icons.Add(Graphic.FromBitPlanes(16, 16, reader.ReadBytes(16 * 16 / 2), 4));
 
-		return tacticalIcons = [.. icons];
+		return [.. icons];
 	}
 
 	public IGraphic LoadItemGraphic(ItemGraphic index)

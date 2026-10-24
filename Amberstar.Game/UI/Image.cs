@@ -44,6 +44,15 @@ internal class Image : Control
         set => image.PaletteIndex = value;
     }
 
+    /// <summary>
+    /// All pixels are drawn with this color (used for shadows).
+    /// </summary>
+    public byte? MaskColorIndex
+    {
+        get => image.MaskColorIndex;
+        set => image.MaskColorIndex = value;
+    }
+
     public void SetTextureIndex(int textureIndex)
     {
         var textureAtlas = image.Layer.Config.Texture!;

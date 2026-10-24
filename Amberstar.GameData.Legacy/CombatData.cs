@@ -29,9 +29,63 @@ internal class CombatData : ICombatData
 
 	public static int MonsterGraphicDataSize => ColumnCount * MonsterRowCount * 6 + MonsterGraphicCount * 4;
 
-	public CombatData(byte[] data, byte[] paletteData, byte[] monsterGraphicData)
+	const int SpellAnimationPathCount = 2;
+	readonly SpellParticle[][][] spellParticles = new SpellParticle[SpellAnimationPathCount][][];
+	readonly IGraphic[] damageDigits = new IGraphic[10];
+
+	/// <summary>
+	/// The 2 particle paths (24 frames of 6 particles with x, y and icon) are followed by 8 bytes and the damage table.
+	/// </summary>
+	public static int SpellAnimationDataSize => SpellAnimationPathCount * ICombatData.SpellAnimationFrameCount * ICombatData.SpellAnimationParticleCount * 3;
+
+	public static int SpellAnimationDataOffset => SpellAnimationDataSize + 8;
+
+	public static int DamageDigitDataSize => 10 * ICombatData.DamageDigitHeight;
+
+	public CombatData(byte[] data, byte[] paletteData, byte[] monsterGraphicData, byte[] spellAnimationData, byte[] damageDigitData)
 		: this(data)
 	{
+		if (spellAnimationData.Length < SpellAnimationDataSize)
+			spellAnimationData = new byte[SpellAnimationDataSize];
+
+		var spellAnimationReader = new DataReader(spellAnimationData);
+
+		for (int path = 0; path < SpellAnimationPathCount; path++)
+		{
+			spellParticles[path] = new SpellParticle[ICombatData.SpellAnimationFrameCount][];
+
+			for (int frame = 0; frame < ICombatData.SpellAnimationFrameCount; frame++)
+			{
+				var particles = new SpellParticle[ICombatData.SpellAnimationParticleCount];
+
+				for (int i = 0; i < particles.Length; i++)
+					particles[i] = new((sbyte)spellAnimationReader.ReadByte(), (sbyte)spellAnimationReader.ReadByte(), spellAnimationReader.ReadByte());
+
+				spellParticles[path][frame] = particles;
+			}
+		}
+
+		if (damageDigitData.Length < DamageDigitDataSize)
+			damageDigitData = new byte[DamageDigitDataSize];
+
+		for (int digit = 0; digit < damageDigits.Length; digit++)
+		{
+			var pixels = new byte[ICombatData.DamageDigitWidth * ICombatData.DamageDigitHeight];
+
+			for (int y = 0; y < ICombatData.DamageDigitHeight; y++)
+			{
+				int line = damageDigitData[digit * ICombatData.DamageDigitHeight + y];
+
+				for (int x = 0; x < ICombatData.DamageDigitWidth; x++)
+				{
+					if ((line & (0x80 >> x)) != 0)
+						pixels[y * ICombatData.DamageDigitWidth + x] = ICombatData.DamageDigitColorIndex;
+				}
+			}
+
+			damageDigits[digit] = new Graphic(ICombatData.DamageDigitWidth, ICombatData.DamageDigitHeight, pixels, GraphicFormat.PaletteIndices);
+		}
+
 		for (int background = 1; background <= ICombatData.CombatBackgroundCount; background++)
 		{
 			var palette = paletteData.Length == 0 ? new byte[PaletteSize] : paletteData[..PaletteSize];
@@ -91,4 +145,10 @@ internal class CombatData : ICombatData
 	public MonsterGraphicPosition GetMonsterPosition(int column, int row) => monsterPositions[row * ColumnCount + column];
 
 	public IReadOnlyList<int> GetMonsterFrameCounts(int monsterGraphic) => monsterFrameCounts[monsterGraphic];
+
+	int ICombatData.SpellAnimationPathCount => SpellAnimationPathCount;
+
+	public IReadOnlyList<SpellParticle> GetSpellParticles(int path, int frame) => spellParticles[path][frame];
+
+	public IGraphic GetDamageDigit(int digit) => damageDigits[digit];
 }

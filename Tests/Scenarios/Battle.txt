@@ -13,9 +13,12 @@ buttonenabled 6 0
 battleaction parry
 battleround
 battlecell 2 2 RIESENRATTE
+cleartexts
 battleaction attack 2 2
 battleround
 textshown THALION TRIFFT RIESENRATTE
+# --- the damage is shown on the tactical battle field
+animationshown damage RIESENRATTE
 battleaction attack 2 2
 battleround
 battleresult Won

@@ -13,6 +13,12 @@ public record SpellDamage(int Min, int Max, int Animation);
 public record MonsterGraphicPosition(int X, int Y, int FrameGroup);
 
 /// <summary>
+/// A particle of a spell animation. The position is relative to the center of the monster
+/// and the icon is one of the 6 icons of the animation in F_T_ANIM.ICN.
+/// </summary>
+public record SpellParticle(int X, int Y, int Icon);
+
+/// <summary>
 /// Combat data of the program data which is not part of the released source code.
 /// </summary>
 public interface ICombatData
@@ -42,4 +48,27 @@ public interface ICombatData
 	/// Gets the number of frames of the 3 frame groups of a monster graphic (1-based).
 	/// </summary>
 	IReadOnlyList<int> GetMonsterFrameCounts(int monsterGraphic);
+
+	public const int SpellAnimationFrameCount = 24;
+	public const int SpellAnimationParticleCount = 6;
+
+	/// <summary>
+	/// Number of particle paths. A random one is used for each spell animation.
+	/// </summary>
+	int SpellAnimationPathCount { get; }
+
+	/// <summary>
+	/// Gets the particles of a frame of a spell animation path.
+	/// </summary>
+	IReadOnlyList<SpellParticle> GetSpellParticles(int path, int frame);
+
+	/// <summary>
+	/// Gets the graphic (4x5) of a digit of the damage numbers on the tactical battle field.
+	/// The pixels use the color index <see cref="DamageDigitColorIndex"/>.
+	/// </summary>
+	IGraphic GetDamageDigit(int digit);
+
+	public const int DamageDigitWidth = 4;
+	public const int DamageDigitHeight = 5;
+	public const byte DamageDigitColorIndex = 9;
 }

@@ -38,6 +38,7 @@ public enum EmbeddedDataOffset
 	CombatData,
 	CombatPalette,
 	MonsterGraphicPositions,
+	DamageDigits,
 }
 
 public class AssetProvider : IAssetProvider
@@ -241,7 +242,8 @@ public class AssetProvider : IAssetProvider
         shadowTable = new(() => new ShadowTable(Data.ShadowData));
         altarPuzzle = new(() => Data.AltarPuzzleData.Length == 0 ? null : new AltarPuzzle(Data.AltarPuzzleData));
         monsterGroupLoader = new(() => new MonsterGroupLoader(this));
-        combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData));
+        combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData,
+			Data.SpellAnimationData, Data.DamageDigitData));
         songLoader = new(() => new SongLoader(this, Platform));
     }
 
@@ -447,6 +449,7 @@ public class AssetProvider : IAssetProvider
 			AssetType.CombatBackground => "COM_BACK.AMB",
 			AssetType.MonsterGraphics => "MON_GFX.AMB",
 			AssetType.TacticalIcons => "TACTIC.ICN",
+			AssetType.SpellAnimations => "F_T_ANIM.ICN",
 			AssetType.Palette => "COL_PALL.AMB",
 			AssetType.Graphics80x80 => "PICS80.AMB",
 			AssetType.Tileset => "ICON_DAT.AMB",
@@ -599,6 +602,9 @@ public class AssetProvider : IAssetProvider
 				// The positions of the monsters (x, y, frame group) of the back row are followed by
 				// the other rows and the frame counts of the monster graphics.
 				return FindAndGotoByteSequence(dataReader, 0, 0x00, 0x36, 0x00, 0x46, 0x00, 0x00, 0x00, 0x44, 0x00, 0x46, 0x00, 0x00, 0x00, 0x52, 0x00, 0x46);
+			case EmbeddedDataOffset.DamageDigits:
+				// The digits 0 and 1 (5 lines of 4 pixels each)
+				return FindAndGotoByteSequence(dataReader, 0, 0x60, 0xd0, 0xd0, 0xd0, 0x60, 0x30, 0x70, 0x30, 0x30, 0x30);
 			case EmbeddedDataOffset.AltarPuzzle:
 				// The text indices and the piece order
 				return FindAndGotoByteSequence(dataReader, 0, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,

@@ -77,6 +77,7 @@ The most important ones:
 | `condition <slot> <condition> [0\|1]`    | Check a condition like Poisoned                                      |
 | `count <item> [amount]`, `give`          | Check or give items                                                  |
 | `textshown <text>`, `notextshown [text]` | Check the texts shown since the last `cleartexts`                    |
+| `animationshown <text>`                  | Check a battle animation since the last `cleartexts` (`damage NAME`) |
 | `cheat <command>`                        | Execute a cheat console command (e.g. `cheat events 65`)             |
 
 Values printed without an expected value are remembered, so a later check can use `+n`, `-n`

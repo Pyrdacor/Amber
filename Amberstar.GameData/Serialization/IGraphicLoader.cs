@@ -30,4 +30,8 @@ public interface IGraphicLoader
 	/// classes of the party members and then the monster graphics + 9).
 	/// </summary>
 	IGraphic[] LoadTacticalIcons();
+	/// <summary>
+	/// Loads the 16x16 icons of the spell animations in battles (6 icons per animation).
+	/// </summary>
+	IGraphic[] LoadSpellAnimationIcons();
 }

@@ -629,7 +629,11 @@ internal sealed class Battle
 		if (backRow.Count > 1 || shiftBackRowNextRound)
 		{
 			foreach (var participant in backRow)
-				MoveTo(participant, new(participant.Position.X, PartyFrontRow));
+			{
+				var from = participant.Position;
+				MoveTo(participant, new(from.X, PartyFrontRow));
+				events.Add(new BattleMoveEvent(participant, from, participant.Position));
+			}
 
 			events.Add(new BattleTextEvent(null, Message.OpponentsAreClosingIn));
 			shiftBackRowNextRound = false;
@@ -845,6 +849,9 @@ internal sealed class Battle
 		var attackerData = attacker.Character;
 		var defenderData = defender.Character;
 
+		if (attacker is MonsterParticipant monster)
+			events.Add(new BattleAttackAnimationEvent(monster));
+
 		// hit
 		int attack = Skill(attackerData, GameData.Skill.Attack);
 		attack = attacker.Side == BattleSide.Party ? (attack + WeaponPower) / 2 * 2 : attack * 2;
@@ -976,6 +983,8 @@ internal sealed class Battle
 		var spellData = assetProvider.SpellDataLoader.LoadSpellData(action.SpellSchool, action.SpellNumber);
 		var character = monster.Monster;
 
+		events.Add(new BattleAttackAnimationEvent(monster));
+
 		character.SpellPoints.CurrentValue = (word)Math.Max(0, character.SpellPoints.CurrentValue - spellData.SpellPointCost);
 		bool success = probe(Skill(character, GameData.Skill.UseMagic));
 		events.Add(new BattleSpellEvent(caster, action.SpellSchool, action.SpellNumber, success));
@@ -1015,12 +1024,14 @@ internal sealed class Battle
 	const int DissolveSpell = 21;
 	const int MagicArrowsSpell = 22;
 	const int MagicArrowsDamage = 8;
-	static readonly Dictionary<int, (Condition Condition, Message Message)> MonsterConditionWhiteSpells = new()
+	const int MagicArrowsAnimation = 10;
+	const int SleepAnimation = 5;
+	static readonly Dictionary<int, (Condition Condition, Message Message, int Animation)> MonsterConditionWhiteSpells = new()
 	{
-		{ 20, (Condition.Stunned, Message.IsStunned) },
-		{ 22, (Condition.Panicked, Message.Panics) },
-		{ 23, (Condition.Irritated, Message.IsIrritated) },
-		{ 24, (Condition.Blind, Message.GoesBlind) },
+		{ 20, (Condition.Stunned, Message.IsStunned, 4) },
+		{ 22, (Condition.Panicked, Message.Panics, 6) },
+		{ 23, (Condition.Irritated, Message.IsIrritated, 7) },
+		{ 24, (Condition.Blind, Message.GoesBlind, 14) },
 	};
 
 	/// <summary>
@@ -1108,6 +1119,7 @@ internal sealed class Battle
 				if (!ResistsPartySpell(target, events))
 				{
 					target.Character.AddCondition(Condition.Sleeping);
+					events.Add(new BattleSpellAnimationEvent(target, SleepAnimation));
 					events.Add(new BattleTextEvent(target, Message.FallsAsleep));
 				}
 			}
@@ -1130,6 +1142,7 @@ internal sealed class Battle
 				if (!ResistsPartySpell(target, events))
 				{
 					target.Character.AddCondition(effect.Condition);
+					events.Add(new BattleSpellAnimationEvent(target, effect.Animation));
 					events.Add(new BattleTextEvent(target, effect.Message));
 				}
 			}
@@ -1208,6 +1221,7 @@ internal sealed class Battle
 			if (spellNumber == MagicArrowsSpell)
 			{
 				Damage(target, MagicArrowsDamage, events);
+				events.Add(new BattleSpellAnimationEvent(target, MagicArrowsAnimation));
 				continue;
 			}
 
@@ -1227,6 +1241,7 @@ internal sealed class Battle
 				damage *= 2;
 
 			Damage(target, damage, events);
+			events.Add(new BattleSpellAnimationEvent(target, damageRange.Animation));
 		}
 	}
 

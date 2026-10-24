@@ -129,6 +129,12 @@ namespace Amberstar.Frontend
 			int tacticalIconOffset = graphics.Count;
 			foreach (var graphic in assetProvider.GraphicLoader.LoadTacticalIcons())
 				graphics.Add(graphics.Count, graphic);
+			int spellAnimationOffset = graphics.Count;
+			foreach (var graphic in assetProvider.GraphicLoader.LoadSpellAnimationIcons())
+				graphics.Add(graphics.Count, graphic);
+			int damageDigitOffset = graphics.Count;
+			for (int i = 0; i < 10; i++)
+				graphics.Add(graphics.Count, assetProvider.CombatData.GetDamageDigit(i));
 			var monsterGraphicOffsets = new Dictionary<int, int>();
 			foreach (int monsterGraphic in assetProvider.GetAssetKeys(Amber.Common.AssetType.MonsterGraphics))
 			{
@@ -286,7 +292,8 @@ namespace Amberstar.Frontend
             graphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
-				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets);
+				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets,
+				spellAnimationOffset, damageDigitOffset);
 			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);

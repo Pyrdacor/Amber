@@ -4,9 +4,12 @@ waittext
 dismissall
 startbattle 35
 waitscreen Battle
+cleartexts
 battleaction parry
 battleround
 battleresult PartyDefeated
+# --- the monsters attack with their attack frames
+animationshown attack
 waittext
 textshown GÖTTIN BALA
 dismissall

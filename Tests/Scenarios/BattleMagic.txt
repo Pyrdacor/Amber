@@ -28,3 +28,5 @@ textshown WELCHE ROTTE
 battleround
 textshown CRAG ZAUBERT DEN SPRUCH: SCHLAF
 textshown RIESENRATTE SCHLÄFT EIN
+# --- the sleep spell shows its particles (animation 5) around the rat
+animationshown spell RIESENRATTE 5
