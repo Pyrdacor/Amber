@@ -1289,7 +1289,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
                 var tileInfo = tileset!.Tiles[character.Icon - 1];
 
-                mapCharacter.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex); // TODO: Animation
+                mapCharacter.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex +
+                    GetAnimationFrame(tileInfo, character.Position.X + character.Position.Y * map.Width));
             }
 		}
 
@@ -1556,6 +1557,20 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		foreach (var (sprite, (tileInfo, mapIndex)) in animatedTiles)
 			sprite.TextureOffset = textureAtlas.GetOffset(tileGraphicOffset + tileInfo.ImageIndex + GetAnimationFrame(tileInfo, mapIndex));
+
+		// The persons and monsters are animated as well.
+		var tileset = tilesets![map!.TilesetIndex - 1];
+
+		for (int i = 0; i < characters.Count; i++)
+		{
+			if (!mapCharacters[i].Visible)
+				continue;
+
+			var character = characters[i];
+			var characterTileInfo = tileset.Tiles[character.Icon - 1];
+			mapCharacters[i].TextureOffset = textureAtlas.GetOffset(tileGraphicOffset + characterTileInfo.ImageIndex +
+				GetAnimationFrame(characterTileInfo, character.Position.X + character.Position.Y * map.Width));
+		}
 	}
 
 	/// <summary>
