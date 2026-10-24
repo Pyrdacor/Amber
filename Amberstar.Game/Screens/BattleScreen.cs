@@ -78,6 +78,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	Label? text;
 	TargetSelection targetSelection = TargetSelection.None;
 	(SpellSchool School, int SpellNumber, SpellTarget Target)? selectedSpell = null;
+	// the item of the chosen spell (its owner might not be the active member)
+	(int Slot, ItemSlot ItemSlot, bool Equipped)? spellItem = null;
 	bool slowMode = false;
 	bool executing = false;
 	readonly Queue<BattleEvent> pendingEvents = [];
@@ -117,9 +119,11 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 	internal override byte ButtonGridPaletteIndex => Game?.PaletteIndexProvider.GetCombatPaletteIndex(background) ?? 0;
 
-	// The battle can't be left with escape and the inventory is not available.
+	// The battle can't be left with escape. The inventory and the active member can be chosen
+	// while the actions are chosen.
 	public override bool CloseOnEscape { get; } = false;
-	public override bool AllowInventoryAccess { get; } = false;
+	public override bool AllowInventoryAccess => !executing;
+	public override bool AllowCharacterSelection => !executing;
 	// The game time is paused during battles but the animations run.
 	public override bool UpdateWhilePaused { get; } = true;
 
@@ -194,9 +198,38 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		base.Close();
 	}
 
+	public override void ScreenPushed(Screen screen)
+	{
+		base.ScreenPushed(screen);
+
+		// e.g. the inventory covers the battle
+		if (!screen.Transparent)
+		{
+			monsterImages.ForEach(image => image.Visible = false);
+			ClearMarkers();
+			ClearAnimations();
+		}
+	}
+
+	public override void ScreenPopped(Screen screen)
+	{
+		base.ScreenPopped(screen);
+
+		if (!screen.Transparent)
+		{
+			Game.SetLayout(Layout.Battle, ButtonGridPaletteIndex);
+			Game.Cursor.CursorType = CursorType.Sword;
+			UpdateBattleField();
+			UpdateStatusIcons();
+			RequestButtonSetup();
+			UpdateMarkers();
+		}
+	}
+
 	void ActivePartyMemberChanged()
 	{
 		targetSelection = TargetSelection.None;
+		spellItem = null;
 		RequestButtonSetup();
 		UpdateMarkers();
 	}
@@ -235,6 +268,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		int slot = ActiveSlot;
 		targetSelection = TargetSelection.None;
+		spellItem = null;
 		UpdateMarkers();
 
 		switch (index)
@@ -285,7 +319,27 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			return;
 		}
 
-		SetAction(slot, new(BattleActionType.Magic, SpellSchool: school, SpellNumber: spellNumber));
+		SetAction(slot, CreateSpellAction(school, spellNumber, null));
+	}
+
+	BattleAction CreateSpellAction(SpellSchool school, int spellNumber, List<BattleParticipant>? targets) =>
+		new(BattleActionType.Magic, SpellSchool: school, SpellNumber: spellNumber, Targets: targets,
+			Item: spellItem?.ItemSlot, ItemEquipped: spellItem?.Equipped ?? false);
+
+	/// <summary>
+	/// The spell of an item which was used in the inventory becomes the action of its owner (L18730 in the original).
+	/// </summary>
+	internal void ChooseItemSpell(int slot, ItemSlot itemSlot, bool equipped)
+	{
+		if (battle == null || executing || itemSlot.Item == null)
+			return;
+
+		var item = itemSlot.Item;
+		spellItem = (slot, itemSlot, equipped);
+		ChooseSpell(slot, item.SpellSchool, item.SpellIndex);
+
+		if (targetSelection == TargetSelection.None)
+			spellItem = null;
 	}
 
 	List<BattleParticipant>? GetSpellTargets(Position cell)
@@ -375,7 +429,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			if (valid)
 			{
 				var (school, spellNumber, _) = selectedSpell!.Value;
-				battle.SetPartyAction(slot, new(BattleActionType.Magic, SpellSchool: school, SpellNumber: spellNumber, Targets: targets));
+				battle.SetPartyAction(spellItem?.Slot ?? slot, CreateSpellAction(school, spellNumber, targets));
 			}
 		}
 		else if (selection == TargetSelection.Move)
@@ -394,6 +448,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		}
 
 		targetSelection = TargetSelection.None;
+		spellItem = null;
 		ShowText("");
 		UpdateStatusIcons();
 		UpdateMarkers();
@@ -425,6 +480,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			if (buttons == MouseButtons.Right)
 			{
 				targetSelection = TargetSelection.None;
+				spellItem = null;
 				ShowText("");
 				UpdateMarkers();
 				return true;

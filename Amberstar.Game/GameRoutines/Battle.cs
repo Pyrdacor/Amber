@@ -132,7 +132,8 @@ partial class Game
 		CurrentBattle = new(AssetProvider, monsterGroup, partyMembers, State.CombatPositions, partyAdvantage, monsterAdvantage,
 			Probe, (min, max) => Random(min, max))
 		{
-			ActivateSpell = (type, value, duration) => ActivateSpell(type, value, duration)
+			ActivateSpell = (type, value, duration) => ActivateSpell(type, value, duration),
+			UseMagicItem = (owner, itemSlot, equipped) => UseMagicItemCharge(new(owner, itemSlot, equipped))
 		};
 
 		PlaySong(BattleSong);
@@ -150,6 +151,36 @@ partial class Game
 		magicItem = null;
 
 		ScreenHandler.PushScreen(ScreenType.SpellSelect, () => AfterScreenClosed(() => selected(SelectedSpell)));
+	}
+
+	/// <summary>
+	/// Uses the spell of an item in a battle (L11ed4 and L18730 in the original). The inventory is closed and
+	/// the spell becomes the action of the item's owner. Its targets are chosen like for spells.
+	/// </summary>
+	internal void UseItemInBattle(IPartyMember owner, ItemSlot itemSlot, bool equipped)
+	{
+		var item = itemSlot.Item!;
+		var spellData = LoadSpellData(item.SpellSchool, item.SpellIndex);
+
+		if (!CanCastSpellAt(spellData, SpellLocation.Battle))
+		{
+			ShowTextMessage(LoadMessageText(Message.SpellDoesNotWorkHere));
+			return;
+		}
+
+		ScreenHandler.PopScreen();
+
+		int slot = State.PartyMembersWithSlot.FirstOrDefault(p => p.PartyMember == owner, (-1, null)).Item1 + 1;
+
+		// Some special spells can't be cast by the party (they do nothing).
+		if (slot == 0 || CurrentBattle?.CanChooseAction(slot) != true || !BattleAction.PartyCanCastInBattle(item.SpellSchool, item.SpellIndex))
+			return;
+
+		AfterScreenClosed(() =>
+		{
+			if (ScreenHandler.ActiveScreen is BattleScreen battleScreen)
+				battleScreen.ChooseItemSpell(slot, itemSlot, equipped);
+		});
 	}
 
 	/// <summary>
@@ -176,6 +207,8 @@ partial class Game
 		(SpellSchool.White, 26) => Message.WhichUndeadGroup,
 		(SpellSchool.Gray, 23) => Message.WhoToHaste,
 		(SpellSchool.Black, 21) => Message.WhichMonsterToDissolve,
+		(SpellSchool.Special, 13) => Message.WhichDemonToBanish,
+		(SpellSchool.Special, 14 or 15) => Message.WhoseSpellPointsToRestore,
 		_ => target switch
 		{
 			SpellTarget.Monster => Message.WhichMonster,

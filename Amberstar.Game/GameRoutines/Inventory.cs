@@ -14,7 +14,7 @@ partial class Game
 	/// Equips an item of the backpack (Equip_item in the original).
 	/// Returns the message to show if the item can't be equipped.
 	/// </summary>
-	internal static Message? EquipItem(IPartyMember partyMember, int inventorySlotIndex)
+	internal static Message? EquipItem(IPartyMember partyMember, int inventorySlotIndex, bool inBattle = false)
 	{
 		var sourceSlot = partyMember.Inventory[inventorySlotIndex];
 		var item = sourceSlot.Item;
@@ -22,7 +22,9 @@ partial class Game
 		if (item == null || sourceSlot.Count == 0 || item.Type == ItemType.MonsterItem)
 			return null;
 
-		// TODO: In battle, items with the flag NotEquipDuringFight can't be equipped.
+		// In battles only some items can be equipped (nothing happens otherwise).
+		if (inBattle && !item.Flags.HasFlag(ItemFlags.EquipDuringFight))
+			return null;
 
 		var targetSlot = item.EquipmentSlot;
 
@@ -58,7 +60,7 @@ partial class Game
 	/// Puts an equipped item into the backpack (Unequip_item in the original).
 	/// Returns the message to show if the item can't be unequipped.
 	/// </summary>
-	internal static Message? UnequipItem(IPartyMember partyMember, EquipmentSlot equipmentSlot)
+	internal static Message? UnequipItem(IPartyMember partyMember, EquipmentSlot equipmentSlot, bool inBattle = false)
 	{
 		var sourceSlot = partyMember.Equipment[equipmentSlot];
 		var item = sourceSlot.Item;
@@ -66,7 +68,9 @@ partial class Game
 		if (item == null || sourceSlot.Count == 0 || item.Type == ItemType.MonsterItem)
 			return null;
 
-		// TODO: In battle, items with the flag NotEquipDuringFight can't be unequipped.
+		// In battles only some items can be unequipped (nothing happens otherwise).
+		if (inBattle && !item.Flags.HasFlag(ItemFlags.EquipDuringFight))
+			return null;
 
 		if (item.Flags.HasFlag(ItemFlags.Cursed))
 			return Message.ItemIsCursed;

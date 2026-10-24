@@ -34,8 +34,11 @@ public enum ItemFlags : byte
     /// </summary>
 	DestroyAfterUsage = 0x08,
     /// <summary>
-    /// If set, the equipment can neither be
-    /// equipped nor unequipped during a fight.
+    /// If set, the equipment can be equipped and unequipped
+    /// during a fight (weapons, shields, rings, ...). Armor
+    /// can't be changed in a fight.
+    /// Note: The released source code checks the opposite but
+    /// the program and the item data use it like this.
     /// </summary>
-    NotEquipDuringFight = 0x10,
+    EquipDuringFight = 0x10,
 }

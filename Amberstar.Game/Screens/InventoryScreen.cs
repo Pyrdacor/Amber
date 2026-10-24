@@ -488,7 +488,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         if (mouseButtons != MouseButtons.Left)
             return;
 
-        ItemActionDone(Game.EquipItem(partyMember!, index));
+        ItemActionDone(Game.EquipItem(partyMember!, index, Game.CurrentBattle != null));
     }
 
     private void EquipmentSlotClicked(EquipmentSlot equipmentSlot, MouseButtons mouseButtons, KeyModifiers keyModifiers)
@@ -500,7 +500,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         if (equipmentSlot == EquipmentSlot.LeftHand && equippedItemSlots[equipmentSlot].TwoHandedSecondSlot)
             equipmentSlot = EquipmentSlot.RightHand;
 
-        ItemActionDone(Game.UnequipItem(partyMember!, equipmentSlot));
+        ItemActionDone(Game.UnequipItem(partyMember!, equipmentSlot, Game.CurrentBattle != null));
     }
 
     /// <summary>
@@ -615,7 +615,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
             return;
 
         // items which are used on the map (e.g. keys or a shovel)
-        if (Game.UseItemOnMap(item))
+        if (Game.CurrentBattle == null && Game.UseItemOnMap(item))
         {
             if (item.Flags.HasFlag(ItemFlags.DestroyAfterUsage))
                 Game.DestroyUsedItem(user, itemSlot, equipped);
@@ -630,6 +630,13 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
             if (!item.UsableClasses.HasFlag((ClassFlags)(1 << (int)user.Class)))
             {
                 ShowMessage(Message.WrongClass);
+                return;
+            }
+
+            // In battles the spell becomes the action of the item's owner.
+            if (Game.CurrentBattle != null)
+            {
+                Game.UseItemInBattle(user, itemSlot, equipped);
                 return;
             }
 
@@ -663,7 +670,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
                 break;
             }
             case ItemType.Transportation: // magic disc
-                if (Game.ScreenHandler.FindMapScreen() is not Map2DScreen { IsWilderness: true })
+                if (Game.CurrentBattle != null || Game.ScreenHandler.FindMapScreen() is not Map2DScreen { IsWilderness: true })
                 {
                     ShowMessage(Message.FlyingDiscNotUsableHere);
                     return;

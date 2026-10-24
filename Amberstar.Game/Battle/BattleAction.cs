@@ -24,10 +24,18 @@ internal enum BattleActionType
 /// <summary>
 /// The action of a participant in the next round. The target is a grid position (move and attack).
 /// Spells are given by school and number and their targets are chosen with the action.
+/// Spells of items also give the item slot (its charge is used when the spell is cast).
 /// </summary>
 internal sealed record BattleAction(BattleActionType Type, Position Target = default, bool Ranged = false,
-	SpellSchool SpellSchool = SpellSchool.None, int SpellNumber = 0, IReadOnlyList<BattleParticipant>? Targets = null)
+	SpellSchool SpellSchool = SpellSchool.None, int SpellNumber = 0, IReadOnlyList<BattleParticipant>? Targets = null,
+	ItemSlot? Item = null, bool ItemEquipped = false)
 {
+	/// <summary>
+	/// The party can't cast most special spells in battles, not even with items (the setup table L1879e in the original).
+	/// </summary>
+	public static bool PartyCanCastInBattle(SpellSchool school, int spellNumber) =>
+		school != SpellSchool.Special || spellNumber is 13 or 14 or 15 or 17;
+
 	/// <summary>
 	/// The targets of a spell are given by the target flags of the spell data.
 	/// </summary>

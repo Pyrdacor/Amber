@@ -130,3 +130,15 @@ mad -> random (random/2 % 37): bit0 -> attack random target in reach; row 4 and 
   damage table, a random one is chosen per round (L183aa). Particles are clipped at the bottom of the background.
   Animations: black damage spells from the damage table, magic arrows 10, white 20 paralyze 4, 21 sleep 5, 22 panic 6,
   23 irritate 7, 24 blind 14. Dissolve, destroy undead and the spells of monsters have none.
+
+## Items in battles
+- The inventory can be opened while the actions are chosen (right click on a portrait).
+- Equipping and unequipping (L13088, L1324e): in battles ($5b827) only items with bit 4 of the item flags can be changed
+  (weapons, shields, rings, amulets, ammunition), otherwise nothing happens. The released source code checks the opposite.
+- Using an item with a spell (L11ed4): the spell must work in battles (location bit 4), the inventory is closed and the
+  spell becomes the action of the item's owner (L18730, action word 6 = -1, word 8 = item slot). Its target is chosen like
+  for spells. When the action is executed (L17b44) the item's school and spell are used, a charge is removed (L12042) and
+  the spell always succeeds.
+- Special spells of the party (setup table L1879e): only 13 banish demon (target message 186), 14/15 spell points
+  (message 187) and 17 youth (message 189, but youth doesn't work in battles by its location flags). The other special
+  spells do nothing. Banish demon kills a demon (monster byte 68 bit 1) if its anti-magic probe succeeds, otherwise it resists.

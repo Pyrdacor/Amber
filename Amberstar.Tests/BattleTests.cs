@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amberstar.Frontend;
 using Amberstar.Frontend.Scripting;
 using Amberstar.Game.Battle;
@@ -221,6 +221,30 @@ public sealed class BattleTests
 		Assert.Contains(events, e => e is BattleSpellEvent { Success: true });
 		Assert.Equal(6, hero.Character.HitPoints.CurrentValue);
 		Assert.Equal(8, hero.Character.SpellPoints.CurrentValue);
+	}
+
+	[Fact]
+	public void ItemSpellsAlwaysSucceedAndUseTheItem()
+	{
+		using var setup = new Setup(true, 0);
+		var battle = setup.Battle;
+		var hero = battle.PartyMembers[0];
+		// spell point potion (special spell 14: 1-25 spell points)
+		Assert.Null(setup.Game.Game.ScriptGiveItem(1, 94, 1));
+		var itemSlot = hero.PartyMember.Inventory.First(slot => slot.Item?.Index == 94);
+		hero.Character.SpellPoints.MaxValue = 50;
+		hero.Character.SpellPoints.CurrentValue = 0;
+		setup.ProbeResult = false;
+		var usedItems = new List<ItemSlot>();
+		battle.UseMagicItem = (_, slot, _) => usedItems.Add(slot);
+		battle.SetPartyAction(1, new(BattleActionType.Magic, SpellSchool: SpellSchool.Special, SpellNumber: 14, Targets: [hero], Item: itemSlot));
+
+		var events = battle.ExecuteRound();
+
+		// the random value is the maximum
+		Assert.Contains(events, e => e is BattleSpellEvent { Success: true });
+		Assert.Equal(25, hero.Character.SpellPoints.CurrentValue);
+		Assert.Equal([itemSlot], usedItems);
 	}
 
 	[Fact]

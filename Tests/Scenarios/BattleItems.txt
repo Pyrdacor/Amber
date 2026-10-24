@@ -1,0 +1,38 @@
+# Items in battles: armour can't be changed but weapons can, Crag drinks a spell point potion (item 94, special spell 14) in a battle against a giant rat.
+waittext
+dismissall
+join 61
+give 2 94
+startbattle 1
+waitscreen Battle
+battlecell 2 3 CRAG
+# --- the hero can't take off his clothes (111) but his weapon (127)
+click 32 17 right
+waitscreen Inventory
+invslot Body
+itemslot 1 Body 111
+invslot RightHand
+itemslot 1 RightHand empty
+itemslot 1 2 127
+invslot 2
+itemslot 1 RightHand 127
+key Escape
+waitscreen Battle
+wait 500
+# --- the inventory is opened by a right click on the portrait, the potion is used
+value 2 sp
+cleartexts
+click 80 17 right
+waitscreen Inventory
+button 3
+invslot 4
+# --- the spell becomes Crag's action, its target is chosen on the battle field
+waitscreen Battle
+# the inventory fades out
+wait 500
+textshown WESSEN SP SOLLEN ERNEUERT WERDEN
+click 248 105
+battleround
+textshown CRAG ZAUBERT DEN SPRUCH
+count 94 0
+value 2 sp +

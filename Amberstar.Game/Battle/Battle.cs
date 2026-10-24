@@ -303,6 +303,11 @@ internal sealed class Battle
 	/// <summary>
 	/// Irritated members and members without spell schools can't cast spells.
 	/// </summary>
+	/// <summary>
+	/// Uses a charge of a magic item (owner, item slot, equipped).
+	/// </summary>
+	public Action<IPartyMember, ItemSlot, bool>? UseMagicItem { get; set; }
+
 	public bool CanCastSpells(int slot) => CanChooseAction(slot) && !GetPartyMember(slot)!.HasAnyConditionOf(Condition.Irritated) &&
 		GetPartyMember(slot)!.PartyMember.LearnedSpellSchools != 0;
 
@@ -1042,9 +1047,23 @@ internal sealed class Battle
 	{
 		var spellData = assetProvider.SpellDataLoader.LoadSpellData(action.SpellSchool, action.SpellNumber);
 		var character = caster.PartyMember;
+		bool success;
 
-		character.SpellPoints.CurrentValue = (word)Math.Max(0, character.SpellPoints.CurrentValue - spellData.SpellPointCost);
-		bool success = probe(Skill(character, GameData.Skill.UseMagic));
+		if (action.Item != null)
+		{
+			// The item might be gone (e.g. given away). Spells of items always succeed (L18b28 in the original).
+			if (action.Item.Item == null || action.Item.Count == 0 || action.Item.Item.SpellCharges == 0)
+				return;
+
+			UseMagicItem?.Invoke(character, action.Item, action.ItemEquipped);
+			success = true;
+		}
+		else
+		{
+			character.SpellPoints.CurrentValue = (word)Math.Max(0, character.SpellPoints.CurrentValue - spellData.SpellPointCost);
+			success = probe(Skill(character, GameData.Skill.UseMagic));
+		}
+
 		events.Add(new BattleSpellEvent(caster, action.SpellSchool, action.SpellNumber, success));
 
 		// The spell name is shown first and the result after the effects of the spell (L17ba4 in the original).
@@ -1076,6 +1095,51 @@ internal sealed class Battle
 			case SpellSchool.Black:
 				CastBlackSpell(action.SpellNumber, spellData, targets, events);
 				break;
+			case SpellSchool.Special:
+				CastSpecialSpell((SpecialSpell)action.SpellNumber, targets, events);
+				break;
+		}
+	}
+
+	/// <summary>
+	/// Special spells of items (L19478, L194ec, L19540 and L1959c in the original).
+	/// </summary>
+	void CastSpecialSpell(SpecialSpell spell, List<BattleParticipant> targets, List<BattleEvent> events)
+	{
+		bool Alive(BattleParticipant target) => !target.HasAnyConditionOf(OutOfBattleConditions);
+
+		foreach (var target in targets.Where(Alive))
+		{
+			switch (spell)
+			{
+				case SpecialSpell.BanishDemon:
+					if (target is not MonsterParticipant monster || !monster.Monster.MonsterFlags.HasFlag(MonsterFlags.Demon))
+						break;
+
+					// Note: The original kills the demon if its anti-magic probe succeeds.
+					if (ResistsSpell(target, false))
+						target.Character.AddCondition(Condition.Dead);
+					else
+						events.Add(new BattleTextEvent(target, Message.ResistsTheSpell));
+					break;
+				case SpecialSpell.SpellPoints1:
+					target.Character.HealSpellPoints((word)(1 + Random(25)));
+					break;
+				case SpecialSpell.SpellPoints2:
+					if (target.Character.SpellPoints.CurrentValue < target.Character.SpellPoints.TotalMax)
+						target.Character.FillSpellPoints();
+					break;
+				case SpecialSpell.Youth:
+					if (target is PartyMemberParticipant partyMember)
+					{
+						int age = partyMember.PartyMember.Age.CurrentValue - (1 + Random(10));
+
+						// The party member can't be younger than 15.
+						if (age >= 15)
+							partyMember.PartyMember.Age.CurrentValue = (word)age;
+					}
+					break;
+			}
 		}
 	}
 
