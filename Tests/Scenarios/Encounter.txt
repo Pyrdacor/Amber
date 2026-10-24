@@ -1,10 +1,28 @@
-# Encounter events (map 38, 22,29, chance 100%, monster group 35). Battles are not implemented yet,
-# so a message is shown and the event stays active.
+#! seed 5
+# Encounter events (map 38, 22,29, chance 100%, monster group 35: three swamp spiders) start a battle.
+# The hero moves to the back row and flees (only the back row can flee).
 waittext
 dismissall
+setvalue 1 hp 300
 cleartexts
 teleport 38 22 29
-waittext
-textshown not implemented
-dismissall
-eventactive 38 2 1
+waitscreen Battle
+battleresult Ongoing
+battlecell 0 2 SUMPFSPINNE
+battlecell 3 2 SUMPFSPINNE
+battlecell 5 2 SUMPFSPINNE
+battlecell 1 3 THALION
+# --- fleeing is only possible from the back row
+buttonenabled 0 0
+battleaction move 1 4
+battleround
+battlecell 1 4 THALION
+textshown ÄNDERT DEN STANDORT
+buttonenabled 0 1
+# --- the spiders follow, the hero flees
+battleaction flee
+battleround
+textshown FLÜCHTET ERFOLGREICH
+battleresult PartyFled
+waitidle
+screen Map2D

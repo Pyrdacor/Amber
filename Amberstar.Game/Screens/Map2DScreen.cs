@@ -1924,6 +1924,19 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		UpdateLight(true);
 	}
 
+	void IMapScreen.RestartMusic()
+	{
+		if (worldMap != null)
+			Game.PlaySong(worldMap.SongIndex);
+		else if (Map.SongIndex != 0)
+			Game.PlaySong(1 + Map.SongIndex);
+	}
+
+	/// <summary>
+	/// The flags of the tile at the party position (e.g. for the combat background).
+	/// </summary>
+	internal uint PartyTileFlags => (uint)GetTileFlags(Game.State.PartyPosition.X, Game.State.PartyPosition.Y);
+
     private TileFlags GetTileFlags(int x, int y)
     {
 		var tile = map!.Tiles[x + y * map.Width];

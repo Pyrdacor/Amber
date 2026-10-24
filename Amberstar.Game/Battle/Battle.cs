@@ -107,6 +107,11 @@ internal sealed class Battle
 	public BattleResult Result { get; private set; } = BattleResult.Ongoing;
 
 	/// <summary>
+	/// Ends the battle as if the party fled (used by scenario scripts to leave battles).
+	/// </summary>
+	public void Abort() => Result = BattleResult.PartyFled;
+
+	/// <summary>
 	/// The number of executed rounds.
 	/// </summary>
 	public int Round { get; private set; } = 0;

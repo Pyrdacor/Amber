@@ -35,6 +35,13 @@ using G = Game.Game;
 ///                             screens like doors, chests or conversations with escape (default timeout 15000)
 ///   yes / no                  answer the shown confirmation window
 ///   answer &lt;word&gt;             answer the shown riddlemouth with a word or a dictionary index like #1615
+///   battleaction &lt;action&gt; [x y] choose the action of the active member in a battle like the buttons
+///                             (flee, move, attack, parry, magic, slow, fast); move and attack need a 0-based cell
+///                             of the battle field (columns 0-5, rows 0-2 monsters, 3-4 party)
+///   battleround [timeout ms]  press Ok and wait until the battle round was shown (closes texts in the slow mode)
+///   battlecell &lt;x&gt; &lt;y&gt; [name|empty] print or check the participant at a 0-based battle field cell
+///   battleresult [result]     print or check the battle result (Ongoing, Won, PartyFled, PartyDefeated, none)
+///   leavebattle               leave the shown battle as if the party fled (closeall does this as well)
 ///   word &lt;index&gt; [text]       print a dictionary word, optionally check it
 ///   altarselect &lt;name&gt;        select the remaining Amberstar piece with the given name at the altar
 ///   altar [laid] [name]       print or check the number of laid Amberstar pieces and the selected piece
@@ -592,6 +599,51 @@ public sealed class ScenarioScript
 					Report(transport.Equals(args[3], StringComparison.OrdinalIgnoreCase), $"transport = {transport} (expected {args[3]})");
 				break;
 			}
+			case "battleaction":
+				CheckResult(game.ScriptBattleAction(args[0], args.Length > 2 ? new Position(Arg(1), Arg(2)) : null));
+				continueTime = time + 1;
+				break;
+			case "battleround":
+			{
+				int round = game.ScriptBattleRound;
+				var error = game.ScriptBattleAction("ok", null);
+
+				// The battle ends or the round is executed and its texts were shown.
+				if (error != null)
+					Report(false, error);
+				else
+					wait = new("battleround", time + (OptionalArg(0) ?? 60000), g => g.ScriptBattleRound != round && !g.ScriptBattleRoundRunning, g =>
+					{
+						if (g.ScriptWaitingForClick)
+							Click(g, TextClickPosition, MouseButtons.Left);
+					});
+				break;
+			}
+			case "battlecell":
+			{
+				var actual = game.ScriptBattleCell(Arg(0), Arg(1)) ?? "empty";
+
+				if (args.Length < 3)
+					output($"  battlecell {Arg(0)},{Arg(1)} = {actual}");
+				else
+					Report(actual.Equals(string.Join(" ", args[2..]), StringComparison.OrdinalIgnoreCase),
+						$"battlecell {Arg(0)},{Arg(1)} = {actual} (expected {string.Join(" ", args[2..])})");
+				break;
+			}
+			case "battleresult":
+			{
+				var actual = game.ScriptBattleResult;
+
+				if (args.Length == 0)
+					output($"  battleresult = {actual}");
+				else
+					Report(actual.Equals(args[0], StringComparison.OrdinalIgnoreCase), $"battleresult = {actual} (expected {args[0]})");
+				break;
+			}
+			case "leavebattle":
+				game.ScriptLeaveBattle();
+				continueTime = time + 1;
+				break;
 			case "answer":
 				CheckResult(game.ScriptAnswer(argument.StartsWith('#') ? game.ScriptGetWord(int.Parse(argument[1..])) : argument));
 				continueTime = time + 1;
@@ -924,6 +976,8 @@ public sealed class ScenarioScript
 			Click(game, TextClickPosition, MouseButtons.Left);
 		else if (game.ScriptActiveScreen == "Confirmation")
 			game.ScriptAnswer(false);
+		else if (game.ScriptActiveScreen == "Battle")
+			game.ScriptLeaveBattle();
 		else if (game.ScriptActiveScreen is not ("Map2D" or "Map3D"))
 			PressKey(game, Key.Escape);
 	}

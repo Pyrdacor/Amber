@@ -24,6 +24,8 @@ partial class Game
 
 	public void ScriptClearShownTexts() => scriptShownTexts.Clear();
 
+	internal void ScriptTextShown(string text) => scriptShownTexts.Add(text);
+
 	internal void ScriptTextShown(IText text)
 	{
 		// a large width avoids line breaks inside of the paragraphs
@@ -465,6 +467,37 @@ partial class Game
 	public string? ScriptAltar => ScreenHandler.FindScreen(ScreenType.Altar) is AltarScreen altarScreen
 		? $"{altarScreen.Step} {altarScreen.SelectedPieceName}"
 		: null;
+
+	/// <summary>
+	/// Chooses an action of the active member in a battle (flee, move x y, attack x y, parry, magic, slow, fast, ok).
+	/// The battle field cells are 0-based (rows 0-2 monsters, 3-4 party).
+	/// </summary>
+	public string? ScriptBattleAction(string action, Position? target)
+	{
+		if (ScreenHandler.ActiveScreen is not BattleScreen battleScreen)
+			return $"no battle is shown but {ScriptActiveScreen}";
+
+		return battleScreen.ScriptChooseAction(action, target);
+	}
+
+	/// <summary>
+	/// True while a battle round is executed.
+	/// </summary>
+	public bool ScriptBattleRoundRunning => ScreenHandler.FindScreen(ScreenType.Battle) is BattleScreen { Executing: true };
+
+	/// <summary>
+	/// The number of executed battle rounds (-1 without a battle).
+	/// </summary>
+	public int ScriptBattleRound => CurrentBattle?.Round ?? -1;
+
+	/// <summary>
+	/// The name of the participant at a 0-based battle field cell or null if empty.
+	/// </summary>
+	public string? ScriptBattleCell(int column, int row) => CurrentBattle?[column, row]?.Name;
+
+	public string ScriptBattleResult => CurrentBattle?.Result.ToString() ?? "none";
+
+	public void ScriptLeaveBattle() => (ScreenHandler.ActiveScreen as BattleScreen)?.ScriptLeave();
 
 	public string? ScriptAnswer(string word)
 	{

@@ -32,4 +32,8 @@ internal interface IMapScreen
 	/// Gets the 0-based positions of the persons and monsters which are on the map now.
 	/// </summary>
 	IEnumerable<Position> GetCharacterPositions();
+	/// <summary>
+	/// Plays the song of the map again (e.g. after a battle).
+	/// </summary>
+	void RestartMusic();
 }
