@@ -204,5 +204,31 @@ public enum Message
     AfterBattleLoot,                  // 199: NACH DEM KAMPF SAMMELT IHR DIE SACHEN EURER GEGNER EIN.
     ChooseBattleFormation,            // 200: WELCHE FORMATION SOLLEN DIE GRUPPENMITGLIEDER FÜR DIE NÄCHSTEN KÄMPFE EINNEHMEN?
     AltarRequires13,                  // 201: ALS IHR DEN ALTAR BERÜHRT ... NUR WENN 13 SIND AM GLEICHEN ORT ...
-    LastMessage = AltarRequires13
+    // combat messages
+    MoveWhere,                        // 202: WOHIN ZIEHEN?
+    AttackWhom,                       // 203: WEN ANGREIFEN?
+    Hits,                             // 204: TRIFFT
+    With,                             // 205: MIT
+    ChangesLocation,                  // 206: ÄNDERT DEN STANDORT.
+    FleesSuccessfully,                // 207: FLÜCHTET ERFOLGREICH.
+    FailsToFlee,                      // 208: SCHAFFT DIE FLUCHT NICHT.
+    StandsStill,                      // 209: HÄLT DIE STELLUNG.
+    MissesTheTarget,                  // 210: VERPASST DAS ZIEL.
+    LP,                               // 211: LP.
+    CastsASpell,                      // 212: FÜHRT EINEN ZAUBER AUS!
+    OpponentsAreClosingIn,            // 213: DIE GEGNER RÜCKEN AUF!
+    ResistsTheSpell,                  // 214: WEHRT DEN ZAUBER AB!
+    IsImmuneToTheSpell,               // 215: IST IMMUN GEGEN DEN SPRUCH.
+    IsDefenselessAgainstTheSpell,     // 216: IST WEHRLOS GEGEN DEN SPRUCH.
+    IsStunned,                        // 217: WIRD GELÄHMT.
+    IsPoisoned,                       // 218: WIRD VERGIFTET.
+    IsPetrified,                      // 219: WIRD VERSTEINERT.
+    BecomesIll,                       // 220: WIRD KRANK.
+    AgesRapidly,                      // 221: WIRD SCHNELLER ALT.
+    IsIrritated,                      // 222: IST IRRITIERT.
+    GoesMad,                          // 223: WIRD VERRÜCKT.
+    FallsAsleep,                      // 224: SCHLÄFT EIN.
+    Panics,                           // 225: BEKOMMT ANGST.
+    GoesBlind,                        // 226: WIRD BLIND.
+    LastMessage = GoesBlind
 }

@@ -35,6 +35,7 @@ public enum EmbeddedDataOffset
 	EnterWordLabel,
 	ShadowTable, // SHADOW.DAT
 	AltarPuzzle,
+	CombatData,
 }
 
 public class AssetProvider : IAssetProvider
@@ -156,6 +157,8 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<ISpellDataLoader> spellDataLoader;
     readonly Lazy<IShadowTable> shadowTable;
     readonly Lazy<IAltarPuzzle?> altarPuzzle;
+    readonly Lazy<IMonsterGroupLoader> monsterGroupLoader;
+    readonly Lazy<ICombatData> combatData;
     readonly Lazy<ISongLoader> songLoader;
 
     private ProgramData Data => programData.Value;
@@ -180,6 +183,8 @@ public class AssetProvider : IAssetProvider
     public ISpellDataLoader SpellDataLoader => spellDataLoader.Value;
     public IShadowTable ShadowTable => shadowTable.Value;
     public IAltarPuzzle? AltarPuzzle => altarPuzzle.Value;
+    public IMonsterGroupLoader MonsterGroupLoader => monsterGroupLoader.Value;
+    public ICombatData CombatData => combatData.Value;
     public ISongLoader SongLoader => songLoader.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -233,6 +238,8 @@ public class AssetProvider : IAssetProvider
         spellDataLoader = new(() => new SpellDataLoader(() => Data.SpellData));
         shadowTable = new(() => new ShadowTable(Data.ShadowData));
         altarPuzzle = new(() => Data.AltarPuzzleData.Length == 0 ? null : new AltarPuzzle(Data.AltarPuzzleData));
+        monsterGroupLoader = new(() => new MonsterGroupLoader(this));
+        combatData = new(() => new CombatData(Data.CombatData));
         songLoader = new(() => new SongLoader(this, Platform));
     }
 
@@ -574,6 +581,12 @@ public class AssetProvider : IAssetProvider
 			case EmbeddedDataOffset.ShadowTable:
 				// The first offsets of the shadow table
 				return FindAndGotoByteSequence(dataReader, 0x2a000, 0x00, 0x00, 0x00, 0xc6, 0x01, 0x68, 0x01, 0xe8, 0x02, 0x4a);
+			case EmbeddedDataOffset.CombatData:
+				// The damage of the first two black magic spells follows an unused entry of 6 bytes.
+				if (!FindAndGotoByteSequence(dataReader, 0, 0x00, 0x01, 0x00, 0x02, 0x00, 0x0c, 0x00, 0x02, 0x00, 0x04, 0x00, 0x07))
+					return false;
+				dataReader.Position -= 6;
+				return true;
 			case EmbeddedDataOffset.AltarPuzzle:
 				// The text indices and the piece order
 				return FindAndGotoByteSequence(dataReader, 0, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,

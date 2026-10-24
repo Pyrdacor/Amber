@@ -48,6 +48,35 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void CombatDataLoads(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+
+		// group 4: two giant rats in the front row (columns 1 and 4), one in the middle and a third monster type in the back
+		var group = assetProvider.MonsterGroupLoader.LoadMonsterGroup(4);
+		Assert.Equal(new MonsterGroupRow(6, 0x12), group.Rows[0]);
+		Assert.True(group.Rows[0]!.HasColumn(1));
+		Assert.True(group.Rows[0]!.HasColumn(4));
+		Assert.False(group.Rows[0]!.HasColumn(0));
+		Assert.Equal(7, group.Rows[2]!.MonsterIndex);
+		Assert.Null(assetProvider.MonsterGroupLoader.LoadMonsterGroup(1).Rows[1]);
+
+		var giantRat = assetProvider.MonsterLoader.LoadMonster(6);
+		Assert.Equal(15, giantRat.DefeatExperience);
+		Assert.Equal(50, giantRat.Morale);
+
+		// fire beam, hurricane
+		Assert.Equal((1, 2), (assetProvider.CombatData.GetSpellDamage(1).Min, assetProvider.CombatData.GetSpellDamage(1).Max));
+		Assert.Equal((128, 256), (assetProvider.CombatData.GetSpellDamage(20).Min, assetProvider.CombatData.GetSpellDamage(20).Max));
+		Assert.Equal(MonsterElementalFlags.FireImmune, assetProvider.CombatData.GetElementImmunity(0));
+		Assert.Equal(MonsterElementalFlags.WaterImmune, assetProvider.CombatData.GetElementImmunity(1));
+
+		// the combat messages are the last message file
+		Assert.NotEmpty(assetProvider.TextLoader.LoadText(new(Amber.Common.AssetType.Message, (int)Message.GoesBlind)).GetString());
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AltarPuzzleLoads(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

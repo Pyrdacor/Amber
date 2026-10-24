@@ -30,7 +30,7 @@ internal class Monster : BattleCharacter, IMonster
         monster.monsterFlags = (MonsterFlags)reader.ReadByte();
         monster.elementalFlags = (MonsterElementalFlags)reader.ReadByte();
 
-        reader.Position = 0x44;
+        reader.Position = 0xc6;
         monster.defeatExperience = reader.ReadWord();
 
         reader.Position = 0x100;

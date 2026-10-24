@@ -29,4 +29,6 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
 	/// The altar puzzle data or null if it was not found in the program data.
 	/// </summary>
 	IAltarPuzzle? AltarPuzzle { get; }
+	IMonsterGroupLoader MonsterGroupLoader { get; }
+	ICombatData CombatData { get; }
 }

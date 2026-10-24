@@ -316,9 +316,9 @@ namespace Amberstar.GameData.Legacy
                 PlaceNames[i] = new DataReader(dataReader.ReadBytes(30));
             #endregion
             #region Messages
-            // There are 8 message files (CODE0001.SYS to CODE0008.SYS) which contain the messages for inventory, places, etc.
+            // There are 9 message files which contain the messages for inventory, places, combat etc.
             // The inventory messages [CODE0001.SYS] directly follow the place names.
-            MessageData = new IDataReader[8];
+            MessageData = new IDataReader[9];
             
             for (int i = 0; i < MessageData.Length; i++)
                 MessageData[i] = new DataReader(Text.DetermineLengthAndReadAsBytes(dataReader));
@@ -361,6 +361,12 @@ namespace Amberstar.GameData.Legacy
 			// Note: Without the shadow table there are no shadows on 2D maps.
 			if (dataSeeker(EmbeddedDataOffset.ShadowTable, dataReader))
 				ShadowData = dataReader.ReadBytes(Legacy.ShadowTable.DetermineSize(dataReader));
+			#endregion
+
+			#region Combat data
+			// Note: Without the damage table the black magic spells do no damage.
+			if (dataSeeker(EmbeddedDataOffset.CombatData, dataReader))
+				CombatData = dataReader.ReadBytes(Legacy.CombatData.Size);
 			#endregion
 
 			#region Altar puzzle
@@ -452,6 +458,7 @@ namespace Amberstar.GameData.Legacy
         public byte[] SpellData { get; private set; } = [];
         public byte[] ShadowData { get; private set; } = [];
         public byte[] AltarPuzzleData { get; private set; } = [];
+        public byte[] CombatData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];
