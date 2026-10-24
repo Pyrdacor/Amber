@@ -17,7 +17,10 @@ namespace Amberstar.Frontend
 		Dictionary<int, int> cloudGraphicIndices,
 		Dictionary<int, Dictionary<PerspectiveLocation, Dictionary<BlockFacing, int>>> labBlockImageIndices,
         Dictionary<int, int> personPortraitIndices,
-		int puzzleGraphicOffset
+		int puzzleGraphicOffset,
+		int combatBackgroundOffset,
+		int tacticalIconOffset,
+		Dictionary<int, int> monsterGraphicOffsets
 
     ) : IGraphicIndexProvider
 	{
@@ -44,5 +47,11 @@ namespace Amberstar.Frontend
         public int GetPersonPortraitIndex(int index) => personPortraitIndices[index];
 
 		public int GetPuzzleGraphicIndex(PuzzleGraphic graphic, int index = 0) => puzzleGraphicOffset + (int)graphic + index;
+
+		public int GetCombatBackgroundIndex(int background) => combatBackgroundOffset + background - 1;
+
+		public int GetTacticalIconIndex(int icon) => tacticalIconOffset + icon;
+
+		public int GetMonsterGraphicIndex(int monsterGraphic, int frame) => monsterGraphicOffsets[monsterGraphic] + frame;
     }
 }

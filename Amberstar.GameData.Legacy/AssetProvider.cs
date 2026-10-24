@@ -36,6 +36,8 @@ public enum EmbeddedDataOffset
 	ShadowTable, // SHADOW.DAT
 	AltarPuzzle,
 	CombatData,
+	CombatPalette,
+	MonsterGraphicPositions,
 }
 
 public class AssetProvider : IAssetProvider
@@ -239,7 +241,7 @@ public class AssetProvider : IAssetProvider
         shadowTable = new(() => new ShadowTable(Data.ShadowData));
         altarPuzzle = new(() => Data.AltarPuzzleData.Length == 0 ? null : new AltarPuzzle(Data.AltarPuzzleData));
         monsterGroupLoader = new(() => new MonsterGroupLoader(this));
-        combatData = new(() => new CombatData(Data.CombatData));
+        combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData));
         songLoader = new(() => new SongLoader(this, Platform));
     }
 
@@ -442,6 +444,9 @@ public class AssetProvider : IAssetProvider
 			AssetType.ItemText => "CODETXT.AMB",
 			AssetType.PuzzleText => "PUZZLE.TXT",
 			AssetType.PuzzleGraphics => "PUZZLE.ICN",
+			AssetType.CombatBackground => "COM_BACK.AMB",
+			AssetType.MonsterGraphics => "MON_GFX.AMB",
+			AssetType.TacticalIcons => "TACTIC.ICN",
 			AssetType.Palette => "COL_PALL.AMB",
 			AssetType.Graphics80x80 => "PICS80.AMB",
 			AssetType.Tileset => "ICON_DAT.AMB",
@@ -587,6 +592,13 @@ public class AssetProvider : IAssetProvider
 					return false;
 				dataReader.Position -= 6;
 				return true;
+			case EmbeddedDataOffset.CombatPalette:
+				// The palette is followed by 3 colors (12-14) for each background.
+				return FindAndGotoByteSequence(dataReader, 0, 0x00, 0x00, 0x05, 0x00, 0x04, 0x44, 0x03, 0x32, 0x01, 0x22, 0x05, 0x52, 0x05, 0x31, 0x04, 0x20);
+			case EmbeddedDataOffset.MonsterGraphicPositions:
+				// The positions of the monsters (x, y, frame group) of the back row are followed by
+				// the other rows and the frame counts of the monster graphics.
+				return FindAndGotoByteSequence(dataReader, 0, 0x00, 0x36, 0x00, 0x46, 0x00, 0x00, 0x00, 0x44, 0x00, 0x46, 0x00, 0x00, 0x00, 0x52, 0x00, 0x46);
 			case EmbeddedDataOffset.AltarPuzzle:
 				// The text indices and the piece order
 				return FindAndGotoByteSequence(dataReader, 0, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,

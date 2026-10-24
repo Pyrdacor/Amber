@@ -71,6 +71,18 @@ public sealed class GameDataTests
 		Assert.Equal(MonsterElementalFlags.FireImmune, assetProvider.CombatData.GetElementImmunity(0));
 		Assert.Equal(MonsterElementalFlags.WaterImmune, assetProvider.CombatData.GetElementImmunity(1));
 
+		// graphics
+		var background = assetProvider.GraphicLoader.LoadCombatBackground(1);
+		Assert.Equal((176, 112), (background.Width, background.Height));
+		var ratGraphic = assetProvider.GraphicLoader.LoadMonsterGraphic(1);
+		Assert.Equal(14, ratGraphic.Length);
+		Assert.Equal([3, 3, 8], assetProvider.CombatData.GetMonsterFrameCounts(1));
+		Assert.Equal((16, 16), (ratGraphic[0].Width, ratGraphic[0].Height));
+		Assert.Equal(new MonsterGraphicPosition(54, 70, 0), assetProvider.CombatData.GetMonsterPosition(0, 0));
+		Assert.Equal(new MonsterGraphicPosition(136, 110, 2), assetProvider.CombatData.GetMonsterPosition(5, 2));
+		Assert.Equal(93, assetProvider.GraphicLoader.LoadTacticalIcons().Length);
+		Assert.NotEqual(assetProvider.CombatData.GetPalette(1).GetData(), assetProvider.CombatData.GetPalette(2).GetData());
+
 		// the combat messages are the last message file
 		Assert.NotEmpty(assetProvider.TextLoader.LoadText(new(Amber.Common.AssetType.Message, (int)Message.GoesBlind)).GetString());
 	}

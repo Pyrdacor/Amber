@@ -367,6 +367,12 @@ namespace Amberstar.GameData.Legacy
 			// Note: Without the damage table the black magic spells do no damage.
 			if (dataSeeker(EmbeddedDataOffset.CombatData, dataReader))
 				CombatData = dataReader.ReadBytes(Legacy.CombatData.Size);
+
+			if (dataSeeker(EmbeddedDataOffset.CombatPalette, dataReader))
+				CombatPaletteData = dataReader.ReadBytes(Legacy.CombatData.PaletteDataSize);
+
+			if (dataSeeker(EmbeddedDataOffset.MonsterGraphicPositions, dataReader))
+				MonsterGraphicData = dataReader.ReadBytes(Legacy.CombatData.MonsterGraphicDataSize);
 			#endregion
 
 			#region Altar puzzle
@@ -459,6 +465,8 @@ namespace Amberstar.GameData.Legacy
         public byte[] ShadowData { get; private set; } = [];
         public byte[] AltarPuzzleData { get; private set; } = [];
         public byte[] CombatData { get; private set; } = [];
+        public byte[] CombatPaletteData { get; private set; } = [];
+        public byte[] MonsterGraphicData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

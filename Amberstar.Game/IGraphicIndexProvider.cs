@@ -17,4 +17,7 @@ public interface IGraphicIndexProvider
 	int GetCursorGraphicIndex(CursorType cursorType);
 	int GetPersonPortraitIndex(int index);
 	int GetPuzzleGraphicIndex(PuzzleGraphic graphic, int index = 0);
+	int GetCombatBackgroundIndex(int background);
+	int GetTacticalIconIndex(int icon);
+	int GetMonsterGraphicIndex(int monsterGraphic, int frame);
 }

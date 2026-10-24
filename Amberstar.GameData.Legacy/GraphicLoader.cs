@@ -15,6 +15,9 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 	private readonly Dictionary<DayTime, Color[]> skyGradients = [];
     private readonly Dictionary<int, IGraphic> personPortraits = [];
 	private IGraphic[]? puzzleGraphics = null;
+	private readonly Dictionary<int, IGraphic> combatBackgrounds = [];
+	private readonly Dictionary<int, IGraphic[]> monsterGraphics = [];
+	private IGraphic[]? tacticalIcons = null;
 
     public static byte[] LoadGraphicDataWithHeader(IDataReader dataReader, out int width, out int height, out int planes)
 	{
@@ -204,6 +207,66 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 			graphics.Add(Load(32, 32));
 
 		return puzzleGraphics = [.. graphics];
+	}
+
+	public IGraphic LoadCombatBackground(int index)
+	{
+		if (combatBackgrounds.TryGetValue(index, out var graphic))
+			return graphic;
+
+		var asset = assetProvider.GetAsset(new(AssetType.CombatBackground, index))
+			?? throw new AmberException(ExceptionScope.Data, $"Combat background {index} not found.");
+
+		graphic = Graphic.FromBitPlanes(176, 112, asset.GetReader().ReadBytes(176 * 112 / 2), 4);
+		combatBackgrounds.Add(index, graphic);
+
+		return graphic;
+	}
+
+	/// <summary>
+	/// The monster graphics start with a table of frame offsets. Each frame has
+	/// its width in words, its height and the bitplane data.
+	/// </summary>
+	public IGraphic[] LoadMonsterGraphic(int index)
+	{
+		if (monsterGraphics.TryGetValue(index, out var frames))
+			return frames;
+
+		var asset = assetProvider.GetAsset(new(AssetType.MonsterGraphics, index))
+			?? throw new AmberException(ExceptionScope.Data, $"Monster graphic {index} not found.");
+		var reader = asset.GetReader();
+		int frameCount = (int)reader.PeekDword() / 4;
+		var offsets = Enumerable.Range(0, frameCount).Select(_ => reader.ReadDword()).ToArray();
+
+		frames = new IGraphic[frameCount];
+
+		for (int i = 0; i < frameCount; i++)
+		{
+			reader.Position = (int)offsets[i];
+			int width = reader.ReadWord() * 16;
+			int height = reader.ReadWord();
+			frames[i] = Graphic.FromBitPlanes(width, height, reader.ReadBytes(width * height / 2), 4);
+		}
+
+		monsterGraphics.Add(index, frames);
+
+		return frames;
+	}
+
+	public IGraphic[] LoadTacticalIcons()
+	{
+		if (tacticalIcons != null)
+			return tacticalIcons;
+
+		var asset = assetProvider.GetAsset(new(AssetType.TacticalIcons, 1))
+			?? throw new AmberException(ExceptionScope.Data, "Tactical icons not found.");
+		var reader = asset.GetReader();
+		var icons = new List<IGraphic>();
+
+		while (reader.Size - reader.Position >= 16 * 16 / 2)
+			icons.Add(Graphic.FromBitPlanes(16, 16, reader.ReadBytes(16 * 16 / 2), 4));
+
+		return tacticalIcons = [.. icons];
 	}
 
 	public IGraphic LoadItemGraphic(ItemGraphic index)

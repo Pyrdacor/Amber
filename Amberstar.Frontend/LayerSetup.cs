@@ -19,7 +19,8 @@ namespace Amberstar.Frontend
             var generalPalettes = Enumerable.Range(1, 10).Select(assetProvider.PaletteLoader.LoadPalette).ToArray();
 			var tilesetPalettes = Enumerable.Range(1, 2).Select(index => assetProvider.TilesetLoader.LoadTileset(index).Palette).ToArray();
 			var image80x80Palettes = Enumerable.Range(1, 26).Select(index => assetProvider.GraphicLoader.Load80x80Graphic((Image80x80)index).Palette).ToArray();
-			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26, GraphicFormat.RGBA);
+			var combatPalettes = Enumerable.Range(1, ICombatData.CombatBackgroundCount).Select(assetProvider.CombatData.GetPalette).ToArray();
+			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length, GraphicFormat.RGBA);
             var generalPaletteIndices = new Dictionary<int, byte>();
 			var palettes = new Dictionary<int, IGraphic>();
             byte y = 0;
@@ -53,6 +54,15 @@ namespace Amberstar.Frontend
 				image80x80PaletteIndices.Add((Image80x80)(i + 1), y);
 				palettes.Add(y, image80x80Palettes[i]);
 				palette.AddOverlay(0, y++, image80x80Palettes[i]);
+			}
+
+			var combatPaletteIndices = new Dictionary<int, byte>();
+
+			for (int i = 0; i < combatPalettes.Length; i++)
+			{
+				combatPaletteIndices.Add(i + 1, y);
+				palettes.Add(y, combatPalettes[i]);
+				palette.AddOverlay(0, y++, combatPalettes[i]);
 			}
 
 			var paletteTexture = renderer.TextureFactory.Create(palette);
@@ -113,6 +123,19 @@ namespace Amberstar.Frontend
 			int puzzleGraphicOffset = graphics.Count;
 			foreach (var graphic in assetProvider.GraphicLoader.LoadPuzzleGraphics())
 				graphics.Add(graphics.Count, graphic);
+			int combatBackgroundOffset = graphics.Count;
+			for (int i = 1; i <= ICombatData.CombatBackgroundCount; i++)
+				graphics.Add(graphics.Count, assetProvider.GraphicLoader.LoadCombatBackground(i));
+			int tacticalIconOffset = graphics.Count;
+			foreach (var graphic in assetProvider.GraphicLoader.LoadTacticalIcons())
+				graphics.Add(graphics.Count, graphic);
+			var monsterGraphicOffsets = new Dictionary<int, int>();
+			foreach (int monsterGraphic in assetProvider.GetAssetKeys(Amber.Common.AssetType.MonsterGraphics))
+			{
+				monsterGraphicOffsets.Add(monsterGraphic, graphics.Count);
+				foreach (var graphic in assetProvider.GraphicLoader.LoadMonsterGraphic(monsterGraphic))
+					graphics.Add(graphics.Count, graphic);
+			}
             layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
 			{
 				BaseZ = 0.7f,
@@ -263,8 +286,8 @@ namespace Amberstar.Frontend
             graphicIndexProvider = new(buttonOffset, statusIconOffset, uiGraphicOffset,
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
-				partyMemberPortraitIndices, puzzleGraphicOffset);
-			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices);
+				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets);
+			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

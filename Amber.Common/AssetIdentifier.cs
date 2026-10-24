@@ -49,6 +49,9 @@
 		Music,
 		Chest,
 		PuzzleGraphics, // Amberstar assembling graphics
+		CombatBackground,
+		MonsterGraphics,
+		TacticalIcons,
 	}
 
 	public struct AssetIdentifier
