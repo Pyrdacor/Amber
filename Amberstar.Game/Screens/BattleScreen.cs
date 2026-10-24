@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amber.Renderer.Common;
 using Amberstar.Game.Battle;
 using Amberstar.Game.UI;
@@ -54,6 +54,14 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	const byte AttackingMonsterDisplayLayer = 26;
 	const byte TacticalDisplayLayer = 10;
 	const byte MarkerDisplayLayer = 20;
+	// The markers blink every 16 vertical blanks (bit 4 of the vertical blank counter in the original).
+	const int VerticalBlanksPerBlink = 16;
+	// colors of the combat palette for the markers
+	const int ActiveMemberColorIndex = 9;
+	const int ChoosingMemberColorIndex = 10;
+	const int ChosenTargetColorIndex = 6;
+	const int ChosenAttackTargetColorIndex = 5;
+	const int PossibleTargetColorIndex = 1;
 	const byte DamageDisplayLayer = 22;
 	const byte SpellParticleDisplayLayer = 30;
 	const int DamageDigitDistance = 5;
@@ -86,6 +94,9 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	readonly List<SpellAnimation> spellAnimations = [];
 	readonly Dictionary<BattleParticipant, DamageDisplay> damageDisplays = [];
 	bool waitingForAnimations = false;
+	int blinkVerticalBlanks = 0;
+	// row under the mouse while a monster row is chosen as a spell target
+	int? hoveredMonsterRow = null;
 
 	sealed class SpellAnimation(MonsterParticipant target, int animation, int path)
 	{
@@ -166,6 +177,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		TakeBattleField();
 		UpdateBattleField();
 		UpdateStatusIcons();
+		UpdateMarkers();
 
 		// With the monster advantage the first round starts at once.
 		if (battle.MonsterAdvantage)
@@ -185,9 +197,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	void ActivePartyMemberChanged()
 	{
 		targetSelection = TargetSelection.None;
-		ClearMarkers();
 		RequestButtonSetup();
-		ShowActionMarker();
+		UpdateMarkers();
 	}
 
 	int ActiveSlot => Game.State.ActivePartyMemberIndex;
@@ -224,7 +235,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		int slot = ActiveSlot;
 		targetSelection = TargetSelection.None;
-		ClearMarkers();
+		UpdateMarkers();
 
 		switch (index)
 		{
@@ -235,7 +246,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 				ExecuteRound();
 				break;
 			case MoveButtonIndex:
-				StartTargetSelection(TargetSelection.Move, Message.MoveWhere, battle.GetMoveTargets(slot));
+				StartTargetSelection(TargetSelection.Move, Message.MoveWhere);
 				break;
 			case SlowButtonIndex:
 			case FastButtonIndex:
@@ -243,7 +254,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 				RequestButtonSetup();
 				break;
 			case AttackButtonIndex:
-				StartTargetSelection(TargetSelection.Attack, Message.AttackWhom, battle.GetAttackTargets(slot, out _));
+				StartTargetSelection(TargetSelection.Attack, Message.AttackWhom);
 				break;
 			case ParryButtonIndex:
 				SetAction(slot, BattleAction.Parry);
@@ -267,17 +278,10 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		var target = BattleAction.GetSpellTarget(spellData);
 		selectedSpell = (school, spellNumber, target);
 
-		IEnumerable<Position> targetCells = target switch
-		{
-			SpellTarget.Member => battle!.PartyMembers.Where(battle.IsOnBattleField).Select(partyMember => partyMember.Position),
-			SpellTarget.Monster or SpellTarget.MonsterGroup => battle!.Monsters.Select(monster => monster.Position),
-			_ => []
-		};
-
 		if (target is SpellTarget.Member or SpellTarget.Monster or SpellTarget.MonsterGroup)
 		{
 			var message = Game.GetSpellTargetMessage(school, spellNumber, target) ?? Message.WhichMonster;
-			StartTargetSelection(TargetSelection.Spell, message, targetCells);
+			StartTargetSelection(TargetSelection.Spell, message);
 			return;
 		}
 
@@ -336,16 +340,18 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	{
 		battle!.SetPartyAction(slot, action);
 		UpdateStatusIcons();
-		ShowActionMarker();
+		UpdateMarkers();
 	}
 
-	void StartTargetSelection(TargetSelection selection, Message message, IEnumerable<Position> targets)
+	/// <summary>
+	/// The possible targets blink on the tactical battle field (see <see cref="UpdateMarkers"/>).
+	/// </summary>
+	void StartTargetSelection(TargetSelection selection, Message message)
 	{
 		targetSelection = selection;
+		hoveredMonsterRow = null;
 		ShowText(Game.LoadMessageText(message).GetLines(int.MaxValue).Aggregate("", (a, b) => a + b));
-
-		foreach (var target in targets)
-			AddMarker(target, Color.White);
+		UpdateMarkers();
 	}
 
 	/// <summary>
@@ -388,10 +394,9 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		}
 
 		targetSelection = TargetSelection.None;
-		ClearMarkers();
 		ShowText("");
 		UpdateStatusIcons();
-		ShowActionMarker();
+		UpdateMarkers();
 
 		return valid;
 	}
@@ -406,14 +411,13 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			return true;
 		}
 
+		var clickedCell = GetCell(position);
+
 		if (!executing && targetSelection != TargetSelection.None)
 		{
-			var cell = new Position((position.X - TacticalPosition.X) / TacticalIconSize, (position.Y - TacticalPosition.Y) / TacticalIconSize);
-
-			if (position.X >= TacticalPosition.X && position.Y >= TacticalPosition.Y &&
-				cell.X < Battle.Battle.Columns && cell.Y < Battle.Battle.Rows)
+			if (clickedCell != null)
 			{
-				SelectTarget(cell);
+				SelectTarget(clickedCell.Value);
 				return true;
 			}
 
@@ -421,13 +425,52 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			if (buttons == MouseButtons.Right)
 			{
 				targetSelection = TargetSelection.None;
-				ClearMarkers();
 				ShowText("");
+				UpdateMarkers();
 				return true;
 			}
 		}
 
+		// A party member on the tactical battle field becomes the active member when it is clicked.
+		if (!executing && buttons == MouseButtons.Left && clickedCell != null &&
+			shownBattleField[CellIndex(clickedCell.Value)] is PartyMemberParticipant partyMember)
+		{
+			Game.State.SetActivePartyMember(partyMember.Slot);
+			return true;
+		}
+
 		return base.MouseDown(position, buttons, keyModifiers);
+	}
+
+	public override void MouseMove(Position position, MouseButtons buttons)
+	{
+		base.MouseMove(position, buttons);
+
+		// A monster row is chosen by the mouse height (L161e4 in the original).
+		if (targetSelection == TargetSelection.Spell && selectedSpell?.Target == SpellTarget.MonsterGroup)
+		{
+			int row = (position.Y - TacticalPosition.Y) / TacticalIconSize;
+			int? hoveredRow = position.Y >= TacticalPosition.Y && row < Battle.Battle.MonsterRows ? row : null;
+
+			if (hoveredRow != hoveredMonsterRow)
+			{
+				hoveredMonsterRow = hoveredRow;
+				UpdateMarkers();
+			}
+		}
+	}
+
+	/// <summary>
+	/// The cell of the tactical battle field at a screen position.
+	/// </summary>
+	static Position? GetCell(Position position)
+	{
+		if (position.X < TacticalPosition.X || position.Y < TacticalPosition.Y)
+			return null;
+
+		var cell = new Position((position.X - TacticalPosition.X) / TacticalIconSize, (position.Y - TacticalPosition.Y) / TacticalIconSize);
+
+		return cell.X < Battle.Battle.Columns && cell.Y < Battle.Battle.Rows ? cell : null;
 	}
 
 	public override void Update(long elapsedTicks)
@@ -449,6 +492,12 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		UpdateSpellAnimations(verticalBlanks);
 		UpdateDamageDisplays(verticalBlanks);
+
+		bool blinkOn = BlinkOn;
+		blinkVerticalBlanks += verticalBlanks;
+
+		if (blinkOn != BlinkOn && !executing)
+			UpdateMarkers();
 
 		if (waitingForAnimations && !AnimationRunning)
 		{
@@ -653,7 +702,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		battle.PrepareRound();
 		UpdateStatusIcons();
 		RequestButtonSetup();
-		ShowActionMarker();
+		UpdateMarkers();
 	}
 
 	string MessageText(Message message) => string.Join(" ", Game.LoadMessageText(message).GetLines(int.MaxValue));
@@ -841,48 +890,152 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 	void ClearMarkers()
 	{
-		markers.ForEach(marker => marker.Visible = false);
+		markers.ForEach(Game.Destroy);
 		markers.Clear();
 	}
 
+	bool BlinkOn => (blinkVerticalBlanks & VerticalBlanksPerBlink) == 0;
+
+	Color MarkerColor(int colorIndex) => Game.AssetProvider.CombatData.GetPalette(background).GetColorAt(colorIndex, 0);
+
+	void AddMarkerRect(int x, int y, int width, int height, int colorIndex)
+	{
+		var rect = Game.CreateColoredRect(Layer.UI, new(x, y), new(width, height), MarkerColor(colorIndex));
+
+		if (rect != null)
+		{
+			rect.DisplayLayer = MarkerDisplayLayer;
+			markers.Add(rect);
+		}
+	}
+
+	void AddFrame(int x, int y, int size, int colorIndex)
+	{
+		AddMarkerRect(x, y, size, 1, colorIndex);
+		AddMarkerRect(x, y + size - 1, size, 1, colorIndex);
+		AddMarkerRect(x, y + 1, 1, size - 2, colorIndex);
+		AddMarkerRect(x + size - 1, y + 1, 1, size - 2, colorIndex);
+	}
+
 	/// <summary>
-	/// Draws a frame around a cell of the tactical battle field.
+	/// A frame on the grid lines around a cell (L16492 in the original).
 	/// </summary>
-	void AddMarker(Position cell, Color color)
+	void AddGridFrame(Position cell, int colorIndex) =>
+		AddFrame(TacticalPosition.X + cell.X * TacticalIconSize - 1, TacticalPosition.Y + cell.Y * TacticalIconSize - 1, TacticalIconSize + 1, colorIndex);
+
+	/// <summary>
+	/// A frame inside of a cell (L16578 in the original).
+	/// </summary>
+	void AddCellFrame(Position cell, int colorIndex) =>
+		AddFrame(TacticalPosition.X + cell.X * TacticalIconSize, TacticalPosition.Y + cell.Y * TacticalIconSize, TacticalIconSize - 1, colorIndex);
+
+	// the lines of the cross (y offset, x offset, width) of L1654e in the original
+	static readonly (int Y, int X, int Width)[] CrossLines =
+	[
+		(4, 4, 2), (4, 9, 2), (5, 4, 3), (5, 8, 3), (6, 5, 5), (7, 6, 3), (8, 5, 5), (9, 4, 3), (9, 8, 3), (10, 4, 2), (10, 9, 2)
+	];
+
+	/// <summary>
+	/// A cross inside of a cell (L1656c in the original).
+	/// </summary>
+	void AddCross(Position cell, int colorIndex)
 	{
 		int x = TacticalPosition.X + cell.X * TacticalIconSize;
 		int y = TacticalPosition.Y + cell.Y * TacticalIconSize;
 
-		void AddLine(int lineX, int lineY, int width, int height)
-		{
-			var line = Game.CreateColoredRect(Layer.UI, new(lineX, lineY), new(width, height), color);
-
-			if (line != null)
-			{
-				line.DisplayLayer = MarkerDisplayLayer;
-				markers.Add(line);
-			}
-		}
-
-		AddLine(x, y, TacticalIconSize, 1);
-		AddLine(x, y + TacticalIconSize - 1, TacticalIconSize, 1);
-		AddLine(x, y, 1, TacticalIconSize);
-		AddLine(x + TacticalIconSize - 1, y, 1, TacticalIconSize);
+		foreach (var line in CrossLines)
+			AddMarkerRect(x + line.X, y + line.Y, line.Width, 1, colorIndex);
 	}
 
 	/// <summary>
-	/// Marks the target of the active member's move or attack.
+	/// The markers on the tactical battle field blink (L163e2, L160ee, L16162, L161b0, L161e4 and L1624c in the original).
+	/// While the actions are chosen the active member has a frame on the grid lines and its move or attack target
+	/// has a frame inside the cell. While a target is chosen, the possible targets blink alternately with the
+	/// chosen target (and the move targets of the other members as crosses).
 	/// </summary>
-	void ShowActionMarker()
+	void UpdateMarkers()
 	{
+		ClearMarkers();
+
 		if (battle == null || executing)
 			return;
 
-		ClearMarkers();
-		var action = battle.GetPartyAction(ActiveSlot);
+		int slot = ActiveSlot;
+		var activeMember = battle.GetPartyMember(slot);
+		var activeCell = activeMember == null ? null : GetShownCell(activeMember);
+		var action = battle.GetPartyAction(slot);
+		bool blinkOn = BlinkOn;
 
-		if (action.Type is BattleActionType.Move or BattleActionType.Attack)
-			AddMarker(action.Target, action.Type == BattleActionType.Move ? Color.Green : Color.Red);
+		if (targetSelection == TargetSelection.None)
+		{
+			if (!blinkOn)
+				return;
+
+			if (activeCell != null)
+				AddGridFrame(activeCell.Value, ActiveMemberColorIndex);
+
+			if (action.Type is BattleActionType.Move or BattleActionType.Attack)
+				AddCellFrame(action.Target, ChosenTargetColorIndex);
+
+			return;
+		}
+
+		var spellTarget = selectedSpell?.Target;
+
+		if (activeCell != null && !(targetSelection == TargetSelection.Spell && spellTarget == SpellTarget.Member))
+			AddGridFrame(activeCell.Value, ChoosingMemberColorIndex);
+
+		switch (targetSelection)
+		{
+			case TargetSelection.Move:
+				if (blinkOn)
+				{
+					foreach (var cell in battle.GetMoveTargets(slot))
+						AddCellFrame(cell, ActiveMemberColorIndex);
+				}
+				else
+				{
+					foreach (var partyMember in battle.PartyMembers)
+					{
+						var memberAction = battle.GetPartyAction(partyMember.Slot);
+
+						if (memberAction.Type != BattleActionType.Move)
+							continue;
+
+						if (partyMember.Slot == slot)
+							AddCellFrame(memberAction.Target, ChosenTargetColorIndex);
+						else
+							AddCross(memberAction.Target, ChosenTargetColorIndex);
+					}
+				}
+				break;
+			case TargetSelection.Attack:
+				if (blinkOn)
+				{
+					foreach (var cell in battle.GetAttackTargets(slot, out _))
+						AddCellFrame(cell, PossibleTargetColorIndex);
+				}
+				else if (action.Type == BattleActionType.Attack)
+				{
+					AddCellFrame(action.Target, ChosenAttackTargetColorIndex);
+				}
+				break;
+			case TargetSelection.Spell:
+				if (!blinkOn)
+					break;
+
+				IEnumerable<BattleParticipant> targets = spellTarget switch
+				{
+					SpellTarget.Member => battle.PartyMembers.Where(battle.IsOnBattleField),
+					SpellTarget.Monster => battle.Monsters,
+					SpellTarget.MonsterGroup => battle.Monsters.Where(monster => monster.Position.Y == hoveredMonsterRow),
+					_ => []
+				};
+
+				foreach (var target in targets)
+					AddCellFrame(target.Position, PossibleTargetColorIndex);
+				break;
+		}
 	}
 
 	#endregion

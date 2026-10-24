@@ -28,6 +28,15 @@ partial class Game
     readonly ISprite layoutSprite;
     readonly IColoredRect?[] partyMemberNameBackgrounds = new IColoredRect?[MaxPartyMembers];
     readonly IRenderText?[] partyMemberNames = new IRenderText?[MaxPartyMembers];
+    readonly List<IColoredRect>[] partyMemberBars = [.. Enumerable.Range(0, MaxPartyMembers).Select(_ => new List<IColoredRect>())];
+    // the shown values of the bars (hit points, max hit points, spell points, max spell points)
+    readonly (int, int, int, int)?[] shownBarValues = new (int, int, int, int)?[MaxPartyMembers];
+    // The bars of the hit points (left) and spell points (right) below the status icon (Red_bar and Blue_bar in GRAPHICS.ASM).
+    // Each column has a color of the UI palette and a shadow line above the bar.
+    const int BarTop = 19;
+    const int BarMaxHeight = 16;
+    static readonly (int X, int ShadowColor, int Color)[] HitPointBarColumns = [(1, 4, 5), (2, 7, 1), (3, 4, 5), (4, 4, 6), (5, 4, 13), (6, 4, 4)];
+    static readonly (int X, int ShadowColor, int Color)[] SpellPointBarColumns = [(10, 4, 9), (11, 3, 8), (12, 4, 9), (13, 4, 2), (14, 4, 3), (15, 4, 4)];
 
     internal ButtonLayout ButtonLayout { get; set; } = ButtonLayout.Movement;
     internal Cursor Cursor { get; }
@@ -86,6 +95,56 @@ partial class Game
             var nameText = partyMemberNames[slotIndex] = TextManager.Create(name, nameColorIndex);
             nameText.ShowInArea(new Rect(namePosition, nameSize), 10);
         }
+
+        UpdatePartyMemberBars(slotIndex, partyMember);
+    }
+
+    /// <summary>
+    /// The hit point and spell point bars are 1 to 16 pixels high (Update_bars in LAYOUT.ASM).
+    /// Dead members have no bars.
+    /// </summary>
+    void UpdatePartyMemberBars(int slotIndex, IPartyMember? partyMember)
+    {
+        var bars = partyMemberBars[slotIndex];
+        bars.ForEach(Destroy);
+        bars.Clear();
+        shownBarValues[slotIndex] = GetBarValues(partyMember);
+
+        if (partyMember == null || partyMember.IsDead())
+            return;
+
+        var palette = AssetProvider.PaletteLoader.LoadBuiltinPalette(BuiltinPalette.UI);
+        int x = PortraitArea.Left + slotIndex * 48 + 32;
+
+        void AddBar(CharacterValue value, (int X, int ShadowColor, int Color)[] columns)
+        {
+            int max = value.TotalMax;
+            int current = value.CurrentValue;
+
+            if (max == 0 || current == 0)
+                return;
+
+            int height = current >= max ? BarMaxHeight : Math.Max(1, current * BarMaxHeight / max);
+            int y = BarTop + BarMaxHeight - height;
+
+            foreach (var column in columns)
+            {
+                var shadow = CreateColoredRect(Layer.UI, new(x + column.X, y - 1), new(1, 1), palette.GetColorAt(column.ShadowColor, 0));
+                var bar = CreateColoredRect(Layer.UI, new(x + column.X, y), new(1, height), palette.GetColorAt(column.Color, 0));
+
+                foreach (var rect in new[] { shadow, bar })
+                {
+                    if (rect != null)
+                    {
+                        rect.DisplayLayer = 5;
+                        bars.Add(rect);
+                    }
+                }
+            }
+        }
+
+        AddBar(partyMember.HitPoints, HitPointBarColumns);
+        AddBar(partyMember.SpellPoints, SpellPointBarColumns);
     }
 
     internal int SetHandIconsByItem(IItem item, int count = 1)
@@ -201,8 +260,27 @@ partial class Game
         playerStatusIcons[partyMemberSlot].Visible = false;
     }
 
+    static (int, int, int, int)? GetBarValues(IPartyMember? partyMember) => partyMember == null || partyMember.IsDead() ? null :
+        (partyMember.HitPoints.CurrentValue, partyMember.HitPoints.TotalMax, partyMember.SpellPoints.CurrentValue, partyMember.SpellPoints.TotalMax);
+
+    /// <summary>
+    /// The bars are updated when the values change (Update_bars in LAYOUT.ASM).
+    /// </summary>
+    private void UpdatePartyMemberBars()
+    {
+        for (int i = 0; i < MaxPartyMembers; i++)
+        {
+            var partyMember = State.GetPartyMember(1 + i);
+
+            if (GetBarValues(partyMember) != shownBarValues[i])
+                UpdatePartyMemberBars(i, partyMember);
+        }
+    }
+
     private void UpdateStatusIcons()
     {
+        UpdatePartyMemberBars();
+
         var layer = GetRenderLayer(Layer.UI);
         var textureAtlas = layer.Config.Texture!;
 
