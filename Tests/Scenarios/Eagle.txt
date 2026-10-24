@@ -1,0 +1,37 @@
+# The flute (item 209) calls the giant eagle on world maps.
+waittext
+dismissall
+give 1 209
+itemslot 1 2 209
+# --- not at the start (no world map)
+click 32 17 right
+waitscreen Inventory
+button 3
+invslot 2
+waittext
+dismisstext
+key Escape
+waitidle
+travel Walk
+# --- on the world map the party flies away
+teleport 37 11 14
+waitidle
+click 32 17 right
+waitscreen Inventory
+button 3
+invslot 2
+screen Inventory
+travel Eagle
+itemslot 1 2 209
+key Escape
+waitidle
+travel Eagle
+# --- the eagle flies over events and lands where the party can walk
+click 230 170 right
+move right
+move right
+pos 13 14
+buttonenabled 3 1
+button 3
+travel Walk
+transport 37 13 14 none

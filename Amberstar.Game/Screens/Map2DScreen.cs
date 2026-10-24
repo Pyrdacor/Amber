@@ -743,8 +743,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			Game.AfterPartyMoved(tileFlags.HasFlag(TileFlags.Poison), tileFlags.HasFlag(TileFlags.AllowSwim));
 		}
 
-        // Check for events
-        if (!ignoreEvents)
+        // Check for events. There are none in the sky (Event_handler in the original).
+        if (!ignoreEvents && Game.State.TravelType < TravelType.Eagle)
 			TryExecuteMapEvent(EventTrigger.Move);
     }
 
@@ -1265,6 +1265,13 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         }
 
 		int playerBaseLineOffset = GetBaseLineOffset(playerTile, out bool playerVisible);
+
+		// The party flies over everything (Display_sky_icons in the original).
+		if (Game.State.TravelType >= TravelType.Eagle)
+		{
+			playerBaseLineOffset = 3 * RenderOrderOffset;
+			playerVisible = true;
+		}
         var renderLayer = Game.GetRenderLayer(Layer.Map2D);
         var tileset = tilesets![map!.TilesetIndex - 1];
 
@@ -1658,6 +1665,23 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			Game.State.TravelType = TravelType.Walk;
 		}
 
+		Game.Time.TravelTypeChanged();
+		UpdateMap();
+		RequestButtonSetup();
+	}
+
+	/// <summary>
+	/// The party can only call the giant eagle on foot on world maps.
+	/// </summary>
+	internal bool CanCallEagle() => worldMap != null && Game.State.TravelType == TravelType.Walk;
+
+	/// <summary>
+	/// The party gets on the giant eagle (Call_eagle in the original which is empty).
+	/// Note: The eagle is not placed on the map when the party gets off as there is no transport icon for it.
+	/// </summary>
+	internal void CallEagle()
+	{
+		Game.State.TravelType = TravelType.Eagle;
 		Game.Time.TravelTypeChanged();
 		UpdateMap();
 		RequestButtonSetup();

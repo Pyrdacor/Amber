@@ -830,8 +830,21 @@ partial class Game
 			case SpecialSpell.BanishDemon:
 				ShowNotImplementedMessage("Casting combat spells", finished);
 				break;
+			case SpecialSpell.EagleCall:
+				if (ScreenHandler.FindMapScreen() is not Map2DScreen mapScreen || !mapScreen.CanCallEagle())
+					ShowTextMessage(LoadMessageText(Message.SpellDoesNotWorkHere), finished);
+				else if (TrySpell(finished))
+				{
+					mapScreen.CallEagle();
+					finished();
+				}
+				break;
+			case SpecialSpell.PickLock:
+				// Lockpicks only work at locked doors and chests (Use_item_DOOR in the original).
+				ShowTextMessage(LoadMessageText(Message.SpellDoesNotWorkHere), finished);
+				break;
 			default:
-				// TODO: pick lock, eagle call and music
+				// TODO: The music spell is not part of the original source code.
 				ShowNotImplementedMessage($"The spell {spell}", finished);
 				break;
 		}
