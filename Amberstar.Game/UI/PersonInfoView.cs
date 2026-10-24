@@ -118,7 +118,7 @@ internal class PersonInfoView
 
                 // SLP
                 var slpString = textLoader.LoadText(new AssetIdentifier(AssetType.UIText, (int)UIText.SLP)).GetString();
-                slpString = Game.InsertNumberIntoString(slpString, "  ", false, partyMember.SpellLearningPoints, 3, '0');
+                slpString = Game.InsertNumberIntoString(slpString, ": ", true, partyMember.SpellLearningPoints, 3, '0');
                 personInfoTexts[(int)InfoText.SLP] = game.TextManager.Create(slpString, 15, paperColor, palette);
             }
             else
