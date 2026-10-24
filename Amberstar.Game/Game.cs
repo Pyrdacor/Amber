@@ -78,6 +78,8 @@ public partial class Game : IDisposable
 
 		ResetStatusIcons();
 		UpdatePartyMembers();
+		// The name of the active member is shown in a brighter color.
+		State.ActivePartyMemberChanged += UpdatePartyMembers;
 
         ScreenHandler.PushScreen(ScreenType.Map2D);
 
