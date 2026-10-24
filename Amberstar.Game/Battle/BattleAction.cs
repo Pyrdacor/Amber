@@ -23,11 +23,32 @@ internal enum BattleActionType
 
 /// <summary>
 /// The action of a participant in the next round. The target is a grid position (move and attack).
-/// Spells are given by school and number. Item spells give the inventory slot instead.
+/// Spells are given by school and number and their targets are chosen with the action.
 /// </summary>
 internal sealed record BattleAction(BattleActionType Type, Position Target = default, bool Ranged = false,
-	SpellSchool SpellSchool = SpellSchool.None, int SpellNumber = 0, int? ItemSlot = null)
+	SpellSchool SpellSchool = SpellSchool.None, int SpellNumber = 0, IReadOnlyList<BattleParticipant>? Targets = null)
 {
+	/// <summary>
+	/// The targets of a spell are given by the target flags of the spell data.
+	/// </summary>
+	public static SpellTarget GetSpellTarget(ISpellData spellData)
+	{
+		int flags = spellData.TargetFlags;
+
+		if ((flags & 0x01) != 0)
+			return SpellTarget.Member;
+		if ((flags & 0x02) != 0)
+			return SpellTarget.Party;
+		if ((flags & 0x04) != 0)
+			return SpellTarget.Monster;
+		if ((flags & 0x08) != 0)
+			return SpellTarget.MonsterGroup;
+		if ((flags & 0x10) != 0)
+			return SpellTarget.AllMonsters;
+
+		return SpellTarget.None;
+	}
+
 	public static readonly BattleAction Parry = new(BattleActionType.Parry);
 	public static readonly BattleAction None = new(BattleActionType.None);
 }

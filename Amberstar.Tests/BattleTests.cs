@@ -20,6 +20,7 @@ public sealed class BattleTests
 		public HeadlessGame Game { get; }
 		public Battle Battle { get; private set; } = null!;
 		public bool ProbeResult { get; set; } = true;
+		public Func<int, bool>? Probe { get; set; }
 		public Func<int, int, int> Random { get; set; } = (min, max) => max;
 
 		public Setup(params int[] battlePositions) : this(false, battlePositions)
@@ -36,7 +37,7 @@ public sealed class BattleTests
 			var partyMembers = state.PartyMembersWithSlot.Where(p => p.PartyMember != null).Select(p => new PartyMemberParticipant(p.PartyMember!, p.SlotIndex + 1)).ToList();
 			int[] positions = battlePositions.Length == 0 ? [.. state.CombatPositions] : battlePositions;
 			Battle = new(Game.Game.AssetProvider, Game.Game.AssetProvider.MonsterGroupLoader.LoadMonsterGroup(RatGroup), partyMembers,
-				positions, partyAdvantage, false, _ => ProbeResult, (min, max) => Random(min, max));
+				positions, partyAdvantage, false, value => Probe?.Invoke(value) ?? ProbeResult, (min, max) => Random(min, max));
 		}
 
 		public void Dispose() => Game.Dispose();
@@ -201,5 +202,77 @@ public sealed class BattleTests
 		int perMember = battle.Finish();
 		Assert.Equal(battle.Experience, perMember);
 		Assert.Equal(experience + (uint)perMember, hero.ExperiencePoints);
+	}
+
+	[Fact]
+	public void HealingSpellHealsTheTarget()
+	{
+		using var setup = new Setup(true, 0);
+		var battle = setup.Battle;
+		var hero = battle.PartyMembers[0];
+		hero.Character.HitPoints.MaxValue = 50;
+		hero.Character.HitPoints.CurrentValue = 1;
+		hero.Character.SpellPoints.CurrentValue = 10;
+		battle.SetPartyAction(1, new(BattleActionType.Magic, SpellSchool: SpellSchool.White, SpellNumber: 1, Targets: [hero]));
+
+		var events = battle.ExecuteRound();
+
+		// healing 1 heals 1-5 hit points (the random value is the maximum)
+		Assert.Contains(events, e => e is BattleSpellEvent { Success: true });
+		Assert.Equal(6, hero.Character.HitPoints.CurrentValue);
+		Assert.Equal(8, hero.Character.SpellPoints.CurrentValue);
+	}
+
+	[Fact]
+	public void FireBeamDamagesTheMonster()
+	{
+		using var setup = new Setup(true, 0);
+		var battle = setup.Battle;
+		var rat = (MonsterParticipant)battle[1, 2]!;
+		int hitPoints = rat.Monster.HitPoints.CurrentValue;
+		battle.PartyMembers[0].Character.SpellPoints.CurrentValue = 10;
+		// the spell succeeds (first probe), the rat doesn't resist
+		int probes = 0;
+		setup.Probe = _ => probes++ == 0;
+		battle.SetPartyAction(1, new(BattleActionType.Magic, SpellSchool: SpellSchool.Black, SpellNumber: 1, Targets: [rat]));
+
+		battle.ExecuteRound();
+
+		// fire beam: 1-2 damage
+		Assert.Equal(hitPoints - 2, rat.Monster.HitPoints.CurrentValue);
+	}
+
+	[Fact]
+	public void SleepAffectsTheWholeRow()
+	{
+		using var setup = new Setup(true, 0);
+		var battle = setup.Battle;
+		var frontRow = battle.Monsters.Where(monster => monster.Position.Y == 2).ToList<BattleParticipant>();
+		battle.PartyMembers[0].Character.SpellPoints.CurrentValue = 10;
+		int probes = 0;
+		setup.Probe = _ => probes++ == 0;
+		battle.SetPartyAction(1, new(BattleActionType.Magic, SpellSchool: SpellSchool.White, SpellNumber: 21, Targets: frontRow));
+
+		battle.ExecuteRound();
+
+		Assert.Equal(2, frontRow.Count);
+		Assert.All(frontRow, monster => Assert.True(monster.HasAnyConditionOf(Condition.Sleeping)));
+		Assert.False(((MonsterParticipant)battle[2, 1]!).HasAnyConditionOf(Condition.Sleeping));
+	}
+
+	[Fact]
+	public void ArmorProtectionIsActivated()
+	{
+		using var setup = new Setup(true, 0);
+		var battle = setup.Battle;
+		battle.PartyMembers[0].Character.SpellPoints.CurrentValue = 30;
+		(Amberstar.Game.Game.ActiveSpellType Type, int Value, int Duration)? activated = null;
+		battle.ActivateSpell = (type, value, duration) => activated = (type, value, duration);
+		battle.SetPartyAction(1, new(BattleActionType.Magic, SpellSchool: SpellSchool.Gray, SpellNumber: 5));
+
+		battle.ExecuteRound();
+
+		Assert.Equal((Amberstar.Game.Game.ActiveSpellType.ArmorProtection, 10, 96), activated);
+		Assert.Equal(10, battle.ArmorProtection);
 	}
 }

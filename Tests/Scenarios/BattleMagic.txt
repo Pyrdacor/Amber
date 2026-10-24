@@ -1,0 +1,30 @@
+# Spells in battles (Crag, a white wizard): healing a party member and sleep on a row of monsters (monster group 1: a giant rat).
+waittext
+dismissall
+join 61
+learnspell 2 White 1
+learnspell 2 White 21
+setvalue 2 usemagic 100
+setvalue 1 hp 1
+startbattle 1
+waitscreen Battle
+battlecell 2 3 CRAG
+# --- Crag heals the hero (1-5 hit points)
+activate 2
+buttonenabled 8 1
+cleartexts
+value 1 hp
+value 2 sp
+battlespell White 1 1 3
+textshown WER SOLL GEHEILT WERDEN
+battleround
+textshown CRAG ZAUBERT DEN SPRUCH
+textshown UND DER SPRUCH GELINGT
+value 2 sp -2
+# --- sleep: any cell of a row with monsters chooses the row
+cleartexts
+battlespell White 21 0 2
+textshown WELCHE ROTTE
+battleround
+textshown CRAG ZAUBERT DEN SPRUCH: SCHLAF
+textshown RIESENRATTE SCHLÄFT EIN

@@ -129,11 +129,59 @@ partial class Game
 		battleMapCharacter = mapCharacter;
 
 		CurrentBattle = new(AssetProvider, monsterGroup, partyMembers, State.CombatPositions, partyAdvantage, monsterAdvantage,
-			Probe, (min, max) => Random(min, max));
+			Probe, (min, max) => Random(min, max))
+		{
+			ActivateSpell = (type, value, duration) => ActivateSpell(type, value, duration)
+		};
 
 		PlaySong(BattleSong);
 		ScreenHandler.PushScreen(ScreenType.Battle, () => AfterScreenClosed(FinishBattle));
 	}
+
+	/// <summary>
+	/// The active member chooses a spell for the next battle round. The spell is cast during the round.
+	/// </summary>
+	internal void SelectBattleSpell(Action<(SpellSchool School, int SpellNumber)?> selected)
+	{
+		SpellCaster = State.ActivePartyMember;
+		SpellLocation = SpellLocation.Battle;
+		SelectedSpell = null;
+		magicItem = null;
+
+		ScreenHandler.PushScreen(ScreenType.SpellSelect, () => AfterScreenClosed(() => selected(SelectedSpell)));
+	}
+
+	/// <summary>
+	/// The texts which ask for the target of a battle spell (Message files 7 and 8).
+	/// </summary>
+	internal static Message? GetSpellTargetMessage(SpellSchool school, int spellNumber, SpellTarget target) => (school, spellNumber) switch
+	{
+		(SpellSchool.White, >= 1 and <= 5) => Message.WhoToHeal,
+		(SpellSchool.White, 10) => Message.WhosePoisonToCure,
+		(SpellSchool.White, 11) => Message.WhoseParalysisToCure,
+		(SpellSchool.White, 12) => Message.WhoseDiseaseToCure,
+		(SpellSchool.White, 13) => Message.WhoseAgingToCure,
+		(SpellSchool.White, 14) => Message.WhosePetrificationToCure,
+		(SpellSchool.White, 16) => Message.WhosePanicToRemove,
+		(SpellSchool.White, 17) => Message.WhoseIrritationToRemove,
+		(SpellSchool.White, 18) => Message.WhoseBlindnessToCure,
+		(SpellSchool.White, 19) => Message.WhoseMadnessToCure,
+		(SpellSchool.White, 20) => Message.WhichMonsterToParalyze,
+		(SpellSchool.White, 21) => Message.WhichGroupToSleep,
+		(SpellSchool.White, 22) => Message.WhichMonsterToPanic,
+		(SpellSchool.White, 23) => Message.WhichMonsterToIrritate,
+		(SpellSchool.White, 24) => Message.WhichMonsterToBlind,
+		(SpellSchool.White, 25) => Message.WhichUndeadToDestroy,
+		(SpellSchool.White, 26) => Message.WhichUndeadGroup,
+		(SpellSchool.Gray, 23) => Message.WhoToHaste,
+		(SpellSchool.Black, 21) => Message.WhichMonsterToDissolve,
+		_ => target switch
+		{
+			SpellTarget.Monster => Message.WhichMonster,
+			SpellTarget.MonsterGroup => Message.WhichMonsterGroup,
+			_ => null
+		}
+	};
 
 	/// <summary>
 	/// The armour protection, weapon power and anti-magic spells affect the battle.

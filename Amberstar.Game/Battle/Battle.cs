@@ -961,15 +961,17 @@ internal sealed class Battle
 	#region Magic
 
 	/// <summary>
-	/// Casts a spell. Party spells are handled by the game (they need targets) and only monster spells are executed here.
+	/// Casts a spell of a monster or a party member.
 	/// </summary>
 	void CastSpell(BattleParticipant caster, BattleAction action, List<BattleEvent> events)
 	{
-		if (caster is not MonsterParticipant monster)
+		if (caster is PartyMemberParticipant partyMember)
 		{
-			PartySpellHandler?.Invoke(caster, action, events);
+			CastPartySpell(partyMember, action, events);
 			return;
 		}
+
+		var monster = (MonsterParticipant)caster;
 
 		var spellData = assetProvider.SpellDataLoader.LoadSpellData(action.SpellSchool, action.SpellNumber);
 		var character = monster.Monster;
@@ -988,9 +990,245 @@ internal sealed class Battle
 	}
 
 	/// <summary>
-	/// Party spells are executed by the game.
+	/// Activates the armour protection, weapon power or anti-magic spell (type, value, duration in steps of 5 minutes).
 	/// </summary>
-	public Action<BattleParticipant, BattleAction, List<BattleEvent>>? PartySpellHandler { get; set; }
+	public Action<Game.ActiveSpellType, int, int>? ActivateSpell { get; set; }
+
+	static readonly int[] ActiveSpellValues = [5, 10, 15];
+	static readonly int[] ActiveSpellDurations = [24, 96, 192];
+	// conditions which are healed by the white spells 10-19 (the 6th one wakes up the whole party)
+	static readonly Condition[] CuredConditions =
+	[
+		Condition.Poisoned, Condition.Stunned, Condition.Diseased, Condition.Aging, Condition.Petrified,
+		Condition.Sleeping, Condition.Panicked, Condition.Irritated, Condition.Blind, Condition.Mad
+	];
+	const int FirstCureSpell = 10;
+	const int LastCureSpell = 19;
+	const int SalvationSpell = 6;
+	const int SleepSpell = 21;
+	const int DestroyUndeadSpell = 25;
+	const int HolyWordSpell = 26;
+	const int HasteSpell = 23;
+	const int MassHasteSpell = 24;
+	const int FirstActiveSpell = 4;
+	const int LastActiveSpell = 12;
+	const int DissolveSpell = 21;
+	const int MagicArrowsSpell = 22;
+	const int MagicArrowsDamage = 8;
+	static readonly Dictionary<int, (Condition Condition, Message Message)> MonsterConditionWhiteSpells = new()
+	{
+		{ 20, (Condition.Stunned, Message.IsStunned) },
+		{ 22, (Condition.Panicked, Message.Panics) },
+		{ 23, (Condition.Irritated, Message.IsIrritated) },
+		{ 24, (Condition.Blind, Message.GoesBlind) },
+	};
+
+	/// <summary>
+	/// Party spells use the spell points and probe the skill to use magic (L18b28 in the original).
+	/// The targets were chosen with the action (L18936 and the spell routines in the original).
+	/// </summary>
+	void CastPartySpell(PartyMemberParticipant caster, BattleAction action, List<BattleEvent> events)
+	{
+		var spellData = assetProvider.SpellDataLoader.LoadSpellData(action.SpellSchool, action.SpellNumber);
+		var character = caster.PartyMember;
+
+		character.SpellPoints.CurrentValue = (word)Math.Max(0, character.SpellPoints.CurrentValue - spellData.SpellPointCost);
+		bool success = probe(Skill(character, GameData.Skill.UseMagic));
+		events.Add(new BattleSpellEvent(caster, action.SpellSchool, action.SpellNumber, success));
+
+		// The spell name is shown first and the result after the effects of the spell (L17ba4 in the original).
+		if (!success)
+		{
+			events.Add(new BattleTextEvent(caster, Message.SpellCastFails));
+			return;
+		}
+
+		CastPartySpellEffects(action, spellData, events);
+		events.Add(new BattleTextEvent(caster, Message.SpellCastSucceeds));
+	}
+
+	void CastPartySpellEffects(BattleAction action, ISpellData spellData, List<BattleEvent> events)
+	{
+		var targets = BattleAction.GetSpellTarget(spellData) == SpellTarget.AllMonsters
+			? Monsters.ToList<BattleParticipant>()
+			: (action.Targets ?? []).Where(target => target.Side == BattleSide.Party || IsOnBattleField(target)).ToList();
+		var aliveMembers = partyMembers.Where(partyMember => !partyMember.HasAnyConditionOf(OutOfBattleConditions)).ToList();
+
+		switch (action.SpellSchool)
+		{
+			case SpellSchool.White:
+				CastWhiteSpell(action.SpellNumber, targets, aliveMembers, events);
+				break;
+			case SpellSchool.Gray:
+				CastGraySpell(action.SpellNumber, targets, aliveMembers);
+				break;
+			case SpellSchool.Black:
+				CastBlackSpell(action.SpellNumber, spellData, targets, events);
+				break;
+		}
+	}
+
+	void CastWhiteSpell(int spell, List<BattleParticipant> targets, List<PartyMemberParticipant> aliveMembers, List<BattleEvent> events)
+	{
+		bool Alive(BattleParticipant target) => !target.HasAnyConditionOf(OutOfBattleConditions);
+
+		if (spell >= 1 && spell <= 5)
+		{
+			// 1-5, 2-9, 4-19, 8-39 and 16-79 hit points
+			int level = spell - 1;
+			int amount = level == 0 ? 1 + Random(5) : (1 << level) + Random(4 << level);
+
+			foreach (var target in targets.Where(Alive))
+				target.Character.HealHitPoints((word)amount);
+		}
+		else if (spell == SalvationSpell)
+		{
+			foreach (var partyMember in aliveMembers)
+				partyMember.Character.HealHitPoints((word)(4 + Random(16)));
+		}
+		else if (spell >= FirstCureSpell && spell <= LastCureSpell)
+		{
+			var condition = CuredConditions[spell - FirstCureSpell];
+
+			if (condition == Condition.Sleeping)
+			{
+				foreach (var partyMember in aliveMembers)
+					partyMember.Character.RemoveCondition(Condition.Sleeping);
+			}
+			else
+			{
+				foreach (var target in targets.Where(Alive))
+					target.Character.RemoveCondition(condition);
+			}
+		}
+		else if (spell == SleepSpell)
+		{
+			foreach (var target in targets.OfType<MonsterParticipant>())
+			{
+				if (!ResistsPartySpell(target, events))
+				{
+					target.Character.AddCondition(Condition.Sleeping);
+					events.Add(new BattleTextEvent(target, Message.FallsAsleep));
+				}
+			}
+		}
+		else if (spell == DestroyUndeadSpell || spell == HolyWordSpell)
+		{
+			// only undead monsters are affected
+			foreach (var target in targets.OfType<MonsterParticipant>().Where(target => target.Monster.MonsterFlags.HasFlag(MonsterFlags.Undead)))
+			{
+				if (ResistsSpell(target, false))
+					events.Add(new BattleTextEvent(target, Message.ResistsTheSpell));
+				else
+					target.Character.AddCondition(Condition.Dead);
+			}
+		}
+		else if (MonsterConditionWhiteSpells.TryGetValue(spell, out var effect))
+		{
+			foreach (var target in targets.OfType<MonsterParticipant>())
+			{
+				if (!ResistsPartySpell(target, events))
+				{
+					target.Character.AddCondition(effect.Condition);
+					events.Add(new BattleTextEvent(target, effect.Message));
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// Monsters resist with their anti-magic. Some monsters are immune to the condition spells (L18dbc in the original).
+	/// </summary>
+	bool ResistsPartySpell(MonsterParticipant target, List<BattleEvent> events)
+	{
+		if (ResistsSpell(target, false))
+		{
+			events.Add(new BattleTextEvent(target, Message.ResistsTheSpell));
+			return true;
+		}
+
+		if (target.Monster.MonsterFlags.HasFlag(MonsterFlags.Boss))
+		{
+			events.Add(new BattleTextEvent(target, Message.IsImmuneToTheSpell));
+			return true;
+		}
+
+		return false;
+	}
+
+	void CastGraySpell(int spell, List<BattleParticipant> targets, List<PartyMemberParticipant> aliveMembers)
+	{
+		if (spell >= FirstActiveSpell && spell <= LastActiveSpell)
+		{
+			// armour protection, weapon power and anti-magic with 3 levels each
+			int index = spell - FirstActiveSpell;
+			var type = (Game.ActiveSpellType)(1 + index / 3);
+			int value = ActiveSpellValues[index % 3];
+
+			if (type == Game.ActiveSpellType.ArmorProtection)
+				ArmorProtection = value;
+			else if (type == Game.ActiveSpellType.WeaponPower)
+				WeaponPower = value;
+			else
+				AntiMagic = value;
+
+			ActivateSpell?.Invoke(type, value, ActiveSpellDurations[index % 3]);
+		}
+		else if (spell == HasteSpell)
+		{
+			foreach (var target in targets.OfType<PartyMemberParticipant>())
+				hastedSlots.Add(target.Slot);
+		}
+		else if (spell == MassHasteSpell)
+		{
+			foreach (var partyMember in aliveMembers)
+				hastedSlots.Add(partyMember.Slot);
+		}
+	}
+
+	/// <summary>
+	/// Damage spells, dissolve and magic arrows on monsters (L19162 in the original).
+	/// </summary>
+	void CastBlackSpell(int spellNumber, ISpellData spellData, List<BattleParticipant> targets, List<BattleEvent> events)
+	{
+		foreach (var target in targets.OfType<MonsterParticipant>())
+		{
+			if (ResistsSpell(target, false))
+			{
+				events.Add(new BattleTextEvent(target, Message.ResistsTheSpell));
+				continue;
+			}
+
+			if (spellNumber == DissolveSpell)
+			{
+				target.Character.AddCondition(Condition.Dead);
+				continue;
+			}
+
+			if (spellNumber == MagicArrowsSpell)
+			{
+				Damage(target, MagicArrowsDamage, events);
+				continue;
+			}
+
+			var immunity = assetProvider.CombatData.GetElementImmunity(spellData.LocationFlags >> 6);
+
+			if (target.Monster.ElementalFlags.HasFlag(immunity))
+			{
+				events.Add(new BattleTextEvent(target, Message.IsImmuneToTheSpell));
+				continue;
+			}
+
+			var damageRange = assetProvider.CombatData.GetSpellDamage(spellNumber);
+			int damage = damageRange.Min + 1 + Random(damageRange.Max - damageRange.Min);
+
+			// vulnerable monsters get double damage
+			if (target.Monster.ElementalFlags.HasFlag((MonsterElementalFlags)((int)immunity << 4)))
+				damage *= 2;
+
+			Damage(target, damage, events);
+		}
+	}
 
 	IEnumerable<PartyMemberParticipant> GetSpellTargets(ISpellData spellData)
 	{
@@ -1008,7 +1246,11 @@ internal sealed class Battle
 		return [(PartyMemberParticipant)this[GetRandomPartyPosition()]!];
 	}
 
-	bool ResistsSpell(BattleParticipant target) => probe(Attribute(target.Character, GameData.Attribute.AntiMagic) + AntiMagic);
+	/// <summary>
+	/// The anti-magic spell only protects the party.
+	/// </summary>
+	bool ResistsSpell(BattleParticipant target, bool withAntiMagicSpell = true) =>
+		probe(Attribute(target.Character, GameData.Attribute.AntiMagic) + (withAntiMagicSpell ? AntiMagic : 0));
 
 	/// <summary>
 	/// Black magic damage spells of monsters (L19212 in the original).

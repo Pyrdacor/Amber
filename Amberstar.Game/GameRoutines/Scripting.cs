@@ -481,6 +481,20 @@ partial class Game
 	}
 
 	/// <summary>
+	/// Chooses a battle spell of the active member and its target cell (0-based) like the magic button.
+	/// </summary>
+	public string? ScriptBattleSpell(string school, int spellNumber, Position? target)
+	{
+		if (ScreenHandler.ActiveScreen is not BattleScreen battleScreen)
+			return $"no battle is shown but {ScriptActiveScreen}";
+
+		if (!Enum.TryParse<SpellSchool>(school, true, out var spellSchool))
+			return $"unknown spell school {school}";
+
+		return battleScreen.ScriptChooseSpell(spellSchool, spellNumber, target);
+	}
+
+	/// <summary>
 	/// True while a battle round is executed.
 	/// </summary>
 	public bool ScriptBattleRoundRunning => ScreenHandler.FindScreen(ScreenType.Battle) is BattleScreen { Executing: true };

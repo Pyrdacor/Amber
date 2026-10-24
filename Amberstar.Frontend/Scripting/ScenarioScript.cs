@@ -38,6 +38,8 @@ using G = Game.Game;
 ///   battleaction &lt;action&gt; [x y] choose the action of the active member in a battle like the buttons
 ///                             (flee, move, attack, parry, magic, slow, fast); move and attack need a 0-based cell
 ///                             of the battle field (columns 0-5, rows 0-2 monsters, 3-4 party)
+///   battlespell &lt;school&gt; &lt;spell&gt; [x y] choose a spell of the active member in a battle and its target cell
+///                             (party members for healing, a monster or a monster of the row for monster spells)
 ///   battleround [timeout ms]  press Ok and wait until the battle round was shown (closes texts in the slow mode)
 ///   battlecell &lt;x&gt; &lt;y&gt; [name|empty] print or check the participant at a 0-based battle field cell
 ///   battleresult [result]     print or check the battle result (Ongoing, Won, PartyFled, PartyDefeated, none)
@@ -604,6 +606,10 @@ public sealed class ScenarioScript
 			}
 			case "battleaction":
 				CheckResult(game.ScriptBattleAction(args[0], args.Length > 2 ? new Position(Arg(1), Arg(2)) : null));
+				continueTime = time + 1;
+				break;
+			case "battlespell":
+				CheckResult(game.ScriptBattleSpell(args[0], Arg(1), args.Length > 3 ? new Position(Arg(2), Arg(3)) : null));
 				continueTime = time + 1;
 				break;
 			case "battleround":

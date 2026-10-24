@@ -21,7 +21,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	{
 		None,
 		Move,
-		Attack
+		Attack,
+		Spell
 	}
 
 	const int FleeButtonIndex = 0;
@@ -51,6 +52,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	readonly List<IColoredRect> markers = [];
 	Label? text;
 	TargetSelection targetSelection = TargetSelection.None;
+	(SpellSchool School, int SpellNumber, SpellTarget Target)? selectedSpell = null;
 	bool slowMode = false;
 	bool executing = false;
 	readonly Queue<BattleEvent> pendingEvents = [];
@@ -198,10 +200,87 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 				SetAction(slot, BattleAction.Parry);
 				break;
 			case MagicButtonIndex:
-				// TODO: spells in battles
-				Game.ShowNotImplementedMessage("Casting spells in battles");
+				Game.SelectBattleSpell(spell =>
+				{
+					if (spell != null)
+						ChooseSpell(slot, spell.Value.School, spell.Value.SpellNumber);
+				});
 				break;
 		}
+	}
+
+	/// <summary>
+	/// The targets of a spell are chosen with the spell (L17de4, L17f02, L1801a and L18140 in the original).
+	/// </summary>
+	void ChooseSpell(int slot, SpellSchool school, int spellNumber)
+	{
+		var spellData = Game.LoadSpellData(school, spellNumber);
+		var target = BattleAction.GetSpellTarget(spellData);
+		selectedSpell = (school, spellNumber, target);
+
+		IEnumerable<Position> targetCells = target switch
+		{
+			SpellTarget.Member => battle!.PartyMembers.Where(battle.IsOnBattleField).Select(partyMember => partyMember.Position),
+			SpellTarget.Monster or SpellTarget.MonsterGroup => battle!.Monsters.Select(monster => monster.Position),
+			_ => []
+		};
+
+		if (target is SpellTarget.Member or SpellTarget.Monster or SpellTarget.MonsterGroup)
+		{
+			var message = Game.GetSpellTargetMessage(school, spellNumber, target) ?? Message.WhichMonster;
+			StartTargetSelection(TargetSelection.Spell, message, targetCells);
+			return;
+		}
+
+		SetAction(slot, new(BattleActionType.Magic, SpellSchool: school, SpellNumber: spellNumber));
+	}
+
+	List<BattleParticipant>? GetSpellTargets(Position cell)
+	{
+		var (_, _, target) = selectedSpell!.Value;
+
+		return target switch
+		{
+			SpellTarget.Member when battle![cell] is PartyMemberParticipant partyMember => [partyMember],
+			SpellTarget.Monster when battle![cell] is MonsterParticipant monster => [monster],
+			SpellTarget.MonsterGroup when cell.Y < Battle.Battle.MonsterRows && battle!.Monsters.Any(monster => monster.Position.Y == cell.Y) =>
+				[.. battle.Monsters.Where(monster => monster.Position.Y == cell.Y)],
+			_ => null
+		};
+	}
+
+	/// <summary>
+	/// Chooses a spell and its target like the magic button (used by scenario scripts).
+	/// </summary>
+	internal string? ScriptChooseSpell(SpellSchool school, int spellNumber, Position? target)
+	{
+		if (battle == null || executing)
+			return "the battle round is executed";
+
+		int slot = ActiveSlot;
+
+		if (!battle.CanCastSpells(slot))
+			return "the active member can't cast spells";
+
+		var caster = Game.State.ActivePartyMember!;
+		var spellData = Game.LoadSpellData(school, spellNumber);
+
+		if (!Game.HasLearnedSpell(caster, school, spellNumber) || !Game.CanCastSpellAt(spellData, SpellLocation.Battle) ||
+			caster.SpellPoints.CurrentValue < spellData.SpellPointCost)
+			return $"the spell {school} {spellNumber} can't be cast";
+
+		ChooseSpell(slot, school, spellNumber);
+
+		if (targetSelection == TargetSelection.Spell)
+		{
+			if (target == null)
+				return "the spell needs a target";
+
+			if (!SelectTarget(target.Value))
+				return $"{target} is no target of the spell";
+		}
+
+		return null;
 	}
 
 	void SetAction(int slot, BattleAction action)
@@ -233,7 +312,18 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		var selection = targetSelection;
 		bool valid;
 
-		if (selection == TargetSelection.Move)
+		if (selection == TargetSelection.Spell)
+		{
+			var targets = GetSpellTargets(cell);
+			valid = targets != null;
+
+			if (valid)
+			{
+				var (school, spellNumber, _) = selectedSpell!.Value;
+				battle.SetPartyAction(slot, new(BattleActionType.Magic, SpellSchool: school, SpellNumber: spellNumber, Targets: targets));
+			}
+		}
+		else if (selection == TargetSelection.Move)
 		{
 			valid = battle.GetMoveTargets(slot).Contains(cell);
 
@@ -458,7 +548,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 	string FormatSpell(BattleSpellEvent spellEvent) => spellEvent.Caster is MonsterParticipant
 		? $"{spellEvent.Caster.Name} {MessageText(Message.CastsASpell)}"
-		: $"{spellEvent.Caster.Name} {MessageText(spellEvent.Success ? Message.SpellCastSucceeds : Message.SpellCastFails)}";
+		: $"{spellEvent.Caster.Name} {MessageText(Message.CastsSpell)} {Game.GetFullText(Game.LoadSpellName(spellEvent.School, spellEvent.SpellNumber)).Trim()}";
 
 	void ShowText(string message)
 	{
