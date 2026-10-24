@@ -680,7 +680,9 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			Game.ScriptTextShown(message);
 		}
 
-		text!.SetText(message, TextManager.DefaultInkColorIndex, TextManager.TransparentPaper, ButtonGridPaletteIndex);
+		// Long texts are wrapped into the 2 lines of the text area.
+		text!.SetText(Game.AssetProvider.TextLoader.FromString(message), TextArea.Size.Width, TextManager.DefaultInkColorIndex,
+			TextManager.TransparentPaper, ButtonGridPaletteIndex);
 		text.Visible = message.Length != 0;
 	}
 

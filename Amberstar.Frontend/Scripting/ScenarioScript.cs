@@ -139,6 +139,7 @@ using G = Game.Game;
 ///                             print an active spell (Light, ArmorProtection, WeaponPower, AntiMagic,
 ///                             Clairvoyance or Invisibility), optionally check it
 ///   activate &lt;slot&gt;           make the party member in slot 1-6 the active one
+///   activemember [slot]     print or check the slot of the active party member
 ///   value &lt;slot&gt; &lt;name&gt; [v]   print a party member value (gold, food, hp, maxhp, sp, maxsp, level, exp, slp,
 ///                             weight, defense, damage, hands, fingers, spellschools or an attribute or skill name),
 ///                             optionally check it
@@ -864,6 +865,9 @@ public sealed class ScenarioScript
 			case "activate":
 				if (!game.ScriptSetActivePartyMember(Arg(0)))
 					Report(false, $"no party member in slot {Arg(0)}");
+				break;
+			case "activemember":
+				CheckValue("activemember", game.ScriptActivePartyMember, args.FirstOrDefault());
 				break;
 			case "value":
 			{

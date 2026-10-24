@@ -9,8 +9,11 @@ setvalue 1 hp 1
 startbattle 1
 waitscreen Battle
 battlecell 2 3 CRAG
+# --- the active member is chosen by its portrait
+activemember 1
+click 80 20
+activemember 2
 # --- Crag heals the hero (1-5 hit points)
-activate 2
 buttonenabled 8 1
 cleartexts
 value 1 hp
