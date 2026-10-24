@@ -602,6 +602,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
         currentTicks += elapsedTicks;
 
 		UpdateLight(false);
+		UpdateAnimations(elapsedTicks);
 
 		if (moveX != 0 || moveY != 0)
 		{
@@ -1214,7 +1215,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 				if (tile.Underlay != 0)
 				{
-					CreateTileSprite(underlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, tile.Underlay);
+					CreateTileSprite(underlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, tile.Underlay, 0, index);
 				}
 				else if (underlay.TryGetValue(gridIndex, out var underlaySprite))
 				{
@@ -1223,7 +1224,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 				if (tile.Overlay != 0)
 				{
-					CreateTileSprite(overlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, tile.Overlay, 2 * RenderOrderOffset);
+					CreateTileSprite(overlay, gridIndex, OffsetX + x * TileWidth, OffsetY + y * TileHeight, tile.Overlay, 2 * RenderOrderOffset, index);
 				}
 				else if (overlay.TryGetValue(gridIndex, out var overlaySprite))
 				{
@@ -1381,9 +1382,10 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		underlay.Clear();
 		overlay.Values.ToList().ForEach(tile => tile.Visible = false);
 		overlay.Clear();
+		animatedTiles.Clear();
 	}
 
-	private IAnimatedSprite CreateTileSprite(Dictionary<int, IAnimatedSprite> mapLayer, int gridIndex, int x, int y, int index, int baseLineOffset = 0)
+	private IAnimatedSprite CreateTileSprite(Dictionary<int, IAnimatedSprite> mapLayer, int gridIndex, int x, int y, int index, int baseLineOffset = 0, int mapIndex = 0)
 	{
 		var renderLayer = Game.GetRenderLayer(Layer.Map2D);
 
@@ -1398,8 +1400,14 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		var tileInfo = GetTileInfo(index);
 
-		tileSprite.FrameCount = Math.Max(1, tileInfo.FrameCount);			
-		tileSprite.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex);
+		// Note: The frames are separate graphics which are not always in the same row of the texture atlas.
+		tileSprite.FrameCount = 1;
+		tileSprite.TextureOffset = renderLayer.Config.Texture!.GetOffset(tileGraphicOffset + tileInfo.ImageIndex + GetAnimationFrame(tileInfo, mapIndex));
+
+		if (tileInfo.FrameCount > 1)
+			animatedTiles[tileSprite] = (tileInfo, mapIndex);
+		else
+			animatedTiles.Remove(tileSprite);
 		tileSprite.PaletteIndex = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map!.TilesetIndex);
 		tileSprite.BaseLineOffset = baseLineOffset;
 		tileSprite.Visible = true;
@@ -1471,6 +1479,102 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	}
 
 	internal bool ScriptIsShadowed(int x, int y) => GetShadowedTiles(new Rect(0, 0, map!.Width, map.Height)).Contains(new Position(x, y));
+
+	/// <summary>
+	/// The current frame of all animations with the same frame count (Circle_anim and Wave_anim in the original).
+	/// </summary>
+	sealed class TileAnimation
+	{
+		public int Frame;
+		public bool Backwards;
+		// Random animations are only shown at some tiles (Recalc_random in the original).
+		public int RandomMask;
+		public int RandomOffset;
+	}
+
+	const int MaxAnimationFrames = 8;
+	// Note: The original updates the animations every 4th (city) or 2nd (wilderness) display update.
+	const long TicksPerDisplayUpdate = 4;
+	readonly TileAnimation[] circleAnimations = [.. Enumerable.Range(0, MaxAnimationFrames + 1).Select(_ => new TileAnimation())];
+	readonly TileAnimation[] waveAnimations = [.. Enumerable.Range(0, MaxAnimationFrames + 1).Select(_ => new TileAnimation())];
+	long animationTicks = 0;
+	readonly Dictionary<IAnimatedSprite, (ITile TileInfo, int MapIndex)> animatedTiles = [];
+
+	private void RecalculateRandomAnimation(TileAnimation animation)
+	{
+		const int RandomBias = 6;
+		animation.RandomMask = 0;
+
+		for (int i = 0; i < RandomBias; i++)
+			animation.RandomMask |= 1 << Game.Random(0, 15);
+
+		animation.RandomOffset = Game.Random(0, 127);
+	}
+
+	/// <summary>
+	/// Updates the tile animations (Update_animation in the original).
+	/// </summary>
+	private void UpdateAnimations(long elapsedTicks)
+	{
+		long ticksPerPhase = TicksPerDisplayUpdate * (IsWilderness ? 2 : 4);
+		animationTicks += elapsedTicks;
+
+		if (animationTicks < ticksPerPhase)
+			return;
+
+		animationTicks %= ticksPerPhase;
+
+		for (int frameCount = 2; frameCount <= MaxAnimationFrames; frameCount++)
+		{
+			var circle = circleAnimations[frameCount];
+
+			if (++circle.Frame == frameCount)
+			{
+				circle.Frame = 0;
+				RecalculateRandomAnimation(circle);
+			}
+
+			// The wave animation goes back and forth.
+			var wave = waveAnimations[frameCount];
+
+			if (!wave.Backwards)
+			{
+				if (++wave.Frame == frameCount)
+				{
+					wave.Frame -= 2;
+					wave.Backwards = true;
+				}
+			}
+			else if (--wave.Frame == 0)
+			{
+				wave.Backwards = false;
+				RecalculateRandomAnimation(wave);
+			}
+		}
+
+		var textureAtlas = Game.GetRenderLayer(Layer.Map2D).Config.Texture!;
+
+		foreach (var (sprite, (tileInfo, mapIndex)) in animatedTiles)
+			sprite.TextureOffset = textureAtlas.GetOffset(tileGraphicOffset + tileInfo.ImageIndex + GetAnimationFrame(tileInfo, mapIndex));
+	}
+
+	/// <summary>
+	/// Gets the current animation frame of a tile at a map tile index (Display_underlay_icon in the original).
+	/// </summary>
+	private int GetAnimationFrame(ITile tileInfo, int mapIndex)
+	{
+		int frameCount = Math.Min(MaxAnimationFrames, tileInfo.FrameCount);
+
+		if (frameCount <= 1)
+			return 0;
+
+		var animation = tileInfo.Flags.HasFlag(TileFlags.WaveAnimation) ? waveAnimations[frameCount] : circleAnimations[frameCount];
+
+		if (tileInfo.Flags.HasFlag(TileFlags.RandomAnimation) && (animation.RandomMask & (1 << ((mapIndex + animation.RandomOffset) & 0xf))) == 0)
+			return 0;
+
+		return animation.Frame;
+	}
 
 	private ITile GetTileInfo(int index)
 	{

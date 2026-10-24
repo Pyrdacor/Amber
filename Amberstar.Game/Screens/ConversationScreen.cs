@@ -9,7 +9,6 @@ namespace Amberstar.Game.Screens;
 // MapCharacterIndex = Index inside the characters on the map (0..23)
 internal record ConversationCharacter(int CharacterIndex, IMap Map, int MapCharacterIndex);
 
-// TODO: Silk has no gold and food (but he has in original)
 internal sealed class ConversationScreen : ItemGridScreen, IWaitForClickScreen
 {
     const int ItemSlotCount = 12;
