@@ -48,6 +48,32 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void OutroDataLoads(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+		var outro = assetProvider.OutroData;
+
+		Assert.NotNull(outro);
+		Assert.Equal((320, 200), (outro.ThroneRoom.Width, outro.ThroneRoom.Height));
+		Assert.Equal((320, 200), (outro.Balcony.Width, outro.Balcony.Height));
+		Assert.Equal(7, outro.Chancellor.Count);
+		Assert.Equal([94, 104, 69], outro.PartyFigures.Select(figure => figure.Height));
+		Assert.Equal(6, outro.PartyFigurePositions.Count);
+		Assert.Equal(12, outro.Dragon.Count);
+		Assert.Equal(112, outro.Dragon[0].Width);
+		Assert.Equal(8, outro.Flyer.Count);
+		Assert.Equal(3, outro.BalconyPeople.Count);
+		Assert.Equal(new Position(176, 102), outro.BalconyPeoplePositions[1]);
+		Assert.Equal(0xff, outro.BalconyScript[^1]);
+		// the chancellor's speech and the texts on the balcony
+		Assert.Equal(3, outro.ChancellorTexts.Count);
+		Assert.Equal(3, outro.BalconyTexts.Count);
+		Assert.Contains("AMBERMOON", outro.BalconyTexts[2]);
+		Assert.NotNull(outro.GetGlyph('A'));
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void CombatDataLoads(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

@@ -163,6 +163,7 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<IMonsterGroupLoader> monsterGroupLoader;
     readonly Lazy<ICombatData> combatData;
     readonly Lazy<ISongLoader> songLoader;
+    readonly Lazy<IOutroData?> outroData;
 
     private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -189,6 +190,7 @@ public class AssetProvider : IAssetProvider
     public IMonsterGroupLoader MonsterGroupLoader => monsterGroupLoader.Value;
     public ICombatData CombatData => combatData.Value;
     public ISongLoader SongLoader => songLoader.Value;
+    public IOutroData? OutroData => outroData.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -245,7 +247,34 @@ public class AssetProvider : IAssetProvider
         combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData,
 			Data.SpellAnimationData, Data.DamageDigitData));
         songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices));
+        outroData = new(LoadOutroData);
     }
+
+	/// <summary>
+	/// The outro is the separate program EXTRO.68K. Its data segment is LOB packed.
+	/// </summary>
+	private IOutroData? LoadOutroData()
+	{
+		var file = fileSystem.GetFile("EXTRO.68K");
+
+		if (file == null)
+			return null;
+
+		try
+		{
+			using var fileReader = file.Stream.GetReader();
+			var prgFile = PrgReader.Read(fileReader);
+			var container = new FileReader().ReadFile("EXTRO.68K", new DataReader(prgFile.DataSegment));
+			var reader = container.Files.Values.First();
+			reader.Position = 0;
+
+			return new OutroData(reader.ReadBytes(reader.Size), Platform);
+		}
+		catch
+		{
+			return null;
+		}
+	}
 
 	public LegacyPlatform Platform { get; } = LegacyPlatform.Source;
 

@@ -31,4 +31,8 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
 	IAltarPuzzle? AltarPuzzle { get; }
 	IMonsterGroupLoader MonsterGroupLoader { get; }
 	ICombatData CombatData { get; }
+	/// <summary>
+	/// The data of the outro or null if it was not found (EXTRO.68K).
+	/// </summary>
+	IOutroData? OutroData { get; }
 }
