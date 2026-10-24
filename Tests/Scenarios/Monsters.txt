@@ -40,3 +40,15 @@ battlecell 3 2 WEINSCHLEIM
 leavebattle
 waitidle
 characterat 15 19 1
+# --- staying monsters fight the party when it walks onto them (sewers of Twinlake, a giant rat at 16,16)
+teleport 68 16 18 up
+dismissall
+characterat 16 16 1
+move up 2
+waitscreen Confirmation
+textshown ANGREIFEN ODER FLIEHEN
+yes
+waitscreen Battle
+battleresult Ongoing
+leavebattle
+waitidle

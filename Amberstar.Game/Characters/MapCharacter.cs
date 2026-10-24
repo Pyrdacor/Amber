@@ -266,10 +266,14 @@ internal class MapCharacter
     }
 
     /// <summary>
-    /// The monster group of the monster fights the party.
+    /// The monster group of the monster fights the party. Every monster (also staying ones) fights
+    /// the party if they are at the same position (Battle_check in the original).
     /// </summary>
     private void CheckReachedParty(Game game)
     {
+        if (Type == MapCharacterType.Monster && Position == game.State.PartyPosition)
+            reachedParty = true;
+
         if (!reachedParty)
             return;
 
@@ -284,7 +288,11 @@ internal class MapCharacter
     public bool PartyMoved(Game game)
     {
         if (data.WalkType != MapCharacterWalkType.Chase || position == new Position())
+        {
+            // The party may walk onto a staying monster.
+            CheckReachedParty(game);
             return false;
+        }
 
         var oldPosition = position;
         Hunt(game.State, true);
