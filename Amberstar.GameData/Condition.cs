@@ -27,6 +27,10 @@ public enum MentalCondition : byte
 	Panicked = 0x08,
 	Blind = 0x10,
 	Overloaded = 0x20,
+	/// <summary>
+	/// Only used during battles for party members which fled or were petrified.
+	/// </summary>
+	Fled = 0x80,
 }
 
 [Flags]
@@ -39,6 +43,10 @@ public enum Condition : word
 	Panicked = 0x0008,
 	Blind = 0x0010,
 	Overloaded = 0x0020,
+	/// <summary>
+	/// Only used during battles for party members which fled or were petrified.
+	/// </summary>
+	Fled = 0x0080,
 	Stunned = 0x0100,
 	Poisoned = 0x0200,
 	Petrified = 0x0400,
@@ -65,7 +73,8 @@ public static class ConditionExtensions
 		{
 			foreach (var condition in Enum.GetValues<Condition>().Skip(1).Distinct())
 			{
-				if (conditions.HasFlag(condition))
+				// fled has no status icon
+				if (condition != Condition.Fled && conditions.HasFlag(condition))
 					yield return GetStatusIcon(condition);
 			}
         }

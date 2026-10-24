@@ -100,3 +100,17 @@ mad -> random (random/2 % 37): bit0 -> attack random target in reach; row 4 and 
   Message 87 (Shandra rescues the party once) and 88 (the party is dead) belong to the end of a lost battle.
 - COM_BACK.AMB: 14 backgrounds of 176x112 pixels (4 bitplanes). MON_GFX.AMB: 21 monster graphics with a frame table.
 - Damage table of the black spells in the program data: 6 bytes (min, max, animation words) per spell after an unused entry whose last 4 bytes are the immunity bit of each element ([0, 2, 1, 3]: fire, water, earth, wind).
+
+## Targets and order
+- party move (L162ac): one of the 8 neighbor cells, rows 3-4 only, the cell must be free and not the move target of another member.
+- melee targets (L1634c): from the cell in front (row - 1 = 2) or diagonal in front, i.e. only from row 3 against row 2.
+  ranged targets: every monster.
+- action list (L18280): stable bubble sort by initiative (speed + bonus) ascending, executed from the end (fastest first).
+  The list holds the monsters in grid order first, then the party members.
+
+## Party death (0x6fe Update_status_block, 0x7a2)
+- If no member can be the active member (conditions & $e586: dead, ashes, dust, petrified, stunned, fled, sleeping, mad),
+  a battle ends. If the active member fled or any member fled, the party fled ($5be90).
+- Otherwise: if quest bit 6 is set and Probe(average luck + bonus of the members) succeeds, the "Resurrection sequence"
+  (0x9a8) runs: song 19, next day 7:20, map 70 at 16,13 facing north, all conditions cleared, HP filled, Message 87 (Shandra).
+- Else the "Game Over sequence" (0xba4): song 19, Message 88, then the game restarts.
