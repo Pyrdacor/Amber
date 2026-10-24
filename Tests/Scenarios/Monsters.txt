@@ -29,8 +29,14 @@ characterat 16 19 1
 passtime 5
 wait 200
 characterat 15 19 1
-# as long as there are no battles the monster stays next to the party
+# --- the monster reaches the party: fight or flee?
 passtime 5
-wait 200
+waitscreen Confirmation
+textshown ANGREIFEN ODER FLIEHEN
+yes
+waitscreen Battle
+battlecell 3 2 WEINSCHLEIM
+# --- the monster stays on the map if the party flees from the battle
+leavebattle
+waitidle
 characterat 15 19 1
-characterat 14 19 0

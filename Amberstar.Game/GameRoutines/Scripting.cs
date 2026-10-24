@@ -497,6 +497,33 @@ partial class Game
 
 	public string ScriptBattleResult => CurrentBattle?.Result.ToString() ?? "none";
 
+	/// <summary>
+	/// Starts a battle against a monster group like an encounter without the request.
+	/// </summary>
+	public string? ScriptStartBattle(int monsterGroupIndex)
+	{
+		if (!ScriptIdle)
+			return $"battles can only be started while a map is shown and nothing happens: {ScriptActiveScreen}";
+
+		StartBattle(monsterGroupIndex);
+
+		return null;
+	}
+
+	/// <summary>
+	/// Gives the chosen loot item to a party member (1-based slot).
+	/// </summary>
+	public string? ScriptGiveLootItem(int slot) => ScreenHandler.ActiveScreen is LootScreen lootScreen
+		? lootScreen.GiveItem(slot) ? null : "the item was not given"
+		: $"no loot is shown but {ScriptActiveScreen}";
+
+	/// <summary>
+	/// The gold, food and number of items of the shown loot.
+	/// </summary>
+	public string? ScriptLoot => ScreenHandler.ActiveScreen is LootScreen lootScreen
+		? $"{lootScreen.Gold} {lootScreen.Food} {lootScreen.ItemCount}"
+		: null;
+
 	public void ScriptLeaveBattle() => (ScreenHandler.ActiveScreen as BattleScreen)?.ScriptLeave();
 
 	public string? ScriptAnswer(string word)

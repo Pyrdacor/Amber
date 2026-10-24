@@ -135,19 +135,23 @@ internal class MapCharacter
         }
     }
 
+    bool reachedParty = false;
+
     /// <summary>
     /// Checks if the character can move in the given direction (Character_movement_check in the original).
-    /// Note: As long as there are no battles, monsters don't move onto the party.
+    /// Monsters which reach the party start a battle (Battle_check in the program which is disabled in
+    /// the released source code). They don't move onto the party.
     /// </summary>
     private bool CanMove(GameState gameState, Direction direction)
     {
         var offset = direction.Offset();
         var target = new Position(Position.X + offset.X, Position.Y + offset.Y);
 
-        // TODO: Start a battle when a monster reaches the party (Battle_check in the original
-        // which is disabled in the released source code).
         if (Type == MapCharacterType.Monster && target == gameState.PartyPosition)
+        {
+            reachedParty = true;
             return false;
+        }
 
         return canMoveChecker(target.X, target.Y, data.TravelType);
     }
@@ -258,6 +262,19 @@ internal class MapCharacter
     public void Update(Game Game)
     {
         UpdatePosition(Game.State);
+        CheckReachedParty(Game);
+    }
+
+    /// <summary>
+    /// The monster group of the monster fights the party.
+    /// </summary>
+    private void CheckReachedParty(Game game)
+    {
+        if (!reachedParty)
+            return;
+
+        reachedParty = false;
+        game.MonsterReachedParty(this);
     }
 
     /// <summary>
@@ -271,6 +288,7 @@ internal class MapCharacter
 
         var oldPosition = position;
         Hunt(game.State, true);
+        CheckReachedParty(game);
 
         return position != oldPosition;
     }

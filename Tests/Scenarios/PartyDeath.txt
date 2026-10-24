@@ -1,0 +1,14 @@
+# The battle is lost when nobody of the party can act. Without Shandra's help (quest bit 6) the game is over
+# and starts again (there is no savegame in the tests).
+waittext
+dismissall
+startbattle 35
+waitscreen Battle
+battleaction parry
+battleround
+battleresult PartyDefeated
+waittext
+textshown GÖTTIN BALA
+dismissall
+map 65
+value 1 hp

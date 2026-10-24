@@ -47,6 +47,7 @@ public enum ScreenType
     Riddlemouth,
     Altar,
     Battle,
+    Loot,
     // Place sub screens and places
     Inn,
     Healer,
@@ -739,6 +740,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Riddlemouth => new RiddlemouthScreen(),
             ScreenType.Altar => new AltarScreen(),
             ScreenType.Battle => new BattleScreen(),
+            ScreenType.Loot => new LootScreen(),
             _ => throw new NotImplementedException()
 		};
 

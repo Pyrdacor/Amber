@@ -1,11 +1,14 @@
 #! seed 5
-# Encounter events (map 38, 22,29, chance 100%, monster group 35: three swamp spiders) start a battle.
-# The hero moves to the back row and flees (only the back row can flee).
+# Encounter events (map 38, 22,29, chance 100%, monster group 35: three swamp spiders) ask to fight or flee.
+# The hero fights, moves to the back row and flees (only the back row can flee).
 waittext
 dismissall
 setvalue 1 hp 300
 cleartexts
 teleport 38 22 29
+waitscreen Confirmation
+textshown ANGREIFEN ODER FLIEHEN
+yes
 waitscreen Battle
 battleresult Ongoing
 battlecell 0 2 SUMPFSPINNE
@@ -26,3 +29,5 @@ textshown FLÜCHTET ERFOLGREICH
 battleresult PartyFled
 waitidle
 screen Map2D
+# the event has no save index, so the encounter can happen again
+eventactive 38 2 1

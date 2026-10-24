@@ -266,7 +266,7 @@ partial class Game
 
         void Changed(Screen newScreen, Screen oldScreen)
         {
-            if (oldScreen.Type == ScreenType.Confirmation)
+            if (oldScreen?.Type == ScreenType.Confirmation)
             {
                 ScreenHandler.ScreenChanged -= Changed;
 

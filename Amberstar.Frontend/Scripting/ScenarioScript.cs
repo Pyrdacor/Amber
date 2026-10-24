@@ -42,6 +42,9 @@ using G = Game.Game;
 ///   battlecell &lt;x&gt; &lt;y&gt; [name|empty] print or check the participant at a 0-based battle field cell
 ///   battleresult [result]     print or check the battle result (Ongoing, Won, PartyFled, PartyDefeated, none)
 ///   leavebattle               leave the shown battle as if the party fled (closeall does this as well)
+///   startbattle &lt;group&gt;       start a battle against a monster group without the request
+///   loot [gold food items]    print or check the gold, food and item count of the shown loot
+///   lootgive &lt;slot&gt;           give the item chosen with the give button of the loot to a party member
 ///   word &lt;index&gt; [text]       print a dictionary word, optionally check it
 ///   altarselect &lt;name&gt;        select the remaining Amberstar piece with the given name at the altar
 ///   altar [laid] [name]       print or check the number of laid Amberstar pieces and the selected piece
@@ -640,6 +643,26 @@ public sealed class ScenarioScript
 					Report(actual.Equals(args[0], StringComparison.OrdinalIgnoreCase), $"battleresult = {actual} (expected {args[0]})");
 				break;
 			}
+			case "startbattle":
+				CheckResult(game.ScriptStartBattle(Arg(0)));
+				continueTime = time + 1;
+				break;
+			case "loot":
+			{
+				var actual = game.ScriptLoot;
+
+				if (actual == null)
+					Report(false, $"no loot is shown but {game.ScriptActiveScreen}");
+				else if (args.Length == 0)
+					output($"  loot = {actual}");
+				else
+					Report(actual == string.Join(" ", args), $"loot = {actual} (expected {string.Join(" ", args)})");
+				break;
+			}
+			case "lootgive":
+				CheckResult(game.ScriptGiveLootItem(Arg(0)));
+				continueTime = time + 1;
+				break;
 			case "leavebattle":
 				game.ScriptLeaveBattle();
 				continueTime = time + 1;

@@ -180,7 +180,10 @@ partial class Game
 
 		if (!State.PartyMembers.Any(partyMember => !partyMember.HasAnyConditionOf(UnaffectedConditions)))
 		{
-			// TODO: The whole party is dead. The released original source code doesn't show what happens.
+			// The battle handles its end itself.
+			if (CurrentBattle == null)
+				PartyDefeated();
+
 			return;
 		}
 
