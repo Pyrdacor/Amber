@@ -8,10 +8,12 @@ internal class Monster : BattleCharacter, IMonster
     private byte spellCastChance;
     private byte magicHitBonus;
     private byte morale;
+    private byte battlePosition;
     private word defeatExperience;
     private MonsterFlags monsterFlags;
     private MonsterElementalFlags elementalFlags;
     private readonly List<MonsterSpell> spells = [];
+    private MonsterSpell?[] spellSlots = new MonsterSpell?[25];
 
     public static Monster Load(IAsset asset)
     {
@@ -25,6 +27,7 @@ internal class Monster : BattleCharacter, IMonster
         monster.spellCastChance = reader.ReadByte();
         monster.magicHitBonus = reader.ReadByte();
         monster.morale = reader.ReadByte();
+        monster.battlePosition = reader.ReadByte();
 
         reader.Position = 0x44;
         monster.monsterFlags = (MonsterFlags)reader.ReadByte();
@@ -41,7 +44,8 @@ internal class Monster : BattleCharacter, IMonster
         {
             if (monsterSpellSchools[i] != 0)
             {
-                monster.spells.Add(new((SpellSchool)monsterSpellSchools[i], monsterSpellIndices[i]));
+                monster.spellSlots[i] = new((SpellSchool)monsterSpellSchools[i], monsterSpellIndices[i]);
+                monster.spells.Add(monster.spellSlots[i]!);
             }
         }
 
@@ -52,6 +56,8 @@ internal class Monster : BattleCharacter, IMonster
     public byte Morale { get => morale; init => morale = value; }
     public byte SpellCastChance { get => spellCastChance; init => spellCastChance = value; }
     public byte MagicHitBonus { get => magicHitBonus; init => magicHitBonus = value; }
+    public byte BattlePosition { get => battlePosition; init => battlePosition = value; }
+    public MonsterSpell?[] SpellSlots => spellSlots;
     public word DefeatExperience { get => defeatExperience; init => defeatExperience = value; }
     public MonsterFlags MonsterFlags { get => monsterFlags; init => monsterFlags = value; }
     public MonsterElementalFlags ElementalFlags { get => elementalFlags; init => elementalFlags = value; }
@@ -68,6 +74,8 @@ internal class Monster : BattleCharacter, IMonster
         clone.spellCastChance = spellCastChance;
         clone.magicHitBonus = magicHitBonus;
         clone.morale = morale;
+        clone.battlePosition = battlePosition;
+        clone.spellSlots = [.. spellSlots];
         clone.defeatExperience = defeatExperience;
         clone.monsterFlags = monsterFlags;
         clone.elementalFlags = elementalFlags;
