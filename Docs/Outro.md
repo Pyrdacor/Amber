@@ -31,9 +31,10 @@ The outro is not part of the released source code. The game and the outro were d
 - After the last text the space key ends the outro.
 
 ## Music
-- A COSO module with samples (TFMX variant) inside the music player of the outro. Its divisions store a signed timbre
-  transpose which is added to the timbres of the notes (the game's MMME modules set the timbre directly).
-  The samples (drums with the DMA sound of the STE) are not played by the port.
+- The music player (a relocatable program at $1fbdc in the German outro) emulates the 4 sample voices of the Amiga:
+  it mixes them by software (L960 in the player) and plays them with the DMA sound of the STE or the YM chip.
+- It plays a COSO module with samples (TFMX variant): 4 voices with 3 bytes per division (pattern, note transpose,
+  signed timbre transpose). The port can't play it yet and plays song 6 of the game instead.
 
 ## Port
 - `OutroData` loads the data, `OutroScreen` shows it. The palettes fade like the original (fade in: each color channel

@@ -70,7 +70,6 @@ public sealed class GameDataTests
 		Assert.Equal(3, outro.BalconyTexts.Count);
 		Assert.Contains("AMBERMOON", outro.BalconyTexts[2]);
 		Assert.NotNull(outro.GetGlyph('A'));
-		Assert.NotNull(outro.Music);
 	}
 
 	[Theory]

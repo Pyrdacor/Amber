@@ -297,29 +297,12 @@ internal class OutroData : IOutroData
 	}
 
 	/// <summary>
-	/// The music player contains a COSO module. It is null if it can't be loaded.
+	/// The music player of the outro emulates the 4 sample voices of the Amiga (mixed by software) and plays a COSO module
+	/// with samples (TFMX variant, 4 voices with 3 bytes per division). The port can't play such modules yet.
 	/// </summary>
-	ISong? LoadMusic(int playerOffset, LegacyPlatform platform)
+	static ISong? LoadMusic(int playerOffset, LegacyPlatform platform)
 	{
-		int offset = playerOffset;
-
-		while (offset + 0x20 <= data.Length && !(data[offset] == 'C' && data[offset + 1] == 'O' && data[offset + 2] == 'S' && data[offset + 3] == 'O'))
-			offset += 2;
-
-		if (offset + 0x20 > data.Length)
-			return null;
-
-		// The module is a newer TFMX variant with timbre transposes in the divisions.
-		// TODO: Its samples (drums with the DMA sound of the STE) are not played.
-		try
-		{
-			var songs = HippelCosoLoader.Load(new DataReader(data[offset..]), platform);
-
-			return songs.Count == 0 ? null : songs[0];
-		}
-		catch
-		{
-			return null;
-		}
+		// TODO: Play the module with the 4 sample voices (the Amiga player of HippelCosoSong is not implemented yet).
+		return null;
 	}
 }

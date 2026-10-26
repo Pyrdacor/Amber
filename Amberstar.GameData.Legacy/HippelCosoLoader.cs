@@ -421,10 +421,8 @@ internal static class HippelCosoLoader
                     // TODO: FULL STOP the entire song
                 }*/
 
-                // TFMX modules store a signed timbre transpose.
-                int timbreIndex = isMmme ? data.Channels[c].TimbreIndex : unchecked((sbyte)data.Channels[c].TimbreIndex);
-                channels[c] = new(data.Channels[c].Monopattern, data.Channels[c].Transpose, timbreIndex,
-                    volumeReduction, songSpeed, timbreAdjust, !isMmme);
+                channels[c] = new(data.Channels[c].Monopattern, data.Channels[c].Transpose, data.Channels[c].TimbreIndex,
+                    volumeReduction, songSpeed, timbreAdjust);
             }
 
             divisions[i] = new(channels);
