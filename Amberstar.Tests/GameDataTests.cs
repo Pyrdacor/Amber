@@ -48,6 +48,29 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void OutroMusicPlays(string folder)
+	{
+		var music = TestData.CreateAssetProvider(folder).OutroData!.Music!;
+		var player = new SampleCollector();
+		music.Play();
+
+		// 2 minutes (the song changes its divisions and samples)
+		for (int i = 0; i < 60 * 120; i++)
+			music.Update(1000.0 / 60, player);
+
+		Assert.True(player.Samples.Count >= 44100 * 120);
+		Assert.Contains(player.Samples, sample => sample != 0);
+	}
+
+	sealed class SampleCollector : IMusicPlayer
+	{
+		public List<short> Samples { get; } = [];
+
+		public void SampleData(short[] pcmData, bool endOfStream) => Samples.AddRange(pcmData);
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void OutroDataLoads(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);
@@ -70,6 +93,7 @@ public sealed class GameDataTests
 		Assert.Equal(3, outro.BalconyTexts.Count);
 		Assert.Contains("AMBERMOON", outro.BalconyTexts[2]);
 		Assert.NotNull(outro.GetGlyph('A'));
+		Assert.NotNull(outro.Music);
 	}
 
 	[Theory]

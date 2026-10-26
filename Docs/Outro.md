@@ -34,7 +34,9 @@ The outro is not part of the released source code. The game and the outro were d
 - The music player (a relocatable program at $1fbdc in the German outro) emulates the 4 sample voices of the Amiga:
   it mixes them by software (L960 in the player) and plays them with the DMA sound of the STE or the YM chip.
 - It plays a COSO module with samples (TFMX variant): 4 voices with 3 bytes per division (pattern, note transpose,
-  signed timbre transpose). The port can't play it yet and plays song 6 of the game instead.
+  signed timbre transpose). `HippelCosoPaulaSong` plays it like the player: the sequencer (L9e88), the patterns (L9fbc),
+  the frequency and volume sequences (La22e, commands E0-E9 and E0/E8) and the sample voices of the Amiga (L958c,
+  started voices switch to the loop of the sample, voices with less than 220 words are silent).
 
 ## Port
 - `OutroData` loads the data, `OutroScreen` shows it. The palettes fade like the original (fade in: each color channel

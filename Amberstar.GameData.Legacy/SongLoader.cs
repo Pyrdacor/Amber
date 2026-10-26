@@ -13,6 +13,17 @@ internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, Lega
 
     public ISong LoadSong(int musicIndex, int songIndex)
     {
+        // The Amiga plays the modules with its 4 sample voices.
+        if (platform == LegacyPlatform.Amiga)
+        {
+            var amigaAsset = assetProvider.GetAsset(new(AssetType.Music, musicIndex))
+                ?? throw new AmberException(ExceptionScope.Data, $"Music {musicIndex} not found.");
+            var reader = amigaAsset.GetReader();
+            reader.Position = 0;
+
+            return new HippelCosoPaulaSong(reader.ReadBytes(reader.Size), songIndex + 1);
+        }
+
         if (!music.TryGetValue(musicIndex, out var songs))
         {
             var asset = assetProvider.GetAsset(new(AssetType.Music, musicIndex));

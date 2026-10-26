@@ -112,7 +112,7 @@ internal class OutroData : IOutroData
 		ChancellorTexts = Texts(Address(ChancellorTextsOffset));
 		BalconyTexts = Texts(Address(BalconyTextsOffset));
 
-		Music = LoadMusic(Address(MusicOffset), platform);
+		Music = LoadMusic(Address(MusicOffset));
 	}
 
 	public IGraphic ThroneRoom { get; }
@@ -298,11 +298,19 @@ internal class OutroData : IOutroData
 
 	/// <summary>
 	/// The music player of the outro emulates the 4 sample voices of the Amiga (mixed by software) and plays a COSO module
-	/// with samples (TFMX variant, 4 voices with 3 bytes per division). The port can't play such modules yet.
+	/// with samples (TFMX variant, 4 voices with 3 bytes per division) which follows the player code.
 	/// </summary>
-	static ISong? LoadMusic(int playerOffset, LegacyPlatform platform)
+	ISong? LoadMusic(int playerOffset)
 	{
-		// TODO: Play the module with the 4 sample voices (the Amiga player of HippelCosoSong is not implemented yet).
-		return null;
+		int offset = playerOffset;
+
+		while (offset + 0x20 <= data.Length && !(data[offset] == 'C' && data[offset + 1] == 'O' && data[offset + 2] == 'S' && data[offset + 3] == 'O'))
+			offset += 2;
+
+		if (offset + 0x20 > data.Length)
+			return null;
+
+		// The samples follow the module.
+		return new HippelCosoPaulaSong(data[offset..]);
 	}
 }
