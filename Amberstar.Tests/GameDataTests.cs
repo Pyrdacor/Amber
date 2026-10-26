@@ -48,6 +48,25 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void AllSongsPlay(string folder)
+	{
+		var songLoader = TestData.CreateAssetProvider(folder).SongLoader;
+
+		for (int song = 1; song <= songLoader.SongCount; song++)
+		{
+			var music = songLoader.LoadSong(songLoader.GetMusicIndex(song), 0);
+			var player = new SampleCollector();
+			music.Play();
+
+			for (int i = 0; i < 60 * 20; i++)
+				music.Update(1000.0 / 60, player);
+
+			Assert.True(player.Samples.Any(sample => sample != 0), $"song {song} is silent");
+		}
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void OutroMusicPlays(string folder)
 	{
 		var music = TestData.CreateAssetProvider(folder).OutroData!.Music!;

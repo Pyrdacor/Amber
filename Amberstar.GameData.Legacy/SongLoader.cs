@@ -3,41 +3,26 @@ using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
+/// <summary>
+/// The music modules (COSO) are played like the original players: the Atari ST with its sound chip
+/// (<see cref="HippelCosoYmSong"/>), the Amiga with its sample voices (<see cref="HippelCosoPaulaSong"/>).
+/// </summary>
 internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, LegacyPlatform platform, List<int> songMusicIndices) : ISongLoader
 {
     public int SongCount => songMusicIndices.Count;
 
     public int GetMusicIndex(int song) => song >= 1 && song <= songMusicIndices.Count ? songMusicIndices[song - 1] : song;
 
-    readonly Dictionary<int, List<HippelCosoSong>> music = [];
-
     public ISong LoadSong(int musicIndex, int songIndex)
     {
-        // The Amiga plays the modules with its 4 sample voices.
-        if (platform == LegacyPlatform.Amiga)
-        {
-            var amigaAsset = assetProvider.GetAsset(new(AssetType.Music, musicIndex))
-                ?? throw new AmberException(ExceptionScope.Data, $"Music {musicIndex} not found.");
-            var reader = amigaAsset.GetReader();
-            reader.Position = 0;
+        var asset = assetProvider.GetAsset(new(AssetType.Music, musicIndex))
+            ?? throw new AmberException(ExceptionScope.Data, $"Music {musicIndex} not found.");
+        var reader = asset.GetReader();
+        reader.Position = 0;
+        var module = reader.ReadBytes(reader.Size);
 
-            return new HippelCosoPaulaSong(reader.ReadBytes(reader.Size), songIndex + 1);
-        }
-
-        if (!music.TryGetValue(musicIndex, out var songs))
-        {
-            var asset = assetProvider.GetAsset(new(AssetType.Music, musicIndex));
-
-            if (asset == null)
-                throw new AmberException(ExceptionScope.Data, $"Music {musicIndex} not found.");
-
-            songs = HippelCosoLoader.Load(asset.GetReader(), platform);
-            music.Add(musicIndex, songs);
-        }
-            
-        if (songIndex < 0 || songIndex >= songs.Count)                
-            throw new AmberException(ExceptionScope.Data, $"Song {songIndex} is not available in music {musicIndex}.");
-
-        return songs[songIndex];
+        return platform == LegacyPlatform.Amiga
+            ? new HippelCosoPaulaSong(module, songIndex + 1)
+            : new HippelCosoYmSong(module, songIndex + 1);
     }
 }
