@@ -61,7 +61,7 @@ public sealed class GameDataTests
 		Assert.Equal(6, outro.PartyFigurePositions.Count);
 		Assert.Equal(12, outro.Dragon.Count);
 		Assert.Equal(112, outro.Dragon[0].Width);
-		Assert.Equal(8, outro.Flyer.Count);
+		Assert.Equal(8, outro.Eagle.Count);
 		Assert.Equal(3, outro.BalconyPeople.Count);
 		Assert.Equal(new Position(176, 102), outro.BalconyPeoplePositions[1]);
 		Assert.Equal(0xff, outro.BalconyScript[^1]);
@@ -70,6 +70,7 @@ public sealed class GameDataTests
 		Assert.Equal(3, outro.BalconyTexts.Count);
 		Assert.Contains("AMBERMOON", outro.BalconyTexts[2]);
 		Assert.NotNull(outro.GetGlyph('A'));
+		Assert.NotNull(outro.Music);
 	}
 
 	[Theory]

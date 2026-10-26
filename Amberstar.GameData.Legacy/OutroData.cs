@@ -18,11 +18,11 @@ internal class OutroData : IOutroData
 	const int LandscapePaletteOffset = 0x2da;
 	const int RedMoonPaletteOffset = 0x5a4;
 	const int MoonOffset = 0x5f8;
-	const int EaglesOffset = 0x670;
+	const int PulsingMoonOffset = 0x670;
 	const int DragonYOffsetsOffset = 0x6be;
 	const int DragonOffset = 0x6ca;
-	const int FlyerYOffsetsOffset = 0x71c;
-	const int FlyerOffset = 0x728;
+	const int EagleYOffsetsOffset = 0x71c;
+	const int EagleOffset = 0x728;
 	const int BalconyPeopleRectsOffset = 0x76a;
 	static readonly int[] BalconyPeopleOffsets = [0x792, 0x7b2, 0x7d2];
 	const int ChancellorTextsOffset = 0x7ea;
@@ -68,7 +68,7 @@ internal class OutroData : IOutroData
 		LeftTorch = Frames(Address(LeftTorchOffset), 3, 1, 46);
 		RightTorch = Frames(Address(RightTorchOffset), 3, 1, 46);
 		Chancellor = Frames(Address(ChancellorOffset), 7, 2, 37);
-		Eagles = Frames(Address(EaglesOffset), 4, 1, 14);
+		PulsingMoon = Frames(Address(PulsingMoonOffset), 4, 1, 14);
 		Moon = Sprite(Address(MoonOffset), 9, 32);
 
 		// The party figures have word offsets, the dragons long offsets to their frames (with width and height).
@@ -80,9 +80,9 @@ internal class OutroData : IOutroData
 		int dragon = Address(DragonOffset);
 		Dragon = [.. Enumerable.Range(0, 12).Select(i => SpriteWithSize(dragon + Long(dragon + i * 4)))];
 		DragonYOffsets = Words(Address(DragonYOffsetsOffset), 12);
-		int flyer = Address(FlyerOffset);
-		Flyer = [.. Enumerable.Range(0, 8).Select(i => SpriteWithSize(flyer + Long(flyer + i * 4)))];
-		FlyerYOffsets = Words(Address(FlyerYOffsetsOffset), 8);
+		int eagle = Address(EagleOffset);
+		Eagle = [.. Enumerable.Range(0, 8).Select(i => SpriteWithSize(eagle + Long(eagle + i * 4)))];
+		EagleYOffsets = Words(Address(EagleYOffsetsOffset), 8);
 
 		// The rectangles which restore the background behind the people give their positions and sizes.
 		int rects = Address(BalconyPeopleRectsOffset);
@@ -123,11 +123,11 @@ internal class OutroData : IOutroData
 	public IReadOnlyList<IGraphic> PartyFigures { get; }
 	public IReadOnlyList<int> PartyFigureYOffsets { get; }
 	public IReadOnlyList<Position> PartyFigurePositions { get; }
-	public IReadOnlyList<IGraphic> Eagles { get; }
+	public IReadOnlyList<IGraphic> PulsingMoon { get; }
 	public IReadOnlyList<IGraphic> Dragon { get; }
 	public IReadOnlyList<int> DragonYOffsets { get; }
-	public IReadOnlyList<IGraphic> Flyer { get; }
-	public IReadOnlyList<int> FlyerYOffsets { get; }
+	public IReadOnlyList<IGraphic> Eagle { get; }
+	public IReadOnlyList<int> EagleYOffsets { get; }
 	public IGraphic Moon { get; }
 	public IReadOnlyList<IReadOnlyList<IGraphic>> BalconyPeople { get; }
 	public IReadOnlyList<Position> BalconyPeoplePositions { get; }
@@ -147,9 +147,9 @@ internal class OutroData : IOutroData
 		OutroGraphic.RightTorch => RightTorch,
 		OutroGraphic.Chancellor => Chancellor,
 		OutroGraphic.PartyFigure => PartyFigures,
-		OutroGraphic.Eagle => Eagles,
+		OutroGraphic.PulsingMoon => PulsingMoon,
 		OutroGraphic.Dragon => Dragon,
-		OutroGraphic.Flyer => Flyer,
+		OutroGraphic.Eagle => Eagle,
 		OutroGraphic.Moon => [Moon],
 		OutroGraphic.BalconyPerson1 => BalconyPeople[0],
 		OutroGraphic.BalconyPerson2 => BalconyPeople[1],
@@ -309,8 +309,8 @@ internal class OutroData : IOutroData
 		if (offset + 0x20 > data.Length)
 			return null;
 
-		// TODO: The module is a newer TFMX variant (with samples and timbre transposes in the divisions)
-		// which the player doesn't support yet.
+		// The module is a newer TFMX variant with timbre transposes in the divisions.
+		// TODO: Its samples (drums with the DMA sound of the STE) are not played.
 		try
 		{
 			var songs = HippelCosoLoader.Load(new DataReader(data[offset..]), platform);

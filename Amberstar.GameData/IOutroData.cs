@@ -42,9 +42,9 @@ public enum OutroGraphic
 	RightTorch,
 	Chancellor,
 	PartyFigure,
-	Eagle,
+	PulsingMoon,
 	Dragon,
-	Flyer,
+	Eagle,
 	Moon,
 	BalconyPerson1,
 	BalconyPerson2,
@@ -53,7 +53,7 @@ public enum OutroGraphic
 
 /// <summary>
 /// The data of the outro (EXTRO.68K, a separate program of the original). The chancellor speaks to the party
-/// in the throne room, then the people watch the dragon and the eagles from the balcony.
+/// in the throne room, then the people watch the dragon, an eagle and the pulsing third moon from the balcony.
 /// </summary>
 public interface IOutroData
 {
@@ -107,11 +107,14 @@ public interface IOutroData
 	/// </summary>
 	IReadOnlyList<Position> PartyFigurePositions { get; }
 
-	IReadOnlyList<IGraphic> Eagles { get; }
+	/// <summary>
+	/// The third moon which pulses red at the end (4 frames).
+	/// </summary>
+	IReadOnlyList<IGraphic> PulsingMoon { get; }
 	IReadOnlyList<IGraphic> Dragon { get; }
 	IReadOnlyList<int> DragonYOffsets { get; }
-	IReadOnlyList<IGraphic> Flyer { get; }
-	IReadOnlyList<int> FlyerYOffsets { get; }
+	IReadOnlyList<IGraphic> Eagle { get; }
+	IReadOnlyList<int> EagleYOffsets { get; }
 	IGraphic Moon { get; }
 
 	/// <summary>

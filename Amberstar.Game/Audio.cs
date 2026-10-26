@@ -3,9 +3,12 @@ using Amberstar.GameData;
 
 namespace Amberstar.Game;
 
-class AudioStream(IAssetProvider assetProvider, int musicIndex, int songIndex) : IAudioStream, IMusicPlayer
+class AudioStream(ISong song) : IAudioStream, IMusicPlayer
 {
-    readonly ISong song = assetProvider.SongLoader.LoadSong(musicIndex, songIndex);
+    public AudioStream(IAssetProvider assetProvider, int musicIndex, int songIndex)
+        : this(assetProvider.SongLoader.LoadSong(musicIndex, songIndex))
+    {
+    }
 
     public event DataStreamEventHandler? DataStreamed;
 
@@ -42,6 +45,11 @@ partial class Game
     // the song of the shown map which is played when the music is switched on
     int requestedSongIndex = -1;
     readonly Dictionary<int, AudioStream> music = [];
+
+    /// <summary>
+    /// The music of the outro is not one of the 19 songs of the game (see <see cref="IOutroData.Music"/>).
+    /// </summary>
+    internal const int OutroSong = 100;
 
     private void UpdateMusic(double elapsed)
     {
@@ -80,7 +88,9 @@ partial class Game
         {
             if (!music.TryGetValue(songIndex, out var audioStream))
             {
-                audioStream = new AudioStream(AssetProvider, AssetProvider.SongLoader.GetMusicIndex(songIndex), 0);
+                audioStream = songIndex == OutroSong
+                    ? new AudioStream(AssetProvider.OutroData!.Music!)
+                    : new AudioStream(AssetProvider, AssetProvider.SongLoader.GetMusicIndex(songIndex), 0);
                 music.Add(songIndex, audioStream);
             }
 

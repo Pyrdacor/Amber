@@ -284,7 +284,11 @@ internal abstract class HippelCosoSong : ISong
                                 customInstrument = command.Params[2];
 
                             // Set timbre
-                            player.SetTimbre(player.GetTimbre() + command.Params[1], customInstrument);
+                            var division = player.channels[player.currentVoice].CurrentDivision;
+                            int timbre = division?.TimbreTranspose == true
+                                ? division.TimbreIndex + command.Params[1]
+                                : player.GetTimbre() + command.Params[1];
+                            player.SetTimbre(timbre, customInstrument);
                         }
                         // Technically this is not zeroed if no note param flag was set, but it should be fine.
                         player.channels[player.currentVoice].CurrentPortandoDelta = 0;
@@ -311,7 +315,12 @@ internal abstract class HippelCosoSong : ISong
 
     internal record Division(Division.Channel[] Channels)
     {
-        public record Channel(int PatternIndex, int Transpose, int TimbreIndex, int VolumeReduction, int SongSpeed, int TimbreAdjust);
+        /// <summary>
+        /// With a timbre transpose (TFMX modules like the outro music) the timbre index of the division is added
+        /// to the timbres of the notes instead of setting the timbre.
+        /// </summary>
+        public record Channel(int PatternIndex, int Transpose, int TimbreIndex, int VolumeReduction, int SongSpeed, int TimbreAdjust,
+            bool TimbreTranspose = false);
     }
 
     internal abstract class ChannelPlayer(Func<int, int>? noisePeriodConverter)
@@ -472,6 +481,8 @@ internal abstract class HippelCosoSong : ISong
 
         public bool ResetAtNextEndPatternCommand { get; set; } = false;
 
+        public Division.Channel? CurrentDivision => currentDivision;
+
         private protected virtual void InstumentChanged()
         {
             currentInstrument?.Reset();
@@ -603,7 +614,11 @@ internal abstract class HippelCosoSong : ISong
 
         private protected virtual void InitDivision()
         {
-            CurrentTimbre = currentDivision!.TimbreIndex + currentDivision.TimbreAdjust;
+            if (!currentDivision!.TimbreTranspose)
+                CurrentTimbre = currentDivision.TimbreIndex + currentDivision.TimbreAdjust;
+            else if (currentTimbre == null)
+                CurrentTimbre = 0;
+
             CurrentInstrument = currentTimbre!.Instrument;
 
             currentPattern = player.patterns[currentDivision!.PatternIndex];
@@ -961,7 +976,7 @@ internal abstract class HippelCosoSong : ISong
 
     public void SetTimbre(int index, int? customInstrument)
     {
-        channels[currentVoice].SetTimbre(index < timbres.Length ? index : 0, customInstrument);
+        channels[currentVoice].SetTimbre(index >= 0 && index < timbres.Length ? index : 0, customInstrument);
     }
 
     public void SetSample(int index)

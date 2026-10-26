@@ -25,13 +25,15 @@ The outro is not part of the released source code. The game and the outro were d
   color 5 replaced from line 82).
 - Script (1 step = 6 vertical blanks): 0 n = wait n steps, 1-3 n = frame of a person (64 pixels wide, 4 frames, positions
   (112,94), (176,102), (256,94)), 4 = next text, 5 = red moon palette and the moon (at 94,20) for 2 steps, 0xff = end.
-- The dragon (12 frames with y offsets, starting at x 350, 1 pixel per step) and a second flyer (8 frames, x 620,
-  2 pixels per step) fly to the left. When both left the screen, the eagles (4 frames, cycle 0,1,2,3,2,1 at 226,22) are shown.
+- The dragon (12 frames with y offsets, starting at x 350, 1 pixel per step) and an eagle (8 frames, x 620,
+  2 pixels per step, drawn in front of the dragon) fly to the left. 70 steps after the dragon left the screen, the third moon
+  pulses (4 frames, cycle 0,1,2,3,2,1 at 226,22).
 - After the last text the space key ends the outro.
 
 ## Music
-- A COSO module with samples (TFMX variant, timbre transposes in the divisions) inside the music player of the outro.
-  The port can't play it yet and plays song 6 of the game instead.
+- A COSO module with samples (TFMX variant) inside the music player of the outro. Its divisions store a signed timbre
+  transpose which is added to the timbres of the notes (the game's MMME modules set the timbre directly).
+  The samples (drums with the DMA sound of the STE) are not played by the port.
 
 ## Port
 - `OutroData` loads the data, `OutroScreen` shows it. The palettes fade like the original (fade in: each color channel

@@ -7,7 +7,7 @@ namespace Amberstar.Game.Screens;
 
 /// <summary>
 /// The outro (EXTRO.68K in the original, a separate program which was disassembled). The chancellor speaks to the
-/// party in the throne room. Then the people watch the dragon and the eagles from the balcony until the space key
+/// party in the throne room. Then the people watch the dragon and an eagle from the balcony until the space key
 /// is pressed. Like in the original everything is timed by vertical blanks (50 per second): a step every 6 vertical
 /// blanks, the palettes fade in steps of 5 (in) and 3 (out) vertical blanks.
 /// </summary>
@@ -33,7 +33,7 @@ internal sealed class OutroScreen : Screen
 	const byte SpriteDisplayLayer = 224;
 	const byte TextBoxDisplayLayer = 230;
 	const byte TextDisplayLayer = 232;
-	// The music of the outro can't be played yet, so a song of the game is played.
+	// If the music of the outro can't be loaded, a song of the game is played.
 	const int FallbackSong = 6;
 	// throne room
 	static readonly Position LeftTorchPosition = new(115, 59);
@@ -46,16 +46,16 @@ internal sealed class OutroScreen : Screen
 	const int ChancellorEndWait = -80;
 	const int TextWait = -100;
 	// balcony
-	static readonly Position EaglePosition = new(226, 22);
-	static readonly int[] EagleFrames = [0, 1, 2, 3, 2, 1];
+	static readonly Position PulsingMoonPosition = new(226, 22);
+	static readonly int[] PulsingMoonFrames = [0, 1, 2, 3, 2, 1];
 	static readonly Position MoonPosition = new(94, 20);
 	const int DragonStartX = 350;
 	const int DragonEndX = -128;
 	const int DragonOffsetY = -9;
-	const int FlyerStartX = 620;
-	const int FlyerEndX = -80;
-	const int FlyerOffsetY = 2;
-	const int EagleStartWait = -70;
+	const int EagleStartX = 620;
+	const int EagleEndX = -80;
+	const int EagleOffsetY = 2;
+	const int PulsingMoonStartWait = -70;
 	const int MoonSteps = 2;
 	// text box (L928 in the extro)
 	static readonly Rect TextBoxArea = new(20, 150, 281, 43);
@@ -91,9 +91,9 @@ internal sealed class OutroScreen : Screen
 	readonly Image?[] persons = new Image?[3];
 	int dragonX = DragonStartX;
 	int dragonFrame = 0;
-	int flyerX = FlyerStartX;
-	int flyerFrame = 3;
-	int eaglePhase = EagleStartWait;
+	int eagleX = EagleStartX;
+	int eagleFrame = 3;
+	int pulsingMoonPhase = PulsingMoonStartWait;
 	int moonSteps = 0;
 	bool canLeave = false;
 	readonly List<(Image Image, OutroPalette Palette)> flyingSprites = [];
@@ -117,8 +117,8 @@ internal sealed class OutroScreen : Screen
 		base.Open(closeAction);
 
 		outro = Game.AssetProvider.OutroData!;
-		Game.Cursor.Visible = false;
-		Game.PlaySong(FallbackSong);
+		Game.Cursor.CursorType = CursorType.Sword;
+		Game.PlaySong(outro.Music != null ? Game.OutroSong : FallbackSong);
 
 		// The palettes fade in from black.
 		phase = Phase.ThroneRoomFadeIn;
@@ -129,21 +129,34 @@ internal sealed class OutroScreen : Screen
 	public override void Close()
 	{
 		ClearImages();
-		Game.Cursor.Visible = true;
 
 		base.Close();
 	}
 
+	/// <summary>
+	/// The space key (or a click) ends the outro after the last text.
+	/// </summary>
+	void Leave()
+	{
+		if (canLeave && phase == Phase.Balcony)
+			StartPhase(Phase.BalconyFadeOut);
+	}
+
 	public override bool KeyDown(Key key, KeyModifiers keyModifiers)
 	{
-		// Only the space key ends the outro after the last text.
-		if (key == Key.Space && canLeave && phase == Phase.Balcony)
-			StartPhase(Phase.BalconyFadeOut);
+		if (key == Key.Space)
+			Leave();
 
 		return true;
 	}
 
-	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers) => true;
+	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
+	{
+		if (buttons == MouseButtons.Left)
+			Leave();
+
+		return true;
+	}
 
 	public override void Update(long elapsedTicks)
 	{
@@ -442,22 +455,22 @@ internal sealed class OutroScreen : Screen
 	}
 
 	/// <summary>
-	/// The script moves the people and shows the texts. The dragon and another flyer fly to the left, later the
-	/// eagles are shown (L49e in the extro).
+	/// The script moves the people and shows the texts. The dragon and the eagle fly to the left, later the
+	/// third moon pulses (L49e in the extro).
 	/// </summary>
 	void BalconyStep()
 	{
-		if (eaglePhase < 0)
+		if (pulsingMoonPhase < 0)
 		{
-			flyerX = Math.Max(FlyerEndX, flyerX - 2);
+			eagleX = Math.Max(EagleEndX, eagleX - 2);
 
 			if (--dragonX <= DragonEndX)
 			{
 				dragonX = DragonEndX;
-				eaglePhase++;
+				pulsingMoonPhase++;
 			}
 
-			flyerFrame = (flyerFrame + 1) % outro.Flyer.Count;
+			eagleFrame = (eagleFrame + 1) % outro.Eagle.Count;
 			dragonFrame = (dragonFrame + 1) % outro.Dragon.Count;
 		}
 
@@ -466,17 +479,18 @@ internal sealed class OutroScreen : Screen
 		flyingSprites.ForEach(entry => RemoveImage(entry.Image));
 		flyingSprites.Clear();
 
-		// eagles
-		if (eaglePhase >= 0)
+		// the pulsing third moon
+		if (pulsingMoonPhase >= 0)
 		{
-			eaglePhase = (eaglePhase + 1) % EagleFrames.Length;
-			AddFlyingSprite(OutroGraphic.Eagle, EagleFrames[eaglePhase], EaglePosition);
+			pulsingMoonPhase = (pulsingMoonPhase + 1) % PulsingMoonFrames.Length;
+			AddFlyingSprite(OutroGraphic.PulsingMoon, PulsingMoonFrames[pulsingMoonPhase], PulsingMoonPosition, SpriteDisplayLayer);
 		}
 
 		// The dragon frames are shown backwards.
 		int dragonIndex = outro.Dragon.Count - 1 - dragonFrame;
-		AddFlyingSprite(OutroGraphic.Dragon, dragonIndex, new(dragonX, DragonOffsetY + outro.DragonYOffsets[dragonIndex]));
-		AddFlyingSprite(OutroGraphic.Flyer, flyerFrame, new(flyerX, FlyerOffsetY + outro.FlyerYOffsets[flyerFrame]));
+		// The eagle is drawn in front of the dragon.
+		AddFlyingSprite(OutroGraphic.Dragon, dragonIndex, new(dragonX, DragonOffsetY + outro.DragonYOffsets[dragonIndex]), SpriteDisplayLayer);
+		AddFlyingSprite(OutroGraphic.Eagle, eagleFrame, new(eagleX, EagleOffsetY + outro.EagleYOffsets[eagleFrame]), SpriteDisplayLayer + 1);
 
 		UpdatePersons();
 
@@ -491,9 +505,9 @@ internal sealed class OutroScreen : Screen
 		}
 	}
 
-	void AddFlyingSprite(OutroGraphic graphic, int frame, Position position)
+	void AddFlyingSprite(OutroGraphic graphic, int frame, Position position, int displayLayer)
 	{
-		var image = AddImage(graphic, frame, position, OutroPalette.Sky, SpriteDisplayLayer);
+		var image = AddImage(graphic, frame, position, OutroPalette.Sky, (byte)displayLayer);
 
 		if (image != null)
 			flyingSprites.Add((image, OutroPalette.Sky));
