@@ -160,11 +160,10 @@ internal sealed class HealerScreen : PlaceScreen
 
 		AskToBuy(Game.LoadMessageText(Message.DestroyCursedItemsPrice), price, () =>
 		{
-			// TODO: The original shows an animation of the destruction.
-			foreach (var equipmentSlot in cursedEquipment)
-				Game.RemoveEquipment(Patient, equipmentSlot, Patient.Equipment[equipmentSlot].Count);
-
-			ShowPatient();
+			// The equipment of the patient is shown while the items are destroyed (RemCurseYes in the original).
+			Game.EquipmentToDestroy = cursedEquipment;
+			Game.State.SetCurrentInventory(patientSlot);
+			Game.ScreenHandler.PushScreen(ScreenType.Inventory);
 		});
 	}
 

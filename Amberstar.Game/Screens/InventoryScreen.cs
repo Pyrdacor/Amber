@@ -207,6 +207,13 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         // The inventory was opened to choose an item for a spell.
         if (Game.SpellItemMessage != null)
             Game.AddDelayedAction(0, () => Game.ScreenHandler.PushScreen(ScreenType.InventorySpellItem));
+
+        // The inventory was opened by a healer to destroy cursed items.
+        if (Game.EquipmentToDestroy is List<EquipmentSlot> equipmentToDestroy)
+        {
+            Game.EquipmentToDestroy = null;
+            DestroyEquipment(equipmentToDestroy, () => Game.ScreenHandler.PopScreen());
+        }
     }
 
     private void CleanUpItems()
@@ -825,6 +832,43 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     /// Shows the items and values after they were changed (e.g. by a spell).
     /// </summary>
     internal void Refresh() => SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
+
+    /// <summary>
+    /// Destroys equipped items one after another with the curse animation (RemCurse_DisInit in
+    /// PLACES.ASM of the original, used by healers). The mouse is disabled meanwhile and there is
+    /// a pause of 1 second before and after the destruction.
+    /// </summary>
+    void DestroyEquipment(List<EquipmentSlot> equipmentSlots, Action finishedHandler)
+    {
+        var partyMember = Game.State.CurrentInventory!;
+        long pauseTicks = Game.TicksPerSecond;
+
+        Game.EnableInput(false);
+        Game.AddDelayedAction(pauseTicks, () => DestroyNext(0));
+
+        void DestroyNext(int index)
+        {
+            if (index == equipmentSlots.Count)
+            {
+                Game.AddDelayedAction(pauseTicks, () =>
+                {
+                    Game.EnableInput(true);
+                    finishedHandler();
+                });
+                return;
+            }
+
+            var equipmentSlot = equipmentSlots[index];
+            int count = partyMember.Equipment[equipmentSlot].Count;
+
+            Game.RemoveEquipment(partyMember, equipmentSlot, count);
+            equippedItemSlots[equipmentSlot].ReduceItemCount(count, true, () =>
+            {
+                Refresh(); // e.g. the second slot of a two-handed weapon
+                DestroyNext(index + 1);
+            });
+        }
+    }
 
     internal class GiveItemScreen : InventoryItemPickerScreen
     {

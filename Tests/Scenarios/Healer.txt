@@ -54,8 +54,13 @@ buttonenabled 3 1
 button 3
 waitscreen Confirmation
 yes
+# --- the equipment is shown while the item is destroyed with an animation
+waitscreen Inventory
+waitscreen Healer
 count 159 0
 value 1 strength +5
+# --- the fade back to the healer
+wait 500
 button 7
 button 2
 waitidle

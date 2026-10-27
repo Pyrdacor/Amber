@@ -73,6 +73,11 @@ partial class Game
     public IEnumerable<int> GetValidPartyMemberSlots() =>
         State.PartyMembersWithSlot.Where(p => p.PartyMember != null).Select(p => p.SlotIndex);
 
+    /// <summary>
+    /// Equipment of the current inventory which is destroyed when the inventory is opened (healers).
+    /// </summary>
+    internal List<EquipmentSlot>? EquipmentToDestroy { get; set; }
+
     public void OpenInventory(int characterSlotIndex)
     {
         State.SetCurrentInventory(characterSlotIndex);
