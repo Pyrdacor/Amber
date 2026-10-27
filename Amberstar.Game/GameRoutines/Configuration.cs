@@ -79,7 +79,7 @@ public enum GameOptions : uint
 partial class Game
 {
     // TODO: Add more and more of them.
-    static readonly GameOptions supportedGameOptions = GameOptions.UnmaskedDraggedItem;
+    static readonly GameOptions supportedGameOptions = GameOptions.UnmaskedDraggedItem | GameOptions.ShowDwarfLoadingScreen;
 
     internal IConfiguration Configuration { get; }
 

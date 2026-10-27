@@ -12,7 +12,8 @@ namespace Amberstar.Frontend
 		Dictionary<int, byte> palettesTileset,
 		Dictionary<int, byte> generalPalettes,
 		Dictionary<int, byte> combatPalettes,
-		Dictionary<(OutroPalette, int), byte> outroPalettes
+		Dictionary<(OutroPalette, int), byte> outroPalettes,
+		List<byte> loadingScreenPalettes
 	) : IPaletteIndexProvider
 	{
         public ReadOnlyDictionary<BuiltinPalette, byte> BuiltinPaletteIndices => builtinPaletteIndices.AsReadOnly();
@@ -29,6 +30,8 @@ namespace Amberstar.Frontend
 
 		public byte GetOutroPaletteIndex(OutroPalette palette, int fadeStep = 0) =>
 			outroPalettes[(palette, fadeStep >= IOutroData.FadeSteps ? 0 : fadeStep)];
+
+		public byte GetLoadingScreenPaletteIndex(int fadeStep) => loadingScreenPalettes[Math.Clamp(fadeStep, 0, loadingScreenPalettes.Count - 1)];
 
 
 	}

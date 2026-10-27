@@ -25,7 +25,11 @@ namespace Amberstar.Frontend
 			var outroPalettes = outroData == null ? [] : Enum.GetValues<OutroPalette>()
 				.SelectMany(outroPalette => Enumerable.Range(-IOutroData.FadeSteps, 2 * IOutroData.FadeSteps)
 					.Select(step => (Key: (outroPalette, step), Palette: outroData.GetPalette(outroPalette, step)))).ToArray();
-			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length + outroPalettes.Length, GraphicFormat.RGBA);
+			// the loading screen palette with all fading steps
+			var loadingScreenPalettes = Enumerable.Range(0, IGraphicLoader.LoadingScreenFadeSteps + 1)
+				.Select(assetProvider.GraphicLoader.LoadLoadingScreenPalette).OfType<IGraphic>().ToArray();
+			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length + outroPalettes.Length +
+				loadingScreenPalettes.Length, GraphicFormat.RGBA);
             var generalPaletteIndices = new Dictionary<int, byte>();
 			var palettes = new Dictionary<int, IGraphic>();
             byte y = 0;
@@ -77,6 +81,15 @@ namespace Amberstar.Frontend
 				outroPaletteIndices.Add(key, y);
 				palettes.Add(y, outroPalette);
 				palette.AddOverlay(0, y++, outroPalette);
+			}
+
+			var loadingScreenPaletteIndices = new List<byte>();
+
+			foreach (var loadingScreenPalette in loadingScreenPalettes)
+			{
+				loadingScreenPaletteIndices.Add(y);
+				palettes.Add(y, loadingScreenPalette);
+				palette.AddOverlay(0, y++, loadingScreenPalette);
 			}
 
 			var paletteTexture = renderer.TextureFactory.Create(palette);
@@ -168,6 +181,13 @@ namespace Amberstar.Frontend
 						graphics.Add(graphics.Count, glyph);
 					}
 				}
+			}
+			int? loadingScreenIndex = null;
+			var loadingScreen = assetProvider.GraphicLoader.LoadLoadingScreen();
+			if (loadingScreen != null && loadingScreenPaletteIndices.Count != 0)
+			{
+				loadingScreenIndex = graphics.Count;
+				graphics.Add(graphics.Count, loadingScreen);
 			}
 			var monsterGraphicOffsets = new Dictionary<int, int>();
 			foreach (int monsterGraphic in assetProvider.GetAssetKeys(Amber.Common.AssetType.MonsterGraphics))
@@ -327,9 +347,9 @@ namespace Amberstar.Frontend
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
 				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets,
-				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices);
+				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices, loadingScreenIndex);
 			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices,
-				outroPaletteIndices);
+				outroPaletteIndices, loadingScreenPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

@@ -24,7 +24,8 @@ namespace Amberstar.Frontend
 		int spellAnimationOffset,
 		int damageDigitOffset,
 		Dictionary<OutroGraphic, int> outroGraphicOffsets,
-		Dictionary<char, int> outroGlyphIndices
+		Dictionary<char, int> outroGlyphIndices,
+		int? loadingScreenIndex
 
     ) : IGraphicIndexProvider
 	{
@@ -65,5 +66,7 @@ namespace Amberstar.Frontend
 		public int GetOutroGraphicIndex(OutroGraphic graphic, int frame = 0) => outroGraphicOffsets[graphic] + frame;
 
 		public int? GetOutroGlyphIndex(char ch) => outroGlyphIndices.TryGetValue(ch, out int index) ? index : null;
+
+		public int? GetLoadingScreenIndex() => loadingScreenIndex;
     }
 }

@@ -81,6 +81,10 @@ public partial class Game : IDisposable
 		// The name of the active member is shown in a brighter color.
 		State.ActivePartyMemberChanged += UpdatePartyMembers;
 
+        // The original shows the loading screen at the start (it covers the map until it is gone).
+        if (CanShowLoadingScreen)
+            ShowLoadingScreen(DefaultFadeTime);
+
         ScreenHandler.PushScreen(ScreenType.Map2D);
 
         // TODO: For debugging, remove later

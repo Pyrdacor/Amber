@@ -1,6 +1,7 @@
 ﻿using Amber.Common;
 using Amber.Serialization;
 using Amberstar.GameData;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Tests;
 
@@ -173,6 +174,16 @@ public sealed class GameDataTests
 
 		// the combat messages are the last message file
 		Assert.NotEmpty(assetProvider.TextLoader.LoadText(new(Amber.Common.AssetType.Message, (int)Message.GoesBlind)).GetString());
+
+		// the loading screen (the dwarf) with its palette (color 15 is white and black after the fade)
+		var loadingScreen = assetProvider.GraphicLoader.LoadLoadingScreen();
+		Assert.NotNull(loadingScreen);
+		Assert.Equal(IGraphicLoader.LoadingScreenWidth, loadingScreen.Width);
+		Assert.Contains(loadingScreen.GetData(), color => color != 0);
+		var white = assetProvider.GraphicLoader.LoadLoadingScreenPalette(0)!.GetData()[(15 * 4)..(15 * 4 + 3)];
+		var black = assetProvider.GraphicLoader.LoadLoadingScreenPalette(IGraphicLoader.LoadingScreenFadeSteps)!.GetData()[(15 * 4)..(15 * 4 + 3)];
+		Assert.All(white, component => Assert.True(component > 0xc0));
+		Assert.All(black, component => Assert.Equal(0, component));
 	}
 
 	[Theory]

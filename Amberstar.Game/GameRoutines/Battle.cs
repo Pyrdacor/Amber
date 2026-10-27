@@ -357,7 +357,7 @@ partial class Game
 		ResetStatusIcons();
 		UpdatePartyMembers();
 		ScreenHandler.ClearAllScreens();
-		Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true);
+		Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true, true);
 	}
 
 	internal void ShowNotImplementedMessage(string feature, Action? nextAction = null) => ShowTextMessage($"{feature} is not implemented yet.", nextAction);

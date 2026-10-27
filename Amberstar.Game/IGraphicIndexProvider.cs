@@ -30,4 +30,8 @@ public interface IGraphicIndexProvider
 	/// Gets the texture index of the glyph of a character of the outro texts or null if it has no glyph.
 	/// </summary>
 	int? GetOutroGlyphIndex(char ch);
+	/// <summary>
+	/// Gets the texture index of the loading screen (the dwarf) or null if it is not available.
+	/// </summary>
+	int? GetLoadingScreenIndex();
 }

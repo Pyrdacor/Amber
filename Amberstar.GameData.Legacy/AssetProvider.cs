@@ -40,6 +40,8 @@ public enum EmbeddedDataOffset
 	MonsterGraphicPositions,
 	DamageDigits,
 	SongNames,
+	LoadingScreen,
+	LoadingScreenPalette,
 }
 
 public class AssetProvider : IAssetProvider
@@ -229,7 +231,7 @@ public class AssetProvider : IAssetProvider
 		uIGraphicLoader = new(() => new UIGraphicLoader(this, Data.LayoutBlocks[77])); // layout block 77 is the empty item slot
 		mapLoader = new(() => new MapLoader(this));		
 		paletteLoader = new(() => new PaletteLoader(this, builtinPalettes));
-		graphicLoader = new(() => new GraphicLoader(this));
+		graphicLoader = new(() => new GraphicLoader(this, Data.LoadingScreenData, Data.LoadingScreenPaletteData));
 		tilesetLoader = new(() => new TilesetLoader(this));
 		fontLoader = new(() => new FontLoader(this));
 		savegameLoader = new(() => new SavegameLoader(this));
@@ -635,6 +637,17 @@ public class AssetProvider : IAssetProvider
 			case EmbeddedDataOffset.SongNames:
 				// The names of the songs for the music spell start with the first song.
 				return FindAndGotoText(dataReader, 0, "CITY WALK\0");
+			case EmbeddedDataOffset.LoadingScreen:
+				// The code which draws the loading screen (128x112 at 96,62): move.w #$60,d0 / move.w #$3e,d1 /
+				// move.w #8,d6 / move.w #$70,d7 / lea <graphic>,a0. The reader is placed at the graphic address.
+				if (!FindAndGotoByteSequence(dataReader, 0, 0x30, 0x3c, 0x00, 0x60, 0x32, 0x3c, 0x00, 0x3e, 0x3c, 0x3c, 0x00, 0x08,
+					0x3e, 0x3c, 0x00, 0x70, 0x41, 0xf9))
+					return false;
+				dataReader.Position += 18;
+				return true;
+			case EmbeddedDataOffset.LoadingScreenPalette:
+				return FindAndGotoByteSequence(dataReader, 0, 0x00, 0x00, 0x02, 0x23, 0x03, 0x33, 0x02, 0x22, 0x01, 0x11, 0x06, 0x43,
+					0x05, 0x32, 0x04, 0x21, 0x03, 0x10, 0x07, 0x63);
 			case EmbeddedDataOffset.DamageDigits:
 				// The digits 0 and 1 (5 lines of 4 pixels each)
 				return FindAndGotoByteSequence(dataReader, 0, 0x60, 0xd0, 0xd0, 0xd0, 0x60, 0x30, 0x70, 0x30, 0x30, 0x30);

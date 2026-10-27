@@ -1,12 +1,16 @@
 ﻿using Amber.Assets.Common;
 using Amber.Common;
 using Amber.IO.Common.Serialization;
+using Amber.Serialization;
 using Amberstar.GameData.Serialization;
 
 namespace Amberstar.GameData.Legacy;
 
-internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
+internal class GraphicLoader(AssetProvider assetProvider, byte[] loadingScreenData, byte[] loadingScreenPaletteData) : IGraphicLoader
 {
+	internal const int LoadingScreenDataSize = IGraphicLoader.LoadingScreenWidth * IGraphicLoader.LoadingScreenHeight / 2;
+	internal const int LoadingScreenPaletteSize = 16 * 2;
+
 	private readonly IGraphic[]?[] windowGraphics = [null, null];
 	private readonly Dictionary<Image80x80, IPaletteGraphic> graphics80x80 = [];
 	private readonly Dictionary<ItemGraphic, IGraphic> itemGraphics = [];
@@ -255,6 +259,27 @@ internal class GraphicLoader(AssetProvider assetProvider) : IGraphicLoader
 	}
 
 	public IGraphic[] LoadTacticalIcons() => tacticalIcons ??= LoadIcons(AssetType.TacticalIcons, "Tactical icons");
+
+	public IGraphic? LoadLoadingScreen() => loadingScreenData.Length == 0 ? null
+		: Graphic.FromBitPlanes(IGraphicLoader.LoadingScreenWidth, IGraphicLoader.LoadingScreenHeight, loadingScreenData, 4);
+
+	public IGraphic? LoadLoadingScreenPalette(int fadeStep)
+	{
+		if (loadingScreenPaletteData.Length == 0)
+			return null;
+
+		// Each color component (0-7) is decreased by the fade step.
+		var data = new byte[LoadingScreenPaletteSize];
+
+		for (int i = 0; i < data.Length; i++)
+		{
+			int high = Math.Max(0, (loadingScreenPaletteData[i] >> 4) - fadeStep);
+			int low = Math.Max(0, (loadingScreenPaletteData[i] & 0xf) - fadeStep);
+			data[i] = (byte)((high << 4) | low);
+		}
+
+		return PaletteLoader.LoadPalette(new DataReader(data));
+	}
 
 	public IGraphic[] LoadSpellAnimationIcons() => spellAnimationIcons ??= LoadIcons(AssetType.SpellAnimations, "Spell animations");
 

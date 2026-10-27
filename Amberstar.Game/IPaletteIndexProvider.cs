@@ -20,4 +20,8 @@ public interface IPaletteIndexProvider
 	/// Gets a palette of the outro while it fades (see <see cref="IOutroData.GetPalette"/>).
 	/// </summary>
 	byte GetOutroPaletteIndex(OutroPalette palette, int fadeStep = 0);
+	/// <summary>
+	/// Gets the palette of the loading screen at a fade step (see <see cref="IGraphicLoader.LoadLoadingScreenPalette"/>).
+	/// </summary>
+	byte GetLoadingScreenPaletteIndex(int fadeStep);
 }

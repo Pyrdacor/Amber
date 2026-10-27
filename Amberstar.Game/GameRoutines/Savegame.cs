@@ -115,6 +115,6 @@ partial class Game
 	{
 		LoadGame();
 		ScreenHandler.ClearAllScreens();
-		Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true);
+		Teleport(1 + State.PartyPosition.X, 1 + State.PartyPosition.Y, State.PartyDirection, State.MapIndex, true, true);
 	}
 }

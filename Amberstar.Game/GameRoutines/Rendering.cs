@@ -2,6 +2,7 @@
 using Amber.Renderer;
 using Amber.Renderer.Common;
 using Amberstar.Game.UI;
+using Amberstar.GameData.Serialization;
 
 namespace Amberstar.Game;
 
@@ -19,6 +20,15 @@ partial class Game
 	Action? afterFadeOutAction;
     Action? afterFadeInAction;
 	long fadeActionIndex;
+	// the loading screen of the original (a dwarf) which is shown on map changes instead of fading
+	const int LoadingScreenX = 96;
+	const int LoadingScreenY = 62;
+	const double LoadingScreenFadeStepTime = 0.02; // 1 step per vertical blank
+	static readonly Rect loadingScreenArea = new(0, 37, VirtualScreenWidth, VirtualScreenHeight - 37);
+	IColoredRect? loadingScreenBackground;
+	ISprite? loadingScreenSprite;
+	DateTime loadingScreenStartTime;
+	double loadingScreenDuration;
 
     internal ILayer GetRenderLayer(Layer layer) => Renderer.Layers[(int)layer];
 
@@ -113,14 +123,13 @@ partial class Game
 
 	internal void Fade(long durationInMs, Action? finishAction = null, Action? afterFadeOutAction = null, Color? color = null)
 	{
-		// TODO: Later add an option to allow showing the loading screen with the dwarf from the original instead of black fading!
-
 		if (durationInMs <= 1)
 		{
 			afterFadeOutAction?.Invoke();
 			finishAction?.Invoke();
 			return;
 		}
+
 
 		if (fadingOut)
 		{
@@ -174,8 +183,58 @@ partial class Game
         fadeActionIndex = AddDelayedAction(TimeSpan.FromMilliseconds(remainingTime / 2 + holdTime), () => FadeIn(remainingTime / 2));
 	}
 
+	internal bool CanShowLoadingScreen => IsOptionSet(GameOptions.ShowDwarfLoadingScreen) && GraphicIndexProvider.GetLoadingScreenIndex() != null;
+
+	/// <summary>
+	/// Shows the loading screen like the original does while it loads a map (L194 and L208 in the program):
+	/// the area below the portraits is cleared, the dwarf fades in, stays while loading and fades out.
+	/// It only covers the screen, a fading which runs at the same time is not shown.
+	/// </summary>
+	internal void ShowLoadingScreen(long durationInMs)
+	{
+		if (loadingScreenSprite != null || GraphicIndexProvider.GetLoadingScreenIndex() is not int textureIndex)
+			return;
+
+		loadingScreenBackground = CreateColoredRect(Layer.UI, loadingScreenArea.Position, loadingScreenArea.Size, Color.Black)!;
+		loadingScreenBackground.DisplayLayer = 253;
+		loadingScreenSprite = CreateSprite(Layer.UI, new(LoadingScreenX, LoadingScreenY),
+			new(IGraphicLoader.LoadingScreenWidth, IGraphicLoader.LoadingScreenHeight), textureIndex,
+			PaletteIndexProvider.GetLoadingScreenPaletteIndex(IGraphicLoader.LoadingScreenFadeSteps), true)!;
+		loadingScreenSprite.DisplayLayer = 254;
+		loadingScreenStartTime = Now;
+		loadingScreenDuration = durationInMs / 1000.0;
+	}
+
+	private void UpdateLoadingScreen()
+	{
+		if (loadingScreenSprite == null)
+			return;
+
+		double elapsed = (Now - loadingScreenStartTime).TotalSeconds;
+
+		if (elapsed >= loadingScreenDuration)
+		{
+			loadingScreenSprite.Visible = false;
+			loadingScreenSprite = null;
+			loadingScreenBackground!.Visible = false;
+			loadingScreenBackground = null;
+			return;
+		}
+
+		int steps = IGraphicLoader.LoadingScreenFadeSteps;
+		int fadeIn = (int)(elapsed / LoadingScreenFadeStepTime);
+		int fadeOut = (int)((loadingScreenDuration - elapsed) / LoadingScreenFadeStepTime);
+		int fadeStep = Math.Max(0, steps - Math.Min(fadeIn, fadeOut));
+		loadingScreenSprite.PaletteIndex = PaletteIndexProvider.GetLoadingScreenPaletteIndex(fadeStep);
+	}
+
 	private void UpdateFading()
 	{
+		UpdateLoadingScreen();
+
+		if (fadeArea != null)
+			fadeArea.Visible = loadingScreenSprite == null;
+
 		int Change()
 		{
 			var totalMs = (fadingEndTime - fadingStartTime).TotalMilliseconds;

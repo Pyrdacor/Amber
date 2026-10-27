@@ -402,6 +402,35 @@ namespace Amberstar.GameData.Legacy
 				MonsterGraphicData = dataReader.ReadBytes(Legacy.CombatData.MonsterGraphicDataSize);
 			#endregion
 
+			#region Loading screen
+			// Note: Without the loading screen the map changes fade to black.
+			if (dataSeeker(EmbeddedDataOffset.LoadingScreenPalette, dataReader))
+			{
+				int paletteOffset = dataReader.Position;
+				var paletteData = dataReader.ReadBytes(Legacy.GraphicLoader.LoadingScreenPaletteSize);
+
+				if (dataSeeker(EmbeddedDataOffset.LoadingScreen, dataReader))
+				{
+					// The graphic is drawn and then its palette is faded in (lea <palette>,a1 after 3 calls).
+					// The distance of their addresses gives the position of the graphic.
+					uint graphicAddress = dataReader.ReadDword();
+					dataReader.Position += 6 + 3 * 6;
+
+					if (dataReader.ReadWord() == 0x43f9)
+					{
+						long graphicOffset = paletteOffset + (long)graphicAddress - dataReader.ReadDword();
+
+						if (graphicOffset >= 0 && graphicOffset + Legacy.GraphicLoader.LoadingScreenDataSize <= dataReader.Size)
+						{
+							dataReader.Position = (int)graphicOffset;
+							LoadingScreenData = dataReader.ReadBytes(Legacy.GraphicLoader.LoadingScreenDataSize);
+							LoadingScreenPaletteData = paletteData;
+						}
+					}
+				}
+			}
+			#endregion
+
 			#region Altar puzzle
 			// Note: Without the puzzle data the Amberstar can't be assembled.
 			if (dataSeeker(EmbeddedDataOffset.AltarPuzzle, dataReader))
@@ -547,6 +576,8 @@ namespace Amberstar.GameData.Legacy
         public byte[] MonsterGraphicData { get; private set; } = [];
         public byte[] SpellAnimationData { get; private set; } = [];
         public byte[] DamageDigitData { get; private set; } = [];
+        public byte[] LoadingScreenData { get; private set; } = [];
+        public byte[] LoadingScreenPaletteData { get; private set; } = [];
 		public Dictionary<int, IDataReader> SkillNames { get; } = [];
 		public Dictionary<int, IDataReader> CharInfoTexts { get; } = [];
 		public Dictionary<int, IDataReader> RaceNames { get; } = [];

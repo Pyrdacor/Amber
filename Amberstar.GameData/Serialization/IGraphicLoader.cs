@@ -34,4 +34,21 @@ public interface IGraphicLoader
 	/// Loads the 16x16 icons of the spell animations in battles (6 icons per animation).
 	/// </summary>
 	IGraphic[] LoadSpellAnimationIcons();
+
+	const int LoadingScreenWidth = 128;
+	const int LoadingScreenHeight = 112;
+	/// <summary>
+	/// The loading screen fades in and out in this number of steps (each color component is decreased by 1 per step).
+	/// </summary>
+	const int LoadingScreenFadeSteps = 7;
+
+	/// <summary>
+	/// Loads the loading screen of the original (a dwarf with "Loading, please wait", 128x112).
+	/// Null if it is not available.
+	/// </summary>
+	IGraphic? LoadLoadingScreen();
+	/// <summary>
+	/// Loads the palette of the loading screen at a fade step (0: normal, <see cref="LoadingScreenFadeSteps"/>: black).
+	/// </summary>
+	IGraphic? LoadLoadingScreenPalette(int fadeStep);
 }

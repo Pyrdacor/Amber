@@ -73,7 +73,11 @@ partial class Game
 		return (State.PartyPosition, State.GetIndexOfMapWithPlayer(), State.PartyDirection);
 	}
 
-    public void Teleport(int x, int y, Direction direction, int mapIndex, bool fade)
+    /// <summary>
+    /// Teleports the party. On map changes the loading screen of the original can be shown instead of fading
+    /// (also if <paramref name="loading"/> is set, e.g. when a savegame is loaded).
+    /// </summary>
+    public void Teleport(int x, int y, Direction direction, int mapIndex, bool fade, bool loading = false)
 	{
 		EnableInput(false);
 		Pause();
@@ -82,7 +86,13 @@ partial class Game
 		ClearDelayedActions(fadeActionIndex);
 
 		if (State.GetIndexOfMapWithPlayer() != mapIndex)
+		{
 			fade = true; // always fade when switching maps
+			loading = true;
+		}
+
+		if (loading && CanShowLoadingScreen)
+			ShowLoadingScreen(DefaultFadeTime);
 
 		if (fade)
 		{
