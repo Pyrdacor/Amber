@@ -23,7 +23,7 @@ partial class Game
 	// the loading screen of the original (a dwarf) which is shown on map changes instead of fading
 	const int LoadingScreenX = 96;
 	const int LoadingScreenY = 62;
-	const double LoadingScreenFadeStepTime = 0.02; // 1 step per vertical blank
+	const double LoadingScreenFadeStepTime = 0.02; // 16 steps: about 0.3 seconds to fade in and out
 	static readonly Rect loadingScreenArea = new(0, 37, VirtualScreenWidth, VirtualScreenHeight - 37);
 	IColoredRect? loadingScreenBackground;
 	ISprite? loadingScreenSprite;

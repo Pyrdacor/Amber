@@ -268,17 +268,19 @@ internal class GraphicLoader(AssetProvider assetProvider, byte[] loadingScreenDa
 		if (loadingScreenPaletteData.Length == 0)
 			return null;
 
-		// Each color component (0-7) is decreased by the fade step.
-		var data = new byte[LoadingScreenPaletteSize];
+		// The colors are faded to black evenly (finer than the 8 levels per color component of the Atari ST).
+		var palette = PaletteLoader.LoadPalette(new DataReader(loadingScreenPaletteData));
+		var data = (byte[])palette.GetData().Clone();
+		int steps = IGraphicLoader.LoadingScreenFadeSteps;
+		fadeStep = Math.Clamp(fadeStep, 0, steps);
 
 		for (int i = 0; i < data.Length; i++)
 		{
-			int high = Math.Max(0, (loadingScreenPaletteData[i] >> 4) - fadeStep);
-			int low = Math.Max(0, (loadingScreenPaletteData[i] & 0xf) - fadeStep);
-			data[i] = (byte)((high << 4) | low);
+			if (i % 4 != 3) // keep the alpha
+				data[i] = (byte)(data[i] * (steps - fadeStep) / steps);
 		}
 
-		return PaletteLoader.LoadPalette(new DataReader(data));
+		return Graphic.FromRGBA(palette.Width, palette.Height, data);
 	}
 
 	public IGraphic[] LoadSpellAnimationIcons() => spellAnimationIcons ??= LoadIcons(AssetType.SpellAnimations, "Spell animations");

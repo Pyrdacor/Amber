@@ -38,9 +38,9 @@ public interface IGraphicLoader
 	const int LoadingScreenWidth = 128;
 	const int LoadingScreenHeight = 112;
 	/// <summary>
-	/// The loading screen fades in and out in this number of steps (each color component is decreased by 1 per step).
+	/// The loading screen fades in from black and out to black in this number of steps.
 	/// </summary>
-	const int LoadingScreenFadeSteps = 7;
+	const int LoadingScreenFadeSteps = 16;
 
 	/// <summary>
 	/// Loads the loading screen of the original (a dwarf with "Loading, please wait", 128x112).
