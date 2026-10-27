@@ -52,7 +52,9 @@ namespace Amberstar
             if (mouse != null)
             {
                 cursor = mouse.Cursor;
-                cursor.CursorMode = CursorMode.Disabled;
+                // The system cursor is only hidden inside the window (the game draws its own cursor),
+                // so the mouse can leave the window like in Ambermoon.net.
+                cursor.CursorMode = CursorMode.Hidden;
                 mouse.MouseDown += Mouse_MouseDown;
                 mouse.MouseUp += Mouse_MouseUp;
                 mouse.MouseMove += Mouse_MouseMove;

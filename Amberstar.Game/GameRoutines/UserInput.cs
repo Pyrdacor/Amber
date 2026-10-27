@@ -77,30 +77,28 @@ partial class Game
 
 	public void MouseMove(Position position, MouseButtons buttons)
 	{
-		Position newPosition;
-
-
         if (mouseTrapArea != null)
 		{
-			newPosition = new Position
+			var newPosition = new Position
 			(
 				MathUtil.Limit(mouseTrapArea.Value.Left, position.X, mouseTrapArea.Value.Right - 1),
 				MathUtil.Limit(mouseTrapArea.Value.Top, position.Y, mouseTrapArea.Value.Bottom - 1)
 			);
+
+			if (position != newPosition)
+			{
+				position = newPosition;
+				setMousePosition(position);
+			}
         }
 		else
 		{
-            newPosition = new Position
+			// The mouse may leave the window, the cursor stays at the border then.
+            position = new Position
             (
-                MathUtil.Limit(0, position.X, 319),
-                MathUtil.Limit(0, position.Y, 199)
+                MathUtil.Limit(0, position.X, VirtualScreenWidth - 1),
+                MathUtil.Limit(0, position.Y, VirtualScreenHeight - 1)
             );
-        }
-
-        if (position != newPosition)
-        {
-            position = newPosition;
-            setMousePosition(position);
         }
 
         lastMousePosition = position;
