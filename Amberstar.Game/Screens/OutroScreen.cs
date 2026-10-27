@@ -224,7 +224,8 @@ internal sealed class OutroScreen : Screen
 				ShowBalcony();
 				break;
 			case Phase.Finished:
-				Game.ScreenHandler.PopScreen();
+				// The restart closes all screens (also the outro). Popping the outro before would fade and
+				// show the map after it was closed.
 				Game.RestartGame();
 				break;
 		}
