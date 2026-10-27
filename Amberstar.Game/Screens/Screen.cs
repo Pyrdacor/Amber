@@ -69,6 +69,7 @@ public enum ScreenType
     PlaceBuyFood,
     Outro,
     Jukebox,
+    DismissPartyMembers,
     // TODO ...
 }
 
@@ -750,6 +751,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Loot => new LootScreen(),
             ScreenType.Outro => new OutroScreen(),
             ScreenType.Jukebox => new JukeboxScreen(),
+            ScreenType.DismissPartyMembers => new DismissPartyMembersScreen(),
             _ => throw new NotImplementedException()
 		};
 

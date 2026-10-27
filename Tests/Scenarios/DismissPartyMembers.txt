@@ -1,0 +1,42 @@
+# Party members can be dismissed before saving (Save_game in EYE.ASM of the original).
+waittext
+dismissall
+join 61
+join 62
+partysize 3
+# --- open the options and save: the members 2 and 3 are shown
+click 230 170 right
+button 8
+waitscreen Options
+button 6
+waitscreen DismissPartyMembers
+textshown GRUPPE ENTLASSEN
+# --- the active member (the leader) cannot be dismissed
+activate 3
+click 120 80
+textshown ANFÜHRER KANN NICHT
+click 120 80
+activate 1
+# --- mark member 2, mark and unmark member 3
+click 20 55
+click 120 80
+click 120 80
+# --- abort: nobody is dismissed
+click 165 180
+waitscreen Options
+partysize 3
+# --- now dismiss member 2 and save
+button 6
+waitscreen DismissPartyMembers
+click 20 55
+click 130 180
+waitscreen Options
+partysize 2
+value 3 hp
+buttonenabled 7 1
+# --- load the savegame: member 2 stays dismissed
+button 7
+yes
+waitidle
+partysize 2
+value 3 hp

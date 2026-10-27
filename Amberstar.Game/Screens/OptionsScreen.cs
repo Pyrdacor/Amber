@@ -70,7 +70,13 @@ internal sealed class OptionsScreen : ButtonGridScreen
 				RequestButtonSetup();
 				break;
 			case SaveButtonIndex:
-				// TODO: The original lets the player dismiss party members before saving.
+				// With other party members, they can be dismissed before saving (Save_game in the original).
+				if (Game.State.PartyMembersWithSlot.Any(member => member.SlotIndex != 0 && member.PartyMember != null))
+				{
+					Game.ScreenHandler.PushScreen(ScreenType.DismissPartyMembers, RequestButtonSetup);
+					break;
+				}
+
 				Game.AskForConfirmation(Game.LoadMessageText(Message.SaveGame), () =>
 				{
 					Game.SaveGame();

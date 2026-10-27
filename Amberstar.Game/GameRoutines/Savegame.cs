@@ -4,7 +4,8 @@ namespace Amberstar.Game;
 
 /// <summary>
 /// Like in the original there is one savegame. It contains the party data
-/// (PARTYDAT.SAV), the character records of the party members (CHARDATA.AMB)
+/// (PARTYDAT.SAV), the character records of the party members and dismissed
+/// characters (CHARDATA.AMB)
 /// and the automaps (AUTOMAP.AMB) which the original stores on the disk.
 /// </summary>
 partial class Game
@@ -34,7 +35,7 @@ partial class Game
 		writer.Write((dword)savegameData.Length);
 		writer.Write(savegameData);
 
-		var partyMembers = State.PartyMembersWithCharacterIndex.ToList();
+		var partyMembers = State.SavedCharactersWithCharacterIndex.ToList();
 		writer.Write((word)partyMembers.Count);
 
 		foreach (var (characterIndex, partyMember) in partyMembers)

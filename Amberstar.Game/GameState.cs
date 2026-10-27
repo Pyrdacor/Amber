@@ -23,6 +23,8 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 	}
 
 	readonly Dictionary<int, IPartyMember> partyMembers = assetProvider.PersonLoader.GetPartyMemberCopies();
+	// characters who left the party, their data is saved like in CHARDATA.AMB of the original
+	readonly HashSet<int> dismissedCharacters = [];
 
 	/// <summary>
 	/// Resets all possible party members to the original data (e.g. before loading a savegame).
@@ -33,9 +35,17 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 		foreach (var (index, partyMember) in assetProvider.PersonLoader.GetPartyMemberCopies())
 			partyMembers.Add(index, partyMember);
+
+		dismissedCharacters.Clear();
 	}
 
-	public void ReplacePartyMember(int characterIndex, IPartyMember partyMember) => partyMembers[characterIndex] = partyMember;
+	public void ReplacePartyMember(int characterIndex, IPartyMember partyMember)
+	{
+		partyMembers[characterIndex] = partyMember;
+
+		if (!PartyCharacterIndices.Contains(characterIndex))
+			dismissedCharacters.Add(characterIndex);
+	}
 
 	public bool IsPossiblePartyMember(int characterIndex) => partyMembers.ContainsKey(characterIndex);
 
@@ -44,6 +54,13 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 	/// </summary>
 	public IEnumerable<(int CharacterIndex, IPartyMember PartyMember)> PartyMembersWithCharacterIndex =>
 		PartyCharacterIndices.Where(index => index != 0).Select(index => (index, partyMembers[index]));
+
+	/// <summary>
+	/// The party members and the characters who were dismissed with their character index.
+	/// </summary>
+	public IEnumerable<(int CharacterIndex, IPartyMember PartyMember)> SavedCharactersWithCharacterIndex =>
+		PartyMembersWithCharacterIndex.Concat(dismissedCharacters.Where(index => !PartyCharacterIndices.Contains(index))
+			.Select(index => (index, partyMembers[index])));
 
     public ISavegame ToSavegame(ISavegameLoader savegameLoader)
     {
@@ -215,6 +232,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
                 PartyCharacterIndices[i] = characterIndex;
                 PartySize++;
                 slotIndex = i;
+                dismissedCharacters.Remove(characterIndex);
 
                 return true;
             }
@@ -223,11 +241,28 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
         return false;
 	}
 
+	/// <summary>
+	/// Removes a party member like Really_save_game in the original. The slot stays empty
+	/// and the character is shown on its map again.
+	/// </summary>
+	public void RemovePartyMember(int slotIndex)
+	{
+		var partyMember = GetPartyMember(slotIndex);
+
+		if (partyMember == null)
+			return;
+
+		SetBit(CharacterBits, partyMember.SaveBit, false);
+		dismissedCharacters.Add(PartyCharacterIndices[slotIndex - 1]);
+		PartyCharacterIndices[slotIndex - 1] = 0;
+		PartySize--;
+	}
+
 	public IPartyMember? CurrentInventory
     {
 		get
 		{
-			if (CurrentInventoryIndex == null || CurrentInventoryIndex < 1 || CurrentInventoryIndex > PartySize)
+			if (CurrentInventoryIndex == null || CurrentInventoryIndex < 1 || CurrentInventoryIndex > Game.MaxPartyMembers)
 				return null;
 
 			int characterIndex = PartyCharacterIndices[CurrentInventoryIndex!.Value - 1];
@@ -243,7 +278,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
     {
         get
         {
-            if (ActivePartyMemberIndex < 1 || ActivePartyMemberIndex > PartySize)
+            if (ActivePartyMemberIndex < 1 || ActivePartyMemberIndex > Game.MaxPartyMembers)
                 return null;
 
             int characterIndex = PartyCharacterIndices[ActivePartyMemberIndex - 1];
@@ -280,7 +315,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
 	public IPartyMember? SetActivePartyMember(int slotIndex)
 	{
-		if (slotIndex < 1 || slotIndex > PartySize || PartyCharacterIndices[slotIndex - 1] == 0)
+		if (!HasPartyMemberInSlot(slotIndex))
 			return ActivePartyMember;
 
 		ActivePartyMemberIndex = slotIndex;
@@ -291,7 +326,7 @@ internal class GameState(ISavegame savegame, IAssetProvider assetProvider)
 
     public void SetCurrentInventory(int? slotIndex)
     {
-        if (slotIndex != null && (slotIndex < 1 || slotIndex > PartySize))
+        if (slotIndex != null && !HasPartyMemberInSlot(slotIndex.Value))
             return;
 
         CurrentInventoryIndex = slotIndex;
