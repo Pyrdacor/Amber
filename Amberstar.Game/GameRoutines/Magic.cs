@@ -1,4 +1,4 @@
-using Amber.Common;
+﻿using Amber.Common;
 using Amberstar.Game.Screens;
 using Amberstar.GameData;
 using Amberstar.GameData.Events;
@@ -249,8 +249,9 @@ partial class Game
 				ExecuteSpecialSpell((SpecialSpell)spellNumber, Done);
 				break;
 			default:
-				// All black magic spells are combat spells.
-				ShowNotImplementedMessage("Casting combat spells", Done);
+				// All black magic spells are combat spells. Outside of battles they do nothing
+				// (no spell points are used, the original has no routine for them there).
+				Done();
 				break;
 		}
 	}
@@ -488,8 +489,9 @@ partial class Game
 				});
 				break;
 			default:
-				// stun, sleep, fear, irritation, blind, destroy undead and holy word
-				ShowNotImplementedMessage("Casting combat spells", finished);
+				// stun, sleep, fear, irritation, blind, destroy undead and holy word are combat spells
+				// which do nothing outside of battles (the original only shows a debug message).
+				finished();
 				break;
 		}
 	}
@@ -860,7 +862,8 @@ partial class Game
 				break;
 			case >= SpecialSpell.Stun and <= SpecialSpell.FleshToStone2:
 			case SpecialSpell.BanishDemon:
-				ShowNotImplementedMessage("Casting combat spells", finished);
+				// combat spells which do nothing outside of battles (the original only shows a debug message)
+				finished();
 				break;
 			case SpecialSpell.EagleCall:
 				if (ScreenHandler.FindMapScreen() is not Map2DScreen mapScreen || !mapScreen.CanCallEagle())
@@ -875,8 +878,12 @@ partial class Game
 				// Lockpicks only work at locked doors and chests (Use_item_DOOR in the original).
 				ShowTextMessage(LoadMessageText(Message.SpellDoesNotWorkHere), finished);
 				break;
+			case SpecialSpell.Music:
+				// A song can be chosen (the spell routine at $152fe in the program, not part of the released source code).
+				if (TrySpell(finished))
+					ScreenHandler.PushScreen(ScreenType.Jukebox, () => AfterScreenClosed(finished));
+				break;
 			default:
-				// TODO: The music spell is not part of the original source code.
 				ShowNotImplementedMessage($"The spell {spell}", finished);
 				break;
 		}

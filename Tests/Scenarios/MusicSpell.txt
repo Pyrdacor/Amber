@@ -1,0 +1,19 @@
+# The music spell (special spell 20, item 262) lets the player choose a song.
+waittext
+dismissall
+give 1 262
+itemslot 1 2 262
+click 32 17 right
+waitscreen Inventory
+button 3
+invslot 2
+waitscreen Jukebox
+# --- HIGH SEAS is the second song in the first column
+click 40 94
+song 2
+# --- a right click closes the window (back to the inventory), the song keeps playing
+click 100 100 right
+waitscreen Inventory
+key Escape
+waitidle
+song 2

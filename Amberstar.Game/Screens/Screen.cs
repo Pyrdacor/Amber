@@ -68,6 +68,7 @@ public enum ScreenType
     PlaceGiveFood,
     PlaceBuyFood,
     Outro,
+    Jukebox,
     // TODO ...
 }
 
@@ -748,6 +749,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Battle => new BattleScreen(),
             ScreenType.Loot => new LootScreen(),
             ScreenType.Outro => new OutroScreen(),
+            ScreenType.Jukebox => new JukeboxScreen(),
             _ => throw new NotImplementedException()
 		};
 

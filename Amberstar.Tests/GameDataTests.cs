@@ -166,6 +166,9 @@ public sealed class GameDataTests
 		Assert.Equal(7, assetProvider.SongLoader.GetMusicIndex(6));
 		Assert.Equal(14, assetProvider.SongLoader.GetMusicIndex(16));
 		Assert.Equal(17, assetProvider.SongLoader.GetMusicIndex(19));
+		Assert.Equal(19, assetProvider.SongLoader.SongNames.Count);
+		Assert.Equal("CITY WALK", assetProvider.SongLoader.SongNames[0]);
+		Assert.Equal("HASTA LA VISTA", assetProvider.SongLoader.SongNames[18]);
 		Assert.NotNull(assetProvider.SongLoader.LoadSong(17, 0));
 
 		// the combat messages are the last message file

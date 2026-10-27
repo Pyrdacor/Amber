@@ -39,6 +39,7 @@ public enum EmbeddedDataOffset
 	CombatPalette,
 	MonsterGraphicPositions,
 	DamageDigits,
+	SongNames,
 }
 
 public class AssetProvider : IAssetProvider
@@ -246,7 +247,7 @@ public class AssetProvider : IAssetProvider
         monsterGroupLoader = new(() => new MonsterGroupLoader(this));
         combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData,
 			Data.SpellAnimationData, Data.DamageDigitData));
-        songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices));
+        songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices, Data.SongNames));
         outroData = new(LoadOutroData);
     }
 
@@ -631,6 +632,9 @@ public class AssetProvider : IAssetProvider
 				// The positions of the monsters (x, y, frame group) of the back row are followed by
 				// the other rows and the frame counts of the monster graphics.
 				return FindAndGotoByteSequence(dataReader, 0, 0x00, 0x36, 0x00, 0x46, 0x00, 0x00, 0x00, 0x44, 0x00, 0x46, 0x00, 0x00, 0x00, 0x52, 0x00, 0x46);
+			case EmbeddedDataOffset.SongNames:
+				// The names of the songs for the music spell start with the first song.
+				return FindAndGotoText(dataReader, 0, "CITY WALK\0");
 			case EmbeddedDataOffset.DamageDigits:
 				// The digits 0 and 1 (5 lines of 4 pixels each)
 				return FindAndGotoByteSequence(dataReader, 0, 0x60, 0xd0, 0xd0, 0xd0, 0x60, 0x30, 0x70, 0x30, 0x30, 0x30);

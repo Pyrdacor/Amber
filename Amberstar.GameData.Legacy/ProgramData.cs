@@ -344,6 +344,17 @@ namespace Amberstar.GameData.Legacy
                 throw new AmberException(ExceptionScope.Application, "Could not find the music data in the program file.");
 
             SongMusicIndices = FindSongTable(dataReader, musicPositions);
+
+            // The names of the songs (for the music spell) are only in the Atari ST versions.
+            int songNamesPosition = dataReader.Position;
+
+            if (dataSeeker(EmbeddedDataOffset.SongNames, dataReader))
+            {
+                for (int i = 0; i < SongMusicIndices.Count; i++)
+                    SongNames.Add(ReadString(dataReader));
+            }
+
+            dataReader.Position = songNamesPosition;
             #endregion
             #region Cursors
             if (!dataSeeker(EmbeddedDataOffset.Cursors, dataReader))
@@ -560,6 +571,7 @@ namespace Amberstar.GameData.Legacy
         /// The music index (1-based) of each song (1-based).
         /// </summary>
         public List<int> SongMusicIndices { get; private set; } = [];
+        public List<string> SongNames { get; } = [];
         public List<string> TextFragments { get; } = [];
 		public byte[] GlyphMappings { get; } = [];
 		public string Version { get; } = string.Empty;

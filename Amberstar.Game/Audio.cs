@@ -51,6 +51,11 @@ partial class Game
     /// </summary>
     internal const int OutroSong = 100;
 
+    /// <summary>
+    /// The song which is played (or would be played if the music is switched on), 0 if none.
+    /// </summary>
+    internal int CurrentSong => Math.Max(0, requestedSongIndex);
+
     private void UpdateMusic(double elapsed)
     {
         if (currentSongIndex != -1 && audioOutput.Available && audioOutput.Enabled)
