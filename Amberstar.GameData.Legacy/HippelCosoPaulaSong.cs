@@ -16,8 +16,8 @@ internal sealed class HippelCosoPaulaSong : ISong
 	const double PaulaClock = 3546895.0;
 	const int VoiceCount = 4;
 	const int BytesPerDivision = 3 * VoiceCount;
-	// Samples shorter than this (in words) are not played (L95fa).
-	const int MinSampleLength = 0xdc;
+	// The emulation of the outro does not play samples shorter than this (in words, L95fa).
+	const int EmulatedMinSampleLength = 0xdc;
 	const int MaxVolume = 63;
 	// the periods of the notes (La90a), the original reads the module header for higher notes
 	static readonly int[] Periods =
@@ -107,6 +107,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 	}
 
 	readonly byte[] module;
+	readonly int minSampleLength;
 	readonly int frequencySequences;
 	readonly int volumeSequences;
 	readonly int patterns;
@@ -130,10 +131,14 @@ internal sealed class HippelCosoPaulaSong : ISong
 
 	/// <summary>
 	/// The module data starts with "COSO". Songs are 1-based.
+	///
+	/// The Amiga plays samples of any length. The emulation of the outro on the Atari ST does not play short
+	/// samples (like the waveforms of the leading voices of the Amiga version), so this is only used for it.
 	/// </summary>
-	public HippelCosoPaulaSong(byte[] module, int song = 1)
+	public HippelCosoPaulaSong(byte[] module, int song = 1, bool emulated = true)
 	{
 		this.module = module;
+		minSampleLength = emulated ? EmulatedMinSampleLength : 1;
 		frequencySequences = Long(4);
 		volumeSequences = Long(8);
 		patterns = Long(12);
@@ -236,7 +241,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 		}
 	}
 
-	static int NextSample(PaulaVoice paula)
+	int NextSample(PaulaVoice paula)
 	{
 		if (paula.PlayLength == 0 || paula.Increment == 0.0)
 			return 0;
@@ -258,11 +263,11 @@ internal sealed class HippelCosoPaulaSong : ISong
 		return sample * paula.PlayVolume / MaxVolume;
 	}
 
-	static void SetPlayBuffer(PaulaVoice paula)
+	void SetPlayBuffer(PaulaVoice paula)
 	{
 		int length = paula.Length & 0x3fff;
 
-		if (length < MinSampleLength)
+		if (length < minSampleLength)
 		{
 			paula.PlayLength = 0;
 			return;

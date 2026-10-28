@@ -33,6 +33,6 @@ internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, Lega
         if (amigaSamples.Length != 0)
             module = [.. module, .. amigaSamples];
 
-        return new HippelCosoPaulaSong(module, songIndex + 1);
+        return new HippelCosoPaulaSong(module, songIndex + 1, false);
     }
 }
