@@ -717,6 +717,11 @@ public class AssetProvider : IAssetProvider
 					dataReader.Position--;
 				dataReader.Position++;
 				return true;
+			case EmbeddedDataOffset.LoadingScreen:
+			case EmbeddedDataOffset.LoadingScreenPalette:
+				// The code and the palette are the same as in the Atari version. The addresses in the
+				// text segment are offsets, so the graphic is found like there.
+				return FindAtariOffset(embeddedDataFile, dataReader);
             default:
                 return false;
         }

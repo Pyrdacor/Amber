@@ -187,6 +187,21 @@ public sealed class GameDataTests
 	}
 
 	[Theory]
+	[InlineData("German/AmberfilesAmiga")]
+	[InlineData("English/AmberfilesAmiga")]
+	public void AmigaLoadingScreenLoads(string folder)
+	{
+		var assetProvider = TestData.CreateAssetProvider(folder);
+
+		// the Amiga program contains the same loading screen as the Atari program
+		var loadingScreen = assetProvider.GraphicLoader.LoadLoadingScreen();
+		Assert.NotNull(loadingScreen);
+		var atariLoadingScreen = TestData.CreateAssetProvider(Path.Combine("English", "AmberfilesST")).GraphicLoader.LoadLoadingScreen();
+		Assert.Equal(atariLoadingScreen!.GetData(), loadingScreen.GetData());
+		Assert.NotNull(assetProvider.GraphicLoader.LoadLoadingScreenPalette(0));
+	}
+
+	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void AltarPuzzleLoads(string folder)
 	{
