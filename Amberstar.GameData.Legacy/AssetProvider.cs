@@ -249,9 +249,29 @@ public class AssetProvider : IAssetProvider
         monsterGroupLoader = new(() => new MonsterGroupLoader(this));
         combatData = new(() => new CombatData(Data.CombatData, Data.CombatPaletteData, Data.MonsterGraphicData,
 			Data.SpellAnimationData, Data.DamageDigitData));
-        songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices, Data.SongNames));
+        songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices, Data.SongNames, LoadAmigaSamples()));
         outroData = new(LoadOutroData);
     }
+
+	/// <summary>
+	/// The music modules of the Amiga version contain no samples. They all use the samples of SAMPLEDA.IMG
+	/// (8 bit signed) which follow the modules in memory.
+	/// </summary>
+	private byte[] LoadAmigaSamples()
+	{
+		if (Platform != LegacyPlatform.Amiga)
+			return [];
+
+		var file = fileSystem.GetFile("SAMPLEDA.IMG");
+
+		if (file == null)
+			return [];
+
+		using var reader = file.Stream.GetReader();
+		reader.Position = 0;
+
+		return reader.ReadBytes(reader.Size);
+	}
 
 	/// <summary>
 	/// The outro is the separate program EXTRO.68K. Its data segment is LOB packed.

@@ -6,9 +6,12 @@ namespace Amberstar.GameData.Legacy;
 /// <summary>
 /// The music modules (COSO) are played like the original players: the Atari ST with its sound chip
 /// (<see cref="HippelCosoYmSong"/>), the Amiga with its sample voices (<see cref="HippelCosoPaulaSong"/>).
+///
+/// The modules of the Amiga version have no samples. Their sample offsets are relative to the end of
+/// the module, so the external samples are appended to the module.
 /// </summary>
 internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, LegacyPlatform platform, List<int> songMusicIndices,
-    List<string> songNames) : ISongLoader
+    List<string> songNames, byte[] amigaSamples) : ISongLoader
 {
     public int SongCount => songMusicIndices.Count;
 
@@ -24,8 +27,12 @@ internal class SongLoader(Amber.Assets.Common.IAssetProvider assetProvider, Lega
         reader.Position = 0;
         var module = reader.ReadBytes(reader.Size);
 
-        return platform == LegacyPlatform.Amiga
-            ? new HippelCosoPaulaSong(module, songIndex + 1)
-            : new HippelCosoYmSong(module, songIndex + 1);
+        if (platform != LegacyPlatform.Amiga)
+            return new HippelCosoYmSong(module, songIndex + 1);
+
+        if (amigaSamples.Length != 0)
+            module = [.. module, .. amigaSamples];
+
+        return new HippelCosoPaulaSong(module, songIndex + 1);
     }
 }

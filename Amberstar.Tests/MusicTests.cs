@@ -26,6 +26,8 @@ public sealed class MusicTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	[InlineData("German/AmberfilesAmiga")]
+	[InlineData("English/AmberfilesAmiga")]
 	public void AllSongsPlay(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);
