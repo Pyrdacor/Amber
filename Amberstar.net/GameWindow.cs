@@ -302,7 +302,13 @@ namespace Amberstar
             {
                 while (!closed)
                 {
-                    Cheats.EnqueueCommand(Console.ReadLine() ?? "");
+                    // null means the input was closed (e.g. no console), then there are no more commands
+                    var command = Console.ReadLine();
+
+                    if (command == null)
+                        break;
+
+                    Cheats.EnqueueCommand(command);
                 }
             });
         }
