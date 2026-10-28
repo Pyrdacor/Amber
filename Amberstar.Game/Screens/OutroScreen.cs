@@ -278,7 +278,7 @@ internal sealed class OutroScreen : Screen
 			return null;
 
 		var image = new Image(Game, new Position(position.X, position.Y + skip), new Size(width, height - skip),
-			Game.GraphicIndexProvider.GetOutroGraphicIndex(graphic, frame), displayLayer, Layer.UI, PaletteIndex(palette), opaque);
+			Game.GraphicIndexProvider.GetOutroGraphicIndex(graphic, frame), displayLayer, Layer.Cutscene, PaletteIndex(palette), opaque);
 
 		// Images which start above the screen show their lower part.
 		if (skip != 0)
@@ -300,7 +300,7 @@ internal sealed class OutroScreen : Screen
 
 	void AddRect(Rect area, OutroPalette palette, int colorIndex, byte displayLayer)
 	{
-		var rect = Game.CreateColoredRect(Layer.UI, area.Position, area.Size, Color(palette, colorIndex));
+		var rect = Game.CreateColoredRect(Layer.Cutscene, area.Position, area.Size, Color(palette, colorIndex));
 
 		if (rect != null)
 		{
@@ -345,7 +345,7 @@ internal sealed class OutroScreen : Screen
 			if (glyph != null)
 			{
 				var image = new Image(Game, new Position(x, y), new Size(IOutroData.GlyphWidth, IOutroData.GlyphHeight), glyph.Value,
-					TextDisplayLayer, Layer.UI, PaletteIndex(palette));
+					TextDisplayLayer, Layer.Cutscene, PaletteIndex(palette));
 				textBox.Add((image, palette));
 			}
 

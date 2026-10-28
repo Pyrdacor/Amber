@@ -20,17 +20,10 @@ namespace Amberstar.Frontend
 			var tilesetPalettes = Enumerable.Range(1, 2).Select(index => assetProvider.TilesetLoader.LoadTileset(index).Palette).ToArray();
 			var image80x80Palettes = Enumerable.Range(1, 26).Select(index => assetProvider.GraphicLoader.Load80x80Graphic((Image80x80)index).Palette).ToArray();
 			var combatPalettes = Enumerable.Range(1, ICombatData.CombatBackgroundCount).Select(assetProvider.CombatData.GetPalette).ToArray();
-			// the outro palettes with all fading steps
-			var outroData = assetProvider.OutroData;
-			var outroPalettes = outroData == null ? [] : Enum.GetValues<OutroPalette>()
-				.SelectMany(outroPalette => Enumerable.Range(-outroData.FadeSteps, 2 * outroData.FadeSteps)
-					.Select(step => (Key: (outroPalette, step), Palette: outroData.GetPalette(outroPalette, step)))).ToArray();
 			// the loading screen palette with all fading steps
 			var loadingScreenPalettes = Enumerable.Range(0, IGraphicLoader.LoadingScreenFadeSteps + 1)
 				.Select(assetProvider.GraphicLoader.LoadLoadingScreenPalette).OfType<IGraphic>().ToArray();
-			// The outro palettes of the Amiga have more than 16 colors.
-			int paletteSize = Math.Max(16, outroPalettes.Select(entry => entry.Palette.Width).DefaultIfEmpty(0).Max());
-			var palette = new Graphic(paletteSize, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length + outroPalettes.Length +
+			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length +
 				loadingScreenPalettes.Length, GraphicFormat.RGBA);
             var generalPaletteIndices = new Dictionary<int, byte>();
 			var palettes = new Dictionary<int, IGraphic>();
@@ -74,15 +67,6 @@ namespace Amberstar.Frontend
 				combatPaletteIndices.Add(i + 1, y);
 				palettes.Add(y, combatPalettes[i]);
 				palette.AddOverlay(0, y++, combatPalettes[i]);
-			}
-
-			var outroPaletteIndices = new Dictionary<(OutroPalette, int), byte>();
-
-			foreach (var (key, outroPalette) in outroPalettes)
-			{
-				outroPaletteIndices.Add(key, y);
-				palettes.Add(y, outroPalette);
-				palette.AddOverlay(0, y++, outroPalette);
 			}
 
 			var loadingScreenPaletteIndices = new List<byte>();
@@ -164,26 +148,6 @@ namespace Amberstar.Frontend
 			int damageDigitOffset = graphics.Count;
 			for (int i = 0; i < 10; i++)
 				graphics.Add(graphics.Count, assetProvider.CombatData.GetDamageDigit(i));
-			var outroGraphicOffsets = new Dictionary<OutroGraphic, int>();
-			var outroGlyphIndices = new Dictionary<char, int>();
-			if (outroData != null)
-			{
-				foreach (var outroGraphic in Enum.GetValues<OutroGraphic>())
-				{
-					outroGraphicOffsets.Add(outroGraphic, graphics.Count);
-					foreach (var graphic in outroData.GetGraphics(outroGraphic))
-						graphics.Add(graphics.Count, graphic);
-				}
-				foreach (char ch in outroData.UsedCharacters)
-				{
-					var glyph = outroData.GetGlyph(ch);
-					if (glyph != null)
-					{
-						outroGlyphIndices.Add(ch, graphics.Count);
-						graphics.Add(graphics.Count, glyph);
-					}
-				}
-			}
 			int? loadingScreenIndex = null;
 			var loadingScreen = assetProvider.GraphicLoader.LoadLoadingScreen();
 			if (loadingScreen != null && loadingScreenPaletteIndices.Count != 0)
@@ -335,6 +299,77 @@ namespace Amberstar.Frontend
 				BaseZ = 0.9f,
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers | LayerFeatures.Alpha,
 				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			#endregion
+
+
+			#region Cutscenes
+
+			// The outro and the intro have their own palettes (the palettes of the pictures with all fading steps
+			// need many rows and the Amiga palettes have more than 16 colors) and graphics.
+			var outroData = assetProvider.OutroData;
+			var cutscenePalettes = new List<IGraphic>();
+			var outroPaletteIndices = new Dictionary<(OutroPalette, int), byte>();
+			graphics = [];
+			var outroGraphicOffsets = new Dictionary<OutroGraphic, int>();
+			var outroGlyphIndices = new Dictionary<char, int>();
+			if (outroData != null)
+			{
+				foreach (var outroPalette in Enum.GetValues<OutroPalette>())
+				{
+					for (int step = -outroData.FadeSteps; step < outroData.FadeSteps; step++)
+					{
+						outroPaletteIndices.Add((outroPalette, step), (byte)cutscenePalettes.Count);
+						cutscenePalettes.Add(outroData.GetPalette(outroPalette, step));
+					}
+				}
+				foreach (var outroGraphic in Enum.GetValues<OutroGraphic>())
+				{
+					outroGraphicOffsets.Add(outroGraphic, graphics.Count);
+					foreach (var graphic in outroData.GetGraphics(outroGraphic))
+						graphics.Add(graphics.Count, graphic);
+				}
+				foreach (char ch in outroData.UsedCharacters)
+				{
+					var glyph = outroData.GetGlyph(ch);
+					if (glyph != null)
+					{
+						outroGlyphIndices.Add(ch, graphics.Count);
+						graphics.Add(graphics.Count, glyph);
+					}
+				}
+			}
+			if (graphics.Count == 0)
+				graphics.Add(0, new Graphic(1, 1, GraphicFormat.PaletteIndices));
+			if (cutscenePalettes.Count == 0)
+				cutscenePalettes.Add(builtinPalettes[0]);
+			var cutscenePalette = new Graphic(cutscenePalettes.Max(p => p.Width), cutscenePalettes.Count, GraphicFormat.RGBA);
+			for (int i = 0; i < cutscenePalettes.Count; i++)
+				cutscenePalette.AddOverlay(0, i, cutscenePalettes[i]);
+			layer = renderer.LayerFactory.Create(LayerType.ColorAndTexture2D, new()
+			{
+				BaseZ = 0.8f,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				Palette = renderer.TextureFactory.Create(cutscenePalette),
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+				Texture = renderer.TextureFactory.CreateAtlas(graphics),
+			});
+			layer.Visible = true;
+			renderer.AddLayer(layer);
+
+			// pictures with their own colors (RGBA)
+			graphics = [];
+			if (graphics.Count == 0)
+				graphics.Add(0, new Graphic(1, 1, GraphicFormat.RGBA));
+			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
+			{
+				BaseZ = 0.8f,
+				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
+				RenderTarget = LayerRenderTarget.VirtualScreen2D,
+				Texture = renderer.TextureFactory.CreateAtlas(graphics),
 			});
 			layer.Visible = true;
 			renderer.AddLayer(layer);
