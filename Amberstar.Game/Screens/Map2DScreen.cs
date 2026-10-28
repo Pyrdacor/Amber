@@ -12,7 +12,6 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 {
 	class WorldMap : IMap2D
 	{
-		const int WorldMapSong = 2;
 		IMap2D[] maps = [];
 		int[] mapIndices = [];
 		readonly Dictionary<int, IMap2D> mapCache = [];
@@ -33,7 +32,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 
 		public string Name => maps[0].Name;
 
-        public int SongIndex => WorldMapSong;
+        public int SongIndex => WorldMapSongs[(int)TravelType.Walk];
 
         public MapCharacter[] Characters => [];
 
@@ -212,6 +211,8 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	public const int WorldMapWidth = 50;
 	public const int WorldMapHeight = 50;
 	const int WorldMapPreloadOffset = 12;
+	// the songs of the travel types on the world map (Set_map_music in the original)
+	static readonly int[] WorldMapSongs = [5, 3, 2, 2, 4, 4, 4];
 	const int OffsetX = 16;
 	const int OffsetY = 49;
 	const int RenderOrderOffset = TileHeight / 4;
@@ -251,6 +252,7 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 	long moveTickCounter = 0;
 	long lastMoveStartTicks = 0;
 	long currentTicks = 0;
+	TravelType playedTravelType = TravelType.Walk;
 	bool additionalMoveRequested = false;
 	bool screenPushPlayerWasVisible = false;
 	SpecialItemDisplay? specialItemDisplay;
@@ -597,6 +599,9 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 			return;
 
         currentTicks += elapsedTicks;
+
+		if (worldMap != null && Game.State.TravelType != playedTravelType)
+			PlayMapSong();
 
 		UpdateLight(false);
 		UpdateAnimations(elapsedTicks);
@@ -1879,17 +1884,14 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		if (isWorldMap)
 		{
 			UpdateWorldMap(index);
-
-            Game.PlaySong(worldMap!.SongIndex);
         }
 		else
 		{
-            if (Map.SongIndex != 0)
-                Game.PlaySong(1 + Map.SongIndex);
-
             Game.State.MapIndex = index;
 			worldMap = null;
         }
+
+		PlayMapSong();
 
 		tileGraphicOffset = map.TilesetIndex == 1 ? 0 : tilesets![0].Graphics.Count + 1;
 		palette = Game.PaletteIndexProvider.GetTilesetPaletteIndex(map.TilesetIndex);
@@ -1924,12 +1926,16 @@ internal class Map2DScreen : ButtonGridScreen, IScriptMapScreen
 		UpdateLight(true);
 	}
 
-	void IMapScreen.RestartMusic()
+	void IMapScreen.RestartMusic() => PlayMapSong();
+
+	/// <summary>
+	/// The song of a map is given by the map data, 0 stops the music. On the world map the song depends
+	/// on the travel type (Set_map_music in the original, called when the map or the travel type changes).
+	/// </summary>
+	void PlayMapSong()
 	{
-		if (worldMap != null)
-			Game.PlaySong(worldMap.SongIndex);
-		else if (Map.SongIndex != 0)
-			Game.PlaySong(1 + Map.SongIndex);
+		playedTravelType = Game.State.TravelType;
+		Game.PlaySong(worldMap != null ? WorldMapSongs[(int)playedTravelType] : Map.SongIndex);
 	}
 
 	/// <summary>

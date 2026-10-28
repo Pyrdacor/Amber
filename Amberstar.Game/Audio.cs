@@ -83,6 +83,13 @@ partial class Game
     {
         requestedSongIndex = songIndex;
 
+        // song 0 stops the music (Play_song in the original)
+        if (songIndex == 0)
+        {
+            StopSong();
+            return;
+        }
+
         if (musicPlaying && songIndex == currentSongIndex)
             return;
 

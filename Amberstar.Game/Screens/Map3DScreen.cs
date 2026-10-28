@@ -625,11 +625,7 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		}
 	}
 
-	void IMapScreen.RestartMusic()
-	{
-		if (Map.SongIndex != 0)
-			Game.PlaySong(1 + Map.SongIndex);
-	}
+	void IMapScreen.RestartMusic() => Game.PlaySong(Map.SongIndex);
 
 	/// <summary>
 	/// The flags of the tile at the party position (e.g. for the combat background).
@@ -1300,8 +1296,8 @@ internal class Map3DScreen : ButtonGridScreen, IScriptMapScreen
 		if (map.Flags.HasFlag(MapFlags.City) && Game.CanSee())
 			UpdateSky(true);
 
-		if (Map.SongIndex != 0)
-            Game.PlaySong(1 + Map.SongIndex);
+		// the song of the map, 0 stops the music (Set_map_music in the original)
+		Game.PlaySong(Map.SongIndex);
 
         Game.State.MapIndex = index;
 		Game.State.SetIsWorldMap(false);

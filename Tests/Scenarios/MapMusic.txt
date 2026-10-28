@@ -1,0 +1,11 @@
+# The maps play their song (the music byte of the map data, Set_map_music in the original).
+# On the world map the song depends on the travel type (on foot song 5).
+waittext
+dismissall
+song 6
+teleport 27 25 25
+song 5
+teleport 66 10 10
+song 14
+teleport 68 10 10
+song 12
