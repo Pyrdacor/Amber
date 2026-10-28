@@ -28,8 +28,9 @@ namespace Amberstar.Frontend
 
 		public byte GetCombatPaletteIndex(int background) => combatPalettes[background];
 
+		// the last fade in step is the normal palette
 		public byte GetOutroPaletteIndex(OutroPalette palette, int fadeStep = 0) =>
-			outroPalettes[(palette, fadeStep >= IOutroData.FadeSteps ? 0 : fadeStep)];
+			outroPalettes.TryGetValue((palette, fadeStep), out byte index) ? index : outroPalettes[(palette, 0)];
 
 		public byte GetLoadingScreenPaletteIndex(int fadeStep) => loadingScreenPalettes[Math.Clamp(fadeStep, 0, loadingScreenPalettes.Count - 1)];
 

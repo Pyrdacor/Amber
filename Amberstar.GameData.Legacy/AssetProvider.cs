@@ -274,11 +274,13 @@ public class AssetProvider : IAssetProvider
 	}
 
 	/// <summary>
-	/// The outro is the separate program EXTRO.68K. Its data segment is LOB packed.
+	/// The outro is the separate program EXTRO.68K. Its data segment is LOB packed. On the Amiga it is EXTRO.UDO,
+	/// a LOB packed program (its text and data segment give the image with the addresses from 0).
 	/// </summary>
 	private IOutroData? LoadOutroData()
 	{
-		var file = fileSystem.GetFile("EXTRO.68K");
+		string fileName = Platform == LegacyPlatform.Amiga ? "EXTRO.UDO" : "EXTRO.68K";
+		var file = fileSystem.GetFile(fileName);
 
 		if (file == null)
 			return null;
@@ -286,8 +288,18 @@ public class AssetProvider : IAssetProvider
 		try
 		{
 			using var fileReader = file.Stream.GetReader();
+
+			if (Platform == LegacyPlatform.Amiga)
+			{
+				var unpacked = new FileReader().ReadFile(fileName, fileReader).Files.Values.First();
+				unpacked.Position = 0;
+				var program = PrgReader.Read(unpacked);
+
+				return new OutroData([.. program.TextSegment, .. program.DataSegment], Platform);
+			}
+
 			var prgFile = PrgReader.Read(fileReader);
-			var container = new FileReader().ReadFile("EXTRO.68K", new DataReader(prgFile.DataSegment));
+			var container = new FileReader().ReadFile(fileName, new DataReader(prgFile.DataSegment));
 			var reader = container.Files.Values.First();
 			reader.Position = 0;
 

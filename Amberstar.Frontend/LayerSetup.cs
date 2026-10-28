@@ -23,12 +23,14 @@ namespace Amberstar.Frontend
 			// the outro palettes with all fading steps
 			var outroData = assetProvider.OutroData;
 			var outroPalettes = outroData == null ? [] : Enum.GetValues<OutroPalette>()
-				.SelectMany(outroPalette => Enumerable.Range(-IOutroData.FadeSteps, 2 * IOutroData.FadeSteps)
+				.SelectMany(outroPalette => Enumerable.Range(-outroData.FadeSteps, 2 * outroData.FadeSteps)
 					.Select(step => (Key: (outroPalette, step), Palette: outroData.GetPalette(outroPalette, step)))).ToArray();
 			// the loading screen palette with all fading steps
 			var loadingScreenPalettes = Enumerable.Range(0, IGraphicLoader.LoadingScreenFadeSteps + 1)
 				.Select(assetProvider.GraphicLoader.LoadLoadingScreenPalette).OfType<IGraphic>().ToArray();
-			var palette = new Graphic(16, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length + outroPalettes.Length +
+			// The outro palettes of the Amiga have more than 16 colors.
+			int paletteSize = Math.Max(16, outroPalettes.Select(entry => entry.Palette.Width).DefaultIfEmpty(0).Max());
+			var palette = new Graphic(paletteSize, builtinPalettes.Length + 10 + 2 + 26 + combatPalettes.Length + outroPalettes.Length +
 				loadingScreenPalettes.Length, GraphicFormat.RGBA);
             var generalPaletteIndices = new Dictionary<int, byte>();
 			var palettes = new Dictionary<int, IGraphic>();

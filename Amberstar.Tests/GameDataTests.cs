@@ -91,6 +91,8 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	[InlineData("German/AmberfilesAmiga")]
+	[InlineData("English/AmberfilesAmiga")]
 	public void OutroDataLoads(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);
@@ -113,7 +115,17 @@ public sealed class GameDataTests
 		Assert.Equal(3, outro.BalconyTexts.Count);
 		Assert.Contains("AMBERMOON", outro.BalconyTexts[2]);
 		Assert.NotNull(outro.GetGlyph('A'));
-		Assert.NotNull(outro.Music);
+		// the moon of the English versions is smaller
+		Assert.Equal(folder.StartsWith("German") ? (94, 144) : (110, 112), (outro.MoonPosition.X, outro.Moon.Width));
+		// all colors of the pictures are in their palettes (the Amiga palettes have the colors of the gradients from 16)
+		Assert.All(outro.ThroneRoom.GetData(), color => Assert.InRange(color, 0, outro.GetPalette(OutroPalette.ThroneRoom).Width - 1));
+		Assert.All(outro.Balcony.GetData(), color => Assert.InRange(color, 0, outro.GetPalette(OutroPalette.Sky).Width - 1));
+		// the palettes fade from black (the last step of fading out is black, the first step of fading in is dark)
+		Assert.All(outro.GetPalette(OutroPalette.Sky, -outro.FadeSteps).GetData(), component => Assert.True(component is 0 or 0xff));
+		Assert.Equal(outro.GetPalette(OutroPalette.Sky).GetData(), outro.GetPalette(OutroPalette.Sky, outro.FadeSteps).GetData());
+		// TODO: the music of the Amiga outro (7 voices)
+		if (!folder.Contains("Amiga"))
+			Assert.NotNull(outro.Music);
 	}
 
 	[Theory]

@@ -9,7 +9,7 @@ namespace Amberstar.Game.Screens;
 /// The outro (EXTRO.68K in the original, a separate program which was disassembled). The chancellor speaks to the
 /// party in the throne room. Then the people watch the dragon and an eagle from the balcony until the space key
 /// is pressed. Like in the original everything is timed by vertical blanks (50 per second): a step every 6 vertical
-/// blanks, the palettes fade in steps of 5 (in) and 3 (out) vertical blanks.
+/// blanks, the palettes fade in steps of 5 (in) and 3 (out) vertical blanks (3 and 3 on the Amiga).
 /// </summary>
 internal sealed class OutroScreen : Screen
 {
@@ -26,8 +26,6 @@ internal sealed class OutroScreen : Screen
 
 	const int VerticalBlanksPerSecond = 50;
 	const int VerticalBlanksPerStep = 6;
-	const int VerticalBlanksPerFadeInStep = 5;
-	const int VerticalBlanksPerFadeOutStep = 3;
 	const byte PictureDisplayLayer = 220;
 	const byte FigureDisplayLayer = 222;
 	const byte SpriteDisplayLayer = 224;
@@ -48,7 +46,6 @@ internal sealed class OutroScreen : Screen
 	// balcony
 	static readonly Position PulsingMoonPosition = new(226, 22);
 	static readonly int[] PulsingMoonFrames = [0, 1, 2, 3, 2, 1];
-	static readonly Position MoonPosition = new(94, 20);
 	const int DragonStartX = 350;
 	const int DragonEndX = -128;
 	const int DragonOffsetY = -9;
@@ -122,7 +119,7 @@ internal sealed class OutroScreen : Screen
 
 		// The palettes fade in from black.
 		phase = Phase.ThroneRoomFadeIn;
-		fadeStep = -IOutroData.FadeSteps;
+		fadeStep = -outro.FadeSteps;
 		ShowThroneRoom();
 	}
 
@@ -178,22 +175,22 @@ internal sealed class OutroScreen : Screen
 		{
 			case Phase.ThroneRoomFadeIn:
 			case Phase.BalconyFadeIn:
-				if (verticalBlanks % VerticalBlanksPerFadeInStep == 0)
+				if (verticalBlanks % outro.FadeInVerticalBlanks == 0)
 				{
-					// from black (-7) to the steps 1 to 7
+					// from black (-7) to the steps 1 to 7 (15 on the Amiga)
 					SetFadeStep(Math.Max(1, fadeStep + 1));
 
-					if (fadeStep == IOutroData.FadeSteps)
+					if (fadeStep == outro.FadeSteps)
 						StartPhase(phase + 1);
 				}
 				break;
 			case Phase.ThroneRoomFadeOut:
 			case Phase.BalconyFadeOut:
-				if (verticalBlanks % VerticalBlanksPerFadeOutStep == 0)
+				if (verticalBlanks % outro.FadeOutVerticalBlanks == 0)
 				{
 					SetFadeStep(fadeStep - 1);
 
-					if (fadeStep == -IOutroData.FadeSteps)
+					if (fadeStep == -outro.FadeSteps)
 						StartPhase(phase + 1);
 				}
 				break;
@@ -220,7 +217,7 @@ internal sealed class OutroScreen : Screen
 				SetFadeStep(0);
 				break;
 			case Phase.BalconyFadeIn:
-				fadeStep = -IOutroData.FadeSteps;
+				fadeStep = -outro.FadeSteps;
 				ShowBalcony();
 				break;
 			case Phase.Finished:
@@ -246,7 +243,8 @@ internal sealed class OutroScreen : Screen
 	}
 
 	/// <summary>
-	/// While fading in, the step counts from 1 to 7, while fading out from -1 to -7. 0 is the normal palette.
+	/// While fading in, the step counts from 1 to 7, while fading out from -1 to -7 (15 on the Amiga).
+	/// 0 is the normal palette.
 	/// </summary>
 	void SetFadeStep(int step)
 	{
@@ -499,7 +497,7 @@ internal sealed class OutroScreen : Screen
 		if (moonSteps > 0)
 		{
 			if (moonSteps == MoonSteps)
-				AddImage(OutroGraphic.Moon, 0, MoonPosition, OutroPalette.Sky, FigureDisplayLayer);
+				AddImage(OutroGraphic.Moon, 0, outro.MoonPosition, OutroPalette.Sky, FigureDisplayLayer);
 
 			moonSteps--;
 			canLeave = true;

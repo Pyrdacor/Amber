@@ -77,10 +77,17 @@ public interface IOutroData
 	/// <summary>
 	/// Gets a palette while it fades: 0 is the normal palette, 1 to <see cref="FadeSteps"/> - 1 fade in from black
 	/// (each color channel is increased by 1 per step), -1 to -<see cref="FadeSteps"/> fade out (each channel is
-	/// decreased by 1 per step). The palettes have 16 colors.
+	/// decreased by 1 per step). The palettes have 16 colors, in the Amiga version the palettes of the pictures have
+	/// more colors (color 5 changes every few lines in the original, these pixels use the colors from 16).
 	/// </summary>
 	IGraphic GetPalette(OutroPalette palette, int fadeStep = 0);
-	public const int FadeSteps = 7;
+
+	/// <summary>
+	/// The number of fading steps (7 on the Atari ST, 15 on the Amiga) and the vertical blanks per step.
+	/// </summary>
+	int FadeSteps { get; }
+	int FadeInVerticalBlanks { get; }
+	int FadeOutVerticalBlanks { get; }
 
 	/// <summary>
 	/// Gets the frames of a graphic (the picture parts have 1 frame).
@@ -116,6 +123,7 @@ public interface IOutroData
 	IReadOnlyList<IGraphic> Eagle { get; }
 	IReadOnlyList<int> EagleYOffsets { get; }
 	IGraphic Moon { get; }
+	Position MoonPosition { get; }
 
 	/// <summary>
 	/// The frames of the 3 people on the balcony and their positions.
