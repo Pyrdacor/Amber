@@ -37,7 +37,7 @@ internal class OutroData : IOutroData
 		PulsingMoon: 0x552, DragonYOffsets: 0x5a0, Dragon: 0x5ac, EagleYOffsets: 0x5fe, Eagle: 0x60a, BalconyPeopleRects: 0x64c,
 		BalconyPeople: [0x674, 0x694, 0x6b4], ChancellorTexts: 0x6cc, BalconyTexts: 0x336, BalconyScript: 0xa8,
 		LeftTorch: 0x8b2, RightTorch: 0x8ca, Chancellor: 0x8ee, PartyFigurePositions: 0x908, PartyFigureYOffsets: 0x91e,
-		PartyFigures: 0x930, FontMap: 0x1676, Glyphs: 0x1694, Music: 0, ThroneRoomCopper: 0x40, BalconyCopper: 0x1ea);
+		PartyFigures: 0x930, FontMap: 0x1676, Glyphs: 0x1694, Music: 0x134, ThroneRoomCopper: 0x40, BalconyCopper: 0x1ea);
 
 	const int PictureSize = IOutroData.PictureWidth * IOutroData.PictureHeight / 2;
 	const int PictureLineSize = IOutroData.PictureWidth / 2;
@@ -129,7 +129,7 @@ internal class OutroData : IOutroData
 		ChancellorTexts = Texts(Address(offsets.ChancellorTexts));
 		BalconyTexts = Texts(Address(offsets.BalconyTexts));
 
-		Music = amiga ? null : LoadMusic(Address(offsets.Music));
+		Music = LoadMusic(Address(offsets.Music));
 	}
 
 	/// <summary>
@@ -407,20 +407,23 @@ internal class OutroData : IOutroData
 	}
 
 	/// <summary>
-	/// The music player of the outro emulates the 4 sample voices of the Amiga (mixed by software) and plays a COSO module
-	/// with samples (TFMX variant, 4 voices with 3 bytes per division) which follows the player code.
+	/// The music player of the Atari ST outro emulates the 4 sample voices of the Amiga (mixed by software) and plays
+	/// a COSO module with samples (TFMX variant, 4 voices with 3 bytes per division) which follows the player code.
+	/// The player of the Amiga outro plays a TFMX module with 7 voices (3 voices of the sound chip and 4 voices which
+	/// are mixed into the 4th voice) which follows the player code.
 	/// </summary>
 	ISong? LoadMusic(int playerOffset)
 	{
+		var header = amiga ? "TFMX"u8 : "COSO"u8;
 		int offset = playerOffset;
 
-		while (offset + 0x20 <= data.Length && !(data[offset] == 'C' && data[offset + 1] == 'O' && data[offset + 2] == 'S' && data[offset + 3] == 'O'))
+		while (offset + 0x20 <= data.Length && !data.AsSpan(offset, 4).SequenceEqual(header))
 			offset += 2;
 
 		if (offset + 0x20 > data.Length)
 			return null;
 
-		// The samples follow the module.
-		return new HippelCosoPaulaSong(data[offset..]);
+		// The samples follow the module. The Amiga plays samples of any length.
+		return new HippelPaulaSong(data[offset..], 1, !amiga);
 	}
 }

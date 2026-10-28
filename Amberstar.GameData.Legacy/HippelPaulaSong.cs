@@ -1,23 +1,43 @@
 ﻿namespace Amberstar.GameData.Legacy;
 
 /// <summary>
-/// Plays COSO modules with samples (TFMX variant with 4 voices) like the Amiga does with its sound chip Paula.
+/// Plays the music modules of Jochen Hippel with samples like the Amiga does with its sound chip Paula.
+/// There are 2 formats:
 ///
-/// This was taken from the music player of the outro (EXTRO.68K) which emulates the 4 sample voices of the Amiga
-/// on the Atari ST: the sequencer (L9e88 in the player), the patterns (L9fbc), the frequency and volume sequences
-/// of each voice (La22e), the DMA of the voices (L958c) and the mixing (L94f4 and L9c6).
+/// - COSO modules (a TFMX variant with 4 voices and tables of offsets): the music of the Amiga version of the game and
+///   the outro of the Atari ST versions. This was taken from the music player of the outro (EXTRO.68K) which emulates
+///   the 4 sample voices of the Amiga on the Atari ST: the sequencer (L9e88 in the player), the patterns (L9fbc),
+///   the frequency and volume sequences of each voice (La22e), the DMA of the voices (L958c) and the mixing
+///   (L94f4 and L9c6).
+/// - TFMX modules with 7 voices: the outro of the Amiga versions (EXTRO.UDO, "Player by Jochen Hippel 1990").
+///   The sequences have 64 bytes, the patterns have a fixed size with rows of 2 bytes (note and info, the parameter
+///   is the byte in front of the note) and the divisions have 4 bytes per voice (pattern, transpose, timbre transpose
+///   and effect). The sequences are handled like in the COSO player (L201b8). The voices 1 to 3 use the sound chip,
+///   the voices 4 to 7 are mixed by software into the 4th voice of the sound chip (L27122 and L270ec, with volume
+///   tables and the sum is clipped).
 /// </summary>
-internal sealed class HippelCosoPaulaSong : ISong
+internal sealed class HippelPaulaSong : ISong
 {
 	const int SampleRate = 44100;
 	const int TicksPerSecond = 50;
 	const int BufferSize = SampleRate / 4;
 	const double BufferTime = BufferSize * 1000.0 / SampleRate;
 	const double PaulaClock = 3546895.0;
-	const int VoiceCount = 4;
-	const int BytesPerDivision = 3 * VoiceCount;
+	const int CosoVoiceCount = 4;
+	const int TfmxVoiceCount = 7;
+	// the voices from this one are mixed by software (TFMX)
+	const int TfmxFirstMixedVoice = 3;
+	const int TfmxSequenceSize = 64;
+	const int TfmxBytesPerVoice = 4;
+	const int TfmxSampleHeaderSize = 30;
+	// the name of the sample is in front of its data (offset, length, ?, loop offset, loop length)
+	const int TfmxSampleHeaderDataOffset = 18;
+	// the periods of the TFMX player end after these notes (the next ones are 0)
+	const int TfmxPeriodCount = 72;
 	// The emulation of the outro does not play samples shorter than this (in words, L95fa).
 	const int EmulatedMinSampleLength = 0xdc;
+	// The software mixer plays samples of up to 16 words as silence (L27188).
+	const int MixedMinSampleLength = 0x11;
 	const int MaxVolume = 63;
 	// the periods of the notes (La90a), the original reads the module header for higher notes
 	static readonly int[] Periods =
@@ -50,6 +70,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 		public bool NewStart = true;
 		public double Increment;
 		public int PlayVolume;
+		public int MinSampleLength = 1;
 	}
 
 	/// <summary>
@@ -58,6 +79,11 @@ internal sealed class HippelCosoPaulaSong : ISong
 	sealed class Voice
 	{
 		public int DmaBit;
+		// voices which are mixed by software (TFMX)
+		public bool Mixed;
+		public int PatternPosition; // 60(a0) in the TFMX player
+		public int RandomVolume; // 83(a0) in the TFMX player
+		public int RandomVolumeValue; // 84(a0)
 		public PaulaVoice Paula = new();
 		public int DivisionPosition; // 4(a0) + 58(a0)
 		public int DivisionStart;
@@ -107,7 +133,12 @@ internal sealed class HippelCosoPaulaSong : ISong
 	}
 
 	readonly byte[] module;
+	readonly bool tfmx;
 	readonly int minSampleLength;
+	readonly int bytesPerDivision;
+	readonly int bytesPerVoice;
+	readonly int patternSize;
+	readonly bool clipMixedVoices;
 	readonly int frequencySequences;
 	readonly int volumeSequences;
 	readonly int patterns;
@@ -117,7 +148,8 @@ internal sealed class HippelCosoPaulaSong : ISong
 	readonly int startDivision;
 	readonly int endDivision;
 	readonly int speed;
-	readonly Voice[] voices = new Voice[VoiceCount];
+	readonly Voice[] voices;
+	int randomSeed = 0;
 	int dmaMask = 0;
 	int restartMask = 0;
 	int speedCounter = 1;
@@ -130,26 +162,57 @@ internal sealed class HippelCosoPaulaSong : ISong
 	readonly short[] buffer = new short[BufferSize];
 
 	/// <summary>
-	/// The module data starts with "COSO". Songs are 1-based.
+	/// The module data starts with "COSO" or "TFMX". Songs are 1-based.
 	///
 	/// The Amiga plays samples of any length. The emulation of the outro on the Atari ST does not play short
 	/// samples (like the waveforms of the leading voices of the Amiga version), so this is only used for it.
 	/// </summary>
-	public HippelCosoPaulaSong(byte[] module, int song = 1, bool emulated = true)
+	public HippelPaulaSong(byte[] module, int song = 1, bool emulated = true)
 	{
 		this.module = module;
+		tfmx = module[0] == 'T';
 		minSampleLength = emulated ? EmulatedMinSampleLength : 1;
-		frequencySequences = Long(4);
-		volumeSequences = Long(8);
-		patterns = Long(12);
-		divisions = Long(16);
-		int songs = Long(20);
-		sampleHeaders = Long(24);
-		sampleData = Long(28);
-		int songEntry = songs + (song - 1) * 6;
-		startDivision = Word(songEntry);
-		endDivision = Word(songEntry + 2);
-		speed = Word(songEntry + 4);
+		voices = new Voice[tfmx ? TfmxVoiceCount : CosoVoiceCount];
+
+		if (tfmx)
+		{
+			// the numbers of the sequences, patterns and divisions (minus 1), the pattern size, songs and samples (L1fd0c)
+			patternSize = Word(12);
+			bytesPerVoice = TfmxBytesPerVoice;
+			bytesPerDivision = TfmxBytesPerVoice * TfmxVoiceCount;
+			frequencySequences = 0x20;
+			volumeSequences = frequencySequences + (Word(4) + 1) * TfmxSequenceSize;
+			patterns = volumeSequences + (Word(6) + 1) * TfmxSequenceSize;
+			divisions = patterns + (Word(8) + 1) * patternSize;
+			int songs = divisions + (Word(10) + 1) * bytesPerDivision;
+			sampleHeaders = songs + (Word(16) + 1) * 8;
+			sampleData = sampleHeaders + Word(18) * TfmxSampleHeaderSize;
+			// the songs have the first and the last division and the speed
+			int songEntry = songs + (song - 1) * 8;
+			startDivision = Word(songEntry);
+			endDivision = Word(songEntry + 2);
+			speed = Word(songEntry + 6);
+			// The first division has the settings of the mixer, its last byte decides if the sum of the mixed voices
+			// is clipped or divided by 4 (L278c0 and L271e4).
+			clipMixedVoices = module[divisions + 3] != 0;
+		}
+		else
+		{
+			bytesPerVoice = 3;
+			bytesPerDivision = 3 * CosoVoiceCount;
+			frequencySequences = Long(4);
+			volumeSequences = Long(8);
+			patterns = Long(12);
+			divisions = Long(16);
+			int songs = Long(20);
+			sampleHeaders = Long(24);
+			sampleData = Long(28);
+			int songEntry = songs + (song - 1) * 6;
+			startDivision = Word(songEntry);
+			endDivision = Word(songEntry + 2);
+			speed = Word(songEntry + 4);
+		}
+
 		Reset();
 	}
 
@@ -160,6 +223,12 @@ internal sealed class HippelCosoPaulaSong : ISong
 	int Long(int offset) => (Word(offset) << 16) | Word(offset + 2);
 
 	int TableEntry(int table, int index) => Word(table + index * 2);
+
+	int FrequencySequence(int index) => tfmx ? frequencySequences + index * TfmxSequenceSize : TableEntry(frequencySequences, index);
+
+	int VolumeSequence(int index) => tfmx ? volumeSequences + index * TfmxSequenceSize : TableEntry(volumeSequences, index);
+
+	int Pattern(int index) => tfmx ? patterns + index * patternSize : TableEntry(patterns, index);
 
 	public void Play()
 	{
@@ -180,17 +249,23 @@ internal sealed class HippelCosoPaulaSong : ISong
 	/// </summary>
 	public void Reset()
 	{
-		for (int i = 0; i < VoiceCount; i++)
+		for (int i = 0; i < voices.Length; i++)
 		{
+			bool mixed = tfmx && i >= TfmxFirstMixedVoice;
 			voices[i] = new Voice
 			{
 				DmaBit = 1 << i,
-				DivisionStart = divisions + startDivision * BytesPerDivision + i * 3,
-				DivisionEnd = divisions + (endDivision + 1) * BytesPerDivision + i * 3,
+				Mixed = mixed,
+				DivisionStart = divisions + startDivision * bytesPerDivision + i * bytesPerVoice,
+				DivisionEnd = divisions + (endDivision + 1) * bytesPerDivision + i * bytesPerVoice,
+				// TFMX: the end of the pattern reads the first division
+				PatternPosition = patternSize,
 			};
 			voices[i].DivisionPosition = voices[i].DivisionStart;
+			voices[i].Paula.MinSampleLength = mixed ? MixedMinSampleLength : minSampleLength;
 		}
 
+		randomSeed = 0;
 		dmaMask = 0;
 		speedCounter = 1;
 		currentSpeed = speed;
@@ -232,9 +307,19 @@ internal sealed class HippelCosoPaulaSong : ISong
 
 			tickSamples--;
 			int sum = 0;
+			int mixedSum = 0;
 
 			foreach (var voice in voices)
-				sum += NextSample(voice.Paula);
+			{
+				if (voice.Mixed)
+					mixedSum += NextSample(voice.Paula);
+				else
+					sum += NextSample(voice.Paula);
+			}
+
+			// TFMX: the mixed voices are played by the 4th voice of the sound chip
+			if (tfmx)
+				sum += clipMixedVoices ? Math.Clamp(mixedSum, sbyte.MinValue, sbyte.MaxValue) : mixedSum / 4;
 
 			// 4 voices with up to +-128 each
 			output[i] = (short)Math.Clamp(sum * 48, short.MinValue, short.MaxValue);
@@ -267,7 +352,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 	{
 		int length = paula.Length & 0x3fff;
 
-		if (length < minSampleLength)
+		if (length < paula.MinSampleLength)
 		{
 			paula.PlayLength = 0;
 			return;
@@ -336,6 +421,18 @@ internal sealed class HippelCosoPaulaSong : ISong
 			return;
 		}
 
+		bool nextRow = --speedCounter == 0;
+
+		if (nextRow)
+			speedCounter = currentSpeed;
+
+		// TFMX: the patterns of the mixed voices are read before the sequences (L1fdc6)
+		if (nextRow && tfmx)
+		{
+			foreach (var voice in voices.Where(voice => voice.Mixed))
+				UpdateTfmxPattern(voice);
+		}
+
 		restartMask = 0;
 		var results = voices.Select(UpdateSequences).ToArray();
 		ApplyDma();
@@ -353,7 +450,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 			}
 		}
 
-		for (int i = 0; i < VoiceCount; i++)
+		for (int i = 0; i < voices.Length; i++)
 		{
 			voices[i].Paula.Period = results[i].Period;
 			voices[i].Paula.Volume = results[i].Volume;
@@ -362,12 +459,15 @@ internal sealed class HippelCosoPaulaSong : ISong
 		if (restartMask != 0)
 			ApplyDma();
 
-		if (--speedCounter == 0)
+		if (nextRow)
 		{
-			speedCounter = currentSpeed;
-
-			foreach (var voice in voices)
-				UpdatePattern(voice);
+			foreach (var voice in voices.Where(voice => !voice.Mixed))
+			{
+				if (tfmx)
+					UpdateTfmxPattern(voice);
+				else
+					UpdatePattern(voice);
+			}
 		}
 
 		UpdateIncrements();
@@ -416,8 +516,8 @@ internal sealed class HippelCosoPaulaSong : ISong
 					voice.TimbreTranspose = effect;
 				}
 
-				voice.Pattern = TableEntry(patterns, pattern);
-				voice.DivisionPosition += BytesPerDivision;
+				voice.Pattern = Pattern(pattern);
+				voice.DivisionPosition += bytesPerDivision;
 				continue;
 			}
 
@@ -447,7 +547,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 				return;
 
 			int timbre = ((voice.NoteInfo & 0x1f) + voice.TimbreTranspose) & 0xff;
-			int volumeSequence = TableEntry(volumeSequences, timbre);
+			int volumeSequence = VolumeSequence(timbre);
 			voice.VolumePosition = 0;
 			voice.VolumeCounter = voice.VolumeSpeed = module[volumeSequence];
 			int frequencySequence = module[volumeSequence + 1];
@@ -466,7 +566,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 				frequencySequence = voice.NoteParameter;
 
 			voice.FrequencySequenceData = module;
-			voice.FrequencySequence = TableEntry(frequencySequences, frequencySequence);
+			voice.FrequencySequence = FrequencySequence(frequencySequence);
 			voice.FrequencyPosition = 0;
 			voice.FrequencyDelay = 0;
 			return;
@@ -474,14 +574,111 @@ internal sealed class HippelCosoPaulaSong : ISong
 	}
 
 	/// <summary>
-	/// The sample header has the offset (long), the length (words), the loop offset (bytes) and the loop length (words).
+	/// The patterns of TFMX modules have rows of 2 bytes, a note of 1 or the end of the pattern read the next division
+	/// (L1ff14 in the player of the Amiga outro).
 	/// </summary>
+	void UpdateTfmxPattern(Voice voice)
+	{
+		int note = module[voice.Pattern + (voice.PatternPosition % patternSize)] & 0x7f;
+
+		if (note == 1 || voice.PatternPosition == patternSize)
+		{
+			if (voice.DivisionPosition == voice.DivisionEnd)
+				voice.DivisionPosition = voice.DivisionStart;
+
+			int pattern = module[voice.DivisionPosition];
+			voice.Transpose = (sbyte)module[voice.DivisionPosition + 1];
+			voice.TimbreTranspose = module[voice.DivisionPosition + 2];
+			int effect = module[voice.DivisionPosition + 3];
+			int value = effect & 0xf;
+
+			// d changes the mixing rate (only the quality of the mixed voices)
+			switch (effect >> 4)
+			{
+				case 0xf:
+					voice.DivisionVolume = value == 0 ? 100 : (16 - value) * 6;
+					break;
+				case 0x8:
+					stopped = true;
+					break;
+				case 0xe:
+					currentSpeed = value;
+					break;
+			}
+
+			voice.PatternPosition = 0;
+			voice.Pattern = Pattern(pattern);
+			voice.DivisionPosition += bytesPerDivision;
+		}
+
+		int position = voice.Pattern + voice.PatternPosition;
+		int command = module[position];
+		note = command & 0x7f;
+
+		if (note != 0)
+		{
+			voice.PortamentoValue = 0;
+			voice.Note = note;
+			// the parameter is the byte in front of the note (the last byte of the pattern for the first row)
+			voice.NoteParameter = module[voice.Pattern + (voice.PatternPosition + patternSize - 1) % patternSize];
+			voice.NoteInfo = module[position + 1];
+
+			// Notes with bit 7 only change the note.
+			if ((command & 0x80) == 0)
+			{
+				int timbre = ((voice.NoteInfo & 0x1f) + voice.TimbreTranspose) & 0xff;
+				int volumeSequence = VolumeSequence(timbre);
+				voice.VolumePosition = 0;
+				voice.VolumeCounter = voice.VolumeSpeed = module[volumeSequence];
+				int frequencySequence = module[volumeSequence + 1];
+				voice.VibratoSpeed = module[volumeSequence + 2];
+				voice.VibratoFlags = 0x40;
+				voice.VibratoDepth = voice.VibratoValue = module[volumeSequence + 3];
+				voice.VibratoDelay = module[volumeSequence + 4];
+				voice.VolumeSequenceData = module;
+				voice.VolumeSequence = volumeSequence + 5;
+				voice.VolumeDelay = 0;
+
+				if (frequencySequence != 0x80)
+				{
+					if ((voice.NoteInfo & 0x40) != 0)
+						frequencySequence = voice.NoteParameter;
+
+					voice.FrequencySequenceData = module;
+					voice.FrequencySequence = FrequencySequence(frequencySequence);
+					voice.FrequencyPosition = 0;
+					voice.FrequencyDelay = 0;
+				}
+			}
+		}
+
+		voice.PatternPosition += 2;
+	}
+
+	/// <summary>
+	/// The sample header has the offset (long), the length (words), the loop offset (bytes) and the loop length (words).
+	/// In TFMX modules the name is in front and there is another word in front of the loop offset.
+	/// </summary>
+	(int Offset, int Length, int LoopOffset, int LoopLength) SampleHeader(int sample)
+	{
+		if (tfmx)
+		{
+			int tfmxHeader = sampleHeaders + sample * TfmxSampleHeaderSize + TfmxSampleHeaderDataOffset;
+
+			return (Long(tfmxHeader), Word(tfmxHeader + 4), Word(tfmxHeader + 8), Word(tfmxHeader + 10));
+		}
+
+		int header = sampleHeaders + sample * 10;
+
+		return (Long(header), Word(header + 4), Word(header + 6), Word(header + 8));
+	}
+
 	(int Pointer, int Length, int LoopPointer, int LoopLength) SampleInfo(int sample)
 	{
-		int header = sampleHeaders + sample * 10;
-		int pointer = sampleData + Long(header);
+		var (offset, length, loopOffset, loopLength) = SampleHeader(sample);
+		int pointer = sampleData + offset;
 
-		return (pointer, Word(header + 4), pointer + Word(header + 6), Word(header + 8));
+		return (pointer, length, pointer + loopOffset, loopLength);
 	}
 
 	void RestartDma(Voice voice)
@@ -542,6 +739,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 					return;
 				case 0xe2: // sample with restart
 					voice.Sample = 0xff;
+					voice.RandomVolume = 0;
 					RestartDma(voice);
 					SetSample(voice, data[position + 1]);
 					voice.VolumePosition = 0;
@@ -569,9 +767,9 @@ internal sealed class HippelCosoPaulaSong : ISong
 				case 0xe5: // sample with a sweep through it
 				{
 					RestartDma(voice);
-					int header = sampleHeaders + data[position + 1] * 10;
-					int length = Word(header + 4);
-					voice.SweepStart = Long(header);
+					voice.RandomVolume = 0;
+					var (sweepStart, length, _, _) = SampleHeader(data[position + 1]);
+					voice.SweepStart = sweepStart;
 					voice.SweepEnd = voice.SweepStart + length * 2;
 					int start = (data[position + 2] << 8) | data[position + 3];
 					voice.SweepPosition = start == 0xffff ? length : start;
@@ -603,6 +801,7 @@ internal sealed class HippelCosoPaulaSong : ISong
 					if (sample != voice.Sample)
 					{
 						voice.Sample = sample;
+						voice.RandomVolume = 0;
 						RestartDma(voice);
 						SetSample(voice, sample);
 					}
@@ -620,8 +819,9 @@ internal sealed class HippelCosoPaulaSong : ISong
 				case 0xe9: // sample of a sample bank
 				{
 					voice.Sample = 0xff;
+					voice.RandomVolume = 0;
 					RestartDma(voice);
-					int bank = sampleData + Long(sampleHeaders + data[position + 1] * 10);
+					int bank = sampleData + SampleHeader(data[position + 1]).Offset;
 					int entries = bank + 8;
 					int waves = entries + Word(bank + 4) * 0x18 + Word(bank + 6) * 4;
 					int entry = entries + data[position + 2] * 0x18;
@@ -638,6 +838,11 @@ internal sealed class HippelCosoPaulaSong : ISong
 					voice.Sweep = false;
 					continue;
 				}
+				case 0xea when tfmx: // the volume is reduced by a random part of the value once
+					voice.RandomVolume = data[position + 1];
+					voice.RandomVolumeValue = 0;
+					voice.FrequencyPosition += 2;
+					continue;
 				default:
 					// unknown commands are skipped
 					voice.FrequencyPosition++;
@@ -744,7 +949,8 @@ internal sealed class HippelCosoPaulaSong : ISong
 			note += voice.Note + voice.Transpose;
 
 		note &= 0x7f;
-		int period = note < Periods.Length ? Periods[note] : Word(note * 2 - Periods.Length * 2);
+		int period = tfmx ? (note < TfmxPeriodCount ? Periods[note] : 0)
+			: note < Periods.Length ? Periods[note] : Word(note * 2 - Periods.Length * 2);
 
 		if (voice.VibratoDelay != 0)
 		{
@@ -804,9 +1010,37 @@ internal sealed class HippelCosoPaulaSong : ISong
 	}
 
 	/// <summary>
-	/// The volume of the sequence is scaled by the volume of the division (La6cc).
+	/// The volume of the sequence is scaled by the volume of the division (La6cc). In the TFMX player a random part
+	/// of a value can be subtracted from the volume of the division (L206b6).
 	/// </summary>
-	static int CalculateVolume(Voice voice) => voice.VolumeValue * Math.Max(0, voice.DivisionVolume) / 100;
+	int CalculateVolume(Voice voice)
+	{
+		int volume = voice.DivisionVolume;
+
+		if (voice.RandomVolume != 0)
+		{
+			if (voice.RandomVolumeValue == 0)
+			{
+				voice.RandomVolumeValue = voice.RandomVolume * (NextRandom() & 0xff) / 0xff;
+				voice.RandomVolume = 0;
+			}
+
+			volume -= voice.RandomVolumeValue;
+		}
+
+		return voice.VolumeValue * Math.Max(0, volume) / 100;
+	}
+
+	/// <summary>
+	/// The random numbers of the TFMX player (L2070e).
+	/// </summary>
+	int NextRandom()
+	{
+		int value = (randomSeed + 0x4793) & 0xffff;
+		randomSeed = (((value >> 6) | (value << 10)) & 0xffff) ^ value;
+
+		return randomSeed;
+	}
 
 	#endregion
 }

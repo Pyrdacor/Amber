@@ -68,6 +68,8 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	[InlineData("German/AmberfilesAmiga")]
+	[InlineData("English/AmberfilesAmiga")]
 	public void OutroMusicPlays(string folder)
 	{
 		var music = TestData.CreateAssetProvider(folder).OutroData!.Music!;
@@ -123,9 +125,7 @@ public sealed class GameDataTests
 		// the palettes fade from black (the last step of fading out is black, the first step of fading in is dark)
 		Assert.All(outro.GetPalette(OutroPalette.Sky, -outro.FadeSteps).GetData(), component => Assert.True(component is 0 or 0xff));
 		Assert.Equal(outro.GetPalette(OutroPalette.Sky).GetData(), outro.GetPalette(OutroPalette.Sky, outro.FadeSteps).GetData());
-		// TODO: the music of the Amiga outro (7 voices)
-		if (!folder.Contains("Amiga"))
-			Assert.NotNull(outro.Music);
+		Assert.NotNull(outro.Music);
 	}
 
 	[Theory]

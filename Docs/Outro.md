@@ -34,9 +34,27 @@ The outro is not part of the released source code. The game and the outro were d
 - The music player (a relocatable program at $1fbdc in the German outro) emulates the 4 sample voices of the Amiga:
   it mixes them by software (L960 in the player) and plays them with the DMA sound of the STE or the YM chip.
 - It plays a COSO module with samples (TFMX variant): 4 voices with 3 bytes per division (pattern, note transpose,
-  signed timbre transpose). `HippelCosoPaulaSong` plays it like the player: the sequencer (L9e88), the patterns (L9fbc),
+  signed timbre transpose). `HippelPaulaSong` plays it like the player: the sequencer (L9e88), the patterns (L9fbc),
   the frequency and volume sequences (La22e, commands E0-E9 and E0/E8) and the sample voices of the Amiga (L958c,
   started voices switch to the loop of the sample, voices with less than 220 words are silent).
+
+## Amiga (EXTRO.UDO)
+- A LOB packed program (text and data segment from address 0). The code was rewritten for the Amiga hardware but does
+  the same. The code is the same in all languages (except the moon, see below), the addresses are read from the
+  operands of the instructions.
+- The sprites, the texts, the script, the font and the tables are the same as in the Atari ST version (sprites in the
+  Atari ST format which are converted when drawn).
+- The pictures have the 4 bit planes of each line after another. The palettes have 4 bits per color channel and fade in
+  15 steps of 3 vertical blanks (in and out).
+- The copper lists change color 5 every few lines: 9 steps in the throne room (from line 46), 9 steps in the sky of the
+  balcony (from line 2) and color 5 of the landscape from line 82. The port uses the colors 16-24 of the palettes for
+  these pixels, so the pictures still use one palette per part.
+- The music is a TFMX module with 7 voices (see Music.md).
+- The left mouse button ends the outro at any time (not in the port, the space key ends it after the last text).
+
+## Moon
+- The moon of the English versions is 7 blocks wide at x 110 (9 blocks at x 94 in the German versions). The size and
+  position are read from the code.
 
 ## Port
 - `OutroData` loads the data, `OutroScreen` shows it. The palettes fade like the original (fade in: each color channel
