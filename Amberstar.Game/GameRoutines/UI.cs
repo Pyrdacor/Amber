@@ -260,6 +260,11 @@ partial class Game
         playerStatusIcons[partyMemberSlot].Visible = false;
     }
 
+    /// <summary>
+    /// The bars are not updated by the changed values (e.g. while a battle round is shown which is executed before).
+    /// </summary>
+    internal bool HoldPartyMemberBars { get; set; }
+
     static (int, int, int, int)? GetBarValues(IPartyMember? partyMember) => partyMember == null || partyMember.IsDead() ? null :
         (partyMember.HitPoints.CurrentValue, partyMember.HitPoints.TotalMax, partyMember.SpellPoints.CurrentValue, partyMember.SpellPoints.TotalMax);
 
@@ -268,6 +273,9 @@ partial class Game
     /// </summary>
     private void UpdatePartyMemberBars()
     {
+        if (HoldPartyMemberBars)
+            return;
+
         for (int i = 0; i < MaxPartyMembers; i++)
         {
             var partyMember = State.GetPartyMember(1 + i);

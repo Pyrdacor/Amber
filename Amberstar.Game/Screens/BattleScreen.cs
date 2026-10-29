@@ -85,6 +85,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	bool slowMode = false;
 	bool executing = false;
 	readonly Queue<BattleEvent> pendingEvents = [];
+	// the actions of the round which are not executed yet
+	IEnumerator<List<BattleEvent>>? roundActions;
 	Action? clickAction = null;
 	long verticalBlankTicks = 0;
 	// idle animation (index into IconAnimationFrames, 0 = not animated)
@@ -151,6 +153,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		targetSelection = TargetSelection.None;
 		executing = false;
 		pendingEvents.Clear();
+		roundActions = null;
+		Game.HoldPartyMemberBars = false;
 		clickAction = null;
 		ShownTexts.Clear();
 		idleFrames.Clear();
@@ -193,6 +197,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	public override void Close()
 	{
 		Game.State.ActivePartyMemberChanged -= ActivePartyMemberChanged;
+		Game.HoldPartyMemberBars = false;
 		ClearMonsterImages();
 		ClearMarkers();
 		ClearAnimations();
@@ -648,6 +653,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			return;
 
 		pendingEvents.Clear();
+		roundActions = null;
+		Game.HoldPartyMemberBars = false;
 		clickAction = null;
 		executing = false;
 		waitingForAnimations = false;
@@ -677,8 +684,9 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		Game.UpdateBattleSpells(battle);
 		battle.ActiveSlot = ActiveSlot;
 
-		foreach (var battleEvent in battle.ExecuteRound())
-			pendingEvents.Enqueue(battleEvent);
+		roundActions = battle.ExecuteRoundStepwise().GetEnumerator();
+		// the bars show the hit points of the shown events
+		Game.HoldPartyMemberBars = true;
 
 		ShowNextEvent();
 	}
@@ -688,8 +696,26 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	/// </summary>
 	void ShowNextEvent()
 	{
-		while (pendingEvents.TryPeek(out var battleEvent))
+		while (true)
 		{
+			if (!pendingEvents.TryPeek(out var battleEvent))
+			{
+				// The next action is executed after the animations of the previous one.
+				if (AnimationRunning)
+				{
+					waitingForAnimations = true;
+					return;
+				}
+
+				if (roundActions?.MoveNext() != true)
+					break;
+
+				foreach (var actionEvent in roundActions.Current)
+					pendingEvents.Enqueue(actionEvent);
+
+				continue;
+			}
+
 			switch (battleEvent)
 			{
 				case BattleAttackAnimationEvent attackAnimationEvent:
@@ -778,6 +804,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	void RoundFinished()
 	{
 		executing = false;
+		roundActions = null;
+		Game.HoldPartyMemberBars = false;
 		ShowText("");
 		TakeBattleField();
 		UpdateBattleField();

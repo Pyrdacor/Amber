@@ -556,12 +556,19 @@ internal sealed class Battle
 	/// <summary>
 	/// Executes a round: the monsters choose their actions and all actions are executed by initiative.
 	/// </summary>
-	public List<BattleEvent> ExecuteRound()
+	public List<BattleEvent> ExecuteRound() => [.. ExecuteRoundStepwise().SelectMany(events => events)];
+
+	/// <summary>
+	/// Executes a round action by action: the next action is executed when the events of the previous one are
+	/// taken, so the shown values (e.g. the hit points of the party) change with the shown events.
+	/// </summary>
+	public IEnumerable<List<BattleEvent>> ExecuteRoundStepwise()
 	{
 		var events = new List<BattleEvent>();
 
 		// e.g. killed by party spells which are executed by the game
 		RemoveDefeated(events);
+		yield return events;
 
 		if (!Monsters.Any(monster => monster.Position.Y == MonsterFrontRow))
 			monsterFrontRowWasEmpty = true;
@@ -594,20 +601,24 @@ internal sealed class Battle
 			if (!IsOnBattleField(planned.Participant))
 				continue;
 
+			events = [];
 			ExecuteAction(planned.Participant, planned.Action, events);
 			RemoveDefeated(events);
+			bool end = CheckBattleEnd();
+			yield return events;
 
-			if (CheckBattleEnd())
+			if (end)
 				break;
 		}
 
 		Round++;
 		MonsterAdvantage = false;
+		events = [];
 
 		if (Result == BattleResult.Ongoing)
 			EndRound(events);
 
-		return events;
+		yield return events;
 	}
 
 	/// <summary>
