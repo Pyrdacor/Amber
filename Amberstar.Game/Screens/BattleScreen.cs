@@ -50,8 +50,10 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	const int MonsterDamageVerticalBlanks = 100;
 	const int PartyDamageVerticalBlanks = 70;
 	const byte BackgroundDisplayLayer = 1;
-	const byte MonsterDisplayLayer = 10;
-	const byte AttackingMonsterDisplayLayer = 26;
+	// Each monster has its own display layer by its row and column (drawn from the back row to the front row and
+	// from left to right like the original), so overlapping monsters keep their order.
+	const byte MonsterDisplayLayer = 2;
+	const byte AttackingMonsterDisplayLayer = 21;
 	const byte TacticalDisplayLayer = 10;
 	const byte MarkerDisplayLayer = 20;
 	// The markers blink every 16 vertical blanks (bit 4 of the vertical blank counter in the original).
@@ -910,7 +912,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 				int x = BackgroundPosition.X + position.X - size.Width / 2;
 				int y = BackgroundPosition.Y + position.Y - size.Height;
 				// The attacking monster is drawn in front of the others.
-				byte displayLayer = monster == attackingMonster ? AttackingMonsterDisplayLayer : (byte)(MonsterDisplayLayer + row * 5);
+				byte displayLayer = monster == attackingMonster ? AttackingMonsterDisplayLayer
+					: (byte)(MonsterDisplayLayer + row * Battle.Battle.Columns + column);
 				var image = new Image(Game, new Position(x, y), size, Game.GraphicIndexProvider.GetMonsterGraphicIndex(graphic, frame),
 					displayLayer, Layer.UI, ButtonGridPaletteIndex);
 				monsterImages.Add(image);
