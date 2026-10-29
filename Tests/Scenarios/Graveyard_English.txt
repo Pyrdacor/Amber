@@ -1,8 +1,0 @@
-#! data English/AmberfilesST
-# The intro text of the English version.
-waittext
-textshown GRAVE
-dismissall
-map 65
-pos 8 11
-eventactive 65 2 0

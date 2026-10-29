@@ -1,9 +1,0 @@
-# Anti magic events (map 107, 11,10, no text) must not crash or show a text.
-waittext
-dismissall
-cleartexts
-teleport 107 11 10
-waitidle
-map 107
-pos 11 10
-notextshown

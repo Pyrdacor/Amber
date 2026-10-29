@@ -38,31 +38,10 @@ Interfaces and general classes for rendering.
 Renderer which only keeps the state of the drawables and never draws anything. It is used to run games without a window or graphics hardware, e.g. for automated tests.
 
 
+## NuGet packages
+
+The engine projects (Amber.Common, Amber.Assets.Common, Amber.IO.*, Amber.Audio.* and Amber.Renderer.*) are published as NuGet packages by the workflow [publish-nuget.yml](.github/workflows/publish-nuget.yml). Push a tag like `v0.1.0` or start the workflow by hand with a version. It needs the repository secret `NUGET_API_KEY`.
+
 ## Amberstar
 
-Currently Amberstar is ported to modern platforms based on this new project so the Amberstar related parts are kept here as well for easier development. At some point they will move to their own repository though.
-
-### Amberstar.GameData
-
-Definitions for Amberstar game data.
-
-### Amberstar.GameData.Legacy
-
-Concrete loaders and implementations for Amberstar game data which are related to the original legacy games for Atari ST, Amiga or DOS.
-
-### Amberstar.Game
-
-The game logic, screens and UI.
-
-### Amberstar.Frontend
-
-Creates the game for a renderer and game data. Also contains the cheats, the headless runner and the scenario scripts which are shared by the window frontend and the tests.
-
-### Amberstar.net
-
-The game with a window, OpenGL rendering and OpenAL audio. Use `--help` for the command line options (e.g. `--script` and `--headless`).
-
-### Amberstar.Tests
-
-Automated tests: loading the game data of all versions in the repository, game logic in a headless game and all scenario scripts in [Tests/Scenarios](Tests/Scenarios/README.md). Run them with `dotnet test Amberstar.Tests`.
-
+The remake of Amberstar which is based on this engine is in its own repository: https://github.com/Pyrdacor/Amberstar.net
