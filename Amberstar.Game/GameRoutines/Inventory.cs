@@ -13,6 +13,10 @@ partial class Game
 	/// <summary>
 	/// Equips an item of the backpack (Equip_item in the original).
 	/// Returns the message to show if the item can't be equipped.
+	///
+	/// In the original the slot must be free. The port swaps the items if the equipped item can be unequipped
+	/// (not cursed, room in the backpack) and the hands and fingers are enough afterwards (so a two-handed weapon
+	/// can't replace a weapon while a shield or ammunition is in the other hand).
 	/// </summary>
 	internal static Message? EquipItem(IPartyMember partyMember, int inventorySlotIndex, bool inBattle = false)
 	{
@@ -28,8 +32,7 @@ partial class Game
 
 		var targetSlot = item.EquipmentSlot;
 
-		// Rings can be put on both ring fingers.
-		if (targetSlot == null || (targetSlot != EquipmentSlot.RightFinger && partyMember.Equipment[targetSlot.Value].Count != 0))
+		if (targetSlot == null)
 			return Message.ItemNotEquippable;
 
 		if (!item.UsableClasses.HasFlag((ClassFlags)(1 << (int)partyMember.Class)))
@@ -38,20 +41,55 @@ partial class Game
 		if (item.Genders != GenderFlags.Both && !item.Genders.HasFlag((GenderFlags)(1 << (int)partyMember.Gender)))
 			return Message.WrongGender;
 
-		if (item.Hands > 2 - partyMember.UsedHands)
-			return Message.NotEnoughFreeHands;
-
-		if (item.Fingers > 2 - partyMember.UsedFingers)
-			return Message.NotEnoughFreeFingers;
-
-		if (targetSlot == EquipmentSlot.RightFinger && partyMember.Equipment[EquipmentSlot.RightFinger].Count != 0)
+		// Rings can be put on both ring fingers.
+		if (targetSlot == EquipmentSlot.RightFinger && partyMember.Equipment[EquipmentSlot.RightFinger].Count != 0 &&
+			partyMember.Equipment[EquipmentSlot.LeftFinger].Count == 0)
 			targetSlot = EquipmentSlot.LeftFinger;
 
+		// the item which is swapped
+		var equippedSlot = partyMember.Equipment[targetSlot.Value];
+		var equippedItem = equippedSlot.Count != 0 ? equippedSlot.Item : null;
+
+		if (equippedItem != null)
+		{
+			if (inBattle && !equippedItem.Flags.HasFlag(ItemFlags.EquipDuringFight))
+				return null;
+
+			if (equippedItem.Flags.HasFlag(ItemFlags.Cursed))
+				return Message.ItemIsCursed;
+
+			// the equipped item gets the slot of the new one or another slot
+			if (sourceSlot.Count != 1 && FindBackpackSlot(partyMember, equippedItem) == null)
+				return Message.NoRoomForItem;
+		}
+
+		if (item.Hands > 2 - partyMember.UsedHands + (equippedItem?.Hands ?? 0))
+			return Message.NotEnoughFreeHands;
+
+		if (item.Fingers > 2 - partyMember.UsedFingers + (equippedItem?.Fingers ?? 0))
+			return Message.NotEnoughFreeFingers;
+
+		if (equippedItem != null)
+		{
+			ApplyEquipmentBoni(partyMember, equippedItem, false);
+			equippedSlot.ClearItem();
+		}
+
 		ApplyEquipmentBoni(partyMember, item, true);
-		partyMember.Equipment[targetSlot.Value].SetItem(item, 1);
+		equippedSlot.SetItem(item, 1);
 
 		if (--sourceSlot.Count == 0)
 			sourceSlot.ClearItem();
+
+		if (equippedItem != null)
+		{
+			var backpackSlot = sourceSlot.Count == 0 ? sourceSlot : FindBackpackSlot(partyMember, equippedItem)!;
+
+			if (backpackSlot.Count == 0)
+				backpackSlot.SetItem(equippedItem, 1);
+			else
+				backpackSlot.Count++;
+		}
 
 		return null;
 	}

@@ -1,13 +1,15 @@
-# Equip and unequip items in the inventory: boni, two-handed weapons and cursed items.
+# Equip and unequip items in the inventory: boni, swapping, two-handed weapons and cursed items.
 # The hero starts with item 151 in backpack slot 1 and the one-handed weapon 127 in the right hand.
 waittext
 dismissall
 give 1 175
 give 1 230
+give 1 118
 # the two-handed sword can't be used by adventurers
 setclass 1 Warrior
 itemslot 1 2 175
 itemslot 1 3 230
+itemslot 1 4 118
 itemslot 1 RightHand 127
 value 1 charisma
 value 1 strength
@@ -25,18 +27,24 @@ invslot Neck
 itemslot 1 Neck empty
 itemslot 1 2 175:1
 value 1 charisma -20
-# --- the two-handed sword needs both hands
+# --- the shield goes into the left hand
+invslot 4
+itemslot 1 LeftHand 118:1
+itemslot 1 4 empty
+value 1 hands 2
+# --- the two-handed sword can't replace the weapon while the shield is carried
 invslot 3
 itemslot 1 RightHand 127
 itemslot 1 3 230
 dismiss
-invslot RightHand
-itemslot 1 RightHand empty
-value 1 hands 0
-itemslot 1 4 127:1
-# --- the cursed two-handed sword takes 25 strength and both hands
+invslot LeftHand
+itemslot 1 LeftHand empty
+itemslot 1 4 118:1
+value 1 hands 1
+# --- the cursed two-handed sword replaces the weapon, which gets its slot
 invslot 3
 itemslot 1 RightHand 230
+itemslot 1 3 127:1
 value 1 strength -25
 value 1 hands 2
 # --- the second hand unequips the weapon but it is cursed
@@ -44,3 +52,8 @@ invslot LeftHand
 dismiss
 itemslot 1 RightHand 230
 value 1 hands 2
+# --- the cursed weapon can't be swapped either
+invslot 3
+dismiss
+itemslot 1 RightHand 230
+itemslot 1 3 127:1
