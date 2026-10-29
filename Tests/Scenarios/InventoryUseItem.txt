@@ -28,6 +28,8 @@ itemslot 1 2 178
 # --- the compass fulfills its purpose and vanishes
 button 3
 invslot 3
+# the destruction of the compass is shown before the message
+wait 1000
 dismiss
 itemslot 1 3 empty
 count 104 0

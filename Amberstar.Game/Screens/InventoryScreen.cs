@@ -8,6 +8,9 @@ namespace Amberstar.Game.Screens;
 internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 {
     IPartyMember? partyMember;
+    // the slots are refreshed after the destructions of used up items
+    int runningDestructions = 0;
+    Action? afterDestructions;
     bool itemDragged = false;
     bool waitForClick = false;
     bool closeAfterClick = false;
@@ -514,8 +517,59 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     /// Shows the items and values after the party member data was changed
     /// and shows the given message if any.
     /// </summary>
+    /// <summary>
+    /// The party member whose inventory is shown.
+    /// </summary>
+    internal IPartyMember? PartyMember => partyMember;
+
+    /// <summary>
+    /// The last item of a slot was used up: its destruction is shown in the slot (Show_item_destruction in the
+    /// original). Returns false if the slot is not shown.
+    /// </summary>
+    internal bool ShowItemDestruction(ItemSlot itemSlot, Action? finished = null)
+    {
+        ItemContainer? container = null;
+
+        foreach (var equipmentSlot in Enum.GetValues<EquipmentSlot>())
+        {
+            if (ReferenceEquals(partyMember?.Equipment[equipmentSlot], itemSlot))
+                container = equippedItemSlots[equipmentSlot];
+        }
+
+        for (int i = 0; i < inventoryItemSlots.Length; i++)
+        {
+            if (ReferenceEquals(partyMember?.Inventory[i], itemSlot))
+                container = inventoryItemSlots[i];
+        }
+
+        if (container?.Item == null)
+            return false;
+
+        runningDestructions++;
+        container.ReduceItemCount(container.ItemCount, true, () =>
+        {
+            if (--runningDestructions == 0)
+            {
+                var action = afterDestructions;
+                afterDestructions = null;
+                action?.Invoke();
+            }
+
+            finished?.Invoke();
+        });
+
+        return true;
+    }
+
     private void ItemActionDone(Message? message)
     {
+        // the destruction of a used up item is shown first
+        if (runningDestructions != 0)
+        {
+            afterDestructions += () => ItemActionDone(message);
+            return;
+        }
+
         SwitchToPartyMember(Game.State.CurrentInventoryIndex!.Value, true);
 
         if (message != null)
@@ -625,7 +679,13 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         if (Game.CurrentBattle == null && Game.UseItemOnMap(item))
         {
             if (item.Flags.HasFlag(ItemFlags.DestroyAfterUsage))
+            {
                 Game.DestroyUsedItem(user, itemSlot, equipped);
+
+                // the inventory is left after the destruction
+                if (itemSlot.Count == 0 && ShowItemDestruction(itemSlot, () => Game.ScreenHandler.PopScreen()))
+                    return;
+            }
 
             Game.ScreenHandler.PopScreen();
             return;
@@ -666,6 +726,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
                 Game.State.SpecialItems |= specialItem;
                 Game.DestroyUsedItem(user, itemSlot, equipped, itemSlot.Count);
+                ShowItemDestruction(itemSlot);
                 ItemActionDone(Message.ItemFulfillsSpecialPurposeNow);
                 break;
             }

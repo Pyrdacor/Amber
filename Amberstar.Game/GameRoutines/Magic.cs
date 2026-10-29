@@ -312,6 +312,10 @@ partial class Game
 		}
 
 		DestroyUsedItem(owner, itemSlot, equipped);
+
+		// the inventory shows the destruction of the last item (Destroy_used_item in the original)
+		if (itemSlot.Count == 0 && ScreenHandler.FindScreen(ScreenType.Inventory) is InventoryScreen inventory && inventory.PartyMember == owner)
+			inventory.ShowItemDestruction(itemSlot);
 	}
 
 	/// <summary>
