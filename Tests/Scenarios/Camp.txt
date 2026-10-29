@@ -58,7 +58,7 @@ textshown KEINE SPRUCHROLLE
 dismiss
 slot 2
 # the scroll crumbles to dust before the text is shown
-wait 1000
+wait 1500
 textshown DU SCHAFFST ES
 dismiss
 spellknown 1 White 1 1

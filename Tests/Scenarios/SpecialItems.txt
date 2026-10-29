@@ -10,7 +10,7 @@ waitscreen Inventory
 button 3
 invslot 2
 # the destruction of the compass is shown before the message
-wait 1000
+wait 1500
 dismiss
 key Escape
 waitidle

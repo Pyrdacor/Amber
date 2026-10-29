@@ -52,8 +52,9 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
 
         Label CreateFixedLabel(int x, int y, IText text) => CreateLabel(x, y, DynamicContent ? MaxDynamicTextWidth : Game.GetMaxLineWidth(text), text);
 
-        int x = WindowX + 16;
-        int y = WindowY + 16;
+        // the positions are relative to the client area of the window
+        int x = 0;
+        int y = 0;
 
         // Image background
         AddImage(x, y, 16, 16, Game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.EmptyItemSlot), ControlDisplayLayer, true);
@@ -72,15 +73,15 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
         inputValue = CreateLabel(x, y, 52);
         inputValue.Alignment = TextAlignment.Right;
 
-        x = WindowX + 16 + 1;
+        x = 1;
         y += 9;
 
         var text = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.Message, (int)Message));
         messageLabel = CreateFixedLabel(x, y, text);
         messageLabel.Visible = true;
 
-        x = WindowX + 16;
-        y = WindowY + 48;
+        x = 0;
+        y = 32;
 
         upButton = AddButton(x, y, ButtonType.ArrowUp, ControlDisplayLayer);
         upButton.ClickAction += () => ChangeAmount(1);
@@ -89,7 +90,8 @@ internal abstract class InputAmountScreen() : WindowScreen(WindowX, WindowY, Win
         downButton.ClickAction += () => ChangeAmount(-1);
         downButton.RightClickAction += () => ChangeAmount(short.MinValue);
 
-        var exitButton = AddButton(x + 48, y + 16, ButtonType.Exit, ControlDisplayLayer);
+        // the exit icon is at 128,176 like in the original (ItemW_DisInit)
+        var exitButton = AddButton(x + 80, y + 16, ButtonType.Exit, ControlDisplayLayer);
         exitButton.ClickAction += () => Game.ScreenHandler.PopScreen();
     }
 

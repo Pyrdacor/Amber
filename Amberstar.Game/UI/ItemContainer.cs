@@ -20,6 +20,8 @@ internal class ItemContainer : Control
 	Position position;
     ISprite? sprite;
 	ISprite? brokenOverlay; // TODO
+	// The animations of the original wait 3 vertical blanks and the switch of the screens per frame (about 80 ms).
+	const long TicksPerAnimationFrame = 5;
 	IAnimatedSprite? destroyAnimation;
 	IAnimatedSprite? sparkleAnimation;
 	Label? itemCountLabel;
@@ -327,7 +329,7 @@ internal class ItemContainer : Control
         // the slot can be cleared meanwhile
         var animation = sparkleAnimation;
 
-        game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+        game.AddDelayedAction(TicksPerAnimationFrame, NextFrame);
 
         void NextFrame()
         {
@@ -338,7 +340,7 @@ internal class ItemContainer : Control
                 return;
             }
 
-            game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+            game.AddDelayedAction(TicksPerAnimationFrame, NextFrame);
         }
     }
 
@@ -386,7 +388,7 @@ internal class ItemContainer : Control
 			destroyAnimation.CurrentFrameIndex = 0;
             destroyAnimation.Visible = true;
 
-			game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+			game.AddDelayedAction(TicksPerAnimationFrame, NextFrame);
 
             void NextFrame()
 			{
@@ -409,7 +411,7 @@ internal class ItemContainer : Control
 						brokenOverlay.Visible = false;
 				}
 
-                game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+                game.AddDelayedAction(TicksPerAnimationFrame, NextFrame);
             }
 		}
 		else
