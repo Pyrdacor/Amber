@@ -11,6 +11,9 @@ internal class Cursor
 	public const int Height = 16;
 	readonly Game game;
 	readonly ISprite sprite;
+	// the item which is shown instead of the cursor (e.g. while its receiver is chosen)
+	ISprite? itemSprite;
+	bool visible = true;
 	readonly Dictionary<CursorType, Position> cursorHotspots = [];
 	CursorType cursorType = CursorType.Sword;
 	Position hotspot = new(0, 0);
@@ -18,8 +21,15 @@ internal class Cursor
 
 	public bool Visible
 	{
-		get => sprite.Visible;
-		set => sprite.Visible = value;
+		get => visible;
+		set
+		{
+			visible = value;
+			sprite.Visible = value && itemSprite == null;
+
+			if (itemSprite != null)
+				itemSprite.Visible = value;
+		}
 	}
 
 	public CursorType CursorType
@@ -56,7 +66,44 @@ internal class Cursor
 
 			position = value;
 			sprite.Position = new(position.X - hotspot.X, position.Y - hotspot.Y);
+
+			if (itemSprite != null)
+				itemSprite.Position = ItemPosition;
 		}
+	}
+
+	// the cursor is in the center of the item
+	Position ItemPosition => new(position.X - Width / 2, position.Y - Height / 2);
+
+	/// <summary>
+	/// The cursor shows the item (while its receiver is chosen). The original shows the item masked in white,
+	/// the option UnmaskedDraggedItem shows it like dragged items with its colors. Null shows the cursor again.
+	/// </summary>
+	public void ShowItem(IItem? item)
+	{
+		if (item == null)
+		{
+			if (itemSprite != null)
+			{
+				itemSprite.Visible = false;
+				itemSprite = null;
+			}
+
+			sprite.Visible = visible;
+			return;
+		}
+
+		var layer = game.GetRenderLayer(Layer.UI);
+
+		itemSprite ??= layer.SpriteFactory!.Create();
+		itemSprite.Size = new(Width, Height);
+		itemSprite.TextureOffset = layer.Config.Texture!.GetOffset(game.GraphicIndexProvider.GetItemGraphicIndex(item.GraphicIndex));
+		itemSprite.DisplayLayer = byte.MaxValue;
+		itemSprite.PaletteIndex = game.PaletteIndexProvider.BuiltinPaletteIndices[BuiltinPalette.Item];
+		itemSprite.MaskColorIndex = game.IsOptionSet(GameOptions.UnmaskedDraggedItem) ? null : (byte)0xf;
+		itemSprite.Position = ItemPosition;
+		itemSprite.Visible = visible;
+		sprite.Visible = false;
 	}
 
 	public byte PaletteIndex
@@ -84,6 +131,7 @@ internal class Cursor
 
 	public void Destroy()
 	{
+		ShowItem(null);
 		sprite.Visible = false;
 	}
 }

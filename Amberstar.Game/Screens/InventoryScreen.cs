@@ -794,7 +794,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
         AskForItemAmount(item, itemSlot.Count, Message.GiveHowMuch, amount => StartTransfer(
             receiver => Game.CanReceiveItems(receiver, item, amount),
-            receiver => Game.TransferItems(giver, slotIndex, receiver, amount), CursorType.Sword));
+            receiver => Game.TransferItems(giver, slotIndex, receiver, amount), CursorType.Sword, item));
     }
 
     private void AskForItemAmount(IItem item, int count, Message message, Action<int> entered)
@@ -820,7 +820,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     /// <summary>
     /// Lets the player choose the receiver by clicking a portrait (TIVS module in the original).
     /// </summary>
-    private void StartTransfer(Func<IPartyMember, bool> canReceive, Action<IPartyMember> transfer, CursorType cursorType)
+    private void StartTransfer(Func<IPartyMember, bool> canReceive, Action<IPartyMember> transfer, CursorType cursorType, IItem? item = null)
     {
         if (Game.SetHandIcons(partyMember!, canReceive) == 0)
         {
@@ -834,6 +834,8 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         ShowMessage(Message.WhomToTransferTo, false);
         Game.TrapMouseInPortraitArea();
         Game.Cursor.CursorType = cursorType;
+        // the cursor shows the given item
+        Game.Cursor.ShowItem(item);
     }
 
     private void EndTransfer(IPartyMember? receiver)
@@ -845,6 +847,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
 
         HideMessage();
         Game.Cursor.CursorType = CursorType.Sword;
+        Game.Cursor.ShowItem(null);
         Game.UntrapMouse();
         Game.ResetStatusIcons();
 
