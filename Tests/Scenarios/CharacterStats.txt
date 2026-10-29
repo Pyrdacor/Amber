@@ -1,0 +1,14 @@
+# The character screen with the attributes and skills of the hero and of Silk.
+waittext
+dismissall
+join 12
+# --- open the inventory of the hero and then his character screen
+click 32 17 right
+waitscreen Inventory
+button 0
+waitscreen CharacterStats
+# --- Silk's character screen
+portrait 2
+waitscreen CharacterStats
+button 0
+waitscreen Inventory

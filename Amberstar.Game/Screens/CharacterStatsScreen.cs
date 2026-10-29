@@ -172,7 +172,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
         {
             attributes[i]?.Delete();
 
-            var attributeValue = partyMember.Attributes[(Attribute)i];
+            var attributeValue = partyMember.Attributes[(Attribute)(i + 1)];
             var attributeName = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.AttributeName, i)).GetString()[..3];
             var attributeString = Game.InsertNumberIntoString(valueDivider, "/", false, attributeValue.TotalCurrent, 3, '0');
             attributeString = Game.InsertNumberIntoString(attributeString, "/", true, attributeValue.MaxValue, 3, '0');
@@ -188,7 +188,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
         {
             skills[i]?.Delete();
 
-            var skillValue = partyMember.Skills[(Skill)i];
+            var skillValue = partyMember.Skills[(Skill)(i + 1)];
             var skillName = Game.AssetProvider.TextLoader.LoadText(new AssetIdentifier(AssetType.SkillName, i)).GetString()[..3];
             var skillString = Game.InsertNumberIntoString(percentageValueDivider, "%", false, skillValue.TotalCurrent, 2, '0');
             skillString = Game.InsertNumberIntoString(skillString, "/", true, skillValue.MaxValue, 2, '0');
