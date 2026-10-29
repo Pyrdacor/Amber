@@ -228,6 +228,36 @@ namespace Amberstar.Frontend
 					graphics.Add(glyphTextureIndex++, glyph);
 				}
 			}
+			// The shadow is drawn 1 pixel to the right and down. Its pixels which are covered by the glyph are removed,
+			// so the shadow is not seen through a faded glyph.
+			static IGraphic Shadow(IGraphic glyph)
+			{
+				var original = glyph.GetData();
+				var pixels = original.ToArray();
+
+				for (int y = 0; y < glyph.Height - 1; y++)
+				{
+					for (int x = 0; x < glyph.Width - 1; x++)
+					{
+						if (original[(y + 1) * glyph.Width + x + 1] != 0)
+							pixels[y * glyph.Width + x] = 0;
+					}
+				}
+
+				return new Graphic(glyph.Width, glyph.Height, pixels, glyph.Format);
+			}
+			var textShadowTextureIndices = new Dictionary<char, int>();
+			var runeShadowTextureIndices = new Dictionary<char, int>();
+			foreach (var (ch, glyphIndex) in textGlyphTextureIndices)
+			{
+				textShadowTextureIndices.Add(ch, glyphTextureIndex);
+				graphics.Add(glyphTextureIndex++, Shadow(graphics[glyphIndex]));
+			}
+			foreach (var (ch, glyphIndex) in runeGlyphTextureIndices)
+			{
+				runeShadowTextureIndices.Add(ch, glyphTextureIndex);
+				graphics.Add(glyphTextureIndex++, Shadow(graphics[glyphIndex]));
+			}
 			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
 			{
 				BaseZ = 0.7f,
@@ -419,7 +449,7 @@ namespace Amberstar.Frontend
 			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices,
 				outroPaletteIndices, introPaletteIndices, loadingScreenPaletteIndices);
 			paletteColorProvider = new(palettes);
-			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
+			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices, textShadowTextureIndices, runeShadowTextureIndices);
 		}
 	}
 }

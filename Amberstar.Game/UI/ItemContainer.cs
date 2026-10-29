@@ -264,6 +264,7 @@ internal class ItemContainer : Control
                 itemCountLabel.Area = new(sprite.Position + new Position(2, 10), new(12, 7));
 				itemCountLabel.DisplayLayer = (byte)(displayLayer + 4);
                 itemCountLabel.Visible = true;
+				itemCountLabel.Blinking = true;
             }
 			else
 			{
@@ -294,6 +295,7 @@ internal class ItemContainer : Control
             itemCountLabel ??= new Label(game);
             itemCountLabel.SetText(ItemCount.ToString(), 15, TextManager.TransparentPaper, sprite!.PaletteIndex);
             itemCountLabel.Visible = true;
+            itemCountLabel.Blinking = true;
 
             SlotChanged?.Invoke();
         }
@@ -565,11 +567,5 @@ internal class ItemContainer : Control
 			return;
 
 		DraggedItem.Position = position;
-	}
-
-	public void Update()
-	{
-		if (itemCountLabel != null)
-			itemCountLabel.Alpha = Label.BlinkAnimationAlpha;
 	}
 }

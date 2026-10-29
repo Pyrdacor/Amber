@@ -292,6 +292,9 @@ internal class TextManager(Game game, IFont font,
                 var mapper = textBlock.Runes
                     ? fontInfoProvider.RuneGlyphTextureIndices
                     : fontInfoProvider.TextGlyphTextureIndices;
+                var shadowMapper = textBlock.Runes
+                    ? fontInfoProvider.RuneShadowTextureIndices
+                    : fontInfoProvider.TextShadowTextureIndices;
 
                 foreach (char ch in textBlock.Text)
                 {
@@ -301,7 +304,7 @@ internal class TextManager(Game game, IFont font,
                         x += font.Advance;
                     else
                     {
-						shadowLine.Add(CreateTextSprite(x + 1, y + 1, mapper[ConvertChar(ch)], 0, textBlock.PaperColorIndex, 0, true));
+						shadowLine.Add(CreateTextSprite(x + 1, y + 1, shadowMapper[ConvertChar(ch)], 0, textBlock.PaperColorIndex, 0, true));
 						glyphLine.Add(CreateTextSprite(x, y, mapper[ConvertChar(ch)], textBlock.TextColorIndex, textBlock.PaperColorIndex, 2, false));						
 						x += font.Advance;
                     }
@@ -705,6 +708,30 @@ internal class Label(Game game) : Control, ILayeredDrawable
 
     public static byte BlinkAnimationAlpha { get; private set; }
 
+    // the labels which blink (they blink in all screens, e.g. also while an item is chosen for use)
+    static readonly HashSet<Label> blinkingLabels = [];
+
+    /// <summary>
+    /// The label fades out and in (like the counts of items).
+    /// </summary>
+    public bool Blinking
+    {
+        get => blinkingLabels.Contains(this);
+        set
+        {
+            if (value)
+            {
+                blinkingLabels.Add(this);
+                Alpha = BlinkAnimationAlpha;
+            }
+            else
+            {
+                blinkingLabels.Remove(this);
+                Alpha = 255;
+            }
+        }
+    }
+
     public ILayer Layer => game.GetRenderLayer(Amberstar.Game.Layer.Text);
 
     public override bool Visible
@@ -871,6 +898,7 @@ internal class Label(Game game) : Control, ILayeredDrawable
 
     public override void Destroy()
     {
+        blinkingLabels.Remove(this);
         renderText?.Delete();
         renderText = null;
 
@@ -905,5 +933,8 @@ internal class Label(Game game) : Control, ILayeredDrawable
             long t = timeInAnimation - holdHigh - fadeOut - holdLow;
             BlinkAnimationAlpha = (byte)(MathUtil.Round(255.0f * t / fadeIn));
         }
+
+        foreach (var label in blinkingLabels)
+            label.Alpha = BlinkAnimationAlpha;
     }
 }
