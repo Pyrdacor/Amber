@@ -380,6 +380,13 @@ namespace Amberstar.Frontend
 
 			// pictures with their own colors (RGBA)
 			graphics = [];
+			int thalionLogoIndex = 0;
+			var thalionLogo = assetProvider.ThalionLogo;
+			if (thalionLogo != null)
+			{
+				thalionLogoIndex = graphics.Count;
+				graphics.Add(graphics.Count, thalionLogo.Frame);
+			}
 			if (introData != null)
 			{
 				introGraphicOffsets.Add(IntroGraphic.TitlePicture, graphics.Count);
@@ -408,7 +415,7 @@ namespace Amberstar.Frontend
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
 				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets,
-				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices, introGraphicOffsets, loadingScreenIndex);
+				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices, introGraphicOffsets, thalionLogoIndex, loadingScreenIndex);
 			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices,
 				outroPaletteIndices, introPaletteIndices, loadingScreenPaletteIndices);
 			paletteColorProvider = new(palettes);

@@ -81,8 +81,10 @@ public partial class Game : IDisposable
 		// The name of the active member is shown in a brighter color.
 		State.ActivePartyMemberChanged += UpdatePartyMembers;
 
-        // The original starts with the intro (a separate program).
-        if (configuration.ShowIntro && AssetProvider.IntroData != null)
+        // The original starts with the logo of Thalion and the intro (separate programs).
+        if (configuration.ShowIntro && AssetProvider.ThalionLogo != null)
+            ScreenHandler.PushScreen(ScreenType.ThalionLogo);
+        else if (configuration.ShowIntro && AssetProvider.IntroData != null)
             ScreenHandler.PushScreen(ScreenType.Intro);
         else
             StartGame();
@@ -107,6 +109,19 @@ public partial class Game : IDisposable
             ShowLoadingScreen(DefaultFadeTime);
 
         ScreenHandler.PushScreen(ScreenType.Map2D);
+    }
+
+    /// <summary>
+    /// The logo of Thalion was shown, the intro follows.
+    /// </summary>
+    internal void ThalionLogoFinished()
+    {
+        ScreenHandler.ClearAllScreens();
+
+        if (AssetProvider.IntroData != null)
+            ScreenHandler.PushScreen(ScreenType.Intro);
+        else
+            StartGame();
     }
 
     /// <summary>

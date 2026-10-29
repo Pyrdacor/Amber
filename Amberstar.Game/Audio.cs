@@ -57,6 +57,11 @@ partial class Game
     internal const int IntroSong = 101;
 
     /// <summary>
+    /// The songs of the logo of Thalion follow this one (see <see cref="IThalionLogo.GetSong"/>).
+    /// </summary>
+    internal const int ThalionLogoSong = 200;
+
+    /// <summary>
     /// The song which is played (or would be played if the music is switched on), 0 if none.
     /// </summary>
     internal int CurrentSong => Math.Max(0, requestedSongIndex);
@@ -109,6 +114,7 @@ partial class Game
                 {
                     OutroSong => new AudioStream(AssetProvider.OutroData!.Music!),
                     IntroSong => new AudioStream(AssetProvider.IntroData!.Music!),
+                    > ThalionLogoSong => new AudioStream(AssetProvider.ThalionLogo!.GetSong(songIndex - ThalionLogoSong)),
                     _ => new AudioStream(AssetProvider, AssetProvider.SongLoader.GetMusicIndex(songIndex), 0)
                 };
                 music.Add(songIndex, audioStream);

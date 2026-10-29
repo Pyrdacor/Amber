@@ -71,6 +71,7 @@ public enum ScreenType
     Jukebox,
     DismissPartyMembers,
     Intro,
+    ThalionLogo,
     // TODO ...
 }
 
@@ -754,6 +755,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Jukebox => new JukeboxScreen(),
             ScreenType.DismissPartyMembers => new DismissPartyMembersScreen(),
             ScreenType.Intro => new IntroScreen(),
+            ScreenType.ThalionLogo => new ThalionLogoScreen(),
             _ => throw new NotImplementedException()
 		};
 

@@ -41,8 +41,13 @@ public sealed class HeadlessGameTests
 	{
 		using var game = new HeadlessGame(TestData.GetDataPath(GameSetup.RepositoryDataFolders[0]), showIntro: true);
 
+		// the logo of Thalion ends with a key
+		Assert.True(game.StepUntil(() => game.Game.ScriptActiveScreen == "ThalionLogo"), game.Game.ScriptState());
+		game.Step(60);
+		game.Game.KeyDown(Amberstar.Game.Key.Space, Amberstar.Game.KeyModifiers.None);
+		game.Game.KeyUp(Amberstar.Game.Key.Space, Amberstar.Game.KeyModifiers.None);
 		// the title picture stays until the space key is pressed
-		Assert.True(game.StepUntil(() => game.Game.ScriptActiveScreen == "Intro"), game.Game.ScriptState());
+		Assert.True(game.StepUntil(() => game.Game.ScriptActiveScreen == "Intro", 300), game.Game.ScriptState());
 		game.Step(120);
 		Assert.Empty(game.Game.ScriptShownTexts);
 		game.Game.KeyDown(Amberstar.Game.Key.Space, Amberstar.Game.KeyModifiers.None);

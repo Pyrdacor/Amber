@@ -22,6 +22,12 @@ public interface ITextureAtlas : ITexture
 	/// Returns the pixel offset of the sub-texture with the given index within the atlas.
 	/// </summary>
 	Position GetOffset(int index);
+
+	/// <summary>
+	/// Replaces the pixels of the sub-texture with the given index (the graphic must have its size and format).
+	/// This is used for graphics which change every frame.
+	/// </summary>
+	void UpdateGraphic(int index, IGraphic graphic);
 }
 
 public interface ITextureFactory

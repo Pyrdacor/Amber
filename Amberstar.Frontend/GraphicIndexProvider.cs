@@ -26,6 +26,7 @@ namespace Amberstar.Frontend
 		Dictionary<OutroGraphic, int> outroGraphicOffsets,
 		Dictionary<char, int> outroGlyphIndices,
 		Dictionary<IntroGraphic, int> introGraphicOffsets,
+		int thalionLogoIndex,
 		int? loadingScreenIndex
 
     ) : IGraphicIndexProvider
@@ -69,6 +70,8 @@ namespace Amberstar.Frontend
 		public int? GetOutroGlyphIndex(char ch) => outroGlyphIndices.TryGetValue(ch, out int index) ? index : null;
 
 		public int GetIntroGraphicIndex(IntroGraphic graphic, int frame = 0) => introGraphicOffsets[graphic] + frame;
+
+		public int GetThalionLogoIndex() => thalionLogoIndex;
 
 		public int? GetLoadingScreenIndex() => loadingScreenIndex;
     }

@@ -168,6 +168,7 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<ISongLoader> songLoader;
     readonly Lazy<IOutroData?> outroData;
     readonly Lazy<IIntroData?> introData;
+    readonly Lazy<IThalionLogo?> thalionLogo;
 
     private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -196,6 +197,7 @@ public class AssetProvider : IAssetProvider
     public ISongLoader SongLoader => songLoader.Value;
     public IOutroData? OutroData => outroData.Value;
     public IIntroData? IntroData => introData.Value;
+    public IThalionLogo? ThalionLogo => thalionLogo.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -254,6 +256,7 @@ public class AssetProvider : IAssetProvider
         songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices, Data.SongNames, LoadAmigaSamples()));
         outroData = new(LoadOutroData);
         introData = new(LoadIntroData);
+        thalionLogo = new(LoadThalionLogo);
     }
 
 	/// <summary>
@@ -337,6 +340,31 @@ public class AssetProvider : IAssetProvider
 			reader.Position = 0;
 
 			return new IntroData(reader.ReadBytes(reader.Size));
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
+	/// <summary>
+	/// The logo of Thalion is the separate program THALION.68K (not packed, the addresses are from 0).
+	/// </summary>
+	private IThalionLogo? LoadThalionLogo()
+	{
+		if (Platform != LegacyPlatform.Atari)
+			return null;
+
+		var file = fileSystem.GetFile("THALION.68K");
+
+		if (file == null)
+			return null;
+
+		try
+		{
+			using var fileReader = file.Stream.GetReader();
+
+			return new ThalionLogo(PrgReader.Read(fileReader).TextSegment);
 		}
 		catch
 		{

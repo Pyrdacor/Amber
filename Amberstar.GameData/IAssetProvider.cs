@@ -39,4 +39,8 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
 	/// The data of the intro or null if it was not found (INTRO.68K).
 	/// </summary>
 	IIntroData? IntroData { get; }
+	/// <summary>
+	/// The logo of Thalion or null if it was not found (THALION.68K).
+	/// </summary>
+	IThalionLogo? ThalionLogo { get; }
 }

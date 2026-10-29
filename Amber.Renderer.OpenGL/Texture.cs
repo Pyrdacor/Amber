@@ -29,7 +29,7 @@ internal class Texture : ITexture, IDisposable
 {
     public static Texture? ActiveTexture { get; private set; } = null;
 
-    readonly State state;
+    private protected readonly State state;
     bool disposed = false;
 
 	public uint Index { get; private set; }
@@ -59,7 +59,7 @@ internal class Texture : ITexture, IDisposable
         };
     }
 
-    static GLEnum ToOpenGLPixelFormat(GraphicFormat graphicFormat)
+    private protected static GLEnum ToOpenGLPixelFormat(GraphicFormat graphicFormat)
     {
 		return graphicFormat switch
 		{
@@ -132,6 +132,11 @@ internal class Texture : ITexture, IDisposable
     }
 
     public void Use() => Bind();
+
+    /// <summary>
+    /// After another texture was bound directly, the next one must be bound again.
+    /// </summary>
+    private protected static void ResetActiveTexture() => ActiveTexture = null;
 }
 
 internal class TextureAtlas : Texture, ITextureAtlas
@@ -146,6 +151,7 @@ internal class TextureAtlas : Texture, ITextureAtlas
 	}
 
 	readonly Dictionary<int, Position> textureOffsets = [];
+	GraphicFormat format = GraphicFormat.RGBA;
 
 	public TextureAtlas(State state, Dictionary<int, IGraphic> graphics, int numMipMapLevels = 0)
 		: base(state)
@@ -155,6 +161,7 @@ internal class TextureAtlas : Texture, ITextureAtlas
 
 		var formats = graphics.Select(g => g.Value.Format);
 		var graphicFormat = formats.First();
+		format = graphicFormat;
 
 		if (formats.Skip(1).Any(f => f != graphicFormat))
 			throw new AmberException(ExceptionScope.Application, "All graphics for a texture atlas must use the same format.");		
@@ -277,6 +284,31 @@ internal class TextureAtlas : Texture, ITextureAtlas
 	}
 
 	public Position GetOffset(int index) => textureOffsets[index];
+
+	/// <summary>
+	/// <inheritdoc/>
+	/// </summary>
+	public void UpdateGraphic(int index, IGraphic graphic)
+	{
+		var offset = textureOffsets[index];
+		var data = graphic.GetData();
+
+		// The texture is bound to the first unit (like for drawing).
+		state.Gl.ActiveTexture(GLEnum.Texture0);
+		state.Gl.BindTexture(TextureTarget.Texture2D, Index);
+		state.Gl.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+
+		unsafe
+		{
+			fixed (byte* ptr = &data[0])
+			{
+				state.Gl.TexSubImage2D(GLEnum.Texture2D, 0, offset.X, offset.Y, (uint)graphic.Width, (uint)graphic.Height,
+					ToOpenGLPixelFormat(format), GLEnum.UnsignedByte, ptr);
+			}
+		}
+
+		ResetActiveTexture();
+	}
 }
 
 internal class TextureFactory(State state) : ITextureFactory

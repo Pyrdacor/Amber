@@ -35,6 +35,11 @@ public interface IGraphicIndexProvider
 	/// </summary>
 	int GetIntroGraphicIndex(IntroGraphic graphic, int frame = 0);
 	/// <summary>
+	/// Gets the texture index of the frame of the logo of Thalion (in the layer for true color pictures, it is updated
+	/// with each frame).
+	/// </summary>
+	int GetThalionLogoIndex();
+	/// <summary>
 	/// Gets the texture index of the loading screen (the dwarf) or null if it is not available.
 	/// </summary>
 	int? GetLoadingScreenIndex();

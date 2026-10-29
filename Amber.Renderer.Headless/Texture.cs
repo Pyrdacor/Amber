@@ -45,6 +45,10 @@ internal sealed class TextureAtlas : Texture, ITextureAtlas
 	}
 
 	public Position GetOffset(int index) => offsets[index];
+
+	public void UpdateGraphic(int index, IGraphic graphic)
+	{
+	}
 }
 
 internal sealed class TextureFactory : ITextureFactory

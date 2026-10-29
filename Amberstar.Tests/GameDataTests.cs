@@ -152,6 +152,42 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void ThalionLogoRuns(string folder)
+	{
+		var logo = TestData.CreateAssetProvider(folder).ThalionLogo;
+
+		Assert.NotNull(logo);
+		var songs = new List<int>();
+
+		// the rain, the pieces of the logo, the logo and the name (each with its song), then it waits for a key
+		for (int frame = 0; frame < 1100; frame++)
+		{
+			logo.VerticalBlank();
+
+			if (songs.Count == 0 || songs[^1] != logo.Song)
+				songs.Add(logo.Song);
+		}
+
+		Assert.Equal([1, 6, 8, 2], songs);
+		Assert.False(logo.Finished);
+		// the name is drawn with the colors of the raster (yellow in the middle of the screen)
+		var pixels = logo.Frame.GetData();
+		Assert.Contains(Enumerable.Range(0, pixels.Length / 4), i => pixels[i * 4] > 0xc0 && pixels[i * 4 + 1] > 0xc0 && pixels[i * 4 + 2] < 0x40);
+
+		// the space key fades it out
+		logo.KeyPressed(0x39);
+
+		for (int frame = 0; frame < 200 && !logo.Finished; frame++)
+			logo.VerticalBlank();
+
+		Assert.True(logo.Finished);
+		Assert.Equal(0, logo.Song);
+		Assert.All(logo.Frame.GetData().Where((_, i) => i % 4 != 3), component => Assert.Equal(0, component));
+		Assert.NotNull(logo.GetSong(2));
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void CombatDataLoads(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);
