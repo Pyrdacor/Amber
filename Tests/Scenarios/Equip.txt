@@ -53,11 +53,16 @@ itemslot 1 LeftHand 118:1
 itemslot 1 RightHand empty
 itemslot 1 4 138:1
 value 1 hands 1
-invslot LeftHand
-invslot 5
+# --- the two-handed weapon replaces the shield if the right hand is free
+invslot 4
+itemslot 1 RightHand 138
 itemslot 1 LeftHand empty
-itemslot 1 6 118:1
+itemslot 1 4 118:1
+value 1 hands 2
+# --- the one-handed weapon replaces the two-handed one
+invslot 5
 itemslot 1 RightHand 127
+itemslot 1 5 138:1
 value 1 hands 1
 # --- the cursed two-handed sword replaces the weapon, which gets its slot
 invslot 3
@@ -75,9 +80,9 @@ invslot 3
 dismiss
 itemslot 1 RightHand 230
 itemslot 1 3 127:1
-itemslot 1 6 118:1
-invslot 6
+itemslot 1 4 118:1
+invslot 4
 dismiss
 itemslot 1 RightHand 230
 itemslot 1 LeftHand empty
-itemslot 1 6 118:1
+itemslot 1 4 118:1

@@ -17,7 +17,7 @@ partial class Game
 	/// In the original the slot must be free. The port swaps the items if the equipped item can be unequipped
 	/// (not cursed, room in the backpack) and the hands and fingers are enough afterwards (so a two-handed weapon
 	/// can't replace a weapon while a shield or ammunition is in the other hand, but a shield or ammunition replaces
-	/// a two-handed weapon).
+	/// a two-handed weapon, a two-handed weapon replaces a shield or ammunition if the right hand is free).
 	/// </summary>
 	internal static Message? EquipItem(IPartyMember partyMember, int inventorySlotIndex, bool inBattle = false)
 	{
@@ -52,12 +52,19 @@ partial class Game
 		var equippedSlot = targetEquipmentSlot;
 		var equippedItem = equippedSlot.Count != 0 ? equippedSlot.Item : null;
 
-		// a shield or ammunition replaces a two-handed weapon
+		// A shield or ammunition replaces a two-handed weapon and a two-handed weapon replaces a shield or
+		// ammunition if the right hand is free.
 		if (equippedItem == null && targetSlot == EquipmentSlot.LeftHand && item.Hands != 0 &&
 			partyMember.Equipment[EquipmentSlot.RightHand] is { Count: not 0, Item.Hands: 2 } weaponSlot)
 		{
 			equippedSlot = weaponSlot;
 			equippedItem = weaponSlot.Item;
+		}
+		else if (equippedItem == null && targetSlot == EquipmentSlot.RightHand && item.Hands == 2 &&
+			partyMember.Equipment[EquipmentSlot.LeftHand] is { Count: not 0, Item: not null } leftHandSlot)
+		{
+			equippedSlot = leftHandSlot;
+			equippedItem = leftHandSlot.Item;
 		}
 
 		if (equippedItem != null)
