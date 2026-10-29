@@ -50,6 +50,11 @@ public interface IConfiguration
 
     GameOptions GameOptions { get; set; }
 
+    /// <summary>
+    /// The intro is shown at the start (not for scenario scripts).
+    /// </summary>
+    bool ShowIntro { get; set; }
+
     KeyMovement3D KeyMovement3D { get; set; }
 
     Shortcut[] Shortcuts { get; set; }

@@ -70,6 +70,7 @@ public enum ScreenType
     Outro,
     Jukebox,
     DismissPartyMembers,
+    Intro,
     // TODO ...
 }
 
@@ -752,6 +753,7 @@ internal class ScreenHandler(Game Game) : IDisposable
             ScreenType.Outro => new OutroScreen(),
             ScreenType.Jukebox => new JukeboxScreen(),
             ScreenType.DismissPartyMembers => new DismissPartyMembersScreen(),
+            ScreenType.Intro => new IntroScreen(),
             _ => throw new NotImplementedException()
 		};
 

@@ -35,4 +35,8 @@ public interface IAssetProvider : Amber.Assets.Common.IAssetProvider
 	/// The data of the outro or null if it was not found (EXTRO.68K).
 	/// </summary>
 	IOutroData? OutroData { get; }
+	/// <summary>
+	/// The data of the intro or null if it was not found (INTRO.68K).
+	/// </summary>
+	IIntroData? IntroData { get; }
 }

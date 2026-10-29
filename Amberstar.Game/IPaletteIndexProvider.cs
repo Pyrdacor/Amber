@@ -21,6 +21,10 @@ public interface IPaletteIndexProvider
 	/// </summary>
 	byte GetOutroPaletteIndex(OutroPalette palette, int fadeStep = 0);
 	/// <summary>
+	/// Gets the palette of the intro background while it fades (see <see cref="IIntroData.GetBackgroundPalette"/>).
+	/// </summary>
+	byte GetIntroPaletteIndex(int fadeStep = 0);
+	/// <summary>
 	/// Gets the palette of the loading screen at a fade step (see <see cref="IGraphicLoader.LoadLoadingScreenPalette"/>).
 	/// </summary>
 	byte GetLoadingScreenPaletteIndex(int fadeStep);

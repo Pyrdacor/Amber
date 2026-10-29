@@ -167,6 +167,7 @@ public class AssetProvider : IAssetProvider
     readonly Lazy<ICombatData> combatData;
     readonly Lazy<ISongLoader> songLoader;
     readonly Lazy<IOutroData?> outroData;
+    readonly Lazy<IIntroData?> introData;
 
     private ProgramData Data => programData.Value;
 	public ITextLoader TextLoader => textLoader.Value;
@@ -194,6 +195,7 @@ public class AssetProvider : IAssetProvider
     public ICombatData CombatData => combatData.Value;
     public ISongLoader SongLoader => songLoader.Value;
     public IOutroData? OutroData => outroData.Value;
+    public IIntroData? IntroData => introData.Value;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public AssetProvider(IReadOnlyFileSystem fileSystem)
@@ -251,6 +253,7 @@ public class AssetProvider : IAssetProvider
 			Data.SpellAnimationData, Data.DamageDigitData));
         songLoader = new(() => new SongLoader(this, Platform, Data.SongMusicIndices, Data.SongNames, LoadAmigaSamples()));
         outroData = new(LoadOutroData);
+        introData = new(LoadIntroData);
     }
 
 	/// <summary>
@@ -304,6 +307,36 @@ public class AssetProvider : IAssetProvider
 			reader.Position = 0;
 
 			return new OutroData(reader.ReadBytes(reader.Size), Platform);
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
+	/// <summary>
+	/// The intro is the separate program INTRO.68K. Its data segment is LOB packed (the unpacked program has the code,
+	/// the data and the relocation table, the addresses are from 0).
+	/// </summary>
+	private IIntroData? LoadIntroData()
+	{
+		if (Platform != LegacyPlatform.Atari)
+			return null;
+
+		var file = fileSystem.GetFile("INTRO.68K");
+
+		if (file == null)
+			return null;
+
+		try
+		{
+			using var fileReader = file.Stream.GetReader();
+			var prgFile = PrgReader.Read(fileReader);
+			var container = new FileReader().ReadFile("INTRO.68K", new DataReader(prgFile.DataSegment));
+			var reader = container.Files.Values.First();
+			reader.Position = 0;
+
+			return new IntroData(reader.ReadBytes(reader.Size));
 		}
 		catch
 		{

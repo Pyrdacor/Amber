@@ -342,6 +342,24 @@ namespace Amberstar.Frontend
 					}
 				}
 			}
+			var introData = assetProvider.IntroData;
+			var introPaletteIndices = new Dictionary<int, byte>();
+			var introGraphicOffsets = new Dictionary<IntroGraphic, int>();
+			if (introData != null)
+			{
+				for (int step = -IIntroData.FadeSteps; step < IIntroData.FadeSteps; step++)
+				{
+					introPaletteIndices.Add(step, (byte)cutscenePalettes.Count);
+					cutscenePalettes.Add(introData.GetBackgroundPalette(step));
+				}
+				introGraphicOffsets.Add(IntroGraphic.Background, graphics.Count);
+				graphics.Add(graphics.Count, introData.Background);
+				introGraphicOffsets.Add(IntroGraphic.Logo, graphics.Count);
+				graphics.Add(graphics.Count, introData.Logo);
+				introGraphicOffsets.Add(IntroGraphic.TextPage, graphics.Count);
+				foreach (var page in introData.TextPages)
+					graphics.Add(graphics.Count, page);
+			}
 			if (graphics.Count == 0)
 				graphics.Add(0, new Graphic(1, 1, GraphicFormat.PaletteIndices));
 			if (cutscenePalettes.Count == 0)
@@ -362,6 +380,12 @@ namespace Amberstar.Frontend
 
 			// pictures with their own colors (RGBA)
 			graphics = [];
+			if (introData != null)
+			{
+				introGraphicOffsets.Add(IntroGraphic.TitlePicture, graphics.Count);
+				foreach (var picture in introData.TitlePictures)
+					graphics.Add(graphics.Count, picture);
+			}
 			if (graphics.Count == 0)
 				graphics.Add(0, new Graphic(1, 1, GraphicFormat.RGBA));
 			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
@@ -384,9 +408,9 @@ namespace Amberstar.Frontend
 				image80x80Offset, itemGraphicOffset, windowGraphicOffset, cursorGraphicOffset,
 				backgroundGraphicIndices, cloudGraphicIndices, labBlockImageIndices,
 				partyMemberPortraitIndices, puzzleGraphicOffset, combatBackgroundOffset, tacticalIconOffset, monsterGraphicOffsets,
-				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices, loadingScreenIndex);
+				spellAnimationOffset, damageDigitOffset, outroGraphicOffsets, outroGlyphIndices, introGraphicOffsets, loadingScreenIndex);
 			paletteIndexProvider = new(builtinPaletteIndices, image80x80PaletteIndices, tilesetPaletteIndices, generalPaletteIndices, combatPaletteIndices,
-				outroPaletteIndices, loadingScreenPaletteIndices);
+				outroPaletteIndices, introPaletteIndices, loadingScreenPaletteIndices);
 			paletteColorProvider = new(palettes);
 			fontInfoProvider = new(textGlyphTextureIndices, runeGlyphTextureIndices);
 		}

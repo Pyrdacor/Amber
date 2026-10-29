@@ -130,6 +130,28 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	public void IntroDataLoads(string folder)
+	{
+		var intro = TestData.CreateAssetProvider(folder).IntroData;
+
+		Assert.NotNull(intro);
+		Assert.Equal(IIntroData.TitleFadeSteps, intro.TitlePictures.Count);
+		Assert.Equal((320, 200), (intro.TitlePictures[^1].Width, intro.TitlePictures[^1].Height));
+		Assert.Equal((320, 36), (intro.Logo.Width, intro.Logo.Height));
+		// 21 pages of credits
+		Assert.Equal(21, intro.Texts.Count);
+		Assert.Equal(intro.Texts.Count, intro.TextPages.Count);
+		Assert.Contains("Jochen Hippel", intro.Texts[5]);
+		Assert.Contains("Karsten Köper", intro.Texts[0]);
+		Assert.Equal((320, IIntroData.TextAreaHeight), (intro.TextPages[0].Width, intro.TextPages[0].Height));
+		// the title fades from dark to the normal colors, the background fades from black
+		Assert.True(intro.TitlePictures[0].GetData().Sum(b => (long)b) < intro.TitlePictures[^1].GetData().Sum(b => (long)b));
+		Assert.All(intro.GetBackgroundPalette(-IIntroData.FadeSteps).GetData(), component => Assert.True(component is 0 or 0xff));
+		Assert.NotNull(intro.Music);
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void CombatDataLoads(string folder)
 	{
 		var assetProvider = TestData.CreateAssetProvider(folder);

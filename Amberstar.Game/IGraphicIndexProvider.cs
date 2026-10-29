@@ -31,6 +31,10 @@ public interface IGraphicIndexProvider
 	/// </summary>
 	int? GetOutroGlyphIndex(char ch);
 	/// <summary>
+	/// Gets the texture index of a graphic of the intro (the title pictures are in the layer for true color pictures).
+	/// </summary>
+	int GetIntroGraphicIndex(IntroGraphic graphic, int frame = 0);
+	/// <summary>
 	/// Gets the texture index of the loading screen (the dwarf) or null if it is not available.
 	/// </summary>
 	int? GetLoadingScreenIndex();

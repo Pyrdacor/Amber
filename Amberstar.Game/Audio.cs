@@ -52,6 +52,11 @@ partial class Game
     internal const int OutroSong = 100;
 
     /// <summary>
+    /// The music of the intro (see <see cref="IIntroData.Music"/>).
+    /// </summary>
+    internal const int IntroSong = 101;
+
+    /// <summary>
     /// The song which is played (or would be played if the music is switched on), 0 if none.
     /// </summary>
     internal int CurrentSong => Math.Max(0, requestedSongIndex);
@@ -100,9 +105,12 @@ partial class Game
         {
             if (!music.TryGetValue(songIndex, out var audioStream))
             {
-                audioStream = songIndex == OutroSong
-                    ? new AudioStream(AssetProvider.OutroData!.Music!)
-                    : new AudioStream(AssetProvider, AssetProvider.SongLoader.GetMusicIndex(songIndex), 0);
+                audioStream = songIndex switch
+                {
+                    OutroSong => new AudioStream(AssetProvider.OutroData!.Music!),
+                    IntroSong => new AudioStream(AssetProvider.IntroData!.Music!),
+                    _ => new AudioStream(AssetProvider, AssetProvider.SongLoader.GetMusicIndex(songIndex), 0)
+                };
                 music.Add(songIndex, audioStream);
             }
 

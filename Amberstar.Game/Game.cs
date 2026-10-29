@@ -81,11 +81,11 @@ public partial class Game : IDisposable
 		// The name of the active member is shown in a brighter color.
 		State.ActivePartyMemberChanged += UpdatePartyMembers;
 
-        // The original shows the loading screen at the start (it covers the map until it is gone).
-        if (CanShowLoadingScreen)
-            ShowLoadingScreen(DefaultFadeTime);
-
-        ScreenHandler.PushScreen(ScreenType.Map2D);
+        // The original starts with the intro (a separate program).
+        if (configuration.ShowIntro && AssetProvider.IntroData != null)
+            ScreenHandler.PushScreen(ScreenType.Intro);
+        else
+            StartGame();
 
         // TODO: For debugging, remove later
         // In Twinlake
@@ -99,6 +99,24 @@ public partial class Game : IDisposable
 		//State.SetPartyPosition(33, 23);
 		//ScreenHandler.PushScreen(ScreenType.Map2D);
 	}
+
+    void StartGame()
+    {
+        // The original shows the loading screen at the start (it covers the map until it is gone).
+        if (CanShowLoadingScreen)
+            ShowLoadingScreen(DefaultFadeTime);
+
+        ScreenHandler.PushScreen(ScreenType.Map2D);
+    }
+
+    /// <summary>
+    /// The intro was shown, the game starts.
+    /// </summary>
+    internal void IntroFinished()
+    {
+        ScreenHandler.ClearAllScreens();
+        StartGame();
+    }
 
     internal IRenderer Renderer { get; }
 	internal IAssetProvider AssetProvider { get; }

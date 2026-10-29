@@ -37,6 +37,26 @@ public sealed class HeadlessGameTests
 	}
 
 	[Fact]
+	public void IntroShowsTheCreditsAndStartsTheGame()
+	{
+		using var game = new HeadlessGame(TestData.GetDataPath(GameSetup.RepositoryDataFolders[0]), showIntro: true);
+
+		// the title picture stays until the space key is pressed
+		Assert.True(game.StepUntil(() => game.Game.ScriptActiveScreen == "Intro"), game.Game.ScriptState());
+		game.Step(120);
+		Assert.Empty(game.Game.ScriptShownTexts);
+		game.Game.KeyDown(Amberstar.Game.Key.Space, Amberstar.Game.KeyModifiers.None);
+		// the credits after the fading and the logo
+		Assert.True(game.StepUntil(() => game.Game.ScriptShownTexts.Count == 1, 300), game.Game.ScriptState());
+		Assert.Contains("Karsten", game.Game.ScriptShownTexts[0]);
+		Assert.True(game.StepUntil(() => game.Game.ScriptShownTexts.Count == 2, 400), game.Game.ScriptState());
+		// the space key ends the intro and the game starts with the graveyard text
+		game.Game.KeyDown(Amberstar.Game.Key.Space, Amberstar.Game.KeyModifiers.None);
+		Assert.True(game.StepUntil(() => game.Game.ScriptActiveScreen == "PictureText", 600), game.Game.ScriptState());
+		Assert.Equal(65, game.Game.ScriptMapIndex);
+	}
+
+	[Fact]
 	public void TeleportToAnotherMapFadesInGameTime()
 	{
 		using var game = StartGame();

@@ -284,7 +284,11 @@ namespace Amberstar
                 Game.Game.SetRandomSeed(randomSeed.Value);
 
             var audioOuput = new AudioOutput();
-            var configuration = new Configuration(); // TODO: load it later!
+            var configuration = new Configuration // TODO: load it later!
+            {
+                // scenario scripts start in the game
+                ShowIntro = scenarioScript == null
+            };
 
             game = GameSetup.CreateGame(renderer, dataPath, audioOuput, configuration, QueryPressedKeys, SetMousePosition);
 

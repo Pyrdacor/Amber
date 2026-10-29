@@ -13,6 +13,7 @@ namespace Amberstar.Frontend
 		Dictionary<int, byte> generalPalettes,
 		Dictionary<int, byte> combatPalettes,
 		Dictionary<(OutroPalette, int), byte> outroPalettes,
+		Dictionary<int, byte> introPalettes,
 		List<byte> loadingScreenPalettes
 	) : IPaletteIndexProvider
 	{
@@ -31,6 +32,9 @@ namespace Amberstar.Frontend
 		// the last fade in step is the normal palette
 		public byte GetOutroPaletteIndex(OutroPalette palette, int fadeStep = 0) =>
 			outroPalettes.TryGetValue((palette, fadeStep), out byte index) ? index : outroPalettes[(palette, 0)];
+
+		public byte GetIntroPaletteIndex(int fadeStep = 0) =>
+			introPalettes.TryGetValue(fadeStep, out byte index) ? index : introPalettes[0];
 
 		public byte GetLoadingScreenPaletteIndex(int fadeStep) => loadingScreenPalettes[Math.Clamp(fadeStep, 0, loadingScreenPalettes.Count - 1)];
 
