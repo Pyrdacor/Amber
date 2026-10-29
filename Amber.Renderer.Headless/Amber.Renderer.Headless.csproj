@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <Description>Renderer which only keeps the state of the drawables and never draws anything (e.g. for automated tests).</Description>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;DebugAndroid;ReleaseAndroid</Configurations>

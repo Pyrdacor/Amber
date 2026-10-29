@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <Description>Common file formats used in Amberstar and Ambermoon like the container files, with readers, writers, compression and encoding routines.</Description>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>

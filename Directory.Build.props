@@ -1,0 +1,19 @@
+<Project>
+
+  <!-- Package metadata of the engine projects which are published as NuGet packages (see .github/workflows/publish-nuget.yml).
+       Only projects which set IsPackable to true are packed. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <Version>0.1.0</Version>
+    <Authors>Robert Schneckenhaus</Authors>
+    <Copyright>Copyright (c) 2024 Pyrdacor</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Pyrdacor/Amber</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Pyrdacor/Amber</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Amber Amberstar Ambermoon</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+</Project>

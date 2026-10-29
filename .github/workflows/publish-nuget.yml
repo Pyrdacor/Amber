@@ -1,0 +1,66 @@
+name: Publish NuGet packages
+
+# Publishes the engine projects as NuGet packages.
+# Push a tag like v0.1.0 or start it by hand with a version.
+# The API key is the repository secret NUGET_API_KEY.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g. 0.1.0)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Determine version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $VERSION"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Pack
+        run: |
+          for project in \
+            Amber.Common \
+            Amber.Assets.Common \
+            Amber.IO.Common \
+            Amber.IO.FileFormats \
+            Amber.IO.FileSystem \
+            Amber.Audio.Common \
+            Amber.Audio.OpenAL \
+            Amber.Renderer.Common \
+            Amber.Renderer.Headless \
+            Amber.Renderer.OpenGL
+          do
+            dotnet pack "$project/$project.csproj" -c Release -p:Version="$VERSION" -o packages
+          done
+
+      - name: Push
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "packages/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
