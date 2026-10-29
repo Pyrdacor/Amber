@@ -452,8 +452,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
         switch (index)
         {
             case 0: // Stats
-                Game?.ScreenHandler.PopScreen();
-                Game?.ScreenHandler.PushScreen(ScreenType.CharacterStats);
+                Game?.ScreenHandler.ReplaceScreen(ScreenType.CharacterStats);
                 break;
             case 1: // Drop item
                 Game?.ScreenHandler.PushScreen(ScreenType.InventoryDropItem);

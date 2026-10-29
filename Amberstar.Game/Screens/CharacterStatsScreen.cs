@@ -307,8 +307,7 @@ internal class CharacterStatsScreen : ButtonGridScreen
         switch (index)
         {
             case 0: // Stats
-                Game.ScreenHandler.PopScreen();
-                Game.ScreenHandler.PushScreen(ScreenType.Inventory);
+                Game.ScreenHandler.ReplaceScreen(ScreenType.Inventory);
                 break;
             case 2:
                 Game.ScreenHandler.PopScreen();

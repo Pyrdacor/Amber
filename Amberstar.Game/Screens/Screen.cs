@@ -847,10 +847,48 @@ internal class ScreenHandler(Game Game) : IDisposable
 		}
 	}
 
+	/// <summary>
+	/// Replaces the active screen by another one in one fade. The screen below is not shown in between
+	/// (e.g. the map while the inventory is replaced by the character screen).
+	/// </summary>
 	public void ReplaceScreen(ScreenType screenType, Action? followAction = null)
 	{
-		PopScreen();
-		PushScreen(screenType, followAction);
+		if (screens.Count == 0)
+		{
+			PushScreen(screenType, followAction);
+			return;
+		}
+
+		var oldScreen = ActiveScreen!;
+
+		if (oldScreen.Type == screenType)
+		{
+			followAction?.Invoke();
+			return;
+		}
+
+		if (!createdScreens.TryGetValue(screenType, out var screen))
+			screen = Create(screenType);
+
+		void Replace()
+		{
+			screens.Pop();
+			oldScreen.Close();
+			screens.Push(screen);
+			screen.PreOpen();
+			screen.Open(followAction);
+
+			ScreenChanged?.Invoke(screen, oldScreen);
+		}
+
+		bool transparent = oldScreen.Transparent || screen.Transparent;
+		bool fadeOut = oldScreen.FadeType == ScreenFadeType.Out || oldScreen.FadeType == ScreenFadeType.Both;
+		bool fadeIn = screen.FadeType == ScreenFadeType.In || screen.FadeType == ScreenFadeType.Both;
+
+		if (!transparent && (fadeIn || fadeOut))
+			Game.Fade(Game.DefaultFadeTime, null, Replace);
+		else
+			Replace();
 	}
 
 	public Screen? FindScreen(ScreenType screenType)
