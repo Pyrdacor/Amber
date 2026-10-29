@@ -19,7 +19,7 @@ internal class ReadOnlyFolder : IReadOnlyFolder
 
     public string Name { get; }
 
-    public string Path => Parent == null ? Name : Parent.Path + "/" + Name;
+    public string Path => string.IsNullOrEmpty(Parent?.Path) ? Name : Parent.Path + "/" + Name;
 
     public IReadOnlyFolder? Parent { get; }
 }

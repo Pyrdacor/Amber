@@ -1,7 +1,5 @@
 ﻿using Amber.IO.Common.FileSystem;
-using Amber.IO.FileSystem.Virtual;
-
-namespace Ambermoon.Data.FileSystems.Virtual;
+namespace Amber.IO.FileSystem.Virtual;
 
 internal class ReadOnlyFileStream : IReadOnlyFileStream
 {
@@ -22,7 +20,7 @@ internal class ReadOnlyFileStream : IReadOnlyFileStream
 
     public IDisposableDataReader GetReader()
     {
-        return baseStream.GetReader();
+        return baseStream.GetReader(streamOffset, streamLength);
     }
 
     public void AdjustOffset(int newOffset)

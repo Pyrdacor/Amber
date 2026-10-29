@@ -43,6 +43,9 @@ internal class File : IFile
 
     public IReadOnlyFile AsReadOnly(IReadOnlyFolder parent)
     {
-        return new ReadOnlyFile(Name, baseStream, streamOffset, streamLength, parent);
+        // the stream knows the current offset and size (they change when files are written)
+        var stream = (FileStream)Stream;
+
+        return new ReadOnlyFile(Name, baseStream, stream.Offset, stream.Size, parent);
     }
 }

@@ -48,7 +48,7 @@ internal class DataStream
     public void Read(byte[] data, int offset, int length)
     {
         var bytes = ReadBytes(length);
-        Buffer.BlockCopy(data, offset, bytes, 0, length);
+        Buffer.BlockCopy(bytes, 0, data, offset, length);
     }
 
     public void WriteByte(byte value)

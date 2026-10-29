@@ -1,5 +1,4 @@
 ﻿using Amber.IO.Common.FileSystem;
-using Ambermoon.Data.FileSystems.Virtual;
 
 namespace Amber.IO.FileSystem.Virtual;
 
@@ -33,7 +32,10 @@ internal class FileStream : ReadOnlyFileStream, IFileStream
 
     public IDisposableDataWriter GetWriter()
     {
-        writeStream = new MemoryStream(baseStream.ToArray(streamOffset, streamLength));
+        // like a file opened for writing: it starts at the beginning and can grow (it is not truncated)
+        writeStream = new MemoryStream();
+        writeStream.Write(baseStream.ToArray(streamOffset, streamLength));
+        writeStream.Position = 0;
         return new StreamedDataWriter(writeStream, false, WriteStream);
     }
 

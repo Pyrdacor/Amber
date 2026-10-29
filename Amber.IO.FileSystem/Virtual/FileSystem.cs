@@ -7,7 +7,7 @@ namespace Amber.IO.FileSystem.Virtual;
 internal class FileSystem : IFileSystem
 {
     const string Magic = "PYFS";
-    const int MajorVersion = 0;
+    const int MajorVersion = 1;
     const int MinorVersion = 0;
     const string RootFolderName = "";
     DataStream? dataStream;
@@ -50,20 +50,25 @@ internal class FileSystem : IFileSystem
 
         var allFiles = fileSystem.GetAllFiles().ToList();
 
-        writer.Write((ushort)allFiles.Count);
+        WriteFiles(writer, allFiles.Select(file => (file.Path, (IReadOnlyFileStream)file.Stream)).ToList());
+        writer.CopyTo(stream);
+    }
 
-        foreach (var file in allFiles)
+    static void WriteFiles(DataWriter writer, List<(string Path, IReadOnlyFileStream Stream)> files)
+    {
+        writer.Write((uint)files.Count);
+
+        foreach (var file in files)
         {
-            writer.Write((ushort)file.Stream.Size);
+            writer.Write((uint)file.Stream.Size);
             writer.WriteNullTerminated(file.Path);
         }
 
-        foreach (var file in allFiles)
+        foreach (var file in files)
         {
-            writer.Write(file.Stream.GetReader().ReadToEnd());
+            using var reader = file.Stream.GetReader();
+            writer.Write(reader.ReadToEnd());
         }
-
-        writer.CopyTo(stream);
     }
 
     public static void Save(Stream stream, IReadOnlyFileSystem fileSystem)
@@ -74,19 +79,7 @@ internal class FileSystem : IFileSystem
 
         var allFiles = fileSystem.GetAllFiles().ToList();
 
-        writer.Write((ushort)allFiles.Count);
-
-        foreach (var file in allFiles)
-        {
-            writer.Write((ushort)file.Stream.Size);
-            writer.WriteNullTerminated(file.Path);
-        }
-
-        foreach (var file in allFiles)
-        {
-            writer.Write(file.Stream.GetReader().ReadToEnd());
-        }
-
+        WriteFiles(writer, allFiles.Select(file => (file.Path, file.Stream)).ToList());
         writer.CopyTo(stream);
     }
 
@@ -95,8 +88,8 @@ internal class FileSystem : IFileSystem
         // First there is a magic string: "PYFS" (Pyrdacor's filesystem)
         // Then the file structure version follows as two words (major and minor)
         // Then there is a flag dword.
-        // Then the amount of files follows as a word.
-        // For each file there is a info entry with the full path (relative to root) and file size.
+        // Then the amount of files follows (version 0: word, since version 1: dword).
+        // For each file there is a info entry with the file size (like the amount) and the full path (relative to root).
         // Then for each file the file data is stored.
 
         using var reader = new StreamedDataReader(stream, leaveOpen);
@@ -115,11 +108,14 @@ internal class FileSystem : IFileSystem
         if (flags != 0)
             throw new InvalidDataException("Invalid flags value.");
 
-        int numFiles = reader.ReadWord();
+        // version 0 stored the amount and the sizes as words (so files had at most 65535 bytes)
+        int ReadCount() => major == 0 ? reader.ReadWord() : checked((int)reader.ReadDword());
+
+        int numFiles = ReadCount();
         var fileInfos = new FileInfo[numFiles];
 
         for (int i = 0; i < numFiles; ++i)
-            fileInfos[i] = new FileInfo { Size = reader.ReadWord(), Path = reader.ReadNullTerminatedString(Encoding.UTF8) };
+            fileInfos[i] = new FileInfo { Size = ReadCount(), Path = reader.ReadNullTerminatedString(Encoding.UTF8) };
 
         dataStream = new DataStream(reader.ReadToEnd());
 
