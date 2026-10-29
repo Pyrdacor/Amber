@@ -42,6 +42,8 @@ public enum EmbeddedDataOffset
 	SongNames,
 	LoadingScreen,
 	LoadingScreenPalette,
+	ItemSparkleCode,
+	CurseAnimationCode,
 }
 
 public class AssetProvider : IAssetProvider
@@ -741,6 +743,18 @@ public class AssetProvider : IAssetProvider
 			case EmbeddedDataOffset.LoadingScreenPalette:
 				return FindAndGotoByteSequence(dataReader, 0, 0x00, 0x00, 0x02, 0x23, 0x03, 0x33, 0x02, 0x22, 0x01, 0x11, 0x06, 0x43,
 					0x05, 0x32, 0x04, 0x21, 0x03, 0x10, 0x07, 0x63);
+			case EmbeddedDataOffset.ItemSparkleCode:
+				// The routine which shows the sparkles over an item: ext.w d2 / lsl.w #7,d2 / adda.w d2,a1 / lea <animation>,a3
+				if (!FindAndGotoByteSequence(dataReader, 0, 0x48, 0x82, 0xef, 0x4a, 0xd2, 0xc2, 0x47, 0xf9))
+					return false;
+				dataReader.Position += 8;
+				return true;
+			case EmbeddedDataOffset.CurseAnimationCode:
+				// The routine which shows the destruction of an item: ext.w d3 / lsl.w #7,d3 / adda.w d3,a2 / lea <animation>,a3
+				if (!FindAndGotoByteSequence(dataReader, 0, 0x48, 0x83, 0xef, 0x4b, 0xd4, 0xc3, 0x47, 0xf9))
+					return false;
+				dataReader.Position += 8;
+				return true;
 			case EmbeddedDataOffset.DamageDigits:
 				// The digits 0 and 1 (5 lines of 4 pixels each)
 				return FindAndGotoByteSequence(dataReader, 0, 0x60, 0xd0, 0xd0, 0xd0, 0x60, 0x30, 0x70, 0x30, 0x30, 0x30);
@@ -812,6 +826,8 @@ public class AssetProvider : IAssetProvider
 				return true;
 			case EmbeddedDataOffset.LoadingScreen:
 			case EmbeddedDataOffset.LoadingScreenPalette:
+			case EmbeddedDataOffset.ItemSparkleCode:
+			case EmbeddedDataOffset.CurseAnimationCode:
 				// The code and the palette are the same as in the Atari version. The addresses in the
 				// text segment are offsets, so the graphic is found like there.
 				return FindAtariOffset(embeddedDataFile, dataReader);

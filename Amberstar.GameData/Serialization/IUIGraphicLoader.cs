@@ -39,7 +39,8 @@ public enum UIGraphic
 	CurseAnimation,
 	AutomapIcons,
 	SmallOuch,
-    LastUIGraphic = SmallOuch
+    LastUIGraphic = SmallOuch,
+	ItemSparkle, // 8 frames (16x16) over an item which is used or enchanted (not stored with the other graphics)
 }
 
 public enum ButtonType
@@ -356,6 +357,7 @@ public static class UIGraphicExtensions
         { UIGraphic.CurseAnimation, Info(16, 16, 16) },
         { UIGraphic.AutomapIcons, Info(16, 8, 14) },
         { UIGraphic.SmallOuch, Info(16, 16) },
+        { UIGraphic.ItemSparkle, Info(16, 16, 8) },
         //{ UIGraphic.LastUIGraphic, Info(16, 32, 1) } // TODO
 	};
 

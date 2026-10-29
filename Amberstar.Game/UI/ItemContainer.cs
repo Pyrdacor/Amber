@@ -21,6 +21,7 @@ internal class ItemContainer : Control
     ISprite? sprite;
 	ISprite? brokenOverlay; // TODO
 	IAnimatedSprite? destroyAnimation;
+	IAnimatedSprite? sparkleAnimation;
 	Label? itemCountLabel;
 	byte paletteIndex;
 	byte displayLayer;
@@ -301,6 +302,46 @@ internal class ItemContainer : Control
         }
     }
 
+    /// <summary>
+    /// The item sparkles (8 frames of 3 vertical blanks, L1212a in the original), e.g. when it is used.
+    /// The original waits for it, here the spell goes on meanwhile (so the input is not blocked).
+    /// </summary>
+    public void ShowSparkle(Action? finished = null)
+    {
+        if (sprite == null)
+        {
+            finished?.Invoke();
+            return;
+        }
+
+        var layer = game.GetRenderLayer(Layer.UI);
+        sparkleAnimation ??= layer.SpriteFactory!.CreateAnimated();
+        sparkleAnimation.Position = Position;
+        sparkleAnimation.Size = new(Width, Height);
+        sparkleAnimation.TextureOffset = layer.Config.Texture!.GetOffset(game.GraphicIndexProvider.GetUIGraphicIndex(UIGraphic.ItemSparkle));
+        sparkleAnimation.DisplayLayer = (byte)(sprite.DisplayLayer + 5);
+        sparkleAnimation.PaletteIndex = paletteIndex;
+        sparkleAnimation.FrameCount = UIGraphic.ItemSparkle.GetFrameCount();
+        sparkleAnimation.CurrentFrameIndex = 0;
+        sparkleAnimation.Visible = true;
+        // the slot can be cleared meanwhile
+        var animation = sparkleAnimation;
+
+        game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+
+        void NextFrame()
+        {
+            if (++animation.CurrentFrameIndex == animation.FrameCount)
+            {
+                animation.Visible = false;
+                finished?.Invoke();
+                return;
+            }
+
+            game.AddDelayedAction(Game.TicksPerSecond / 20, NextFrame);
+        }
+    }
+
     public void ReduceItemCount(int amount, bool playAnimation = false, Action? animationFinishedHandler = null)
     {
 		bool slotCleared = amount >= ItemCount;
@@ -406,6 +447,12 @@ internal class ItemContainer : Control
             destroyAnimation.Visible = false;
 			destroyAnimation = null;
         }
+
+		if (sparkleAnimation != null)
+		{
+			sparkleAnimation.Visible = false;
+			sparkleAnimation = null;
+		}
 
         SlotChanged?.Invoke();
     }

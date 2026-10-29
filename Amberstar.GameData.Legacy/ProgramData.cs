@@ -147,8 +147,11 @@ namespace Amberstar.GameData.Legacy
                 Layouts.Add(i, new DataReader(dataReader.ReadBytes(220)));
             #endregion
             #region Read UI graphics
+            int curseAnimationOffset = -1;
             void AddUIGraphic(UIGraphic graphic)
             {
+                if (graphic == UIGraphic.CurseAnimation)
+                    curseAnimationOffset = dataReader.Position;
                 var size = graphic.GetSize();
                 int frameCount = graphic.GetFrameCount();
                 UIGraphics.Add((int)graphic, new DataReader(dataReader.ReadBytes(frameCount * (int)size.Width * (int)size.Height / 2)));
@@ -200,6 +203,33 @@ namespace Amberstar.GameData.Legacy
             #region Read even more UI gfx
             for (int i = (int)UIGraphic.HPBar; i <= (int)UIGraphic.LastUIGraphic; i++)
                 AddUIGraphic((UIGraphic)i);
+            #endregion
+            #region Read the sparkles over items
+            // They are not stored with the other graphics ($49d92 in the German program). The routines which show them
+            // and the curse animation give their addresses, so their offset is found by the offset of the curse animation.
+            int afterGraphics = dataReader.Position;
+            var sparkleSize = UIGraphic.ItemSparkle.GetSize();
+            int sparkleDataSize = UIGraphic.ItemSparkle.GetFrameCount() * (int)sparkleSize.Width * (int)sparkleSize.Height / 2;
+            var sparkleData = new byte[sparkleDataSize];
+
+            if (dataSeeker(EmbeddedDataOffset.ItemSparkleCode, dataReader))
+            {
+                long sparkleAddress = dataReader.ReadDword();
+
+                if (dataSeeker(EmbeddedDataOffset.CurseAnimationCode, dataReader))
+                {
+                    long sparkleOffset = curseAnimationOffset + sparkleAddress - dataReader.ReadDword();
+
+                    if (curseAnimationOffset != -1 && sparkleOffset >= 0 && sparkleOffset + sparkleDataSize <= dataReader.Size)
+                    {
+                        dataReader.Position = (int)sparkleOffset;
+                        sparkleData = dataReader.ReadBytes(sparkleDataSize);
+                    }
+                }
+            }
+
+            UIGraphics.Add((int)UIGraphic.ItemSparkle, new DataReader(sparkleData));
+            dataReader.Position = afterGraphics;
             #endregion
             #region Read sky gradients
             for (int i = 0; i < 3; i++)

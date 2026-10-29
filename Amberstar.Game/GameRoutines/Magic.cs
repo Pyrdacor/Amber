@@ -297,6 +297,9 @@ partial class Game
 		var (owner, itemSlot, equipped) = magicItem;
 		var item = itemSlot.Item!;
 
+		// The used item sparkles (L12042 in the original), an empty slot is cleared afterwards.
+		ShowItemSparkle(owner, itemSlot);
+
 		if (!item.IsStackable() && item.SpellCharges != byte.MaxValue)
 		{
 			if (item.SpellCharges > 1)
@@ -312,10 +315,16 @@ partial class Game
 		}
 
 		DestroyUsedItem(owner, itemSlot, equipped);
+	}
 
-		// the inventory shows the destruction of the last item (Destroy_used_item in the original)
-		if (itemSlot.Count == 0 && ScreenHandler.FindScreen(ScreenType.Inventory) is InventoryScreen inventory && inventory.PartyMember == owner)
-			inventory.ShowItemDestruction(itemSlot);
+	/// <summary>
+	/// An item sparkles in the inventory if it is shown (L1212a in the original), then the action follows.
+	/// </summary>
+	void ShowItemSparkle(IPartyMember owner, ItemSlot itemSlot, Action? then = null)
+	{
+		if (ScreenHandler.FindScreen(ScreenType.Inventory) is not InventoryScreen inventory || inventory.PartyMember != owner ||
+			!inventory.ShowItemSparkle(itemSlot, then))
+			then?.Invoke();
 	}
 
 	/// <summary>
@@ -692,13 +701,14 @@ partial class Game
 				break;
 			case GraySpell.Identification:
 				SelectSpellItem(Message.WhoseItemToExamine, Message.WhichItem, false, item => !item.SlotFlags.HasFlag(ItemSlotFlags.Identified),
-					finished, (_, itemSlot, _, done) =>
+					finished, (owner, itemSlot, _, done) =>
 				{
 					if (TrySpell(done))
 					{
 						IdentifyItem(itemSlot);
 						CurrentItem = itemSlot.Item;
-						ScreenHandler.PushScreen(ScreenType.ItemView, done);
+						// the item sparkles before it is shown ($143fc in the original)
+						ShowItemSparkle(owner, itemSlot, () => ScreenHandler.PushScreen(ScreenType.ItemView, done));
 					}
 				});
 				break;
@@ -860,7 +870,8 @@ partial class Game
 						if (equipped)
 							ApplyEquipmentBoni(target, newItem, true);
 
-						done();
+						// the weapon sparkles ($14ef8 in the original)
+						ShowItemSparkle(target, itemSlot, done);
 					}
 				});
 				break;

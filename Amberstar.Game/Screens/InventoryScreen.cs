@@ -526,7 +526,17 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
     /// The last item of a slot was used up: its destruction is shown in the slot (Show_item_destruction in the
     /// original). Returns false if the slot is not shown.
     /// </summary>
-    internal bool ShowItemDestruction(ItemSlot itemSlot, Action? finished = null)
+    internal bool ShowItemDestruction(ItemSlot itemSlot, Action? finished = null) =>
+        RunItemAnimation(itemSlot, (container, done) => container.ReduceItemCount(container.ItemCount, true, done), finished);
+
+    /// <summary>
+    /// An item sparkles in its slot when it is used or enchanted (L1212a in the original). Returns false if the slot is
+    /// not shown.
+    /// </summary>
+    internal bool ShowItemSparkle(ItemSlot itemSlot, Action? finished = null) =>
+        RunItemAnimation(itemSlot, (container, done) => container.ShowSparkle(done), finished);
+
+    bool RunItemAnimation(ItemSlot itemSlot, Action<ItemContainer, Action> animation, Action? finished)
     {
         ItemContainer? container = null;
 
@@ -546,7 +556,7 @@ internal class InventoryScreen : ItemGridScreen, IWaitForClickScreen
             return false;
 
         runningDestructions++;
-        container.ReduceItemCount(container.ItemCount, true, () =>
+        animation(container, () =>
         {
             if (--runningDestructions == 0)
             {

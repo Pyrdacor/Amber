@@ -152,6 +152,19 @@ public sealed class GameDataTests
 
 	[Theory]
 	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
+	[InlineData("German/AmberfilesAmiga")]
+	[InlineData("English/AmberfilesAmiga")]
+	public void ItemSparkleLoads(string folder)
+	{
+		var sparkle = TestData.CreateAssetProvider(folder).UIGraphicLoader.LoadGraphic(UIGraphic.ItemSparkle);
+
+		// 8 frames of 16x16 pixels, found by the code which shows them
+		Assert.Equal((16 * 8, 16), (sparkle.Width, sparkle.Height));
+		Assert.Contains(sparkle.GetData(), color => color != 0);
+	}
+
+	[Theory]
+	[MemberData(nameof(TestData.DataFolders), MemberType = typeof(TestData))]
 	public void ThalionLogoRuns(string folder)
 	{
 		var logo = TestData.CreateAssetProvider(folder).ThalionLogo;
