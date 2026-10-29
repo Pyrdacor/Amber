@@ -11,6 +11,13 @@ internal class Layer : ILayer
 		Config = config;
 		Index = index;
 
+		// the same checks as the real renderer
+		if (type.UsesTextures() && config.Texture == null)
+			throw new AmberException(ExceptionScope.Application, "Layer supports textures but has no texture.");
+
+		if (type.UsesPalette() && config.Palette == null)
+			throw new AmberException(ExceptionScope.Application, "Layer supports palettes but has no palette.");
+
 		if (type != LayerType.Texture3D && type != LayerType.Billboard3D)
 		{
 			if (type.UsesTextures())

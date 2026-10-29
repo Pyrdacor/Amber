@@ -395,7 +395,7 @@ namespace Amberstar.Frontend
 			}
 			if (graphics.Count == 0)
 				graphics.Add(0, new Graphic(1, 1, GraphicFormat.RGBA));
-			layer = renderer.LayerFactory.Create(LayerType.Texture2D, new()
+			layer = renderer.LayerFactory.Create(LayerType.Images, new()
 			{
 				BaseZ = 0.8f,
 				LayerFeatures = LayerFeatures.Transparency | LayerFeatures.DisplayLayers,
