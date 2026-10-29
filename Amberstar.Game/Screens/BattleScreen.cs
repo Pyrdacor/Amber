@@ -458,6 +458,36 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		return valid;
 	}
 
+	/// <summary>
+	/// A shortcut of the port (not in the original): a click on a monster which can be attacked chooses the attack,
+	/// a click on a free cell of the party rows which can be reached chooses the move.
+	/// </summary>
+	bool ChooseActionByCell(Position cell)
+	{
+		if (battle == null)
+			return false;
+
+		int slot = ActiveSlot;
+
+		if (shownBattleField[CellIndex(cell)] is MonsterParticipant)
+		{
+			if (!battle.CanAttack(slot) || !battle.GetAttackTargets(slot, out bool ranged).Contains(cell))
+				return false;
+
+			SetAction(slot, new(BattleActionType.Attack, cell, ranged));
+			return true;
+		}
+
+		if (cell.Y >= Battle.Battle.MonsterRows && shownBattleField[CellIndex(cell)] == null &&
+			battle.CanMove(slot) && battle.GetMoveTargets(slot).Contains(cell))
+		{
+			SetAction(slot, new(BattleActionType.Move, cell));
+			return true;
+		}
+
+		return false;
+	}
+
 	public override bool MouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers)
 	{
 		if (clickAction != null)
@@ -496,6 +526,9 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 			Game.State.SetActivePartyMember(partyMember.Slot);
 			return true;
 		}
+
+		if (!executing && buttons == MouseButtons.Left && clickedCell != null && ChooseActionByCell(clickedCell.Value))
+			return true;
 
 		return base.MouseDown(position, buttons, keyModifiers);
 	}

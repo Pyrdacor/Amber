@@ -1,0 +1,18 @@
+# Shortcuts of the port in battles (not in the original): a click on a free cell of the party rows which can be
+# reached chooses the move, a click on a monster which can be attacked chooses the attack (monster group 1: a giant rat).
+# The tactical battle field is at 208,49 with cells of 16 pixels.
+waittext
+dismissall
+setvalue 1 Attack 100
+startbattle 1
+waitscreen Battle
+# --- move to the cell 2,3
+click 248 105
+battleround
+battlecell 2 3 THALION
+battlecell 2 2 RIESENRATTE
+cleartexts
+# --- attack the rat at 2,2
+click 248 89
+battleround
+animationshown damage RIESENRATTE
