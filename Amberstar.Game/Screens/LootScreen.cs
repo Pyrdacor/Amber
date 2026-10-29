@@ -57,6 +57,10 @@ internal sealed class LootScreen : ItemGridScreen, IWaitForClickScreen
 		for (int i = 0; i < SlotCount; i++)
 			itemSlots[i] = AddItem(16 + (i % SlotsPerRow) * 32, 37 + 108 + (i / SlotsPerRow) * 32, item: null, count: 0, displayLayer: 10);
 
+		// the open chest (picture 21, loaded at $1985e in the original)
+		var image = AddImage(16, 49, 80, 80, Game.GraphicIndexProvider.Get80x80ImageIndex(Image80x80.OpenChest), 0, true);
+		image.PaletteIndex = Game.PaletteIndexProvider.Get80x80ImagePaletteIndex(Image80x80.OpenChest);
+
 		var (x, y, width, height) = messageDisplayArea;
 		message = AddLabel(x, y, width, height, 20);
 	}
@@ -77,6 +81,8 @@ internal sealed class LootScreen : ItemGridScreen, IWaitForClickScreen
 
 		Game.SetLayout(Layout.Chest, ButtonGridPaletteIndex);
 		Game.Cursor.CursorType = CursorType.Sword;
+		// the icons of the battle actions are removed
+		Game.ResetStatusIcons();
 
 		goldLabel = AddAmountLabel(goldDisplayArea, UIText.Gold);
 		foodLabel = AddAmountLabel(foodDisplayArea, UIText.Food);
