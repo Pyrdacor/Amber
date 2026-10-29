@@ -84,6 +84,8 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 	(int Slot, ItemSlot ItemSlot, bool Equipped)? spellItem = null;
 	bool slowMode = false;
 	bool executing = false;
+	// another screen covers the battle (it stays covered while that screen fades out)
+	bool covered = false;
 	readonly Queue<BattleEvent> pendingEvents = [];
 	// the actions of the round which are not executed yet
 	IEnumerator<List<BattleEvent>>? roundActions;
@@ -152,6 +154,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		targetSelection = TargetSelection.None;
 		executing = false;
+		covered = false;
 		pendingEvents.Clear();
 		roundActions = null;
 		Game.HoldPartyMemberBars = false;
@@ -212,6 +215,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		// e.g. the inventory covers the battle
 		if (!screen.Transparent)
 		{
+			covered = true;
 			monsterImages.ForEach(image => image.Visible = false);
 			ClearMarkers();
 			ClearAnimations();
@@ -224,6 +228,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 
 		if (!screen.Transparent)
 		{
+			covered = false;
 			Game.SetLayout(Layout.Battle, ButtonGridPaletteIndex);
 			Game.Cursor.CursorType = CursorType.Sword;
 			UpdateBattleField();
@@ -577,7 +582,7 @@ internal sealed class BattleScreen : ButtonGridScreen, IWaitForClickScreen
 		int verticalBlanks = (int)(verticalBlankTicks / Game.TicksPerSecond);
 		verticalBlankTicks %= Game.TicksPerSecond;
 
-		if (verticalBlanks == 0 || battle == null)
+		if (verticalBlanks == 0 || battle == null || covered)
 			return;
 
 		bool changed = UpdateIdleAnimation(verticalBlanks);
